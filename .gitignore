@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.env*
+.impeccable/mocks/
+.impeccable/tmp/
+.impeccable/*.local.json
+captures/

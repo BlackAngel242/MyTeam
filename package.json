@@ -1,0 +1,11 @@
+{
+  "name":"bureau-des-agents",
+  "private":true,
+  "type":"module",
+  "scripts":{
+    "start":"node server.mjs",
+    "test":"node --test",
+    "check":"node --check server.mjs && node --check src/herdr.mjs && node --check public/app.js"
+  },
+  "engines":{"node":">=22"}
+}

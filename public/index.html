@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1423">
+  <title>Bureau des agents · DrSmoke</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Bureau des agents, accueil"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Bureau des agents<span class="brand-sub">L’équipe de DrSmoke</span></span></a>
+    <div class="connection" id="connection" role="status"><span class="signal"></span><span id="connection-text">Connexion à Herdr…</span></div>
+    <button class="icon-button" id="refresh" type="button" title="Actualiser les agents"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 18 17"/></svg><span>Actualiser</span></button>
+  </header>
+  <main>
+    <section class="office-section" aria-labelledby="office-title">
+      <div class="section-heading"><div><h1 id="office-title">Une équipe. <br>Un même bureau.</h1><p>Retrouve tes agents, suis leur activité et donne la prochaine consigne.</p></div><button id="motion" class="quiet-button" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Mettre en pause</span></button></div>
+      <div class="office-frame">
+        <div class="office-top"><span><span class="live-dot"></span>Vue du bureau</span><span id="office-count">En attente de Herdr</span></div>
+        <div class="scene-wrap"><canvas id="office" width="1000" height="620" aria-label="Bureau animé des agents. Utilise la liste sous le bureau pour sélectionner un agent." role="img"></canvas><div class="scene-notice" id="scene-notice"><strong>Le bureau se prépare</strong><span>Recherche de tes agents dans Herdr…</span></div></div>
+        <div class="office-bottom"><span>Clique sur un personnage pour ouvrir son poste.</span><span class="legend"><i class="legend-dot working"></i>Au travail<i class="legend-dot idle"></i>Disponible<i class="legend-dot waiting"></i>En attente</span></div>
+      </div>
+      <div class="team-heading"><h2>Les postes de l’équipe</h2><span id="last-update">Pas encore de données</span></div>
+      <div class="agents-list" id="agents-list" aria-label="Sélectionner un agent"><p class="list-placeholder">Les agents détectés apparaîtront ici.</p></div>
+      <p class="state-error" id="state-error" role="status" hidden></p>
+    </section>
+    <aside class="detail" aria-labelledby="detail-title">
+      <div class="detail-heading"><div class="small-avatar" id="detail-avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 4h16v4h4v16h-4v4H8v-4H4V8h4z"/><path class="eyes" d="M10 12h4v4h-4zm8 0h4v4h-4zM12 21h8v2h-8z"/></svg></div><div><h2 id="detail-title">Choisis un agent</h2><p id="detail-status">Son poste s’ouvrira ici.</p></div><span class="detail-dot" id="detail-dot"></span></div>
+      <dl class="agent-meta" id="agent-meta" hidden><div><dt>Outil</dt><dd id="agent-kind"></dd></div><div><dt>Dossier de travail</dt><dd id="agent-cwd"></dd></div></dl>
+      <div class="output-heading"><h3>Dernières sorties</h3><span id="read-state">Aucun poste sélectionné</span></div>
+      <div class="output-wrap"><pre id="output" tabindex="0">Sélectionne un personnage dans le bureau ou un agent dans la liste pour lire les dernières lignes de son terminal.</pre></div>
+      <p class="read-note" id="read-note">Les sorties viennent directement du terminal de l’agent.</p>
+      <form id="prompt-form"><label for="message">La prochaine consigne</label><textarea id="message" rows="3" maxlength="12000" placeholder="Écris ta consigne à cet agent…" disabled></textarea><p id="send-help">Sélectionne un agent pour lui écrire.</p><button id="send" type="submit" disabled><span>Envoyer la consigne</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-5 14-3-7-6 0Zm6 0 8-7"/></svg></button><p id="send-result" role="status" hidden></p></form>
+      <div class="detail-footer"><span class="local-mark"></span>Relié à ta session locale Herdr</div>
+    </aside>
+  </main>
+  <footer class="page-footer"><span>DrSmoke « Un Mbokatié engagé »</span><span></span></footer>
+</body>
+</html>
