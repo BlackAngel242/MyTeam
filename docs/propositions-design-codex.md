@@ -81,3 +81,35 @@ Faire de chaque poste une entrée vers une **fenêtre de travail**, avec le nom 
 Pour garder ce système simple, commencer par deux emplacements de fenêtres ajustables, plutôt que des fenêtres libres qui se cachent mutuellement. Sur téléphone, une seule fenêtre à la fois, avec retour au bureau. La scène continue à montrer uniquement les agents détectés ; les courriers, sous-agents et pauses viennent toujours d'événements observés. Une attente de réponse ouvre le poste ou indique Herdr, elle ne répond jamais à la place de DrSmoke.
 
 **Effort : grand.** Le bénéfice serait de passer d'un beau tableau de surveillance à un espace où lire, comparer et préparer le travail. Cette idée vient après les six améliorations : elle ne doit pas ajouter de commandes automatiques ni rendre l'interface plus encombrée.
+
+## Contre-évaluation
+
+Relecture du 17 octobre 2026 après application de D1 à D8. Les treize captures régénérées ont été rouvertes individuellement, ainsi que `telephone-390.png`, `telephone-360.png` et `planche-heures.png`, soit seize images examinées. Deux lectures visuelles indépendantes Impeccable ont complété la comparaison. Les résultats Playwright annoncés par Claude restent distincts de cette observation : les images permettent de juger la composition, pas de certifier le clavier, les gestes, le défilement ou les envois.
+
+### État des six propositions
+
+1. **Composition sur téléphone : résolue.** Dans `telephone-390.png` et `telephone-360.png`, tous les postes apparaissent dans une scène verticale complète, les cartes sont sur deux colonnes et le panneau passe dessous. Aucun élément ne déborde visiblement à droite. Dans `telephone.png`, l'alerte reprend toute la largeur avec un texte lisible et un bouton entier ; Disposer et Plein écran ont leur rangée. L'ancien écrasement est corrigé. Le parcours reste long, comme détaillé ci-dessous.
+
+2. **État « disponible » cohérent : résolue.** `onglet-poste-codex.png` indique maintenant « En pause (limite) » et utilise un point violet. `palette.png` reprend cet état ; la scène et la carte de `scenario-1440.png` présentent aussi la pause. La fiche distingue le retour à 16:45 de la relance prévue à 16:50. La contradiction principale avec « Disponible » a disparu. La présentation des différentes limites mérite encore une clarification.
+
+3. **Cadrage comme outil de lecture : partielle.** Les noms des cartes sont complets dans `reel-1280.png`, avec l'état sur une autre ligne et une pastille Herdr séparée. La disposition mobile garde les agents visibles. Cependant, à 1280 les personnages et leurs textes de scène restent petits ; mur, Direction et salle de réflexion occupent encore une grande surface. Dans `scenario-scene-zoom.png`, les deux sous-agents ne portent toujours pas de repère les rattachant explicitement à Claude. Les captures ne permettent pas de vérifier la conservation d'une disposition personnalisée, ni la réduction de la salle lorsqu'elle est vide : elle est occupée dans les vues examinées.
+
+4. **Panneau centré sur l'action : partielle.** Dans les trois vues réelles, le grand terminal vide et le formulaire inutilisable sont remplacés par une invitation courte et des choix directs d'agents. Dans `onglet-equipe.png`, les longs paragraphes ont été nettement raccourcis et le champ de message commence désormais dans le cadrage. Dans `onglet-poste-codex.png`, Agrandir est visible à côté des outils du terminal. En revanche, la zone de consigne commence toujours au bord inférieur de la capture et son bouton n'y apparaît pas. Cette image seule ne démontre pas que l'action est plus facile à atteindre ou que le terminal agrandi fonctionne.
+
+5. **Barre du mode Disposer : résolue.** `mode-disposer.png` sépare clairement l'alerte et les boutons de la ligne « Disposition : glisse les postes… ». Réinitialiser, Terminer et Plein écran sont lisibles, sans la superposition précédente. Petite réserve de finition : le libellé « En pause 16:45 » dépasse légèrement le cadre de manipulation de Codex ; le cadre pourrait englober tout le poste et son texte.
+
+6. **Erreurs distinctes des listes vides : partielle.** `onglet-taches.png` et `onglet-fichiers.png` affichent un encart ambre avec Actualiser le bureau, puis « Plans non chargés » ou « Destinations non chargées ». L'ancienne conclusion trompeuse sur une liste vide a disparu. Mais Fichiers conserve aussi la ligne « Session expirée. Actualise le bureau. » juste au-dessus de l'encart qui répète le même message. La correction de fond est visible ; la présentation n'est pas encore nettoyée.
+
+### Les trois défauts restants les plus visibles
+
+1. **Un long trajet avant de lire ou écrire sur téléphone.** Dans `telephone-390.png` et `telephone-360.png`, l'en-tête, les outils, le décor, Direction, les postes et la salle précèdent les cartes et le panneau. Les mêmes agents sont ensuite proposés une deuxième fois dans l'invitation du panneau. Conserver la scène comme vue d'ensemble, mais proposer un accès explicite au poste choisi et un mode de scène compacte ; éviter de répéter les choix lorsque les cartes sont déjà immédiatement au-dessus. Le gain recherché est un accès plus court, sans cacher les agents ni rogner leurs noms.
+
+2. **Une pause de quota difficile à expliquer.** Dans `onglet-poste-codex.png`, « Limite atteinte » est suivi de « Limite 5h restante : 37 % ». Ces données peuvent concerner des limites différentes, mais rien dans le cadrage ne l'explique. Nommer la limite qui bloque et séparer les autres réserves, uniquement si la source fournit cette distinction. Sinon, indiquer que le motif détaillé n'est pas disponible. Ne pas déduire qu'une valeur est fausse à partir de cette seule image.
+
+3. **Une erreur répétée et des instructions devenues peu utiles.** Dans `onglet-fichiers.png`, la session expirée est annoncée deux fois ; « Déposer dans » et l'explication du glisser-déposer restent affichés alors que les destinations ne sont pas chargées. Garder un seul encart de reprise, puis une indication courte sur les données indisponibles. Réafficher les explications de transfert avec les destinations, sans suggérer qu'un transfert est possible pendant l'erreur.
+
+### Cycle jour-nuit
+
+`planche-heures.png` montre désormais des ambiances distinctes à 06:45, 10:00, 13:30, 18:30, 19:45 et 23:00 : ciel plus clair en journée, position de l'astre différente, éclairage intérieur variable et nuit étoilée. Les captures réelles prises à 15:10 ont aussi une pièce nettement plus claire que lors de la première revue. La demande de rendre le jour perceptible est donc satisfaite visuellement. Cela ne constitue pas une vérification astronomique de la trajectoire ni des transitions animées.
+
+Seule cette section a été ajoutée au document ; aucun fichier d'interface modifié.

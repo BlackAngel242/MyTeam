@@ -25,3 +25,6 @@
 - Lecture incrémentale d'un journal : vérifier la continuité des octets (taille et début inchangés) avant de reprendre à l'ancien décalage ; un journal réécrit doit être relu depuis le début (OpenCode, délégations).
 - Un hook de commit doit tester le contenu indexé (extrait dans un dossier temporaire), jamais le dossier de travail où d'autres agents écrivent en parallèle.
 - Les sous-agents d'un outil peuvent tomber en panne (« Model unavailable ») : l'agent doit alors faire le travail lui-même et le signaler, pas abandonner.
+- Commiter uniquement ses propres fichiers (`git add <chemins>`), jamais `git add -A` : un commit d'OpenCode a embarqué une modification en cours de Claude dans public/app.js. Le hook l'a vérifiée, mais l'historique attribue le travail au mauvais auteur.
+- Après un redémarrage d'un agent (OpenCode), vérifier que ses missions en cours ont bien abouti dans le dossier principal : un redémarrage peut perdre la consigne ou laisser le travail dans un worktree.
+- La police pixel n'a pas tous les signes : « · » s'affiche « ? ». Utiliser le tiret dans les textes de la scène.
