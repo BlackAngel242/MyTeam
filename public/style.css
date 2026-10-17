@@ -197,6 +197,7 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
 @media(max-width:520px){
   .topbar{margin:0 16px;gap:10px 12px}.brand{font-size:16px;gap:10px}.brand-mark{padding:8px;grid-template-columns:6px 6px}.brand-mark i{width:6px;height:6px}
   .chips{gap:5px;flex-wrap:wrap}.chip{padding:5px 9px}
+  .icon-button kbd{display:none}
   .connection span:last-child,.icon-button span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
   .icon-button{padding:8px;min-width:40px}
   main{padding:18px 16px 16px}
@@ -208,6 +209,51 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
   .term-tools{flex-wrap:wrap}.term-tools input{flex-basis:100%}
   .page-footer{margin:0 16px;flex-direction:column;gap:4px}
 }
+kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px;border:1px solid #3a4c65;border-bottom-width:2px;border-radius:5px;color:#d5e2f1;background:#0f1a2c}
+.icon-button kbd{margin-left:2px;opacity:.8}
+#send.queue-mode{background:#b5a8e6;color:#1d1636}#send.queue-mode:hover:enabled{background:#cdc3f2}
+
+/* File d'attente et tâches */
+.queue{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+.queue h2,.tasks-title{font-size:16px;font-weight:550;margin:0 0 6px}
+.queue-list{list-style:none;margin:0;padding:0;font-size:12px;max-height:240px;overflow:auto}
+.queue-item{display:grid;gap:3px;padding:9px 0;border-bottom:1px solid #1d2b40;justify-items:start}
+.queue-item.attente .log-head{color:#b5a8e6}.queue-item.envoyee .log-head{color:var(--mint)}.queue-item.a_revoir .log-head{color:var(--amber)}
+.queue-item .tool-button{margin-top:4px;min-height:30px}
+.tasks-progress{margin:0 0 16px}
+.task-group{margin:0 0 16px}.task-group h3{font-size:12.5px;font-weight:550;color:#d5e2f1;margin:0 0 6px}
+.tasks-sub{font-size:13px;font-weight:550;margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.task-list{list-style:none;margin:0;padding:0;font-size:12px}
+.task-list li{display:flex;gap:9px;align-items:flex-start;padding:5px 0;color:#d5e2f1}
+.task-list .box{width:12px;height:12px;flex-shrink:0;margin-top:2px;border:1.5px solid #5a6e88;border-radius:3px}
+.task-list .done{color:var(--quiet)}.task-list .done span:last-child{text-decoration:line-through;text-decoration-color:#4a5d77}
+.task-list .done .box{background:var(--mint);border-color:var(--mint)}
+.task-list .doing .box{border-color:var(--blue);background:linear-gradient(90deg,var(--blue) 50%,transparent 50%)}
+
+/* Aide latérale */
+.help{position:fixed;top:0;right:0;bottom:0;width:min(420px,100vw);z-index:20;background:#0f1a2c;border-left:1px solid var(--line-strong);box-shadow:-18px 0 40px -18px #000c;display:flex;flex-direction:column}
+.help-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+.help-head h2{margin:0;font-size:18px;font-weight:600}
+.help-body{padding:16px 18px 24px;overflow-y:auto;font-size:13px;line-height:1.6;color:#d5e2f1}
+.help-body h3{font-size:13px;font-weight:600;margin:20px 0 8px;color:var(--text)}
+.help-body p{margin:0 0 10px}
+.help-steps{margin:0;padding-left:20px}.help-steps li{margin:0 0 8px}
+.help-legend{margin:0}.help-legend div{margin:0 0 8px}.help-legend dt{font-weight:550;display:flex;gap:8px;align-items:center}.help-legend dd{margin:2px 0 0 15px;color:var(--muted)}
+.help-legend .dot{width:7px;height:7px;border-radius:2px;background:var(--grey);flex-shrink:0}
+.dot.working{background:var(--blue)}.dot.waiting{background:var(--amber)}.dot.idle{background:var(--mint)}.dot.paused{background:#b5a8e6}
+.help-keys{border-collapse:collapse;width:100%}.help-keys td{padding:6px 0;border-bottom:1px solid #1d2b40;vertical-align:top}.help-keys td:first-child{width:140px;white-space:nowrap}
+.help-foot{color:var(--muted);font-size:12px;margin-top:16px}
+
+/* Palette de commandes */
+.palette-backdrop{position:fixed;inset:0;z-index:30;background:#050a14b3;display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 0}
+.palette-box{width:min(560px,100%);background:#111e31;border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 24px 60px -20px #000;overflow:hidden}
+#palette-input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text);font-size:15px;padding:16px 18px;outline:none}
+#palette-list{list-style:none;margin:0;padding:6px;max-height:50vh;overflow-y:auto}
+#palette-list li{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+#palette-list li small{color:var(--muted);font-size:11.5px}
+#palette-list li[aria-selected="true"]{background:#1e3048;color:var(--text)}
+.palette-foot{margin:0;padding:9px 14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+
 /* Vue globale : sur un écran d'ordinateur, tout le bureau tient dans la fenêtre, sans défilement ni zoom.
    La scène s'ajuste à la place restante ; seul le panneau de pilotage défile en lui-même. */
 @media(min-width:1100px) and (min-height:620px){

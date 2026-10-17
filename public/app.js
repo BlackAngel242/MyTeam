@@ -27,12 +27,16 @@ function errorText(error) {
   if (error instanceof SyntaxError) return 'Le serveur local a renvoyé une réponse illisible. Réessaie dans un instant.';
   return error.message || 'Impossible de joindre Herdr. Réessaie dans un instant.';
 }
+// Agent occupé ou en pause : la consigne peut être mise en file ; le serveur l'enverra seul quand il sera prêt.
+const canQueue = a => Boolean(state.connected && a && !canSend(a));
 function updateForm() {
-  const a = activeAgent(), allowed = canSend(a);
-  $('message').disabled = !allowed || sending;
-  $('send').disabled = !allowed || sending || !$('message').value.trim();
-  $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : 'Envoyer la consigne';
-  $('send-help').textContent = !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : !allowed ? 'Cet agent doit être disponible pour recevoir une consigne.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
+  const a = activeAgent(), allowed = canSend(a), queue = canQueue(a);
+  $('message').disabled = !(allowed || queue) || sending;
+  $('send').disabled = !(allowed || queue) || sending || !$('message').value.trim();
+  $('send').classList.toggle('queue-mode', queue);
+  $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : queue ? 'Mettre en file pour ' + a.name : 'Envoyer la consigne';
+  const pause = queue && quotaPause(a);
+  $('send-help').textContent = !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : queue ? a.name + (pause ? ' est en pause' + (pause.until ? ' jusqu’à ' + hhmm(pause.until) : '') : ' n’est pas disponible') + ' : la consigne attendra dans la file et partira seule dès qu’il sera prêt.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
 }
 function renderAgents() {
   const list = $('agents-list'), focused = document.activeElement?.dataset?.agentId;
@@ -75,10 +79,68 @@ function renderSummary(){
 }
 $('attention-open').addEventListener('click',()=>{const id=$('attention-open').dataset.target;if(id){selectAgent(id);showTab('poste');$('output').focus({preventScroll:true});}});
 // Menu du panneau : onglets accessibles au clavier (flèches gauche et droite).
-const tabs=['poste','equipe','fichiers'];
+const tabs=['poste','equipe','fichiers','taches'];
 function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
+  if(name==='taches')loadTodos();
+  if(name==='equipe')loadQueue();
+}
+const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
+// File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
+const queueLabels={attente:'en attente',envoyee:'envoyée',annulee:'annulée',a_revoir:'à revoir'};
+let queueItems=[];
+async function loadQueue(){
+  if(!state.connected||!state.token)return;
+  try{queueItems=(await request('/api/queue',{headers:{'X-Bureau-Token':state.token}})).items||[];}catch{return;}
+  renderQueue();
+}
+function renderQueue(){
+  const list=$('queue-list'),visible=queueItems.filter(q=>q.state!=='annulee').slice(-20).reverse();
+  if(!visible.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucune consigne en attente.';list.replaceChildren(li);return;}
+  list.replaceChildren(...visible.map(q=>{
+    const agent=state.agents.find(a=>a.id===q.id),li=document.createElement('li');li.className='queue-item '+q.state;
+    const head=document.createElement('span');head.className='log-head';
+    head.textContent=(agent?.name||'Agent disparu')+' · '+queueLabels[q.state]+(q.state==='attente'&&q.notBefore&&new Date(q.notBefore)>Date.now()?' · pas avant '+hhmm(new Date(q.notBefore)):'')+(q.sentAt?' · '+hhmm(new Date(q.sentAt)):'');
+    const body=document.createElement('span');body.className='log-body';body.textContent=q.message.length>140?q.message.slice(0,140)+'…':q.message;
+    li.append(head,body);
+    if(q.reason){const why=document.createElement('span');why.className='log-why';why.textContent=q.reason;li.append(why);}
+    if(q.state==='attente'){
+      const cancel=document.createElement('button');cancel.type='button';cancel.className='tool-button';cancel.textContent='Retirer de la file';
+      cancel.addEventListener('click',async()=>{try{await request('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId})});}catch(error){head.textContent=errorText(error);}loadQueue();});
+      li.append(cancel);
+    }
+    return li;
+  }));
+}
+// Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
+async function loadTodos(){
+  if(!state.connected||!state.token)return;
+  let data;try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){$('tasks-project').textContent=errorText(error);return;}
+  const project=data.project||[],done=project.filter(t=>t.done).length;
+  const prog=$('tasks-progress');prog.replaceChildren();
+  if(project.length){
+    const label=document.createElement('div');label.className='limit-head';
+    const l1=document.createElement('span');l1.textContent='Cases cochées dans le projet';const l2=document.createElement('b');l2.textContent=done+' sur '+project.length;label.append(l1,l2);
+    const track=document.createElement('div');track.className='limit-track';const bar=document.createElement('i');bar.style.width=(done/project.length*100)+'%';track.append(bar);prog.append(label,track);
+  }
+  const groups=new Map();for(const t of project){if(!groups.has(t.source))groups.set(t.source,[]);groups.get(t.source).push(t);}
+  $('tasks-project').replaceChildren(...[...groups].map(([source,items])=>{
+    const sec=document.createElement('section');sec.className='task-group';
+    const h=document.createElement('h3');h.textContent=source+' · '+items.filter(t=>t.done).length+'/'+items.length;
+    const ul=document.createElement('ul');ul.className='task-list';
+    for(const t of items){const li=document.createElement('li');li.className=t.done?'done':'';const box=document.createElement('span');box.className='box';box.setAttribute('aria-hidden','true');const tx=document.createElement('span');tx.textContent=t.text;li.append(box,tx);li.setAttribute('aria-label',(t.done?'Fait : ':'À faire : ')+t.text);ul.append(li);}
+    sec.append(h,ul);return sec;
+  }));
+  if(!project.length)$('tasks-project').textContent='Aucune case à cocher trouvée dans TODO.md ni dans les plans.';
+  const agents=Object.entries(data.agents||{}).filter(([,steps])=>steps?.length);
+  const statusLabel={pending:'à faire',in_progress:'en cours',completed:'fait'};
+  $('tasks-agents').replaceChildren(...(agents.length?agents.map(([id,steps])=>{
+    const sec=document.createElement('section');sec.className='task-group';const h=document.createElement('h3');h.textContent=(state.agents.find(a=>a.id===id)?.name||'Agent')+' · '+steps.filter(s=>s.status==='completed').length+'/'+steps.length;
+    const ul=document.createElement('ul');ul.className='task-list';
+    for(const s of steps){const li=document.createElement('li');li.className=s.status==='completed'?'done':s.status==='in_progress'?'doing':'';const box=document.createElement('span');box.className='box';const tx=document.createElement('span');tx.textContent=s.text+' ('+(statusLabel[s.status]||s.status)+')';li.append(box,tx);ul.append(li);}
+    sec.append(h,ul);return sec;
+  }):[Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Aucun plan publié par un agent pour le moment.'})]));
 }
 // Fichiers : récents dans le dossier de l'agent, ou navigation. Copier par glisser-déposer, déplacer avec Maj.
 // Le serveur seul connaît les chemins réels ; ici on ne manipule que des clés de lieu et des chemins relatifs.
@@ -428,7 +490,17 @@ async function readOutput() {
 }
 $('message').addEventListener('input',()=>{if(selected)keepDraft(selected,$('message').value);updateForm();});
 $('prompt-form').addEventListener('submit',async event=>{
-  event.preventDefault();const a=activeAgent(),message=$('message').value.trim();if(!canSend(a)||sending||!message)return;
+  event.preventDefault();const a=activeAgent(),message=$('message').value.trim();
+  if(canQueue(a)&&!sending&&message){
+    sending=true;updateForm();$('send-result').hidden=true;
+    try{
+      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message})});
+      drafts.delete(a.id);$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;loadQueue();
+    }catch(error){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}
+    finally{sending=false;updateForm();}
+    return;
+  }
+  if(!canSend(a)||sending||!message)return;
   const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
   try{
     const data=await request('/api/prompt',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message})});
@@ -961,6 +1033,66 @@ document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.full
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+'Bureau des agents · DrSmoke';if(document.title!==title)document.title=title;}
 function frame(time){if(!paused&&time-lastFrame>80){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+// Aide : panneau latéral, ouvert seul à la première visite, puis par le bouton ou la touche « ? ».
+function toggleHelp(open=$('help').hidden){
+  $('help').hidden=!open;$('help-open').setAttribute('aria-expanded',String(open));
+  if(open){$('help-close').focus();try{localStorage.setItem('bureau.aideVue','1');}catch{}}else $('help-open').focus();
+}
+$('help-open').addEventListener('click',()=>toggleHelp());
+$('help-close').addEventListener('click',()=>toggleHelp(false));
+try{if(!localStorage.getItem('bureau.aideVue'))setTimeout(()=>toggleHelp(true),900);}catch{}
+// Palette de commandes (Ctrl+K) : toutes les actions du bureau au clavier, construites à partir des agents réels.
+let paletteIndex=0,paletteItems=[];
+function commands(){
+  const list=[];
+  for(const a of state.agents){
+    list.push({label:'Ouvrir le poste de '+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');}});
+    if(canSend(a)||canQueue(a))list.push({label:(canSend(a)?'Écrire à ':'Mettre une consigne en file pour ')+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');setTimeout(()=>$('message').focus(),50);}});
+    // La sélection rouvre l'onglet Poste au tour suivant : on passe aux fichiers juste après.
+    list.push({label:'Fichiers de '+a.name,hint:'récents',run:()=>{selectAgent(a.id);setTimeout(()=>showTab('fichiers'),0);}});
+  }
+  list.push({label:'Message à plusieurs agents',hint:'Équipe',run:()=>{showTab('equipe');setTimeout(()=>$('broadcast-message').focus(),50);}});
+  list.push({label:'Courrier du chef',hint:'Équipe',run:()=>{showTab('equipe');$('mailbox').scrollIntoView({block:'start'});}});
+  list.push({label:'File d’attente',hint:'Équipe',run:()=>{showTab('equipe');$('queue-list').scrollIntoView({block:'start'});}});
+  list.push({label:'Tâches du projet et des agents',hint:'Tâches',run:()=>showTab('taches')});
+  list.push({label:editLayout?'Terminer la disposition':'Disposer les postes',hint:'Scène',run:()=>{editLayout=!editLayout;syncLayoutEdit();}});
+  list.push({label:paused?'Animer le bureau':'Mettre le bureau en pause',hint:'Scène',run:()=>$('motion').click()});
+  if(document.fullscreenEnabled)list.push({label:'Plein écran',hint:'Scène',run:()=>$('fullscreen').click()});
+  list.push({label:'Actualiser les agents',hint:'Herdr',run:()=>$('refresh').click()});
+  list.push({label:'Aide',hint:'?',run:()=>toggleHelp(true)});
+  return list;
+}
+const fold2=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function renderPalette(){
+  const q=fold2($('palette-input').value.trim()),words=q.split(/\s+/).filter(Boolean);
+  paletteItems=commands().filter(c=>words.every(w=>fold2(c.label+' '+c.hint).includes(w))).slice(0,12);
+  paletteIndex=Math.min(paletteIndex,Math.max(0,paletteItems.length-1));
+  $('palette-list').replaceChildren(...(paletteItems.length?paletteItems.map((c,i)=>{
+    const li=document.createElement('li');li.role='option';li.id='cmd-'+i;li.setAttribute('aria-selected',String(i===paletteIndex));
+    const t=document.createElement('span');t.textContent=c.label;const h=document.createElement('small');h.textContent=c.hint;li.append(t,h);
+    li.addEventListener('mousedown',e=>{e.preventDefault();runCommand(i);});return li;
+  }):[Object.assign(document.createElement('li'),{className:'list-placeholder',textContent:'Aucune commande ne correspond.'})]));
+  $('palette-input').setAttribute('aria-activedescendant',paletteItems.length?'cmd-'+paletteIndex:'');
+}
+function openPalette(){ $('palette').hidden=false;$('palette-input').value='';paletteIndex=0;renderPalette();$('palette-input').focus(); }
+function closePalette(){ $('palette').hidden=true; }
+function runCommand(i){const c=paletteItems[i];closePalette();if(c)c.run();}
+$('palette-open').addEventListener('click',openPalette);
+$('palette').addEventListener('mousedown',e=>{if(e.target===$('palette'))closePalette();});
+$('palette-input').addEventListener('input',()=>{paletteIndex=0;renderPalette();});
+$('palette-input').addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){e.preventDefault();paletteIndex=(paletteIndex+1)%Math.max(1,paletteItems.length);renderPalette();}
+  else if(e.key==='ArrowUp'){e.preventDefault();paletteIndex=(paletteIndex-1+paletteItems.length)%Math.max(1,paletteItems.length);renderPalette();}
+  else if(e.key==='Enter'){e.preventDefault();runCommand(paletteIndex);}
+});
+addEventListener('keydown',e=>{
+  const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'');
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('palette').hidden?openPalette():closePalette();}
+  else if(e.key==='Escape'&&!$('palette').hidden)closePalette();
+  else if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
+  else if(e.key==='?'&&!typing){e.preventDefault();toggleHelp();}
+});
+setInterval(()=>{if(document.hidden)return;const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();},5000);
 termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);
 setInterval(()=>{if(!document.hidden){refreshState();readOutput();}},3000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();readOutput();}});

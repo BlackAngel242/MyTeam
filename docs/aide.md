@@ -53,12 +53,12 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Frappe au clavier : agent au travail sur une tâche.
 - Mug en main : agent disponible, en attente de sa prochaine consigne.
 - Bras levé : agent en attente d'une validation ou d'une réponse de votre part.
-- Sourire et confettis : mission qui vient de s'achever avec succès.
+- Sourire et étincelles : le travail vient de s'arrêter (passage réel de « au travail » à « terminé ») ; le résultat reste à vérifier dans ses sorties.
 - Fauteuil vide : agent en pause de quota (limite d'utilisation atteinte).
 
 #### Bulles au-dessus des postes
 - Point d'interrogation ambre : l'agent demande une confirmation ou une saisie dans Herdr.
-- Coche verte : mission terminée avec succès.
+- Coche verte : travail terminé selon Herdr, résultat à vérifier.
 - Points de suspension gris : statut transitoire ou non renseigné par l'outil.
 
 #### Couleurs d'état
@@ -101,7 +101,7 @@ Cet onglet permet d'inspecter l'agent sélectionné et d'échanger directement a
 
 #### Barre d'état de l'outil
 - Titre de la tâche en cours ou pensée extraite en direct de l'outil.
-- Modèle utilisé (par exemple Claude 3.7 Sonnet, GPT-4o, Codex), mode et niveau d'effort.
+- Modèle utilisé (tel que l'outil l'affiche, par exemple GPT-6.1-Sol pour Codex ou MiMo V2.6 Pro pour OpenCode), mode et niveau d'effort.
 - Jauge visuelle de la limite restante avec heure de remise à zéro.
 - Temps d'exécution écoulé et nombre d'avertissements détectés.
 
@@ -159,7 +159,7 @@ Cet onglet permet de consulter et d'organiser les fichiers du projet en lien ave
 #### Sécurité et intégrité absolue
 - Aucune fonction de suppression n'existe dans le bureau.
 - Aucun fichier ne peut être écrasé : si un fichier du même nom existe dans la destination, il est automatiquement renommé avec un indice numérique.
-- La navigation est strictement confinée au dossier du projet.
+- La navigation est limitée aux lieux autorisés : le dossier de travail de chaque agent, Bureau, Documents et Téléchargements. Aucun chemin venant du navigateur n'est accepté.
 
 #### Vue Récents et vue Parcourir
 - Bouton « Récents » : liste les fichiers modifiés au cours des 48 dernières heures dans le dossier de travail de l'agent sélectionné.

@@ -21,6 +21,8 @@
     </ul>
     <div class="connection" id="connection" role="status"><span class="signal"></span><span id="connection-text">Connexion à Herdr…</span></div>
     <div class="top-actions">
+      <button id="palette-open" class="icon-button" type="button" title="Commandes (Ctrl+K)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg><span>Commandes</span><kbd>Ctrl K</kbd></button>
+      <button id="help-open" class="icon-button" type="button" aria-expanded="false" aria-controls="help"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.4-1.5 1.2-1.5 2.1v.4M12 17.5v.5M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg><span>Aide</span></button>
       <button id="motion" class="icon-button" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Mettre en pause</span></button>
       <button class="icon-button" id="refresh" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 18 17"/></svg><span>Actualiser</span></button>
     </div>
@@ -43,6 +45,7 @@
         <button class="tab" role="tab" id="tab-poste" aria-controls="panel-poste" aria-selected="true" type="button">Poste</button>
         <button class="tab" role="tab" id="tab-equipe" aria-controls="panel-equipe" aria-selected="false" tabindex="-1" type="button">Équipe<span class="tab-badge" id="team-badge" hidden></span></button>
         <button class="tab" role="tab" id="tab-fichiers" aria-controls="panel-fichiers" aria-selected="false" tabindex="-1" type="button">Fichiers</button>
+        <button class="tab" role="tab" id="tab-taches" aria-controls="panel-taches" aria-selected="false" tabindex="-1" type="button">Tâches</button>
       </div>
       <div class="tab-panel" role="tabpanel" id="panel-poste" aria-labelledby="tab-poste">
         <div class="detail-heading"><div class="small-avatar" id="detail-avatar" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 4h16v4h4v16h-4v4H8v-4H4V8h4z"/><path class="eyes" d="M10 12h4v4h-4zm8 0h4v4h-4zM12 21h8v2h-8z"/></svg></div><div><h2 id="detail-title">Choisis un agent</h2><p id="detail-status">Son poste s’ouvrira ici.</p></div><span class="detail-dot" id="detail-dot"></span></div>
@@ -56,6 +59,7 @@
       </div>
       <div class="tab-panel" role="tabpanel" id="panel-equipe" aria-labelledby="tab-equipe" hidden>
         <section class="mailbox" id="mailbox" aria-labelledby="mailbox-title"><h2 id="mailbox-title">Courrier du chef</h2><p class="panel-intro">Un courrier arrive quand un agent passe réellement de « au travail » à « disponible » ou « terminé » depuis l’ouverture du bureau. Il dit que le travail s’est arrêté, pas que l’objectif est atteint : vérifie le résultat dans ses sorties.</p><ol class="mail-list" id="mail-list"><li class="list-placeholder">Aucun courrier depuis l’ouverture du bureau.</li></ol></section>
+        <section class="queue" aria-labelledby="queue-title"><h2 id="queue-title">File d’attente</h2><p class="panel-intro">Une consigne écrite à un agent occupé ou en pause attend ici. Le serveur l’envoie seul dès qu’il redevient disponible, une à la fois, jamais vers un agent bloqué ; un envoi non confirmé passe « à revoir » sans être renvoyé.</p><ol class="queue-list" id="queue-list"><li class="list-placeholder">Aucune consigne en attente.</li></ol></section>
         <section class="broadcast" aria-labelledby="broadcast-title"><h2 id="broadcast-title">Message à plusieurs agents</h2><p class="panel-intro">La même consigne part séparément à chaque agent coché. Seuls les agents disponibles ou ayant terminé peuvent être choisis.</p><div class="broadcast-targets" id="broadcast-targets"></div><button type="button" class="tool-button select-all" id="broadcast-all">Cocher tous les disponibles</button><label class="visually-hidden" for="broadcast-message">Consigne commune</label><textarea id="broadcast-message" rows="4" maxlength="12000" placeholder="Écris une consigne commune…"></textarea><p id="broadcast-help"></p><button id="broadcast-send" type="button" disabled><span>Coche au moins un agent</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-5 14-3-7-6 0Zm6 0 8-7"/></svg></button><ul id="broadcast-results" role="status" hidden></ul></section>
         <section class="send-log-section" aria-labelledby="send-log-title"><h3 id="send-log-title">Envois de cette session</h3><ol class="send-log" id="send-log"><li class="list-placeholder">Aucune consigne envoyée depuis l’ouverture du bureau.</li></ol></section>
       </div>
@@ -69,9 +73,57 @@
         <ul class="places" id="places"></ul>
         <p class="files-result" id="files-result" role="status" hidden></p>
       </div>
+      <div class="tab-panel" role="tabpanel" id="panel-taches" aria-labelledby="tab-taches" hidden>
+        <h2 class="tasks-title">Tâches</h2>
+        <p class="panel-intro">Cases réellement cochées dans les fichiers du projet, et plans publiés par les agents eux-mêmes dans leurs journaux. Rien n’est estimé.</p>
+        <div class="tasks-progress" id="tasks-progress"></div>
+        <div id="tasks-project"></div>
+        <h3 class="tasks-sub">Plans des agents</h3>
+        <div id="tasks-agents"><p class="list-placeholder">Aucun plan publié par un agent pour le moment.</p></div>
+      </div>
       <div class="detail-footer"><span class="local-mark"></span>Relié à ta session locale Herdr</div>
     </aside>
   </main>
+  <aside class="help" id="help" aria-labelledby="help-title" hidden>
+    <div class="help-head"><h2 id="help-title">Aide du bureau</h2><button type="button" class="icon-button" id="help-close" aria-label="Fermer l’aide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="help-body">
+      <p>Tour de contrôle locale de tes agents Herdr. Tout ce qui s’affiche vient d’un fait observé : états Herdr, terminaux, journaux locaux, fichiers, heure du poste. Rien n’est inventé.</p>
+      <h3>En 5 étapes</h3>
+      <ol class="help-steps">
+        <li><b>Observe la scène.</b> Le chef occupe le bureau Direction ; chaque agent montre son état par sa posture, sa bulle et sa couleur.</li>
+        <li><b>Choisis un poste.</b> Clique un personnage ou sa carte sous la scène.</li>
+        <li><b>Onglet Poste.</b> Barre d’état de l’outil, sorties du terminal, consigne (Ctrl+Entrée). Agent occupé : « Mettre en file ».</li>
+        <li><b>Onglet Équipe.</b> Courrier du chef, file d’attente, message à plusieurs agents en deux clics, journal des envois.</li>
+        <li><b>Onglets Fichiers et Tâches.</b> Fichiers récents, copie ou déplacement sans suppression ; cases du projet et plans des agents.</li>
+      </ol>
+      <h3>Lire la scène</h3>
+      <dl class="help-legend">
+        <div><dt><i class="dot working"></i>Bleu, mains sur le clavier</dt><dd>Au travail.</dd></div>
+        <div><dt><i class="dot waiting"></i>Ambre, main levée, bulle « ? »</dt><dd>Attend ta réponse dans Herdr.</dd></div>
+        <div><dt><i class="dot idle"></i>Menthe, mug ou coche</dt><dd>Disponible ou terminé. Le travail s’est arrêté ; vérifie le résultat dans ses sorties.</dd></div>
+        <div><dt><i class="dot paused"></i>Violet, poste vide, chevalet « RETOUR »</dt><dd>Pause de limite d’usage ; heure de retour annoncée par l’outil, relance prévue 5 minutes après.</dd></div>
+        <div><dt><i class="dot"></i>Gris, bulle « … »</dt><dd>État inconnu.</dd></div>
+      </dl>
+      <p>Un agent qui reçoit une délégation du chef va chercher son dossier au bureau Direction. Quand il termine, une enveloppe rejoint la pile du chef (clique-la). Les sous-agents partent en salle de réflexion et rapportent leur dossier.</p>
+      <h3>Raccourcis</h3>
+      <table class="help-keys"><tbody>
+        <tr><td><kbd>Ctrl</kbd> <kbd>K</kbd></td><td>Palette de commandes</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Ouvrir ou fermer cette aide</td></tr>
+        <tr><td><kbd>Ctrl</kbd> <kbd>Entrée</kbd></td><td>Envoyer la consigne ou l’envoi groupé</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Changer d’onglet</td></tr>
+        <tr><td><kbd>Échap</kbd></td><td>Fermer l’aide, la palette ou le mode Disposer</td></tr>
+        <tr><td><kbd>Maj</kbd> + glisser</td><td>Déplacer un fichier (confirmation demandée)</td></tr>
+      </tbody></table>
+      <p class="help-foot">Lieux de fichiers autorisés : le dossier de travail de chaque agent, Bureau, Documents, Téléchargements. Aucune suppression ni écrasement possible.</p>
+    </div>
+  </aside>
+  <div class="palette-backdrop" id="palette" hidden>
+    <div class="palette-box" role="dialog" aria-modal="true" aria-label="Palette de commandes">
+      <input id="palette-input" type="text" placeholder="Que veux-tu faire ? Ouvrir un poste, écrire, fichiers…" autocomplete="off" aria-controls="palette-list">
+      <ul id="palette-list" role="listbox"></ul>
+      <p class="palette-foot"><kbd>↑</kbd> <kbd>↓</kbd> choisir · <kbd>Entrée</kbd> lancer · <kbd>Échap</kbd> fermer</p>
+    </div>
+  </div>
   <footer class="page-footer"><span>DrSmoke « Un Mbokatié engagé »</span><span></span></footer>
 </body>
 </html>
