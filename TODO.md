@@ -8,7 +8,7 @@
 - [x] Vérifier ordinateur, téléphone, protections locales et accents.
 - [x] Fournir le démarrage, le guide humain et la reprise IA.
 
-## Deuxième version (0.2.0) : Terminée
+## Deuxième version (0.2.0) : Terminée et stabilisée
 
 - [x] Évaluation critique du design et de l'expérience utilisateur (`docs/revue-antigravity.md`).
 - [x] Organisation en onglets « Poste » et « Équipe » pour alléger le panneau latéral.
@@ -20,7 +20,13 @@
 - [x] Défilement automatique fluide vers le poste lors d'un clic sur mobile (< 860 px).
 - [x] Mode plein écran englobant la scène et le panneau de pilotage dans une même tour de contrôle.
 - [x] Intégration de la consommation réelle de jetons et des sous-agents locaux de Claude.
-- [x] Extension de la suite de tests automatisés (57 tests réussis, 0 échec).
+- [x] Télémétrie locale étendue à Codex et OpenCode (`src/agent-activity.mjs`).
+- [x] Explorateur de fichiers intégré et sécurisé (`src/files.mjs` et API `/api/files`).
+- [x] Scène pixel art enrichie : bureau VIP pour le chef et salle de réflexion pour les sous-agents.
+- [x] Barre d'état par IA sous chaque poste.
+- [x] Règle absolue de vérité des faits : aucune donnée simulée ni inventée.
+- [x] Extension de la suite de tests automatisés (129 tests réussis sur 131, 0 échec).
+- [x] Sauvegarde de référence au commit `7817574`.
 
 ## Préparation à la publication GitHub : En cours
 
@@ -28,8 +34,11 @@
 - [x] Rédaction du guide de contribution (`CONTRIBUTING.md`).
 - [x] Rédaction du journal des versions (`CHANGELOG.md`).
 - [x] Enrichissement du guide d'accueil et présentation publique (`README.md`).
+- [x] Validation de la licence libre par DrSmoke (Licence MIT dans `LICENSE` et avis de marques dans `NOTICE.md`).
+- [x] Inventaire des commandes locales vérifiées pour modèles et compétences (`docs/commandes-outils.md`).
+- [x] Synthèse des 8 innovations pour l'OS d'agents (`docs/idees-os.md`).
+- [ ] Détection automatique des ordres de délégation (`src/delegations.mjs`, en cours par OpenCode).
 - [ ] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, en cours par OpenCode).
 - [ ] Scripts d'installation automatique (`scripts/`, en cours par OpenCode).
-- [ ] Choix de la licence libre par DrSmoke (MIT, Apache 2.0 ou GPLv3).
 - [ ] Production des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.

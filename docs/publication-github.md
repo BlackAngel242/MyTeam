@@ -19,7 +19,7 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 
 - Clés API et jetons secrets : Aucun secret, mot de passe ou clé API n'est présent dans le code ou dans l'historique Git (`git ls-files` vérifié).
 - Jeton d'authentification du bureau : Le jeton `X-Bureau-Token` est généré aléatoirement en mémoire à chaque démarrage du serveur (`crypto.randomBytes(32)`). Il n'est jamais sauvegardé sur le disque.
-- Respect de la vie privée : Les sorties affichées dans le terminal proviennent exclusivement de la session Herdr active de la machine locale et ne sont jamais transmises à l'extérieur.
+- Règle de vérité des faits : Tout ce qui apparaît à l'écran provient exclusivement de faits observés (processus Herdr, journaux locaux de Claude, Codex et OpenCode, fichiers réels). Aucun faux agent, faux statut, faux pourcentage ou fausse humeur n'est simulé.
 
 ## 2. Configuration du dépôt GitHub
 
@@ -28,44 +28,36 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 - Nom du dépôt : `bureau-des-agents` (ou `herdr-agent-desktop`)
 - Description courte : « Bureau animé en pixel art pour surveiller ses agents IA Herdr et leur envoyer des consignes. »
 - Visibilité : Public
-- Sujets (topics) : `ai-agents`, `herdr`, `pixel-art`, `developer-tools`, `local-first`, `nodejs`, `claude`, `codex`
+- Licence choisie : Licence MIT (`LICENSE`) avec avis de marques (`NOTICE.md`)
+- Sauvegarde de référence : Version majeure stabilisée au commit `7817574`
+- Sujets (topics) : `ai-agents`, `herdr`, `pixel-art`, `developer-tools`, `local-first`, `nodejs`, `claude`, `codex`, `opencode`
 
-### Fichiers à inclure dans le premier commit public
+### Fichiers inclus dans le socle public
 
-- Code source de l'application : `server.mjs`, `src/herdr.mjs`, `src/claude-activity.mjs`
-- Interface utilisateur : `public/index.html`, `public/style.css`, `public/app.js`, `public/logos.js`, `public/terminal.js`
-- Scripts de démarrage et d'installation : `Ouvrir le bureau.cmd`, `Ouvrir le bureau.ps1`, `scripts/` (en cours de rédaction par OpenCode)
-- Documentation publique : `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `docs/INSTALLATION.md` (rédigé par OpenCode)
-- Tests automatisés : `package.json`, `test/*.mjs`
-- Fichier d'exclusion : `.gitignore`
+- Serveur et logique métier : `server.mjs`, `src/herdr.mjs`, `src/claude-activity.mjs`, `src/agent-activity.mjs`, `src/files.mjs`
+- Interface utilisateur pixel art : `public/index.html`, `public/style.css`, `public/app.js`, `public/logos.js`, `public/terminal.js`
+- Scripts de démarrage et d'installation : `Ouvrir le bureau.cmd`, `Ouvrir le bureau.ps1`, `scripts/` (rédigé par OpenCode)
+- Documentation publique : `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `NOTICE.md`, `docs/INSTALLATION.md` (rédigé par OpenCode)
+- Tests automatisés natifs : `package.json`, `test/*.mjs` (plus de 90 tests automatisés sans dépendance externe)
+- Configuration et exclusion : `.gitignore`
 
-### Fichiers à garder en interne ou à archiver
+### Fichiers conservés pour la coordination interne
 
 - `bureau.log`, `bureau-erreurs.log` (exclus par `.gitignore`)
-- Notes de coordination spécifiques à la session locale : `docs/mission-claude.md`, `docs/avis-codex.md`, `docs/revue-opencode.md`, `docs/revue-codex-interface.md`, `docs/revue-antigravity.md` (peuvent rester dans la branche de développement ou dans un sous-dossier d'archive).
+- Notes de coordination spécifiques à la session locale : `docs/mission-claude.md`, `docs/avis-codex.md`, `docs/revue-opencode.md`, `docs/revue-codex-interface.md`, `docs/revue-antigravity.md`, `docs/revue-codex-delegations.md`
 
-## 3. Choix de la licence logicielle (à décider par DrSmoke)
+## 3. Choix de la licence logicielle (Validé)
 
-Voici trois options reconnues pour les projets libres, présentées simplement avec leurs implications :
-
-1. Option 1 : Licence MIT (Recommandée pour une diffusion large)
-   - Principe : Très permissive et courte. N'importe qui peut utiliser, copier, modifier, fusionner et distribuer le code, y compris dans un logiciel commercial ou fermé.
-   - Conséquence : DrSmoke reste crédité comme auteur original, mais d'autres personnes peuvent créer des versions dérivées sans obligation de partager leur propre code.
-
-2. Option 2 : Licence Apache 2.0 (Protection juridique renforcée)
-   - Principe : Permissive comme la licence MIT, mais ajoute une clause explicite de concession de brevets et exige que les modifications apportées aux fichiers soient clairement indiquées.
-   - Conséquence : Très appréciée en milieu professionnel. Elle protège explicitement l'auteur contre les litiges de brevets tout en autorisant une large réutilisation.
-
-3. Option 3 : Licence GNU GPLv3 (Protection du bien commun libre)
-   - Principe : Licence dite avec « copyleft fort ». Toute personne qui modifie ou améliore le Bureau des agents et distribue son travail doit obligatoirement publier le code source complet sous la même licence GPLv3.
-   - Conséquence : Empêche qu'une entreprise ne s'approprie le projet pour en faire un produit fermé. Garantit que les améliorations restent toujours ouvertes à la communauté.
+DrSmoke a retenu la **Licence MIT** pour le Bureau des agents, offrant une liberté maximale d'utilisation, de modification et de distribution, tout en protégeant son attribution originale.
+Le fichier `LICENSE` contient le texte standard MIT, et `NOTICE.md` précise que les marques et emblèmes (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) restent la propriété exclusive de leurs éditeurs respectifs.
 
 ## 4. Captures d'écran à préparer pour la vitrine GitHub
 
 Pour rendre le dépôt attrayant sur GitHub, il est conseillé de créer un dossier `docs/captures/` et d'y ajouter :
 
-1. `apercu-bureau.png` : Vue complète de l'application avec la scène pixel illuminée par les écrans et le panneau latéral affichant les sorties.
+1. `apercu-bureau.png` : Vue complète de l'application avec le chef au bureau VIP, les agents à leurs postes, la salle de réflexion et le panneau latéral.
 2. `mode-plein-ecran.png` : Vue plein écran montrant la scène et les commandes réunies dans une même tour de contrôle.
 3. `recherche-terminal.png` : Zoom sur le panneau Poste avec un terme recherché surligné en jaune et le défilement figé.
 4. `envoi-equipe.png` : Capture de l'onglet Équipe avec plusieurs agents cochés et le bouton ambre d'envoi armé.
-5. `vue-mobile.png` : Rendu vertical adapté sur écran de smartphone.
+5. `explorateur-fichiers.png` : Capture de l'explorateur de fichiers montrant la consultation sécurisée des dossiers de travail.
+6. `vue-mobile.png` : Rendu vertical adapté sur écran de smartphone avec défilement fluide.

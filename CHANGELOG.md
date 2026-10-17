@@ -23,8 +23,15 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
   - Pastilles récapitulatives dans la barre du haut comptant en temps réel les agents au travail, en attente et disponibles.
   - Bandeau d'alerte jaune dès qu'un agent attend une décision avec bouton direct « Ouvrir son poste ».
   - Journal des envois de la session consignant l'historique et le statut de chaque message transmis.
+- Chef d'équipe et bureau VIP : Le premier agent démarré dans Herdr est reconnu comme chef de l'équipe (« boss ») et bénéficie d'un bureau VIP mis en valeur dans la scène pixel art.
+- Cycle de délégation et courriers : Observation des ordres de délégation (`herdr agent prompt`) dans le journal du chef, déplacement de l'agent pour récupérer sa mission, puis envoi d'un courrier au chef à l'achèvement de la tâche avec humeur calquée sur les faits.
+- Salle de réflexion : Pièce animée dédiée accueillant les sous-agents en phase d'analyse avant qu'ils ne rapportent leur dossier au poste principal.
+- Explorateur de fichiers intégré : Consultation sécurisée de l'arborescence des fichiers du projet (`src/files.mjs` et API `/api/files`), strictement confinée au dossier local sans risque d'écrasement ni de suppression.
+- Télémétrie Codex et OpenCode : Lecture des configurations et journaux locaux réels (`src/agent-activity.mjs`) venant compléter le suivi de Claude sans fabriquer de données.
+- Règle de vérité des faits : Règle fondamentale interdisant toute invention de tâche, de pourcentage ou d'humeur ; seules les données observables sont affichées, et les erreurs réelles alimentent `LESSONS.md`.
 - Suivi de Claude : Lecture de son journal local pour remonter sa consommation réelle de jetons (produits, lus, en cache) et affichage de ses sous-agents sous forme de petits assistants sur son bureau.
-- Suite de tests : Extension à 57 tests automatisés validant l'ensemble des modules (envoi groupé, affichage du terminal, parsing ANSI, jetons et protection d'origine).
+- Suite de tests : Extension à 90 tests automatisés validant l'ensemble des modules (serveur, Herdr, activité Claude/Codex/OpenCode, explorateur de fichiers et protection d'origine).
+- Sauvegarde de référence : Version stabilisée et enregistrée au commit `7817574`.
 
 ## [0.1.0] - 17 octobre 2026
 
