@@ -270,6 +270,18 @@ test('/api/todos exige origine et jeton puis ne retourne que le contrat public',
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET|sessionId|creator_|C:/);
 });
 
+test('/api/tableau exige origine et jeton, puis renvoie le tableau en lecture seule',async t=>{
+  let reads=0;
+  const {send,origin}=await bureau(t,{}, {getBlackboard:async()=>{reads++;return {todo:{source:'TODO.md',done:1,total:2,remaining:['Reste']},files:[]};}});
+  const {data:{token}}=await send('/api/state');
+  for(const headers of [{},{Origin:origin},{'X-Bureau-Token':token},{Origin:'http://localhost:4317','X-Bureau-Token':token}]) assert.equal((await send('/api/tableau',{headers})).status,403);
+  assert.equal(reads,0);
+  const response=await send('/api/tableau',{headers:{'X-Bureau-Token':token,'Sec-Fetch-Site':'same-origin'}});
+  assert.equal(response.status,200);
+  assert.deepEqual(response.data.todo.remaining,['Reste']);
+  assert.equal((await send('/api/tableau',{method:'POST',headers:{Origin:origin,'X-Bureau-Token':token}})).status,404);
+});
+
 test('/api/todos masque les chemins et identifiants inseres dans un texte de tache',async t=>{
   const {send,origin}=await bureau(t,{}, {getTodos:async()=>({project:[{text:'Lire C:/SECRET/fichier.txt creator_user_id=PRIVE',done:true,source:'plan.md'}],agents:{'agent-1':[{text:'Vérifier /home/SECRET/fichier',status:'completed'}]}})});
   const {data:{token}}=await send('/api/state');

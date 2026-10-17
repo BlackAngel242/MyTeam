@@ -13,11 +13,12 @@ import {readTodos,normalizeTodos} from './src/todos.mjs';
 import {bossOf,readDelegations} from './src/delegations.mjs';
 import {createQueue,QueueError} from './src/queue.mjs';
 import {createTerminalStatusReader} from './src/terminal-status.mjs';
+import {readBlackboard} from './src/blackboard.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -158,6 +159,12 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         if(!guard(req,{body:false})) return;
         try {return json(200,normalizeTodos(await getTodos(await bridge.list())));}
         catch(error) {return json(errorStatus(error),{error:'Impossible de lire les listes de tâches pour le moment.'});}
+      }
+      // Tableau mural : fichiers piliers du projet, en lecture seule, protégés comme les tâches.
+      if(req.method==='GET'&&url.pathname==='/api/tableau') {
+        if(!guard(req,{body:false})) return;
+        try {return json(200,await getBlackboard());}
+        catch {return json(500,{error:'Impossible de lire le tableau de l’équipe pour le moment.'});}
       }
       if(['/api/places','/api/files/recent','/api/files/list','/api/files/transfer','/api/files/reveal'].includes(url.pathname)) {
         if(!guard(req,{body:req.method!=='GET'})) return;
