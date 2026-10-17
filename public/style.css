@@ -831,5 +831,13 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 }
 
 /* Agrandir doit l’emporter sur les hauteurs mobiles ci-dessus (revue M9). */
+/* Téléphone : la pastille du panneau passe dans le coin haut droit ; le texte garde toute la largeur et ne pousse plus la carte. */
+@media (max-width: 520px){
+  .agent-button{position:relative;padding-right:9px}
+  .agent-button .pane-badge{position:absolute;top:6px;right:6px;padding:2px 4px}
+  .agent-button .agent-name{padding-right:42px}
+}
+.pane-badge,.tab-badge,kbd{font-size:12px}
+
 /* Hauteur bornée : le terminal garde son propre défilement et suit la dernière ligne. */
 .term-expanded #output{min-height:min(62vh,62dvh);max-height:min(80vh,80dvh)}

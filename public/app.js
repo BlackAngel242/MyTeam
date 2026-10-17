@@ -750,7 +750,16 @@ function room(L,time){
   }
   const v=.12*(1-.6*d);
   for(let i=0;i<3;i++){px(0,0,2+i*2,H,'#050a14',v);px(W-2-i*2,0,2+i*2,H,'#050a14',v);px(0,0,W,1+i,'#050a14',v);}
+  // Suspensions du plafond : allumées dès que le jour baisse, comme dans un vrai bureau en soirée.
+  const lamp=lampLevel();
+  for(let x=narrow?36:44;x<W-20;x+=narrow?72:88){
+    px(x,0,1,8,'#0d1729');px(x-4,8,9,3,mix('#24344f','#3a4d6b',d));px(x-5,11,11,1,'#1a2740');
+    if(lamp>.02){px(x-3,12,7,1,'#ffe2a8',.35+.65*lamp);glow(x,wallH+20,30,'#ffd89a',1.1*lamp);px(x-14,13,29,wallH-10,'#ffd89a',.025*lamp);}
+  }
 }
+// Éclairage intérieur, sur l'heure du poste : allumé de 17 h 30 (pleine puissance à 19 h) jusqu'au matin,
+// éteint progressivement entre le lever et 8 h. Le bureau s'éclaire avant la nuit noire, comme un vrai.
+const lampLevel=()=>{const h=amb.h;return h<12?1-smooth(SUNRISE,SUNRISE+1.5,h):smooth(SUNSET-2,SUNSET-.5,h);};
 function monitor(x,y,a,c,live,work,time,anim,h){
   px(x,y,17,13,'#0b1424');px(x+1,y+1,15,10,live?'#0d1f35':'#111a29');
   if(live){
@@ -818,6 +827,10 @@ function station(a,i,cx,y0,time,L){
     else if(free&&!a.activity?.subagents?.length){px(x+13,y0+26,3,4,'#dfe6ee');px(x+16,y0+27,1,2,'#dfe6ee');px(x+13,y0+26,3,1,'#5a3d2e');px(x+12,y0+27,2,2,skin);}
   }
   monitor(cx-22,y0+15,a,c,live,work,time,anim,h);
+  // Lampe de bureau : s'allume le soir pour un agent présent ; éteinte s'il est parti en pause de limite.
+  const lamp=lampLevel(),lampOn=live&&!pause&&lamp>.02;
+  px(cx+19,y0+29,5,1,'#2a3247');px(cx+21,y0+22,1,7,'#3a4560');px(cx+18,y0+20,7,2,lampOn?'#e8c47e':'#4a5570');
+  if(lampOn){px(cx+19,y0+22,5,1,'#fff1c9',.6+.4*lamp);glow(cx+12,y0+31,16,'#ffd89a',1.3*lamp);}
   if(a&&live){if(wait)bubble(cx+12,y0,'wait',anim,time);else if(st==='done')bubble(cx+12,y0,'done',anim,time);else if(!work&&!free)bubble(cx+12,y0,'unknown',anim,time);}
   if(!a)return;
   // Petite fête de fin : seulement pendant quelques secondes après un passage réel de « travail » à « disponible » ou « terminé ».
@@ -1190,7 +1203,7 @@ function commands(){
     list.push({label:'Ouvrir le poste de '+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');}});
     if(canSend(a)||canQueue(a))list.push({label:(canSend(a)?'Écrire à ':'Mettre une consigne en file pour ')+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');setTimeout(()=>$('message').focus(),50);}});
     // La sélection rouvre l'onglet Poste au tour suivant : on passe aux fichiers juste après.
-    list.push({label:'Fichiers de '+a.name,hint:'récents',run:()=>{selectAgent(a.id);setTimeout(()=>showTab('fichiers'),0);}});
+    list.push({label:'Fichiers de '+a.name,hint:'Fichiers',run:()=>{selectAgent(a.id);setTimeout(()=>showTab('fichiers'),0);}});
   }
   list.push({label:'Message à plusieurs agents',hint:'Équipe',run:()=>{showTab('equipe');setTimeout(()=>$('broadcast-message').focus(),50);}});
   list.push({label:'Courrier du chef',hint:'Équipe',run:()=>{showTab('equipe');$('mailbox').scrollIntoView({block:'start'});}});
@@ -1251,6 +1264,8 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(document.hidden)return;const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();},5000);
+// Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
+if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);
 // En arrière-plan, avec les notifications activées, seul l'état des agents est relu (toutes les 15 s) :
 // draw(0) y repère les changements sans animer la scène. Le navigateur peut encore espacer ces relectures.
