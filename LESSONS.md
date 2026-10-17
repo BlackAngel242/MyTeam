@@ -32,3 +32,5 @@
 - Une hauteur `max-height:none` sur un `pre` qui défile fait grandir la page entière (2471 px) au lieu du terminal : toujours borner la hauteur agrandie pour garder le défilement interne.
 - Edge ne rend pas tout de suite le focus à `body` quand on masque l'élément focalisé : tester `conteneur.contains(document.activeElement)` et pas seulement `activeElement === body`.
 - Une commande peut porter plusieurs ordres de délégation avec le même identifiant : toute clé côté interface doit combiner identifiant et cible, sinon seul le premier agent visé apparaît.
+- `page.clock.setFixedTime` de Playwright fige aussi le temps des animations : vérifier une animation sans horloge figée, et l'heure du ciel séparément.
+- Un clic simulé sur le canvas doit compenser le centrage de l'image (`object-fit: contain`), comme le fait `toLogical` ; sinon le test conclut à tort qu'une zone cliquable ne marche pas.

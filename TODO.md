@@ -60,7 +60,7 @@
 - [x] Scripts d'installation automatique (`scripts/`, testés par OpenCode).
 - [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.
-- [ ] Propositions restantes d'OpenCode : P3 (bandeau de pause sur une ligne), P6 (courrier fondé sur le journal de 12 h), P7 (trois messages d'erreur distincts).
-- [ ] Chef qui porte le dossier à l'agent lors d'une délégation (retenu par DrSmoke).
-- [ ] Tableau mural de mémoire partagée en lecture seule (retenu par DrSmoke ; serveur `/api/tableau` fait).
+- [x] Propositions d'OpenCode P3, P6 et P7 (bandeau de pause, courrier sur 12 h, trois messages d'erreur).
+- [x] Chef qui porte le dossier à l'agent lors d'une délégation (retenu par DrSmoke).
+- [x] Tableau mural de mémoire partagée en lecture seule (retenu par DrSmoke, `/api/tableau`).
 - [ ] Évolution vers un OS d'agents en fenêtres ou tuiles libres (décision DrSmoke).

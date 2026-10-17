@@ -18,6 +18,11 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 - Rafraîchissements stables (M6) : invitation, file d'attente et tâches ne sont redessinées que si leur contenu change, le bouton focalisé est conservé, une même panne n'est annoncée qu'une fois, et une réponse lente ne remplace plus une lecture plus récente.
 - Mémoire bornée (M7) : 30 courriers gardés en détail (le compteur couvre toute la session), 500 identifiants de délégations vus au plus, caches des agents disparus purgés.
 
+### Ajouté
+
+- Tableau de l'équipe : bouton « Tableau » et panneau de liège dans la scène. Fenêtre en lecture seule sur les fichiers piliers (étape en cours de HANDOFF.md, cases ouvertes de TODO.md, rôles d'AGENTS.md, dernières leçons de LESSONS.md), avec la source et la date de chaque fichier. Route serveur `/api/tableau` protégée par jeton, liste de fichiers fermée, chemins et identifiants masqués.
+- Tournée du chef : à chaque délégation observée dans son journal, le chef sort de la Direction, pose le dossier titré sur le bureau de l'agent visé, puis revient. Une tournée à la fois.
+
 ### Modifié
 
 - Éclairage du soir : suspensions au plafond et lampes de bureau allumées de 17 h 30 au matin selon l'heure du poste ; la lampe d'un agent en pause de limite reste éteinte.

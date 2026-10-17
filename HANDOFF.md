@@ -70,7 +70,8 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 
 - Fusion dans `main` faite (42fa960), branche alignée. Éclairage du soir, P1, P2, P4 et P5 d'OpenCode appliqués.
 - Le tableau de la scène relit la file toutes les 5 s, quel que soit l'onglet.
-- Restent : P3, P6, P7, accès direct au poste sur téléphone, idées « wow » proposées à DrSmoke (chef qui porte le dossier, replay de la journée, météo réelle à confirmer car requête extérieure).
+- Faits ensuite : P3, P6, P7 (OpenCode), tableau de l'équipe (`/api/tableau`, `src/blackboard.mjs`) et tournée du chef (Claude). DrSmoke a écarté l'accès direct au poste sur téléphone.
+- Idées encore proposées, non retenues à ce jour : replay de la journée, salle de crise, bureau en tuiles (grand chantier), météo réelle (requête extérieure).
 
 ## Préparation à la publication GitHub et prochaines étapes
 
