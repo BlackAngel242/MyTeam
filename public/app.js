@@ -585,7 +585,7 @@ function vipOffice(L,time){
   if(custom.vip){const f=floorBox(L);w=Math.max(70,Math.min(L.W-4,custom.vip.fw*L.W));vh=Math.max(70,Math.min(f.h,custom.vip.fh*f.h));cx=Math.max(w/2+2,Math.min(L.W-w/2-2,custom.vip.fx*L.W));y=Math.max(f.top,Math.min(L.roomY-vh,f.top+custom.vip.fy*f.h));}
   cx=Math.round(cx);y=Math.round(y);w=Math.round(w);vh=Math.round(vh);
   const x=cx-w/2;vipRect={x,y,w,h:vh};
-  px(x,y,w,vh-6,'#241f38');px(x,y,w,1,'#c9a46a',.6);px(x,y,1,vh-6,'#c9a46a',.6);px(x+w-1,y,1,vh-6,'#c9a46a',.6);
+  px(x,y,w,vh-6,mix('#241f38','#3b3459',amb.d*.65));px(x,y,w,1,'#c9a46a',.6);px(x,y,1,vh-6,'#c9a46a',.6);px(x+w-1,y,1,vh-6,'#c9a46a',.6);
   for(let gx=x+4;gx<x+w-4;gx+=8)for(let gy=y+6;gy<y+vh-10;gy+=8)px(gx,gy,1,1,'#30294a');
   const by=y+vh-6;px(x,by,w/2-10,3,'#2c4468');px(cx+10,by,w/2-10,3,'#2c4468');px(x,by,w/2-10,1,'#4a6a94');px(cx+10,by,w/2-10,1,'#4a6a94');
   text('DIRECTION',x+5,y+4,'#c9a46a');
@@ -594,32 +594,49 @@ function vipOffice(L,time){
   if(editLayout){px(x+w-7,by-7,6,6,'#c9a46a');px(x+w-5,by-5,2,2,'#241f38');}
   return {cx,y0:y-6,doorY:by+1};
 }
-// Le ciel suit l'heure réelle de l'ordinateur : nuit, aube, jour, crépuscule.
-const skies={night:['#0e1d3a','#112347','#142a54','#183260','#1c396b'],dawn:['#262c5c','#46407a','#87598a','#cc7f7c','#eeb07c'],day:['#3a6aac','#477bbb','#588dc8','#6fa1d3','#8fbadf'],dusk:['#1b2250','#392d66','#77406f','#bf5e5f','#e5925d']};
-function skyPhase(){const t=new Date(),h=t.getHours()+t.getMinutes()/60;return {h,phase:h>=21||h<5?'night':h<8?'dawn':h<17?'day':'dusk'};}
+// Lumière du jour, calculée en continu sur l'heure réelle du poste. Lever vers 6 h 30, coucher vers 19 h 30 :
+// heures fixes, sans les saisons (approximation assumée). La nuit garde l'identité bleu nuit du bureau.
+const SUNRISE=6.5,SUNSET=19.5;
+const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+function daylight(){
+  const t=new Date(),h=t.getHours()+t.getMinutes()/60+t.getSeconds()/3600;
+  const d=smooth(SUNRISE-1,SUNRISE+1.5,h)*(1-smooth(SUNSET-1.5,SUNSET+1,h));
+  const warm=Math.max(Math.exp(-((h-SUNRISE)**2)/1.1),Math.exp(-((h-SUNSET)**2)/1.1));
+  const sun=h>SUNRISE-.6&&h<SUNSET+.6?(h-(SUNRISE-.6))/(SUNSET-SUNRISE+1.2):null;
+  const night=24-(SUNSET-SUNRISE),moon=d<.6?((h-SUNSET+24)%24)/night:null;
+  return {h,d,warm,sun,moon:moon!=null&&moon<=1?moon:null};
+}
+const hexRgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const mix=(a,b,t)=>{const A=hexRgb(a),B=hexRgb(b),k=Math.min(1,Math.max(0,t));return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*k).toString(16).padStart(2,'0')).join('');};
+let amb=daylight();
+const skyNight=['#0e1d3a','#112347','#142a54','#183260','#1c396b'],skyDay=['#3f75bd','#4d85c7','#5f96d0','#78aad9','#9ac2e4'],skyWarm=['#2a2f62','#51427e','#93608a','#d4867a','#f0b47c'];
 function cityWindow(x,y,w,h){
-  const {h:hour,phase}=skyPhase(),night=phase==='night',day=phase==='day';
+  const {d,warm,sun,moon}=amb;
   px(x-2,y-2,w+4,h+4,'#0b1426');
-  skies[phase].forEach((c,i)=>px(x,y+Math.floor(i*h/5),w,Math.ceil(h/5)+1,c));
-  const r=rng(7);
-  if(!day)for(let i=0;i<w/5;i++){const sx=x+Math.floor(r()*w),sy=y+Math.floor(r()*h*(night?.42:.2)),c=r()>.7?'#c9d6f0':'#6f86b3';px(sx,sy,1,1,c,night?1:.45);}
-  if(night){px(x+w-21,y+5,6,8,'#e9e3c6');px(x+w-22,y+6,8,6,'#e9e3c6');px(x+w-20,y+7,2,2,'#cfc8a8');px(x+w-17,y+10,1,1,'#cfc8a8');}
-  else{
-    const f=Math.min(1,Math.max(0,(hour-5)/16)),sx=x+4+Math.round(f*(w-14)),sy=y+4+Math.round(Math.abs(f-.5)*2*h*.45);
-    pool(sx+3,sy+3,7,6,'#ffe9a8',.18);px(sx+1,sy,4,6,'#ffe7a3');px(sx,sy+1,6,4,'#ffe7a3');
+  skyNight.forEach((c,i)=>px(x,y+Math.floor(i*h/5),w,Math.ceil(h/5)+1,mix(mix(c,skyDay[i],d),skyWarm[i],warm*.85)));
+  const r=rng(7),starA=Math.max(0,1-d*1.6);
+  for(let i=0;i<w/5;i++){const sx=x+Math.floor(r()*w),sy=y+Math.floor(r()*h*.42),c=r()>.7?'#c9d6f0':'#6f86b3';if(starA>.02)px(sx,sy,1,1,c,starA);}
+  // La lune suit son arc pendant la nuit, le soleil le sien pendant le jour : position fidèle à l'heure.
+  if(moon!=null){
+    const mx=x+3+Math.round(moon*(w-13)),my=y+Math.round(h*.7-Math.sin(Math.PI*moon)*h*.55),a=Math.max(0,1-d*1.8);
+    px(mx+1,my,6,8,'#e9e3c6',a);px(mx,my+1,8,6,'#e9e3c6',a);px(mx+2,my+2,2,2,'#cfc8a8',a);px(mx+5,my+5,1,1,'#cfc8a8',a);
   }
-  const b=rng(11),lit=night?.78:day?.96:.86;let bx=x;
+  if(sun!=null){
+    const sx=x+3+Math.round(sun*(w-12)),sy=y+Math.round(h*.8-Math.sin(Math.PI*sun)*h*.66),c=mix('#ffe7a3','#ff9a5c',warm);
+    pool(sx+3,sy+3,9,7,c,.12+.1*d);px(sx+1,sy,4,6,c);px(sx,sy+1,6,4,c);
+  }
+  const b=rng(11),lit=.78+.18*d;let bx=x;
   while(bx<x+w){
-    const bw=6+Math.floor(b()*10),bh=10+Math.floor(b()*h*.55),top=y+h-bh,right=Math.min(bx+bw,x+w);
-    px(bx,top,right-bx,bh,day?(b()>.5?'#26406a':'#2d4a75'):b()>.5?'#0a162d':'#0d1b36');
+    const bw=6+Math.floor(b()*10),bh=10+Math.floor(b()*h*.55),top=y+h-bh,right=Math.min(bx+bw,x+w),dark=b()>.5;
+    px(bx,top,right-bx,bh,mix(dark?'#0a162d':'#0d1b36',dark?'#2a4670':'#32507b',d));
     for(let wy=top+2;wy<y+h-2;wy+=3)for(let wx=bx+1;wx<right-1;wx+=2)if(b()>lit)px(wx,wy,1,1,b()>.25?'#f4c780':'#9dbbff',.5+b()*.5);
     bx=right+(b()>.7?1:0);
   }
   const panes=Math.max(2,Math.round(w/35));
   for(let m=1;m<panes;m++)px(x+Math.round(m*w/panes),y,1,h,'#0b1426');
   px(x,y+Math.round(h*.36),w,1,'#0b1426');
-  px(x+5,y+3,1,9,'#ffffff',.07);px(x+7,y+3,1,5,'#ffffff',.07);
-  px(x-4,y+h+2,w+8,2,'#2a4166');px(x-4,y+h+4,w+8,1,'#0f1a2c');
+  px(x+5,y+3,1,9,'#ffffff',.07+.06*d);px(x+7,y+3,1,5,'#ffffff',.07+.06*d);
+  px(x-4,y+h+2,w+8,2,mix('#2a4166','#4a6890',d));px(x-4,y+h+4,w+8,1,'#0f1a2c');
 }
 function clock(x,y){
   const t=new Date(),s=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
@@ -654,22 +671,30 @@ function plant(x,bottom){
   px(x+2,bottom-7,8,7,'#6e5242');px(x+1,bottom-8,10,2,'#8a6852');
   px(x+5,bottom-20,2,13,'#2f6b5e');px(x,bottom-18,5,4,'#4f9a82');px(x+7,bottom-22,5,4,'#3f8673');px(x+2,bottom-25,5,4,'#6bb79a');px(x+6,bottom-15,5,3,'#4f9a82');
 }
+// Rayon de soleil entrant par la fenêtre : il se penche selon la position de l'astre et s'efface la nuit.
+function sunbeam(L,wx,ww,wy,wh){
+  const {d,warm,sun}=amb;if(sun==null||d<.05)return;
+  const c=mix('#ffe9a8','#ffb070',warm),lean=(.5-sun)*1.1,top=wy+wh+5,bottom=Math.min(L.roomY-4,L.wallH+46);
+  for(let y=top,k=0;y<bottom;y+=2,k+=2){const a=.07*d*(1-k/(bottom-top))+.01;px(wx+6+lean*k,y,ww-12,2,c,a);}
+}
 function room(L,time){
-  const {W,H,wallH,narrow}=L;
-  px(0,0,W,wallH,'#16243d');px(0,0,W,3,'#0d1729');
-  for(let x=20;x<W;x+=40)px(x,3,1,wallH-9,'#1a2a46');
-  px(0,wallH-6,W,4,'#1d2f4d');px(0,wallH-2,W,2,'#2a4166');
-  px(0,wallH,W,H-wallH,'#18263c');
-  for(let y=wallH+3,i=0;y<H;y+=6,i++){px(0,y,W,1,'#15223a');for(let x=i%2?7:27;x<W;x+=40)px(x,y-5,1,5,'#15223a');}
+  const {W,H,wallH,narrow}=L,d=amb.d;
+  const wall=mix('#16243d','#3a5683',d*.9),seam=mix('#1a2a46','#42618f',d*.9),floor=mix('#18263c','#344b6e',d*.85),plank=mix('#15223a','#2c4163',d*.85);
+  px(0,0,W,wallH,wall);px(0,0,W,3,mix('#0d1729','#1d2f4d',d));
+  for(let x=20;x<W;x+=40)px(x,3,1,wallH-9,seam);
+  px(0,wallH-6,W,4,mix('#1d2f4d','#36527c',d*.8));px(0,wallH-2,W,2,mix('#2a4166','#4a6890',d*.8));
+  px(0,wallH,W,H-wallH,floor);
+  for(let y=wallH+3,i=0;y<H;y+=6,i++){px(0,y,W,1,plank);for(let x=i%2?7:27;x<W;x+=40)px(x,y-5,1,5,plank);}
   px(0,wallH,W,1,'#0f1a2c');
-  const light=skyPhase().phase==='night'?['#9dbbff',.7]:['#ffe7a3',.55];
-  if(narrow){cityWindow(6,10,58,44);board(70,10,68);clock(70,44);glow(35,wallH+8,16,light[0],light[1]);}
+  const nightLight=Math.max(0,1-d*1.4);
+  if(narrow){cityWindow(6,10,58,44);sunbeam(L,6,58,10,44);board(70,10,68);clock(70,44);if(nightLight)glow(35,wallH+8,16,'#9dbbff',.7*nightLight);}
   else{
-    cityWindow(8,10,112,50);glow(64,wallH+9,26,light[0],light[1]);
+    cityWindow(8,10,112,50);sunbeam(L,8,112,10,50);if(nightLight)glow(64,wallH+9,26,'#9dbbff',.7*nightLight);
     board(128,12,64);clock(198,12);neon('BUREAU DE DRSMOKE',128,Math.max(50,boardBottom+5),'#a0dfc4');
     plant(W-52,wallH+4);rack(W-26,16,wallH+6,time);plant(1,wallH+6);
   }
-  for(let i=0;i<3;i++){px(0,0,2+i*2,H,'#050a14',.12);px(W-2-i*2,0,2+i*2,H,'#050a14',.12);px(0,0,W,1+i,'#050a14',.12);}
+  const v=.12*(1-.6*d);
+  for(let i=0;i<3;i++){px(0,0,2+i*2,H,'#050a14',v);px(W-2-i*2,0,2+i*2,H,'#050a14',v);px(0,0,W,1+i,'#050a14',v);}
 }
 function monitor(x,y,a,c,live,work,time,anim,h){
   px(x,y,17,13,'#0b1424');px(x+1,y+1,15,10,live?'#0d1f35':'#111a29');
@@ -718,7 +743,7 @@ function station(a,i,cx,y0,time,L){
   const work=live&&WORK.includes(st),wait=live&&WAIT.includes(st),free=live&&FREE.includes(st),anim=!paused&&live;
   const c=a?tint(a):'#566477',h=a?hash(a.kind+'|'+a.name):0,shirt=colors[i%colors.length];
   if(chosen)glow(cx,y0+58,17,'#a0dfc4',1.7);else if(a&&a.id===hovered)glow(cx,y0+58,15,'#c4d2e4',.9);
-  if(live)glow(cx-13,y0+46,14,c,work?1.4:wait?1.2:.8);
+  if(live)glow(cx-13,y0+46,14,c,(work?1.4:wait?1.2:.8)*(1-.45*amb.d));
   px(cx-25,y0+55,50,3,'#0a1322',.55);
   px(cx-3,y0+15,16,16,'#22324f');px(cx-2,y0+16,14,14,'#2a3c5e');
   const pause=live&&quotaPause(a);
@@ -774,7 +799,7 @@ function meetingGeometry(L){
 }
 function meetingRoom(L,time){
   const {roomY,W,H}=L,G=meetingGeometry(L);
-  px(0,roomY,W,H-roomY,'#1a2740');
+  px(0,roomY,W,H-roomY,mix('#1a2740','#344b6e',amb.d*.85));
   for(let x=4;x<W;x+=12)for(let y=roomY+6;y<H;y+=8)px(x+((y>>3)%2)*6,y,1,1,'#22324d');
   // Cloison vitrée avec une porte à gauche.
   px(G.doorX+12,roomY,W-G.doorX-12,3,'#2c4468');px(G.doorX+12,roomY,W-G.doorX-12,1,'#4a6a94');
@@ -971,7 +996,7 @@ function drawOffice(L,vip,time,now){
 function draw(time){
   const L=layout(),key=L.W+'x'+L.H+'@'+L.S,now=performance.now();
   if(key!==layoutKey){layoutKey=key;off.width=L.W;off.height=L.H;canvas.width=L.W*L.S;canvas.height=L.H*L.S;canvas.parentElement.style.aspectRatio=L.W+' / '+L.H;}
-  spots=[];g.clearRect(0,0,L.W,L.H);trackChanges();
+  spots=[];g.clearRect(0,0,L.W,L.H);trackChanges();amb=daylight();
   room(L,time);
   const G=meetingRoom(L,time),vip=L.boss?vipOffice(L,time):null;
   const all=state.agents.length?state.agents:[null,null],items=all.filter(a=>!L.boss||a!==L.boss);
