@@ -172,6 +172,7 @@ async function loadFiles(){
   $('files-title').textContent=a?'Fichiers de '+a.name:'Fichiers';
   if(!a&&filesView==='recent'){$('file-list').replaceChildren();$('files-intro').textContent='Choisis un agent pour voir les fichiers modifiés récemment dans son dossier de travail.';$('files-crumbs').hidden=true;return;}
   if(filesBusy)return;filesBusy=true;
+  $('panel-fichiers').classList.remove('files-error');
   try{
     const placeData=await request('/api/places',{headers:authed()});places=placeData.places||[];renderPlaces();
     let items;
@@ -186,7 +187,7 @@ async function loadFiles(){
       items=data.items||[];$('files-intro').textContent='Clique sur un dossier pour l’ouvrir.';renderCrumbs();
     }
     renderFileList(items);
-  }catch(error){errorBlock($('file-list'),errorText(error),'fichiers');$('places').replaceChildren(Object.assign(document.createElement('li'),{className:'list-placeholder',textContent:'Destinations non chargées.'}));$('files-intro').textContent=/introuvable|404/i.test(error.message)?'L’explorateur de fichiers attend son raccordement au serveur : il sera actif après le prochain redémarrage du bureau.':errorText(error);}
+  }catch(error){errorBlock($('file-list'),errorText(error),'fichiers');$('places').replaceChildren(Object.assign(document.createElement('li'),{className:'list-placeholder',textContent:'Destinations non chargées.'}));$('files-intro').textContent=/introuvable|404/i.test(error.message)?'L’explorateur de fichiers attend son raccordement au serveur.':'';$('panel-fichiers').classList.add('files-error');}
   finally{filesBusy=false;}
 }
 function fileIcon(item){
@@ -297,7 +298,8 @@ function quotaPause(a){
   const act=a.activity;
   if(act?.limitReached){
     const times=(act.limits||[]).filter(l=>l.resetsAt&&(l.usedPercent>=100||act.limitReached)).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
-    return {until:times.length?new Date(Math.max(...times)):null,source:'journal'};
+    const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100).map(l=>l.window>=1440?'hebdomadaire':l.window?Math.round(l.window/60)+' h':null).filter(Boolean);
+    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:blocking[0]||null};
   }
   const s=statusCache.get(a.id)?.status?.quota;
   if(s&&(!s.until||s.until>Date.now()))return {until:s.until,source:'terminal'};
@@ -311,7 +313,7 @@ function renderStatusbar(a){
   const head=st.title||(st.thought?'En cours : '+st.thought:'');
   $('task-title').hidden=!head;$('task-title').textContent=head;
   const chips=[],pause=quotaPause(a);
-  if(pause)chips.push(['warn',pause.until?'Limite atteinte · retour à '+hhmm(pause.until)+' ('+until(pause.until)+') · relance prévue à '+hhmm(new Date(pause.until.getTime()+300000)):'Limite atteinte · heure de retour non annoncée']);
+  if(pause)chips.push(['warn',pause.until?'Limite'+(pause.which?' '+pause.which:'')+' atteinte · retour à '+hhmm(pause.until)+' ('+until(pause.until)+') · relance prévue à '+hhmm(new Date(pause.until.getTime()+300000)):'Limite atteinte · heure de retour non annoncée']);
   if(st.activity&&!pause)chips.push(['activity',st.activity+(st.elapsed?' · '+st.elapsed:'')]);
   if(st.model)chips.push(['model',(st.mode?st.mode+' · ':'')+st.model+(st.effort?' · '+st.effort:'')]);
   if(st.context)chips.push(['context','Contexte '+st.context.used+' · '+st.context.pct+' %']);
@@ -829,7 +831,8 @@ function meetingRoom(L,time){
   px(G.doorX+12,roomY,W-G.doorX-12,3,'#2c4468');px(G.doorX+12,roomY,W-G.doorX-12,1,'#4a6a94');
   px(0,roomY,G.doorX,3,'#2c4468');px(G.doorX-1,roomY-1,2,5,'#4a6a94');px(G.doorX+11,roomY-1,2,5,'#4a6a94');
   const n=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
-  text(fit((L.narrow?'REFLEXION':'SALLE DE REFLEXION')+(n?' - '+n+' SOUS-AGENT'+(n>1?'S':''):''),W-G.doorX-70),G.doorX+18,roomY+6,'#8fa3c0');
+  const owners=state.agents.filter(a=>a.activity?.subagents?.length).map(a=>a.name);
+  text(fit((L.narrow?'REFLEXION':'SALLE DE REFLEXION')+(n?' - '+n+' SOUS-AGENT'+(n>1?'S':'')+(owners.length===1?' DE '+owners[0]:''):''),W-G.doorX-70),G.doorX+18,roomY+6,'#8fa3c0');
   // Tableau blanc : ses traits ne grandissent que si un assistant y travaille vraiment.
   const bx=G.boardX,by=roomY+6;
   px(bx-1,by-1,34,19,'#0b1426');px(bx,by,32,17,'#dfe6ee');
@@ -1034,7 +1037,7 @@ function draw(time){
     const saved=a&&custom.stations[layoutKeyOf(a)];
     if(saved){cx=Math.round(Math.max(26,Math.min(L.W-26,saved.fx*L.W)));y0=Math.round(Math.max(f.top,Math.min(L.roomY-L.rowH,f.top+saved.fy*f.h)));}
     station(a,a?state.agents.indexOf(a):i,cx,y0,time,L);
-    if(editLayout&&a){px(cx-26,y0+6,52,1,'#a0dfc4',.6);px(cx-26,y0+76,52,1,'#a0dfc4',.6);px(cx-26,y0+6,1,70,'#a0dfc4',.6);px(cx+25,y0+6,1,70,'#a0dfc4',.6);}
+    if(editLayout&&a){const hw=Math.min(31,Math.floor(L.cw/2)-1);px(cx-hw,y0+4,hw*2,1,'#a0dfc4',.6);px(cx-hw,y0+77,hw*2,1,'#a0dfc4',.6);px(cx-hw,y0+4,1,74,'#a0dfc4',.6);px(cx+hw-1,y0+4,1,74,'#a0dfc4',.6);}
   });
   syncActors(L,now);syncOffice(L,now);
   drawActors(L,G,time,now,'back');if(roomOpen())tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');

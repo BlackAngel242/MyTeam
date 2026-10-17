@@ -194,7 +194,7 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
 
 @media(min-width:1500px){main{grid-template-columns:minmax(0,1fr) 430px;gap:40px}pre{min-height:340px;max-height:480px}}
 @media(max-width:1180px){main{grid-template-columns:minmax(0,1fr) 340px;gap:22px;padding:22px 24px}.topbar{margin:0 24px}.chips{order:3;width:100%;margin:0}.detail{padding-left:20px}.page-footer{margin:0 24px}.office-bottom>.legend{display:none}}
-@media(max-width:860px){.office-top{flex-wrap:wrap}.office-top .attention{order:3;flex-basis:100%;margin:6px 0 0}.office-top .attention p{white-space:normal}main{grid-template-columns:1fr;gap:28px}.detail{padding:24px 0 0;border-left:0;border-top:1px solid var(--line)}.agent-meta dd{max-width:70%}pre{min-height:200px;max-height:340px}.office-bottom>.legend{display:flex}}
+@media(max-width:860px){.pick-list{display:none}.office-top{flex-wrap:wrap}.office-top .attention{order:3;flex-basis:100%;margin:6px 0 0}.office-top .attention p{white-space:normal}main{grid-template-columns:1fr;gap:28px}.detail{padding:24px 0 0;border-left:0;border-top:1px solid var(--line)}.agent-meta dd{max-width:70%}pre{min-height:200px;max-height:340px}.office-bottom>.legend{display:flex}}
 @media(max-width:520px){
   .topbar{margin:0 16px;gap:10px 12px}.brand{font-size:16px;gap:10px}.brand-mark{padding:8px;grid-template-columns:6px 6px}.brand-mark i{width:6px;height:6px}
   .chips{gap:5px;flex-wrap:wrap}.chip{padding:5px 9px}
@@ -226,6 +226,7 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
 .layout-bar{margin:0;padding:7px 16px;font-size:12px;color:var(--mint);background:#13283a;border-bottom:1px solid var(--line-strong)}
 .poste-empty{padding:6px 0 18px}.poste-empty p{margin:0 0 12px;color:var(--muted);font-size:13px}
 .pick-list{display:flex;flex-wrap:wrap;gap:6px}.pick{min-height:36px}
+.files-error :is(.drop-title,.drop-hint,#files-crumbs){display:none}
 .no-agent :is(.detail-heading,.statusbar,.output-heading,.term-tools,.output-wrap,.read-note,#prompt-form){display:none}
 .agent-button{position:relative}
 .pane-badge{margin-left:auto;align-self:center;flex-shrink:0;font:11px/1 Consolas,monospace;color:var(--muted);padding:4px 6px;border-radius:6px;background:#0f1a2c;border:1px solid var(--line)}
