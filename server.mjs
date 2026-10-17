@@ -263,7 +263,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(error instanceof QueueError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;

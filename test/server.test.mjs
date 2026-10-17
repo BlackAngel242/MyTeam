@@ -104,6 +104,16 @@ test('/logos.js est servi en javascript ou renvoie un 404 propre',async t=>{
   }
 });
 
+test('/sounds.js est servi comme script classique avec les protections du serveur',async t=>{
+  const {send}=await bureau(t);
+  const response=await send('/sounds.js');
+  assert.equal(response.status,200);
+  assert.match(response.headers['content-type'],/^text\/javascript/);
+  assert.equal(response.headers['x-content-type-options'],'nosniff');
+  assert.equal(response.headers['cache-control'],'no-store');
+  assert.ok(response.headers['content-security-policy']!==undefined);
+});
+
 test('un envoi groupe exige jeton, origine exacte, JSON et cibles valides',async t=>{
   const {send,origin,calls}=await bureau(t);
   const {data:{token}}=await send('/api/state');
