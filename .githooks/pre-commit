@@ -1,7 +1,12 @@
 #!/bin/sh
-# Refuse un commit si le code ne se vérifie pas ou si un secret apparaît dans les fichiers ajoutés.
-npm run --silent check || { echo "Commit refusé : npm run check échoue."; exit 1; }
+# Vérifie exactement ce qui va être commité (l'index), dans un dossier temporaire :
+# les fichiers que d'autres agents écrivent en parallèle ne sont ni touchés ni pris en compte.
 if git diff --cached -U0 | grep -E '^\+' | grep -qE 'sk-[A-Za-z0-9]{20}|eyJ[A-Za-z0-9_-]{20}|creator_account_id"?\s*:\s*"[a-z0-9-]{10}'; then
   echo "Commit refusé : un secret ou un identifiant de compte semble présent."; exit 1
 fi
-npm test --silent >/dev/null 2>&1 || { echo "Commit refusé : npm test échoue (lance npm test pour le détail)."; exit 1; }
+tmp=$(mktemp -d) || exit 1
+trap 'rm -rf "$tmp"' EXIT
+git checkout-index -a --prefix="$tmp/"
+cd "$tmp" || exit 1
+npm run --silent check || { echo "Commit refusé : npm run check échoue sur le contenu commité."; exit 1; }
+npm test --silent >/dev/null 2>&1 || { echo "Commit refusé : npm test échoue sur le contenu commité."; exit 1; }

@@ -81,15 +81,19 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
 
 - Consultez le guide [CONTRIBUTING.md](CONTRIBUTING.md) pour les consignes d'architecture et de proposition de code.
 - Consultez l'historique des versions dans [CHANGELOG.md](CHANGELOG.md).
-- Avant toute soumission, vérifiez que l'ensemble des 57 tests automatisés passe (`npm test`) et que la syntaxe est irréprochable (`npm run check`).
+- Avant toute soumission, vérifiez que l'ensemble des tests automatisés passe (`npm test`) et que la syntaxe est irréprochable (`npm run check`).
 
 ## Entretien sans IA
 
 - Organisation du code : `public/` contient l'interface (HTML, CSS, canvas, logos et gestion du terminal) ; `src/herdr.mjs` gère la passerelle locale Herdr ; `src/claude-activity.mjs` extrait l'activité locale de Claude ; `server.mjs` héberge l'application et sécurise les requêtes.
 - Réglages : Le port peut être changé avec la variable `BUREAU_PORT`. Le chemin vers l'outil Herdr peut être précisé avec `BUREAU_HERDR_PATH`.
 - Tests et vérifications :
-  - `npm test` : exécute la suite complète de 57 tests automatisés.
+  - `npm test` : exécute la suite complète des tests automatisés.
   - `npm run check` : vérifie la validité syntaxique de tous les fichiers du projet.
 - Arrêt du bureau : Utiliser Ctrl+C dans le terminal ayant lancé `node server.mjs`. Ne jamais forcer la fermeture de Herdr pour arrêter le bureau.
+
+## Licence et marques
+
+Code sous licence MIT (`LICENSE`). Les noms et emblèmes des outils d'IA appartiennent à leurs propriétaires et servent seulement à identifier chaque poste : voir `NOTICE.md`.
 
 DrSmoke « Un Mbokatié engagé »
