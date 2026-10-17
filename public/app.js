@@ -42,6 +42,7 @@ function updateForm() {
   $('message').disabled = !(allowed || queue) || sending;
   $('send').disabled = !(allowed || queue) || sending || !$('message').value.trim();
   $('send').classList.toggle('queue-mode', queue);
+  $('priority-wrap').hidden = !queue;if(!queue)$('priority').checked=false;
   $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : queue ? 'Mettre en file pour ' + a.name : 'Envoyer la consigne';
   const pause = queue && quotaPause(a);
   $('send-help').textContent = !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : queue ? a.name + (pause ? ' est en pause' + (pause.until ? ' jusqu’à ' + hhmm(pause.until) : '') : ' n’est pas disponible') + ' : la consigne attendra dans la file et partira seule dès qu’il sera prêt.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
@@ -79,7 +80,7 @@ function renderAgents() {
   }
   if(a)$('pick-list').dataset.key='';
   if(a){$('agent-kind').textContent=a.kind||'Non précisé';$('agent-pane').textContent=a.paneId||'Non précisé';$('agent-cwd').textContent=a.cwd||'Non précisé';}
-  renderActivity(a);renderStatusbar(a);updateForm();renderBroadcast();renderSummary();
+  renderActivity(a);renderStatusbar(a);updateForm();renderBroadcast();renderSummary();renderDirection();
 }
 // Résumé en tête de page et alerte : uniquement les états Herdr actuels.
 function renderSummary(){
@@ -137,22 +138,26 @@ function renderQueue(){
   $('queue-count').textContent=waitingN?'('+waitingN+' en attente)':'';
   const shown=JSON.stringify([visible,state.agents.map(a=>a.id+a.name)]);if(shown===queueShown)return;queueShown=shown;
   if(!visible.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucune consigne en attente.';list.replaceChildren(li);return;}
-  const focusedItem=document.activeElement?.closest?.('#queue-list [data-item]')?.dataset.item;
+  const focusedItem=document.activeElement?.closest?.('#queue-list [data-item]')?.dataset.item,focusedIndex=focusedItem?[...document.activeElement.parentElement.children].indexOf(document.activeElement)+1:1;
   list.replaceChildren(...visible.map(q=>{
     const agent=state.agents.find(a=>a.id===q.id),li=document.createElement('li');li.className='queue-item '+q.state;li.dataset.item=q.itemId;
     const head=document.createElement('span');head.className='log-head';
     head.textContent=(agent?.name||'Agent disparu')+' · '+queueLabels[q.state]+(q.state==='attente'&&q.notBefore&&new Date(q.notBefore)>Date.now()?' · pas avant '+hhmm(new Date(q.notBefore)):'')+(q.sentAt?' · '+hhmm(new Date(q.sentAt)):'');
     const body=document.createElement('span');body.className='log-body';body.textContent=q.message.length>140?q.message.slice(0,140)+'…':q.message;
+    if(q.priority==='haute'){const tag=document.createElement('span');tag.className='prio';tag.textContent='Prioritaire';head.prepend(tag,' · ');}
     li.append(head,body);
     if(q.reason){const why=document.createElement('span');why.className='log-why';why.textContent=q.reason;li.append(why);}
     if(q.state==='attente'){
+      const tools=document.createElement('div');tools.className='queue-tools';
+      const high=q.priority==='haute',prio=document.createElement('button');prio.type='button';prio.className='tool-button';prio.textContent=high?'Remettre en normal':'Passer en tête';
+      prio.addEventListener('click',async()=>{try{await request('/api/queue/priority',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId,priority:high?'normale':'haute'})});}catch(error){head.textContent=errorText(error);}loadQueue();});
       const cancel=document.createElement('button');cancel.type='button';cancel.className='tool-button';cancel.textContent='Retirer de la file';
       cancel.addEventListener('click',async()=>{try{await request('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId})});}catch(error){head.textContent=errorText(error,'envoi');}loadQueue();});
-      li.append(cancel);
+      tools.append(prio,cancel);li.append(tools);
     }
     return li;
   }));
-  if(focusedItem)list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button')?.focus({preventScroll:true});
+  if(focusedItem)(list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button:nth-of-type('+focusedIndex+')')||list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button'))?.focus({preventScroll:true});
 }
 // Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
 async function loadTodos(){
@@ -568,8 +573,8 @@ $('prompt-form').addEventListener('submit',async event=>{
   if(canQueue(a)&&!sending&&message){
     const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
     try{
-      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message})});
-      drafts.delete(target);loadQueue();
+      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message,priority:$('priority').checked?'haute':'normale'})});
+      drafts.delete(target);$('priority').checked=false;loadQueue();
       if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;}
     }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error,'envoi');$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}
@@ -625,6 +630,7 @@ function glow(cx,cy,r,c,s){pool(cx,cy,Math.round(r*1.9),Math.round(r*.7),c,.045*
 // Le chef : le premier agent démarré. Herdr ne donne pas l'heure de démarrage ; on retient le plus petit
 // numéro de panneau de l'espace (w5:p1 avant w5:p4), approximation documentée.
 function bossOf(agents){
+  const chosen=agents.find(a=>a.boss===true);if(chosen&&agents.length>1)return chosen;
   const num=a=>{const m=/:p(\d+)$/.exec(a.paneId||'');return m?Number(m[1]):Infinity;};
   return agents.length>1?agents.reduce((b,a)=>num(a)<num(b)?a:b):null;
 }
@@ -1323,6 +1329,58 @@ function closePalette(restore=true){
   $('palette').hidden=true;for(const el of backdrop())el.inert=false;
   if(restore)(paletteTrigger?.isConnected?paletteTrigger:$('palette-open')).focus({preventScroll:true});
 }
+// Direction de l'équipe : le chef vient de la règle (premier panneau) ou d'un choix de DrSmoke.
+// Le bureau propose une passation quand le chef est en pause de quota ; il ne décide jamais seul.
+let directionBusy=false,handoff=null;
+function renderDirection(){
+  const on=state.connected&&state.agents.length>1,boss=on?bossOf(state.agents):null,d=state.direction;
+  $('direction-now').textContent=!on?'Il faut au moins deux agents connectés pour une direction.':
+    boss.name+' dirige l’équipe'+(d?.source==='choix'?' sur ton choix'+(d.since?' depuis '+hhmm(new Date(d.since)):''):' (règle : premier panneau démarré)')+'.'+(quotaPause(boss)?' En pause de limite actuellement.':'');
+  const pick=$('direction-pick'),others=on?state.agents.filter(a=>a!==boss):[],key=others.map(a=>a.id+label(a)).join('|');
+  if(pick.dataset.key!==key){const keep=pick.value;pick.dataset.key=key;pick.replaceChildren(...others.map(a=>Object.assign(document.createElement('option'),{value:a.id,textContent:a.name+' · '+label(a).toLowerCase()})));if(others.some(a=>a.id===keep))pick.value=keep;}
+  $('direction-set').disabled=!others.length||directionBusy;pick.disabled=!others.length;
+  $('direction-reset').hidden=d?.source!=='choix';$('direction-reset').disabled=directionBusy;
+  // Proposition dans le bandeau d'attention : chef en pause, au moins un suppléant disponible.
+  const free=on&&quotaPause(boss)?others.find(canSend):null,banner=$('direction-banner');
+  if(free&&banner?.dataset.target!==free.id){
+    const box=banner||Object.assign(document.createElement('div'),{id:'direction-banner',className:'direction-banner'});box.setAttribute('role','status');box.dataset.target=free.id;
+    const p=document.createElement('span');p.textContent=boss.name+' est en pause de limite. Confier la direction à '+free.name+' ?';
+    const go=document.createElement('button');go.type='button';go.className='tool-button';go.textContent='Voir la proposition';
+    go.addEventListener('click',()=>{showTab('equipe');$('direction-pick').value=free.id;$('direction').scrollIntoView({block:'start'});$('direction-set').focus({preventScroll:true});});
+    box.replaceChildren(p,go);if(!banner)document.querySelector('.office-frame').after(box);
+  }else if(!free&&banner)banner.remove();
+}
+function directionMessage(from,to){
+  return 'Passation de direction décidée par DrSmoke : '+to.name+' coordonne désormais l’équipe'+(from?' à la place de '+from.name:'')+'. Lis AGENTS.md, HANDOFF.md et TODO.md, puis réponds avec ton plan.';
+}
+async function setDirection(agentId){
+  directionBusy=true;renderDirection();$('direction-result').hidden=true;const before=bossOf(state.agents);
+  try{
+    await request('/api/direction',agentId?{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({agentId})}:{method:'DELETE',headers:{'X-Bureau-Token':state.token}});
+    await refreshState();
+    const now=bossOf(state.agents);
+    $('direction-result').className='files-result';$('direction-result').textContent=now?now.name+' dirige maintenant l’équipe. Aucun message n’a été envoyé.':'Direction mise à jour.';$('direction-result').hidden=false;
+    // Passation : message écrit par le bureau, relu et envoyé (ou non) par DrSmoke.
+    if(now&&before&&now.id!==before.id){handoff={to:now.id};$('direction-message').value=directionMessage(before,now);$('direction-handoff').hidden=false;$('direction-message').focus({preventScroll:true});}
+  }catch(error){$('direction-result').className='files-result error';$('direction-result').textContent=errorText(error);$('direction-result').hidden=false;}
+  finally{directionBusy=false;renderDirection();}
+}
+$('direction-set').addEventListener('click',()=>{const id=$('direction-pick').value;if(id)setDirection(id);});
+$('direction-reset').addEventListener('click',()=>setDirection(null));
+$('direction-skip').addEventListener('click',()=>{handoff=null;$('direction-handoff').hidden=true;$('direction-set').focus({preventScroll:true});});
+$('direction-send').addEventListener('click',async()=>{
+  const a=handoff&&state.agents.find(x=>x.id===handoff.to),message=$('direction-message').value.trim();if(!a||!message)return;
+  $('direction-send').disabled=true;
+  try{
+    // Agent disponible : envoi direct ; sinon la passation attend dans la file, en tête.
+    const direct=canSend(a),data=direct?await request('/api/prompt',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message})})
+      :await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message,priority:'haute'})});
+    if(direct)logSend([a.name],message,'sent',data.message||'Consigne transmise à Herdr.');else loadQueue();
+    $('direction-result').className='files-result';$('direction-result').textContent=direct?'Passation transmise à '+a.name+'.':'Passation mise en file, en tête, pour '+a.name+'.';$('direction-result').hidden=false;
+    handoff=null;$('direction-handoff').hidden=true;
+  }catch(error){if(canSend(a))logSend([a.name],message,outcomeOf(error),errorText(error));$('direction-result').className='files-result error';$('direction-result').textContent=errorText(error);$('direction-result').hidden=false;}
+  finally{$('direction-send').disabled=false;}
+});
 // Tableau de l'équipe : fenêtre modale en lecture seule, alimentée par /api/tableau.
 let boardTrigger=null;
 async function loadBoard(){
