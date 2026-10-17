@@ -100,7 +100,7 @@ Le script d'installation écrit ces réglages dans les variables de l'utilisateu
 
 ## Vérifier que tout va bien
 
-1. `npm test` : la suite de tests doit passer (57 tests réussis, 1 ignoré sans gravité).
+1. `npm test` : la suite de tests doit passer ; l'exécution annonce le nombre exact de tests réussis et ignorés (175 réussis et 2 ignorés le 17 octobre 2026, les deux ignorés portent sur des liens symboliques).
 2. `npm run check` : vérifie la syntaxe de tous les fichiers du projet.
 3. `node server.mjs` puis http://127.0.0.1:4317 : le bureau affiche les agents réellement ouverts dans Herdr.
 
@@ -115,7 +115,7 @@ Le script d'installation écrit ces réglages dans les variables de l'utilisateu
 - **Node.js absent ou trop vieux** : `node --version` doit montrer v22 ou plus. Réinstallez depuis https://nodejs.org/en/download, ouvrez un nouveau terminal, puis relancez le script d'installation.
 - **Un antivirus bloque une commande d'installation** : c'est le cas des commandes « sans fichier » de type `irm ... | iex`. Les pages officielles de Herdr et de Claude Code proposent une variante avec téléchargement d'un fichier `install.cmd` (voir les commandes ci-dessus).
 - **Les tests échouent** : vérifiez d'abord la version de Node.js, puis relancez `npm test`. Si un test reste en échec, notez son nom exact : il indique la fonction concernée.
-- **Je veux tout enlever** : supprimez le dossier du projet, le raccourci du Bureau s'il existe, et les variables `BUREAU_PORT` et `BUREAU_HERDR_PATH`. Node.js, Herdr et les IA se désinstallent séparément, via leurs propres méthodes.
+- **Je veux tout enlever** : supprimez le dossier du projet (il contient aussi `.bureau/`, la file d'attente de vos consignes), le raccourci du Bureau s'il existe, et les variables `BUREAU_PORT` et `BUREAU_HERDR_PATH`. Node.js, Herdr et les IA se désinstallent séparément, via leurs propres méthodes.
 
 ## Sources vérifiées
 
