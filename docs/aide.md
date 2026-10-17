@@ -54,6 +54,7 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Le soleil et la lune suivent un arc horaire dans le ciel (soleil orangé près de l'horizon, lever fixe à 6 h 30 et coucher fixe à 19 h 30, approximation sans saisons).
 - Les fenêtres de la ville et les étoiles s'effacent progressivement avec la montée du jour.
 - L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte à l'intensité du soleil ou à la lueur nocturne des moniteurs.
+- Réduction des mouvements : si votre système active la réduction des mouvements (`prefers-reduced-motion`), la scène est automatiquement figée par défaut (sans choix manuel enregistré). Dans cet état figé, le décor continue d'être redessiné une fois par minute pour suivre l'heure et l'éclairage.
 
 #### Postures des personnages
 - Frappe au clavier : agent au travail sur une tâche (bleu ciel).
@@ -117,13 +118,13 @@ Cet onglet permet d'inspecter l'agent sélectionné et d'échanger directement a
 - Champ « Rechercher dans les sorties » : met en surbrillance instantanée les termes cherchés et affiche le nombre de correspondances.
 - Bouton « Figer » : interrompt le défilement automatique vers le bas pour vous laisser lire calmement une trace d'erreur ou du code. Cliquez sur « Reprendre » pour réactiver le suivi.
 - Bouton « Copier » : copie l'intégralité du texte du terminal affiché dans votre presse-papier.
-- Bouton « Agrandir » : étend la hauteur du terminal pour occuper tout l'espace disponible et lire de longs historiques en pleine page.
+- Bouton « Agrandir » : étend la hauteur du terminal pour occuper tout l'espace disponible et lire de longs historiques en pleine page, y compris sur téléphone où il déploie une hauteur dédiée confortable.
 - Pause automatique sur sélection : dès que vous sélectionnez du texte à la souris dans les sorties, l'actualisation se met en pause avec la mention « Sélection en cours, affichage en pause ». Votre sélection ne saute jamais.
 
 #### Envoi de consigne et mise en file
 - Agent disponible : la zone de texte est déverrouillée et permet un envoi immédiat avec le raccourci clavier Ctrl+Entrée (ou Cmd+Entrée).
 - Agent occupé ou en pause de quota : le bouton affiche « Mettre en file ». La consigne est enregistrée dans la file d'attente sécurisée du serveur et partira toute seule dès que l'agent sera disponible ou 5 minutes après sa remise à zéro de limite.
-- Conservation des brouillons : si vous changez d'agent alors qu'un texte est commencé, votre brouillon est conservé et réapparaîtra à votre retour.
+- Conservation des brouillons : si vous changez d'agent alors qu'un texte est commencé ou pendant l'envoi d'une consigne en file, chaque brouillon reste mémorisé indépendamment sans être écrasé par l'autre poste.
 
 ---
 
@@ -232,11 +233,11 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Scène** | Bouton « Disposer » | Active la réorganisation manuelle des bureaux. |
 | **Scène** | Touche `Échap` | Quitte le mode « Disposer », ferme la palette ou l'aide. |
 | **Scène** | Bouton « Plein écran » | Agrandit la scène et le panneau dans une vue unifiée. |
-| **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations graphiques du canvas. |
+| **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations du canvas (figée, la scène suit l'heure chaque minute). |
 | **Navigation**| `Flèche droite` / `Flèche gauche` | Passe d'un onglet à l'autre (Poste, Équipe, Fichiers, Tâches). |
 | **Poste** | `Ctrl + Entrée` (ou `Cmd + Entrée`) | Envoie la consigne à l'agent sélectionné. |
 | **Poste** | Bouton « Mettre en file » | Place la consigne dans la file d'attente si l'agent est occupé. |
-| **Poste** | Bouton « Agrandir » | Agrandit ou réduit le terminal en pleine hauteur. |
+| **Poste** | Bouton « Agrandir » | Agrandit ou réduit le terminal en pleine hauteur (y compris sur mobile). |
 | **Poste** | Sélection de texte dans le terminal | Suspend temporairement l'actualisation pour copier. |
 | **Poste** | Bouton « Figer » | Bloque le suivi automatique vers le bas. |
 | **Poste** | Bouton « Copier » | Place le texte complet du terminal dans le presse-papier. |

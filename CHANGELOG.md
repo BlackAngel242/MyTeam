@@ -2,6 +2,18 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
+## [Non publié]
+
+### Corrigé
+
+- Sauvegarde des brouillons lors de la mise en file (G1) : mettre une consigne en file pour un agent puis changer de poste pendant la requête réseau n'efface plus le brouillon saisi sur l'autre poste.
+- Validité des lectures protégées du navigateur (G2) : les requêtes GET locales du navigateur (`/api/queue`, `/api/todos`, `/api/places`, `/api/files/*`) sont validées par `Sec-Fetch-Site` en l'absence d'en-tête `Origin`, évitant les faux messages d'erreur « Session expirée ».
+- Calcul des échéances de pause de quota (M2) : une annonce d'horaire lue dans le terminal (comme « try again at 4:45 PM ») conserve l'échéance de sa première détection sans repousser la pause au lendemain en cas de relecture ; les heures invalides sont rejetées et les mentions UTC/GMT sont respectées.
+- Précision du libellé des limites de quota (M3) : une fenêtre de 24 heures affiche désormais « 24 h » au lieu de « hebdomadaire », et seules les limites réellement épuisées (100 %) sont retenues pour déterminer l'heure de reprise.
+- Distribution des scripts statiques (M4) : le serveur HTTP local expose désormais les routes statiques sécurisées pour `/sounds.js` et `/empty-icons.js`.
+- Respect de la réduction des mouvements (M8) : la préférence système `prefers-reduced-motion` fige la scène animée par défaut sans choix manuel préalable, tout en maintenant un rafraîchissement d'une fois par minute pour actualiser l'heure, le soleil et l'éclairage.
+- Hauteur du terminal agrandi sur écran mobile (M9) : le bouton « Agrandir » applique une règle prioritaire garantissant un réel gain de hauteur d'affichage (jusqu'à 62 % de l'écran) sur téléphone.
+
 ## [0.3.0] - 17 octobre 2026
 
 ### Ajouté
