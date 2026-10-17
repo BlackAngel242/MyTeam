@@ -21,6 +21,7 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 ### Ajouté
 
 - Tableau de l'équipe : bouton « Tableau » et panneau de liège dans la scène. Fenêtre en lecture seule sur les fichiers piliers (étape en cours de HANDOFF.md, cases ouvertes de TODO.md, rôles d'AGENTS.md, dernières leçons de LESSONS.md), avec la source et la date de chaque fichier. Route serveur `/api/tableau` protégée par jeton, liste de fichiers fermée, chemins et identifiants masqués.
+- Pause de quota mise en scène : à un passage observé en pause, l'agent quitte le bureau batterie vide ; son chevalet alterne l'heure de retour annoncée et le temps restant ; à la fin observée de la pause, il revient batterie pleine. Rien n'est animé au chargement.
 - Tournée du chef : à chaque délégation observée dans son journal, le chef sort de la Direction, pose le dossier titré sur le bureau de l'agent visé, puis revient. Une tournée à la fois.
 
 ### Modifié

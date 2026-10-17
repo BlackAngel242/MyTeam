@@ -63,4 +63,7 @@
 - [x] Propositions d'OpenCode P3, P6 et P7 (bandeau de pause, courrier sur 12 h, trois messages d'erreur).
 - [x] Chef qui porte le dossier à l'agent lors d'une délégation (retenu par DrSmoke).
 - [x] Tableau mural de mémoire partagée en lecture seule (retenu par DrSmoke, `/api/tableau`).
+- [x] Pause de quota mise en scène : départ, compte à rebours, retour (retenu par DrSmoke).
+- [ ] Organisation fonctionnelle de l'OS d'agents : fil de la salle de contrôle, transfert de direction, priorité des envois, envoi et traitement de fichiers (études d'OpenCode et d'Antigravity en cours).
+- [ ] Salle de crise (en réserve, décision DrSmoke).
 - [ ] Évolution vers un OS d'agents en fenêtres ou tuiles libres (décision DrSmoke).

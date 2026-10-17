@@ -71,7 +71,8 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - Fusion dans `main` faite (42fa960), branche alignée. Éclairage du soir, P1, P2, P4 et P5 d'OpenCode appliqués.
 - Le tableau de la scène relit la file toutes les 5 s, quel que soit l'onglet.
 - Faits ensuite : P3, P6, P7 (OpenCode), tableau de l'équipe (`/api/tableau`, `src/blackboard.mjs`) et tournée du chef (Claude). DrSmoke a écarté l'accès direct au poste sur téléphone.
-- Idées encore proposées, non retenues à ce jour : replay de la journée, salle de crise, bureau en tuiles (grand chantier), météo réelle (requête extérieure).
+- Décisions de DrSmoke (17 octobre au soir) : replay abandonné (pas de bulles de dialogue comme Atoll92/agent-standup), météo abandonnée (consomme pour rien), salle de crise à garder en réserve, bureau en tuiles accepté. Pause de quota mise en scène livrée.
+- Étude en cours de l'organisation fonctionnelle de l'OS d'agents : fil de la salle de contrôle, transfert de direction, priorité des envois, envoi et traitement de fichiers. OpenCode : docs/os-fonctions-opencode.md (données et serveur) ; Antigravity : docs/os-fonctions-antigravity.md (parcours et organisation).
 
 ## Préparation à la publication GitHub et prochaines étapes
 
