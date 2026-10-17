@@ -6,7 +6,8 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot A. Réponses lisibles (avis de Codex Desktop, P0 à P4)
 
-- [ ] A1 (OpenCode) Réponses structurées côté serveur : `src/responses.mjs`, route `GET /api/reponses`, `test/responses.test.mjs`
+- [x] A1a (Claude) Réponses structurées côté serveur pour Claude (session exacte) : `src/responses.mjs`, route `GET /api/reponses`, `test/responses.test.mjs`
+- [ ] A1b (OpenCode) Même contrat pour Codex et OpenCode (rattachement par dossier, ambigu = rien), dans `src/responses.mjs`
 - [ ] A2 (Antigravity) Carte de réponse avec Markdown sûr : `public/response-card.js`
 - [ ] A3 (Antigravity) Copier et exporter `.md` par réponse puis par session
 - [ ] A4 (Antigravity) Mise à jour par clés stables sans perdre sélection ni défilement

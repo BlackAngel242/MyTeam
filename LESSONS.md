@@ -36,3 +36,6 @@
 - Un clic simulé sur le canvas doit compenser le centrage de l'image (`object-fit: contain`), comme le fait `toLogical` ; sinon le test conclut à tort qu'une zone cliquable ne marche pas.
 - Masquer « tout chemin absolu Unix » masque aussi les routes du bureau (`/api/tableau`) : cibler `~/` et les racines système connues, et vérifier le masquage sur les vrais fichiers piliers.
 - Une animation qui lit une horloge partagée (`now`) ne doit jamais la réaffecter pour se figer : une variable locale par acteur évite de figer les acteurs suivants.
+- Un outil d'écriture de fichier peut réduire les doubles antislashs (`'C:\Users'` devient `'C:\Users'`) : dans un test, construire le chemin avec `String.fromCharCode(92)` et relire la ligne écrite avant de lancer le test.
+- Herdr n'expose pas toujours `agent_session` pour Claude (absent sur ce poste le 18 octobre) : sans identifiant de session exact, ne rien rattacher (réponses, activité, délégations) et le dire à l'écran au lieu d'approximer par dossier.
+- Un lot de missions ne s'arrête pas au premier agent bloqué : si un agent affiche une boîte de dialogue (OpenCode : choix de dossier ou Worktrees), ne pas y répondre, le signaler à DrSmoke et redistribuer ce qui peut l'être.

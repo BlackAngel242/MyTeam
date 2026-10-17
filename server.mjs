@@ -15,11 +15,12 @@ import {createQueue,QueueError} from './src/queue.mjs';
 import {createTerminalStatusReader} from './src/terminal-status.mjs';
 import {createDirection,DirectionError} from './src/direction.mjs';
 import {readBlackboard} from './src/blackboard.mjs';
+import {readClaudeResponses} from './src/responses.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -257,6 +258,17 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(200,{connected:true,agents,direction:{source:sourceDirection,since:depuisDirection},updatedAt:new Date().toISOString(),token});
         }
         catch(error) {return json(errorStatus(error),{connected:false,agents:[],error:error.message,updatedAt:new Date().toISOString(),token});}
+      }
+      // Réponses structurées d'un agent : journal local, lecture seule, jamais d'identifiant de session.
+      if(req.method==='GET'&&url.pathname==='/api/reponses') {
+        if(!guard(req,{body:false})) return;
+        try {
+          const agent=(await bridge.list()).find(a=>a.id===url.searchParams.get('id'));
+          if(!agent) return json(400,{error:'Agent introuvable.'});
+          if(agent.kind!=='Claude'||!agent.sessionId) return json(200,{supported:false,reason:'Les réponses de cet outil ne sont pas exposées pour le moment.',responses:[]});
+          const lu=await getResponses(agent.sessionId);
+          return json(200,{supported:true,found:lu.found===true,complete:lu.complete===true,responses:Array.isArray(lu.responses)?lu.responses:[]});
+        } catch(error) {return json(errorStatus(error),{error:'Impossible de lire les réponses pour le moment.'});}
       }
       if(req.method==='GET'&&url.pathname==='/api/read') return json(200,await bridge.read(url.searchParams.get('id')));
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {
