@@ -120,6 +120,16 @@ for (const name of ['Agent', 'Task']) {
   }
 }
 
+test('un sous-agent en attente de son propre travail reste actif, puis finit par son identifiant de tâche', async t => {
+  const { root, path } = await fixture(t, [assistant('m1', {}, [
+    { type: 'tool_use', id: 'async-2', name: 'Agent', input: { description: 'Témoin', run_in_background: true } },
+  ]), { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'async-2', content: [{ type: 'text', text: 'Async agent launched successfully.\nagentId: a008adb6c12e82af0 (internal ID)' }] }] } }]);
+  await appendFile(path, jsonl([{ type: 'user', message: { content: '<task-notification><task-id>a008adb6c12e82af0</task-id><tool-use-id>async-2</tool-use-id><status>completed</status><summary>is waiting on its own background work</summary><note>This agent stopped with background work of its own still running.</note></task-notification>' } }]));
+  assert.equal((await readClaudeActivity(sessionId, { root })).subagents.length, 1);
+  await appendFile(path, jsonl([{ type: 'user', message: { content: '<task-notification><task-id>a008adb6c12e82af0</task-id><status>completed</status><summary>finished</summary></task-notification>' } }]));
+  assert.deepEqual((await readClaudeActivity(sessionId, { root })).subagents, []);
+});
+
 test('un resultat ordinaire termine aussi un appel marque en arriere-plan', async t => {
   const { root } = await fixture(t, [assistant('m1', {}, [
     { type: 'tool_use', id: 'a1', name: 'Agent', input: { run_in_background: true } },

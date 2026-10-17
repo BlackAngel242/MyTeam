@@ -77,8 +77,14 @@ function consumeLine(state, line) {
     if (Array.isArray(message.content)) {
       for (const block of message.content) {
         if (block?.type !== 'tool_result') continue;
-        const agent = state.active.get(block.tool_use_id);
-        if (agent?.background && textOf(block.content).includes('Async agent launched')) continue;
+        const agent = state.active.get(block.tool_use_id), launched = textOf(block.content);
+        // L'accusé « Async agent launched » prouve à lui seul un lancement en arrière-plan.
+        if (agent && launched.includes('Async agent launched')) {
+          // La notification de fin finale peut ne citer que l'identifiant de tâche : on le mémorise.
+          const taskId = /agentId:\s*([A-Za-z0-9_-]+)/.exec(launched);
+          if (taskId) agent.taskId = taskId[1];
+          continue;
+        }
         remove(block.tool_use_id);
       }
     }
@@ -87,7 +93,12 @@ function consumeLine(state, line) {
     const notifications = text.match(/<task-notification>[\s\S]*?<\/task-notification>/g) || [text];
     for (const notification of notifications) {
       if (!/<status>\s*(completed|failed|killed|cancelled)\s*<\/status>/.test(notification)) continue;
+      // « completed » peut signifier « en pause » : l'agent attend encore son propre travail en arrière-plan.
+      if (/background work of its own still running|waiting on its own background work/i.test(notification)) continue;
       for (const match of notification.matchAll(/<tool-use-id>([^<]+)<\/tool-use-id>/g)) remove(match[1]);
+      for (const match of notification.matchAll(/<task-id>([^<]+)<\/task-id>/g)) {
+        for (const [id, agent] of state.active) if (agent.taskId === match[1].trim()) remove(id);
+      }
     }
   }
 }

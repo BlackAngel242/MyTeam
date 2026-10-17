@@ -145,6 +145,14 @@ form>p,.broadcast>p{color:var(--muted);font-size:12px;min-height:16px;margin:8px
 #broadcast-send.armed,#broadcast-send.armed:hover:enabled{background:var(--amber);border-color:var(--amber);color:#2b1d08}
 #broadcast-results{list-style:none;padding:0;margin:12px 0 0;font-size:12px}#broadcast-results li{padding:3px 0}
 #broadcast-results .sent{color:var(--mint)}#broadcast-results :is(.refused,.unknown){color:var(--amber)}
+.mailbox{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--line);border-radius:10px}
+.mailbox h2{font-size:16px;font-weight:550;margin:0 0 6px}
+.mailbox.flash{animation:flash 1.6s ease-out}
+@keyframes flash{from{box-shadow:0 0 0 2px var(--mint)}to{box-shadow:0 0 0 2px transparent}}
+.mail-list{list-style:none;margin:0;padding:0;font-size:12px;max-height:260px;overflow:auto}
+.mail-list .mail{display:grid;gap:3px;padding:10px 0;border-bottom:1px solid #1d2b40;justify-items:start}
+.mail-list .mail .log-head{color:var(--mint)}.mail-list .mail .log-why{color:var(--muted)}
+.mail-list .tool-button{margin-top:4px;min-height:30px}
 .send-log-section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .send-log-section h3{font-size:13px;font-weight:550;margin:0 0 10px}
 .send-log{list-style:none;margin:0;padding:0;font-size:12px;max-height:320px;overflow:auto}

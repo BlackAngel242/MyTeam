@@ -16,7 +16,7 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 
 ## Un fichier, un propriétaire
 
-- Propriété actuelle : `public/` et `src/files.mjs` pour Claude ; `server.mjs`, `src/` (sauf `files.mjs` et `delegations.mjs`), `test/` et `package.json` pour Codex ; `src/delegations.mjs` pour OpenCode ; `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` et `docs/` de publication pour Antigravity. Le chef peut réattribuer.
+- Propriété actuelle : `public/` et `src/files.mjs` pour Claude ; `server.mjs`, `src/agent-activity.mjs`, `src/delegations.mjs`, `src/queue.mjs` et leurs tests pour OpenCode (repris de Codex, dont la limite d'usage est presque atteinte) ; `src/herdr.mjs`, `src/claude-activity.mjs`, `src/todos.mjs`, `public/terminal.js` et `public/logos.js` pour Codex ; `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` et `docs/` de publication pour Antigravity. Le chef peut réattribuer, notamment quand un agent approche de sa limite d'usage.
 - Avant de modifier un fichier d'un autre agent : lire son `git diff`, puis demander au chef.
 
 ## Vérité des faits
