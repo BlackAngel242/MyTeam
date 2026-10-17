@@ -194,7 +194,7 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
 
 @media(min-width:1500px){main{grid-template-columns:minmax(0,1fr) 430px;gap:40px}pre{min-height:340px;max-height:480px}}
 @media(max-width:1180px){main{grid-template-columns:minmax(0,1fr) 340px;gap:22px;padding:22px 24px}.topbar{margin:0 24px}.chips{order:3;width:100%;margin:0}.detail{padding-left:20px}.page-footer{margin:0 24px}.office-bottom>.legend{display:none}}
-@media(max-width:860px){main{grid-template-columns:1fr;gap:28px}.detail{padding:24px 0 0;border-left:0;border-top:1px solid var(--line)}.agent-meta dd{max-width:70%}pre{min-height:200px;max-height:340px}.office-bottom>.legend{display:flex}}
+@media(max-width:860px){.office-top{flex-wrap:wrap}.office-top .attention{order:3;flex-basis:100%;margin:6px 0 0}.office-top .attention p{white-space:normal}main{grid-template-columns:1fr;gap:28px}.detail{padding:24px 0 0;border-left:0;border-top:1px solid var(--line)}.agent-meta dd{max-width:70%}pre{min-height:200px;max-height:340px}.office-bottom>.legend{display:flex}}
 @media(max-width:520px){
   .topbar{margin:0 16px;gap:10px 12px}.brand{font-size:16px;gap:10px}.brand-mark{padding:8px;grid-template-columns:6px 6px}.brand-mark i{width:6px;height:6px}
   .chips{gap:5px;flex-wrap:wrap}.chip{padding:5px 9px}
@@ -222,6 +222,20 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
 .agent-info summary::after{content:"+";font-size:15px;color:var(--muted)}.agent-info[open] summary::after{content:"−"}
 .agent-info summary:hover{color:var(--text)}
 .agent-info .agent-meta{border:0;margin:0;padding:0 0 10px}
+/* Synthèse de la revue de design (docs/synthese-design.md). */
+.layout-bar{margin:0;padding:7px 16px;font-size:12px;color:var(--mint);background:#13283a;border-bottom:1px solid var(--line-strong)}
+.poste-empty{padding:6px 0 18px}.poste-empty p{margin:0 0 12px;color:var(--muted);font-size:13px}
+.pick-list{display:flex;flex-wrap:wrap;gap:6px}.pick{min-height:36px}
+.no-agent :is(.detail-heading,.statusbar,.output-heading,.term-tools,.output-wrap,.read-note,#prompt-form){display:none}
+.agent-button{position:relative}
+.pane-badge{margin-left:auto;align-self:center;flex-shrink:0;font:11px/1 Consolas,monospace;color:var(--muted);padding:4px 6px;border-radius:6px;background:#0f1a2c;border:1px solid var(--line)}
+.count{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.error-block{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;padding:14px;border-radius:10px;background:#2a2416;color:#fbe3b8;font-size:12.5px;list-style:none}
+.error-block p{margin:0;flex:1;min-width:160px}
+.error-block .tool-button{border-color:#6f5a33;color:var(--amber)}
+.empty-icon{width:32px;height:32px;image-rendering:pixelated;flex-shrink:0}
+.term-expanded pre{min-height:62vh;max-height:none}
+.term-expanded :is(.statusbar,.agent-info,.subagent-list){display:none}
 kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;border:1px solid #3a4c65;box-shadow:inset 0 -1px 0 #3a4c65;border-radius:5px;color:#d5e2f1;background:#0f1a2c}
 .icon-button kbd{margin-left:2px;opacity:.8}
 #send.queue-mode{background:#b5a8e6;color:#1d1636}#send.queue-mode:hover:enabled{background:#cdc3f2}
@@ -282,7 +296,7 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
   .scene-wrap{flex:1;min-height:0;aspect-ratio:auto!important;background:#0f1b2e}
   canvas{object-fit:contain}
   .team-heading{margin:10px 0 6px}
-  .agents-list{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:minmax(180px,1fr);overflow-x:auto;padding-bottom:2px}
+  .agents-list{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
   .agent-button{min-height:50px;padding:8px 10px}
   .detail{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:8px}
   .tabs{position:sticky;top:0;z-index:2;background:var(--bg);box-shadow:0 6px 10px -6px #0c1423}
@@ -292,8 +306,8 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
   .office-bottom{display:none}
   .chips{order:0;width:auto;margin:0 0 0 8px}
   .team-heading{margin:8px 0 5px}.team-heading h2{font-size:13px}
-  .agent-button{min-height:40px;padding:6px 10px;gap:8px}
-  .agent-button>span:last-child{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .agent-button{min-height:46px;padding:6px 10px;gap:9px}
+  .agent-button>span:last-child{min-width:0}
   .agent-name{flex-shrink:0;overflow:visible}
   .agent-status{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .agent-logo{width:22px;height:22px}
