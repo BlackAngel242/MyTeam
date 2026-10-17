@@ -106,7 +106,10 @@ function consumeCodex(state, entry) {
       }
     } catch { /* Un appel mal forme n'est pas un plan fiable. */ }
   }
-  if (entry.type === 'session_meta') state.cwd = cwdKey(payload.cwd);
+  if (entry.type === 'session_meta') {
+    state.cwd = cwdKey(payload.cwd);
+    if (typeof payload.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(payload.id)) state.thread = payload.id;
+  }
   if (entry.type === 'turn_context') {
     state.model = modelName(payload.model);
     state.effort = effortName(payload.effort ?? payload.reasoning_effort);
@@ -127,9 +130,16 @@ function consumeCodex(state, entry) {
   }
   if (entry.type === 'event_msg' && payload.type === 'item_completed' && payload.item?.type === 'SubAgentActivity') {
     const item = payload.item;
+    if (!state.thread && typeof payload.thread_id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(payload.thread_id)) state.thread = payload.thread_id;
     const thread = typeof item.agent_thread_id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(item.agent_thread_id) ? item.agent_thread_id : null;
     const kind = typeof item.kind === 'string' ? item.kind : '';
-    if (thread && ['started', 'interacted', 'completed'].includes(kind)) {
+    const fromCall = state.spawnNames.get(typeof item.id === 'string' ? item.id : '');
+    const path = typeof item.agent_path === 'string' ? item.agent_path.split('/').filter(Boolean).pop() ?? '' : '';
+    const nom = taskLabel(fromCall) || taskLabel(path);
+    // Le fil principal de Codex n'est PAS un sous-agent : ses événements portent
+    // son nom « root » ou l'identifiant de session. Ils sont ignorés.
+    const estRacine = thread !== null && (thread === state.thread || nom === 'root');
+    if (thread && !estRacine && ['started', 'interacted', 'completed'].includes(kind)) {
       // started et interacted prouvent que le sous-agent existe ; completed le
       // retire. Valeurs réellement observées dans les journaux du 17/10/2026.
       // world_state.state.environments.subagents n'apparaît dans aucun journal
@@ -144,11 +154,7 @@ function consumeCodex(state, entry) {
       if (kind === 'completed') agent.active = false;
       else {
         agent.active = true;
-        if (!agent.description) {
-          const fromCall = state.spawnNames.get(typeof item.id === 'string' ? item.id : '');
-          const path = typeof item.agent_path === 'string' ? item.agent_path.split('/').filter(Boolean).pop() ?? '' : '';
-          agent.description = taskLabel(fromCall) || taskLabel(path);
-        }
+        if (!agent.description) agent.description = nom;
       }
       state.subagents = [...state.agents.entries()].filter(([, sous]) => sous.active).map(([id, sous]) => ({ id, description: sous.description }));
     }
@@ -179,7 +185,7 @@ function changed(state, stat) {
 
 async function scanCodex(file, previous, headerOnly = false) {
   const { path, stat } = file;
-  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, tokens: null, limits: [], limitReached: false, model: null, effort: null, plan: null, subagents: null, spawnNames: new Map(), agents: new Map() } : previous;
+  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, thread: null, tokens: null, limits: [], limitReached: false, model: null, effort: null, plan: null, subagents: null, spawnNames: new Map(), agents: new Map() } : previous;
   if (!state.exhausted && state.offset < stat.size && !(headerOnly && state.cwd)) {
     const stream = createReadStream(path, { start: state.offset, end: Math.min(stat.size, state.offset + MAX_BYTES) - 1 });
     const input = Readable.from(completeLines(stream, state));

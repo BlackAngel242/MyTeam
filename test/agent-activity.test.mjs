@@ -240,3 +240,22 @@ test('Codex : un appel spawn_agent illisible n\'est pas une observation', async 
   const result = await f.reader(codex);
   assert.equal('subagents' in result, false);
 });
+
+test('Codex : le fil racine n\'est jamais compté comme sous-agent', async t => {
+  const f = await fixture(t);
+  const session = 'session-racine-1';
+  const evenementRacine = kind => ({ type: 'event_msg', payload: { type: 'item_completed', thread_id: session, item: { type: 'SubAgentActivity', id: 'call_racine', kind, agent_thread_id: session, agent_path: '/root' } } });
+  const evenementVrai = (kind, chemin) => ({ type: 'event_msg', payload: { type: 'item_completed', thread_id: session, item: { type: 'SubAgentActivity', id: 'call_vrai', kind, agent_thread_id: 'thread-vrai', agent_path: chemin } } });
+  await writeFile(f.file, lines(
+    { type: 'session_meta', payload: { cwd, id: session } },
+    spawn('call_racine', 'root', 'CONTENU_CHIFFRE'),
+    evenementRacine('started'),
+    spawn('call_vrai', 'vraie_tache', 'AUTRE_CHIFFRE'),
+    evenementVrai('started', '/root/vraie_tache'),
+    evenementVrai('interacted', '/root'),
+    evenementRacine('completed'),
+  ));
+  const result = await f.reader(codex);
+  assert.deepEqual(result.subagents, [{ id: 'thread-vrai', description: 'vraie tache' }], 'le fil racine (root ou session) est exclu');
+  assert.ok(!JSON.stringify(result).includes('CHIFFRE'));
+});
