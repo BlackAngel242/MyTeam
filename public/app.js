@@ -169,7 +169,7 @@ tabs.forEach((t,i)=>{
 // Barre d'état de l'outil : les dernières lignes d'un terminal d'IA sont son interface (invite, modèle, limites, raccourcis).
 // On les sépare des sorties et on n'affiche que ce que l'outil écrit lui-même.
 const spinner='⣾⣽⣻⢿⡿⣟⣯⣷⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏✻✶✳✢⬝';
-const chromeLine=[/^[\s─━═▀▄╹┃╭╮╰╯│]*$/,/^\s*[›>❯]\s*($|\S)/,/for shortcuts|esc (to )?(interrupt|cancel)|ctrl\+p|shift\+tab|f2 to view|\/status|Ask anything|to do anything|auto mode|bypass permissions|accept edits|Restart to update|Update installed|update available/i,/^\s*┃/,/limit:\s*\d+%\s*left/i,/\s·\s~\s·\s/,new RegExp('^\\s*['+spinner+']'),new RegExp('^[\\s'+spinner+'·*]*(Working|Loading|Thinking|Réflexion)?[.…]*\\s*$','i'),/⊙\s*\d+\s*(MCP|plugins?)/i];
+const chromeLine=[/used \d+% of your .*limit|limit reached|resets \d/i,/^[\s─━═▀▄╹┃╭╮╰╯│]*$/,/^\s*[›>❯]\s*($|\S)/,/for shortcuts|esc (to )?(interrupt|cancel)|ctrl\+p|shift\+tab|f2 to view|\/status|Ask anything|to do anything|auto mode|bypass permissions|accept edits|Restart to update|Update installed|update available/i,/^\s*┃/,/limit:\s*\d+%\s*left/i,/\s·\s~\s·\s/,new RegExp('^\\s*['+spinner+']'),new RegExp('^[\\s'+spinner+'·*]*(Working|Loading|Thinking|Réflexion)?[.…]*\\s*$','i'),/⊙\s*\d+\s*(MCP|plugins?)/i];
 function splitChrome(text){
   const lines=text.replace(/\s+$/,'').split('\n');let cut=lines.length,seen=0;
   // Au plus 10 lignes non vides : certains outils (OpenCode) encadrent aussi leurs messages de « ┃ ».
@@ -180,6 +180,8 @@ function splitChrome(text){
   else if((m=chrome.match(/shortcuts\s{2,}(.+?)\s+·\s+(minimal|low|medium|high|xhigh|max)\s*$/mi))){s.model=m[1];s.effort=m[2];}
   else if((m=chrome.match(/┃\s+(\w[\w ]*?)\s+·\s+(.+?)\s*$/m))&&!/shortcuts|commands/.test(m[2])){s.mode=m[1];s.model=m[2];}
   if((m=chrome.match(/(\d+\s*[hj]|weekly|hebdo\w*)?\s*limit:\s*(\d+)%\s*left/i)))s.limit={window:(m[1]||'').replace(/\s/g,''),left:Number(m[2])};
+  // Claude Code : « You've used 91% of your session limit · resets 4:40am ».
+  if(!s.limit&&(m=chrome.match(/used\s+(\d+)%\s+of your (\w+) limit[^\n]*?resets\s+([0-9:]+\s*[ap]m)/i)))s.limit={window:m[2].toLowerCase()==='session'?'de session':m[2],left:100-Number(m[1]),reset:parseClock(m[3])};
   if((m=chrome.match(/(\d+(?:[.,]\d+)?\s*[KkM])\s*\((\d+)%\)/)))s.context={used:m[1],pct:Number(m[2])};
   if((m=chrome.match(/(\d+)\s+warnings?/i)))s.warnings=Number(m[1]);
   if((m=chrome.match(/Working\s*\((\d+h\s*)?(\d+m\s*)?\d+s/i)))s.elapsed=m[0].replace(/Working\s*\(/i,'').trim();
@@ -239,7 +241,7 @@ function renderStatusbar(a){
   $('limit').hidden=!st.limit;
   if(!st.limit){$('limit-label').textContent='';$('limit-value').textContent='';}
   else{
-    $('limit-label').textContent='Limite'+(st.limit.window?' '+st.limit.window:'')+' restante';$('limit-value').textContent=st.limit.left+' %';
+    $('limit-label').textContent='Limite'+(st.limit.window?' '+st.limit.window:'')+' restante'+(st.limit.reset?' · remise à zéro '+hhmm(st.limit.reset):'');$('limit-value').textContent=st.limit.left+' %';
     $('limit-bar').style.width=Math.max(0,Math.min(100,st.limit.left))+'%';$('limit').classList.toggle('low',st.limit.left<=20);
   }
   $('status-source').textContent='Lu dans la barre de l’outil à '+s.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});

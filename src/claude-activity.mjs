@@ -36,9 +36,30 @@ function textOf(content) {
   return content.filter(block => block?.type === 'text' && typeof block.text === 'string').map(block => block.text).join('\n');
 }
 
+function removeActive(state, id) {
+  const agent = state.active.get(id);
+  if (agent) { state.retained -= agent.bytes; state.active.delete(id); }
+}
+
+// Une notification de fin peut arriver dans une ligne user, queue-operation (content) ou attachment (prompt).
+function endFromNotifications(state, text) {
+  const notifications = text.match(/<task-notification>[\s\S]*?<\/task-notification>/g) || [text];
+  for (const notification of notifications) {
+    if (!/<status>\s*(completed|failed|killed|cancelled)\s*<\/status>/.test(notification)) continue;
+    // « completed » peut signifier « en pause » : l'agent attend encore son propre travail en arrière-plan.
+    if (/background work of its own still running|waiting on its own background work/i.test(notification)) continue;
+    for (const match of notification.matchAll(/<tool-use-id>([^<]+)<\/tool-use-id>/g)) removeActive(state, match[1].trim());
+    for (const match of notification.matchAll(/<task-id>([^<]+)<\/task-id>/g)) {
+      for (const [id, agent] of state.active) if (agent.taskId === match[1].trim()) removeActive(state, id);
+    }
+  }
+}
+
 function consumeLine(state, line) {
   let entry;
   try { entry = JSON.parse(line); } catch { return; }
+  if (entry?.type === 'queue-operation' && typeof entry.content === 'string') return endFromNotifications(state, entry.content);
+  if (entry?.type === 'attachment' && typeof entry.attachment?.prompt === 'string') return endFromNotifications(state, entry.attachment.prompt);
   const message = entry?.message;
   if (!message || typeof message !== 'object') return;
   if (entry.type === 'assistant') {
@@ -70,10 +91,6 @@ function consumeLine(state, line) {
       }
     }
   } else if (entry.type === 'user') {
-    const remove = id => {
-      const agent = state.active.get(id);
-      if (agent) { state.retained -= agent.bytes; state.active.delete(id); }
-    };
     if (Array.isArray(message.content)) {
       for (const block of message.content) {
         if (block?.type !== 'tool_result') continue;
@@ -85,21 +102,10 @@ function consumeLine(state, line) {
           if (taskId) agent.taskId = taskId[1];
           continue;
         }
-        remove(block.tool_use_id);
+        removeActive(state, block.tool_use_id);
       }
     }
-    const text = textOf(message.content);
-    // Traiter chaque notification separement evite de melanger deux agents.
-    const notifications = text.match(/<task-notification>[\s\S]*?<\/task-notification>/g) || [text];
-    for (const notification of notifications) {
-      if (!/<status>\s*(completed|failed|killed|cancelled)\s*<\/status>/.test(notification)) continue;
-      // « completed » peut signifier « en pause » : l'agent attend encore son propre travail en arrière-plan.
-      if (/background work of its own still running|waiting on its own background work/i.test(notification)) continue;
-      for (const match of notification.matchAll(/<tool-use-id>([^<]+)<\/tool-use-id>/g)) remove(match[1]);
-      for (const match of notification.matchAll(/<task-id>([^<]+)<\/task-id>/g)) {
-        for (const [id, agent] of state.active) if (agent.taskId === match[1].trim()) remove(id);
-      }
-    }
+    endFromNotifications(state, textOf(message.content));
   }
 }
 
