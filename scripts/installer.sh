@@ -11,7 +11,7 @@
 #
 # Usage : bash scripts/installer.sh [options]
 #   --dry-run            Simulation : affiche les actions sans rien executer.
-#   --oui                Accepte automatiquement chaque confirmation (o/n).
+#   --oui                Accepte sauf Herdr et chaque extension (o/n obligatoire).
 #   --port <numero>      Port du bureau (defaut : 4317 ou valeur existante).
 #   --herdr-chemin <fichier>  Chemin de herdr s'il n'est pas dans le PATH.
 #   --sans-raccourci     Ne propose pas le raccourci « Ouvrir le bureau ».
@@ -53,10 +53,10 @@ noter() { RAPPORT="$RAPPORT
 
 confirmer() {
   if [ "$DRY_RUN" = "1" ]; then simuler "$1 o/n : o (simule)"; return 0; fi
-  if [ "$OUI" = "1" ]; then dire "$1 o/n : o (accepte automatiquement)"; return 0; fi
+  if [ "$OUI" = "1" ] && [ "${2:-}" != "individuel" ]; then dire "$1 o/n : o (accepte automatiquement)"; return 0; fi
   while true; do
     printf '%s (o/n) : ' "$1"
-    read -r reponse
+    read -r reponse || return 1
     reponse=$(printf '%s' "$reponse" | tr '[:upper:]' '[:lower:]')
     case "$reponse" in
       o|oui) return 0 ;;
@@ -69,7 +69,72 @@ confirmer() {
 executer() {
   if [ "$DRY_RUN" = "1" ]; then simuler "$1"; return 0; fi
   dire "$1"
-  sh -c "$2"
+  shift
+  "$@"
+}
+
+# Les valeurs deviennent des donnees, jamais du code shell reinterprete.
+literal_shell() {
+  printf "'"
+  printf '%s' "$1" | sed "s/'/'\\\\''/g"
+  printf "'"
+}
+
+argument_desktop() {
+  case "$1" in *$'\n'*|*$'\r'*) return 1 ;; esac
+  local valeur="$1"
+  valeur=${valeur//\\/\\\\}
+  valeur=${valeur//\"/\\\"}
+  valeur=${valeur//\$/\\\$}
+  valeur=${valeur//\`/\\\`}
+  valeur=${valeur//%/%%}
+  # Deux couches : argument Exec, puis valeur du fichier Desktop Entry.
+  valeur=${valeur//\\/\\\\}
+  printf '"%s"' "$valeur"
+}
+
+ecrire_lanceur() {
+  local fichier="$1" choix="$2"
+  {
+    printf '#!/bin/bash\n'
+    if [ "$choix" = "herdr" ]; then
+      printf 'exec %s\n' "$(literal_shell "$HERDR_LANCEUR")"
+    else
+      printf 'cd -- %s || exit 1\n' "$(literal_shell "$RACINE")"
+      printf 'node server.mjs > bureau.log 2> bureau-erreurs.log &\nsleep 2\n'
+      printf 'if [ "$(uname)" = Darwin ]; then open %s; else xdg-open %s; fi\n' \
+        "$(literal_shell "http://127.0.0.1:$PORT_CHOISI")" "$(literal_shell "http://127.0.0.1:$PORT_CHOISI")"
+    fi
+  } > "$fichier"
+  chmod +x "$fichier"
+}
+
+ecrire_desktop() {
+  local fichier="$1" cible="$2" terminal="$3" argument
+  argument=$(argument_desktop "$cible") || return 1
+  printf '[Desktop Entry]\nType=Application\nName=Ouvrir le bureau\nExec=%s\nTerminal=%s\nCategories=Utility;\n' \
+    "$argument" "$terminal" > "$fichier"
+  chmod +x "$fichier"
+}
+
+installer_node() {
+  case "$(gestionnaire_paquets)" in
+    brew) brew install node ;;
+    apt) sudo apt-get update && sudo apt-get install -y nodejs npm ;;
+    dnf) sudo dnf install -y nodejs npm ;;
+    *) return 1 ;;
+  esac
+}
+
+installer_outil() {
+  case "$1" in
+    herdr) curl -fsSL https://herdr.dev/install.sh | sh ;;
+    claude) curl -fsSL https://claude.ai/install.sh | bash ;;
+    codex) curl -fsSL https://chatgpt.com/codex/install.sh | sh ;;
+    opencode) curl -fsSL https://opencode.ai/install | bash ;;
+    gemini) npm install -g @google/gemini-cli ;;
+    *) return 1 ;;
+  esac
 }
 
 version_node_majeure() {
@@ -115,7 +180,7 @@ else
   else dire "Node.js est present mais trop ancien (version majeure $MAJEURE) : il faut la version 22 ou plus."; fi
   CMD_NODE=$(commande_node)
   if [ -n "$CMD_NODE" ] && confirmer "Installer Node.js avec votre gestionnaire de paquets ($CMD_NODE) ?"; then
-    executer "Installation de Node.js : $CMD_NODE" "$CMD_NODE"
+    executer "Installation de Node.js : $CMD_NODE" installer_node
     if [ "$DRY_RUN" != "1" ]; then
       MAJEURE=$(version_node_majeure || true)
       if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then
@@ -176,8 +241,8 @@ else
   dire "Methode d'installation officielle (documentation Herdr) :"
   dire '  macOS et Linux : curl -fsSL https://herdr.dev/install.sh | sh'
   dire '  Puis documentation complete : https://herdr.dev/docs/install/'
-  if confirmer 'Installer Herdr maintenant avec la commande officielle ci-dessus ?'; then
-    executer 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' 'curl -fsSL https://herdr.dev/install.sh | sh'
+  if confirmer 'Installer Herdr maintenant avec la commande officielle ci-dessus ?' individuel; then
+    executer 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' installer_outil herdr
     if [ "$DRY_RUN" != "1" ]; then
       HERDR_TROUVE=$(chercher_herdr || true)
       if [ -n "$HERDR_TROUVE" ]; then
@@ -282,7 +347,7 @@ proposer_outil() {
   [ -n "$lien" ] && dire "Documentation : $lien"
   [ -n "$lien2" ] && dire "Documentation complémentaire : $lien2"
   if confirmer "Installer $nom ?"; then
-    executer "Installation de $nom : $installation" "$installation"
+    executer "Installation de $nom : $installation" installer_outil "$detection"
     if [ "$DRY_RUN" != "1" ]; then
       if command -v "$detection" >/dev/null 2>&1; then
         dire "$nom est installe."
@@ -332,8 +397,8 @@ if confirmer 'Veux-tu voir la liste des extensions proposées pour ce projet ?';
   else
     for ext in 'Markdown All in One|yzhang.markdown-all-in-one' 'ESLint|dbaeumer.vscode-eslint' 'Prettier - Code formatter|esbenp.prettier-vscode'; do
       nom="${ext%%|*}"; id="${ext##*|}"
-      if confirmer "Installer l'extension $nom ($id) ?"; then
-        executer "Installation de $id avec code --install-extension." "code --install-extension $id"
+      if confirmer "Installer l'extension $nom ($id) ?" individuel; then
+        executer "Installation de $id avec code --install-extension." code --install-extension "$id"
         noter "Extension $id : proposée à l'installation."
       else
         noter "Extension $id : refusée."
@@ -347,8 +412,8 @@ dire ''
 
 # --- 6. Configuration ---------------------------------------------------
 dire '--- 6. Configuration du bureau ---'
-FICHIERS_PROFIL="$HOME/.profile"
-[ -f "$HOME/.bashrc" ] && FICHIERS_PROFIL="$FICHIERS_PROFIL $HOME/.bashrc"
+FICHIERS_PROFIL=("$HOME/.profile")
+[ -f "$HOME/.bashrc" ] && FICHIERS_PROFIL+=("$HOME/.bashrc")
 
 PORT_CHOISI=""
 if [ -n "$PORT" ]; then PORT_CHOISI="$PORT"
@@ -387,11 +452,11 @@ ecrire_profil() {
 export BUREAU_PORT=\"$PORT_CHOISI\""
   if [ -n "$HERDR_A_ENREGISTRER" ]; then
     bloc="$bloc
-export BUREAU_HERDR_PATH=\"$HERDR_A_ENREGISTRER\""
+export BUREAU_HERDR_PATH=$(literal_shell "$HERDR_A_ENREGISTRER")"
   fi
   bloc="$bloc
 # <<< bureau-des-agents <<<"
-  for fichier in $FICHIERS_PROFIL; do
+  for fichier in "${FICHIERS_PROFIL[@]}"; do
     if [ "$DRY_RUN" = "1" ]; then
       simuler "Mise a jour du bloc de configuration dans $fichier (BUREAU_PORT=$PORT_CHOISI)."
       continue
@@ -446,11 +511,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
         if [ "$DRY_RUN" = "1" ]; then
           simuler "Création du raccourci $RACCOURCI (lance Herdr)."
         else
-          cat > "$RACCOURCI" <<FIN_RACCOURCI
-#!/bin/bash
-exec "$HERDR_LANCEUR"
-FIN_RACCOURCI
-          chmod +x "$RACCOURCI"
+          ecrire_lanceur "$RACCOURCI" herdr
           dire "Raccourci créé : $RACCOURCI"
         fi
       else
@@ -458,16 +519,7 @@ FIN_RACCOURCI
         if [ "$DRY_RUN" = "1" ]; then
           simuler "Création du raccourci $RACCOURCI (lance Herdr)."
         else
-          cat > "$RACCOURCI" <<FIN_RACCOURCI
-[Desktop Entry]
-Type=Application
-Name=Ouvrir le bureau
-Comment=Herdr
-Exec=$HERDR_LANCEUR
-Terminal=true
-Categories=Utility;
-FIN_RACCOURCI
-          chmod +x "$RACCOURCI"
+          ecrire_desktop "$RACCOURCI" "$HERDR_LANCEUR" true || exit 1
           dire "Raccourci créé : $RACCOURCI"
         fi
       fi
@@ -483,14 +535,7 @@ FIN_RACCOURCI
       if [ "$DRY_RUN" = "1" ]; then
         simuler "Création du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
       else
-        cat > "$RACCOURCI" <<FIN_RACCOURCI
-#!/bin/bash
-cd "$RACINE" || exit 1
-node server.mjs > bureau.log 2> bureau-erreurs.log &
-sleep 2
-open "http://127.0.0.1:$PORT_CHOISI"
-FIN_RACCOURCI
-        chmod +x "$RACCOURCI"
+        ecrire_lanceur "$RACCOURCI" bureau
         dire "Raccourci créé : $RACCOURCI"
       fi
       noter 'Raccourci : créé.'
@@ -505,16 +550,9 @@ FIN_RACCOURCI
       if [ "$DRY_RUN" = "1" ]; then
         simuler "Création du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
       else
-        cat > "$RACCOURCI" <<FIN_RACCOURCI
-[Desktop Entry]
-Type=Application
-Name=Ouvrir le bureau
-Comment=Bureau des agents
-Exec=sh -c 'cd "$RACINE" && node server.mjs > bureau.log 2> bureau-erreurs.log & sleep 2; xdg-open "http://127.0.0.1:$PORT_CHOISI"'
-Terminal=false
-Categories=Utility;
-FIN_RACCOURCI
-        chmod +x "$RACCOURCI"
+        LANCEUR="$DOSSIER_BUREAU/Ouvrir le bureau.command"
+        ecrire_lanceur "$LANCEUR" bureau
+        ecrire_desktop "$RACCOURCI" "$LANCEUR" false || exit 1
         dire "Raccourci créé : $RACCOURCI"
       fi
       noter 'Raccourci : créé.'
@@ -531,8 +569,8 @@ if [ "$NODE_OK" != "1" ]; then
   dire 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.'
   noter 'Tests : ignores (Node.js absent).'
 elif confirmer 'Lancer npm test et npm run check maintenant ?'; then
-  executer 'Execution de npm test.' "cd \"$RACINE\" && npm test"
-  executer 'Execution de npm run check.' "cd \"$RACINE\" && npm run check"
+  (cd -- "$RACINE" && executer 'Execution de npm test.' npm test)
+  (cd -- "$RACINE" && executer 'Execution de npm run check.' npm run check)
   noter 'Tests : executes.'
 else
   noter 'Tests : non executes (refuse).'

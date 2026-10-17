@@ -16,7 +16,7 @@
   Affiche les actions sans rien executer (simulation).
 
 .PARAMETER Oui
-  Accepte automatiquement toutes les confirmations.
+  Accepte sauf Herdr et chaque extension, qui exigent un o/n individuel.
 
 .PARAMETER Port
   Port du bureau (variable BUREAU_PORT). Sinon, question pendant l'installation.
@@ -55,7 +55,7 @@ Usage :
 
 Options :
   -DryRun          Simulation : affiche les actions sans rien executer.
-  -Oui             Accepte automatiquement chaque confirmation (o/n).
+  -Oui             Accepte sauf Herdr et chaque extension (o/n obligatoire).
   -Port <numero>   Port du bureau (defaut : 4317 ou valeur existante).
   -HerdrChemin <fichier>  Chemin de herdr.exe si absent du PATH.
   -SansRaccourci   Ne propose pas le raccourci « Ouvrir le bureau ».
@@ -73,11 +73,13 @@ function Dire([string]$texte) { Write-Host $texte }
 function Simuler([string]$texte) { Write-Host "[simulation] $texte" -ForegroundColor Yellow }
 function Noter([string]$texte) { $script:rapport += $texte }
 
-function Confirmer([string]$question) {
+function Confirmer([string]$question, [switch]$Individuel) {
   if ($DryRun) { Simuler "$question o/n : o (simule)"; return $true }
-  if ($Oui) { Dire "$question o/n : o (accepte automatiquement)"; return $true }
+  if ($Oui -and -not $Individuel) { Dire "$question o/n : o (accepte automatiquement)"; return $true }
   while ($true) {
-    $reponse = (Read-Host "$question (o/n)").Trim().ToLower()
+    $saisie = Read-Host "$question (o/n)"
+    if ($null -eq $saisie) { return $false }
+    $reponse = $saisie.Trim().ToLower()
     if ($reponse -match '^(o|oui)$') { return $true }
     if ($reponse -match '^(n|non)$') { return $false }
     Dire 'Repondez par o ou par n.'
@@ -147,14 +149,22 @@ Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
 Dire '--- 2. Herdr (gestionnaire de terminaux) ---'
+function Resoudre-Herdr([string]$chemin) {
+  $fichier = Get-Item -LiteralPath $chemin -ErrorAction SilentlyContinue
+  if (-not $fichier -or $fichier.PSIsContainer -or $fichier.Extension -ine '.exe') {
+    throw 'Le chemin Herdr doit designer un fichier executable .exe existant.'
+  }
+  return (Resolve-Path -LiteralPath $fichier.FullName -ErrorAction Stop).ProviderPath
+}
+
 function Chercher-Herdr {
-  if ($HerdrChemin -ne '' -and (Test-Path $HerdrChemin)) { return $HerdrChemin }
-  $commande = Get-Command herdr -ErrorAction SilentlyContinue
-  if ($commande) { return $commande.Source }
+  if ($HerdrChemin -ne '') { return Resoudre-Herdr $HerdrChemin }
+  $commande = Get-Command herdr -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($commande) { return Resoudre-Herdr $commande.Source }
   $dossier = Join-Path $env:USERPROFILE '.herdr\packages'
   if (Test-Path $dossier) {
-    $trouve = Get-ChildItem -Path $dossier -Filter 'herdr.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($trouve) { return $trouve.FullName }
+    $trouve = Get-ChildItem -LiteralPath $dossier -File -Filter 'herdr.exe' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($trouve) { return Resoudre-Herdr $trouve.FullName }
   }
   return $null
 }
@@ -178,7 +188,7 @@ if ($herdrTrouve) {
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd'
   Dire '  Puis documentation complete : https://herdr.dev/docs/install/'
-  if (Confirmer 'Installer Herdr maintenant avec la commande officielle ci-dessus ?') {
+  if (Confirmer 'Installer Herdr maintenant avec la commande officielle ci-dessus ?' -Individuel) {
     try {
       Executer 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' {
         powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"
@@ -323,7 +333,7 @@ if (Confirmer 'Veux-tu voir la liste des extensions proposees pour ce projet ?')
     Noter 'Extensions : ignorees (VS Code absent).'
   } else {
     foreach ($ext in $extensions) {
-      if (Confirmer "Installer l'extension $($ext.nom) ($($ext.id)) ?") {
+      if (Confirmer "Installer l'extension $($ext.nom) ($($ext.id)) ?" -Individuel) {
         try {
           Executer "Installation de $($ext.id) avec code --install-extension." { & $vscode.Source --install-extension $ext.id }
           Noter "Extension $($ext.id) : installee."
@@ -386,7 +396,7 @@ if (-not $SansRaccourci) {
   }
   if ($choixLanceur -eq 'herdr') {
     $cible = $herdrTrouve
-    if (-not $cible) { $cible = (Get-Command herdr -ErrorAction SilentlyContinue).Source }
+    if (-not $cible) { $cible = Chercher-Herdr }
     if (-not $cible) {
       Dire 'Herdr est introuvable : le raccourci Herdr est ignore.'
       Noter 'Raccourci : Herdr absent.'

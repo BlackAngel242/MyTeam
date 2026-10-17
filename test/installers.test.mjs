@@ -18,11 +18,11 @@ async function textes() {
   return { ps1: await readFile(ps1, 'utf8'), sh: await readFile(sh, 'utf8') };
 }
 
-test('les deux installeurs annoncent simulation, acceptation totale et aide', async () => {
+test('les deux installeurs annoncent simulation, option oui et aide', async () => {
   const { ps1: t1, sh: t2 } = await textes();
   for (const [nom, texte] of [['installer.ps1', t1], ['installer.sh', t2]]) {
     assert.match(texte, /DryRun|dry-run/, `${nom} : mode simulation`);
-    assert.match(texte, /Oui|--oui|OUI=/, `${nom} : mode acceptation totale`);
+    assert.match(texte, /Oui|--oui|OUI=/, `${nom} : option oui`);
     assert.match(texte, /Aide|--aide/, `${nom} : aide`);
     assert.match(texte, /\(o\/n\)/, `${nom} : confirmation o/n`);
     assert.ok(!texte.includes('—'), `${nom} : pas de tiret cadratin`);
@@ -94,7 +94,14 @@ test('syntaxe PowerShell de installer.ps1 (parse seul, sans exécution)', async 
   const binaire = existsSync('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe')
     ? 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe' : 'C:\\Program Files\\PowerShell\\7\\pwsh.exe';
   const script = `$t=[IO.File]::ReadAllText('${ps1.replace(/'/g, "''")}'); $e=$null; [void][System.Management.Automation.Language.Parser]::ParseInput($t,[ref]$null,[ref]$e); if($e.Count -gt 0){ $e | ForEach-Object { $_.Message }; exit 1 }`;
-  const { stdout } = await execute(binaire, ['-NoProfile', '-Command', script], { windowsHide: true, timeout: 30000 });
+  let stdout;
+  try {
+    ({ stdout } = await execute(binaire, ['-NoProfile', '-Command', script], { windowsHide: true, timeout: 30000 }));
+  } catch (erreur) {
+    if (erreur.code !== 'EPERM' && erreur.code !== 'EACCES') throw erreur;
+    t.skip('PowerShell bloqué par les droits de cette machine');
+    return;
+  }
   assert.equal(stdout.trim(), '', 'aucune erreur de syntaxe PowerShell');
 });
 
@@ -113,6 +120,10 @@ test('syntaxe bash de installer.sh (bash -n seul, sans exécution)', async t => 
       return;
     } catch (erreur) {
       const texte = `${erreur.stderr || ''} ${erreur.message}`;
+      if (erreur.code === 'EPERM' || erreur.code === 'EACCES' || /CreateFileMapping|WSL\/Service\/E_ACCESSDENIED/i.test(texte)) {
+        t.skip('Bash bloqué par les droits de cette machine');
+        return;
+      }
       if (/No such file|cannot open|Aucun fichier/i.test(texte)) continue;  // mauvais interpréteur : on tente le suivant
       assert.fail(`${binaire} refuse installer.sh : ${texte}`);
     }
