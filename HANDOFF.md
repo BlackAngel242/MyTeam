@@ -58,6 +58,14 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
   - D7 : Écran d'accueil de poste invitant à la sélection directe dès l'ouverture.
   - D8 : Adaptation responsive mobile soignée et validée à 390 et 360 px sans débordement horizontal.
 
+## Deuxième revue de Codex traitée (17 octobre 2026, après 0.3.0)
+
+- Les 11 constats de `docs/revue-codex-interface-2.md` sont corrigés (détail dans la section « Non publié » de `CHANGELOG.md`). 177 tests, 175 réussis, 2 ignorés.
+- Vérifications Playwright sur états simulés dans le scratchpad de Claude (`pw/revue2*.mjs`) ; G2 confirmé sans interception sur le vrai serveur par l'essai d'OpenCode (`%TEMP%/opencode/essai-g2`).
+- Après tout changement de `server.mjs` : redémarrer le processus qui écoute sur 4317, sinon l'ancien code reste servi.
+- Codex est au repos (quota bas, 19 % le 17 octobre) : ne pas lui confier de mission avant sa remise à zéro. OpenCode reprend ses fichiers si besoin.
+- Non vérifié : notifications Windows réelles page cachée (le délai réel dépend du navigateur), lecteur d'écran sur la palette.
+
 ## Préparation à la publication GitHub et prochaines étapes
 
 1. Fichiers maintenus par Antigravity :

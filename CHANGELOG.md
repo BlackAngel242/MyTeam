@@ -12,7 +12,11 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 - Précision du libellé des limites de quota (M3) : une fenêtre de 24 heures affiche désormais « 24 h » au lieu de « hebdomadaire », et seules les limites réellement épuisées (100 %) sont retenues pour déterminer l'heure de reprise.
 - Distribution des scripts statiques (M4) : le serveur HTTP local expose désormais les routes statiques sécurisées pour `/sounds.js` et `/empty-icons.js`.
 - Respect de la réduction des mouvements (M8) : la préférence système `prefers-reduced-motion` fige la scène animée par défaut sans choix manuel préalable, tout en maintenant un rafraîchissement d'une fois par minute pour actualiser l'heure, le soleil et l'éclairage.
-- Hauteur du terminal agrandi sur écran mobile (M9) : le bouton « Agrandir » applique une règle prioritaire garantissant un réel gain de hauteur d'affichage (jusqu'à 62 % de l'écran) sur téléphone.
+- Hauteur du terminal agrandi sur écran mobile (M9) : le bouton « Agrandir » applique une règle prioritaire garantissant un réel gain de hauteur d'affichage (entre 62 et 80 % de l'écran, avec défilement interne qui suit la dernière ligne) sur téléphone.
+- Palette de commandes réellement modale (M1) : fond inerte, Tab contenu dans la palette, focus rendu au déclencheur ou à l'onglet ouvert ; Échap ne ferme qu'une couche à la fois (palette, puis Disposer, puis aide) ; les flèches de Disposer ne détournent plus celles des onglets et des listes ; l'aide de première visite ne s'ouvre plus si une action a déjà commencé.
+- Notifications en arrière-plan (M5) : quand les notifications Windows sont activées, l'état des agents est encore relu toutes les 15 secondes page cachée, sans animer la scène. Le navigateur peut espacer ces relectures.
+- Rafraîchissements stables (M6) : invitation, file d'attente et tâches ne sont redessinées que si leur contenu change, le bouton focalisé est conservé, une même panne n'est annoncée qu'une fois, et une réponse lente ne remplace plus une lecture plus récente.
+- Mémoire bornée (M7) : 30 courriers gardés en détail (le compteur couvre toute la session), 500 identifiants de délégations vus au plus, caches des agents disparus purgés.
 
 ## [0.3.0] - 17 octobre 2026
 

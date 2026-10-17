@@ -28,3 +28,6 @@
 - Commiter uniquement ses propres fichiers (`git add <chemins>`), jamais `git add -A` : un commit d'OpenCode a embarqué une modification en cours de Claude dans public/app.js. Le hook l'a vérifiée, mais l'historique attribue le travail au mauvais auteur.
 - Après un redémarrage d'un agent (OpenCode), vérifier que ses missions en cours ont bien abouti dans le dossier principal : un redémarrage peut perdre la consigne ou laisser le travail dans un worktree.
 - La police pixel n'a pas tous les signes : « · » s'affiche « ? ». Utiliser le tiret dans les textes de la scène.
+- Un correctif serveur n'est vérifié qu'après redémarrage du processus du port 4317 : l'essai G2 d'OpenCode échouait parce que le serveur tournait encore avec le code d'avant le commit. Comparer l'heure de démarrage du processus à celle du commit.
+- Une hauteur `max-height:none` sur un `pre` qui défile fait grandir la page entière (2471 px) au lieu du terminal : toujours borner la hauteur agrandie pour garder le défilement interne.
+- Edge ne rend pas tout de suite le focus à `body` quand on masque l'élément focalisé : tester `conteneur.contains(document.activeElement)` et pas seulement `activeElement === body`.

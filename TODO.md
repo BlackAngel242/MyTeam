@@ -55,7 +55,8 @@
 - [x] Synthèse des 8 innovations pour l'OS d'agents (`docs/idees-os.md`).
 - [x] Guide d'aide complet et fidèle à l'interface réelle (`docs/aide.md`).
 - [ ] Détection automatique des ordres de délégation (`src/delegations.mjs`, en cours par OpenCode).
-- [ ] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, en cours par OpenCode).
+- [x] Deuxième revue de Codex (`docs/revue-codex-interface-2.md`) : G1, G2, M1 à M9 corrigés et vérifiés.
+- [x] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, terminée par OpenCode).
 - [ ] Scripts d'installation automatique (`scripts/`, en cours par OpenCode).
 - [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.

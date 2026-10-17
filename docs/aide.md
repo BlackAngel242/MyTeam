@@ -216,7 +216,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 - Contient la visite guidée en 5 étapes, les légendes visuelles et les boutons de contrôle des signaux.
 
 #### Signaux : Sons 8 bits et notifications Windows
-- Bouton « Notifications Windows » : active les notifications système quand la page est en arrière-plan (agent attendant une réponse, fin de mission, pause de limite).
+- Bouton « Notifications Windows » : active les notifications système quand la page est en arrière-plan (agent attendant une réponse, fin de mission, pause de limite). Page cachée, le bureau relit alors l'état des agents toutes les 15 secondes ; le navigateur peut espacer ces relectures.
 - Bouton « Sons » : active les signaux sonores synthétisés en Web Audio 8 bits (`public/sounds.js`), courts et discrets (< 0,6 s, volume bas), pour les mêmes événements et les délégations.
 - Le choix d'activation reste mémorisé localement dans votre navigateur (`bureau.sons`).
 
@@ -231,7 +231,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Scène** | Clic sur un personnage | Ouvre son poste individuel (fait défiler sur mobile). |
 | **Scène** | Clic sur la pile de courrier | Ouvre l'onglet Équipe et la section Courrier du chef. |
 | **Scène** | Bouton « Disposer » | Active la réorganisation manuelle des bureaux. |
-| **Scène** | Touche `Échap` | Quitte le mode « Disposer », ferme la palette ou l'aide. |
+| **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la palette d'abord, puis le mode « Disposer », puis l'aide. |
 | **Scène** | Bouton « Plein écran » | Agrandit la scène et le panneau dans une vue unifiée. |
 | **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations du canvas (figée, la scène suit l'heure chaque minute). |
 | **Navigation**| `Flèche droite` / `Flèche gauche` | Passe d'un onglet à l'autre (Poste, Équipe, Fichiers, Tâches). |
