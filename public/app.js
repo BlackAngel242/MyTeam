@@ -13,7 +13,8 @@ const labels = { idle:'Disponible', done:'Terminé', busy:'Au travail', working:
 const label = a => labels[a.status] || 'État inconnu';
 const tint = a => ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
 const activeAgent = () => state.agents.find(a => a.id === selected);
-const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].includes(a.status));
+// Un agent en pause de limite ne peut pas répondre : pas d'envoi direct, seulement la file d'attente.
+const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].includes(a.status) && !quotaPause(a));
 async function request(url, options = {}) {
   // Délais au moins égaux au pire cas du serveur (liste puis lecture Herdr) pour ne pas abandonner une réponse en route.
   const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:30000), cache:'no-store' });
@@ -59,7 +60,7 @@ function renderAgents() {
   $('detail-avatar').style.color=a?colors[state.agents.indexOf(a)%colors.length]:'#a0dfc4';
   const avatarLogo=a&&logoCanvas(a);
   if(avatarLogo)$('detail-avatar').replaceChildren(avatarLogo);else if(!$('detail-avatar').querySelector('svg'))$('detail-avatar').replaceChildren(defaultAvatar.cloneNode(true));
-  $('agent-meta').hidden=!a;
+  $('agent-info').hidden=!a;
   if(a){$('agent-kind').textContent=a.kind||'Non précisé';$('agent-pane').textContent=a.paneId||'Non précisé';$('agent-cwd').textContent=a.cwd||'Non précisé';}
   renderActivity(a);renderStatusbar(a);updateForm();renderBroadcast();renderSummary();
 }
@@ -84,7 +85,7 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe')loadQueue();
+  if(name==='equipe'){loadQueue();if(mailCount){mailCount=0;draw(lastFrame);}}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
@@ -520,9 +521,17 @@ const glyphs={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110
 const off=document.createElement('canvas'), g=off.getContext('2d');
 let hovered=null, ariaText='', lastFrame=0, layoutKey='', boardBottom=0;
 const lastStatus=new Map(), changes=new Map();
+const pausedSeen=new Set();
 function trackChanges(){
   const now=performance.now();
-  for(const a of state.agents){const prev=lastStatus.get(a.id);if(prev&&prev!==a.status)changes.set(a.id,{from:prev,to:a.status,at:now});lastStatus.set(a.id,a.status);}
+  for(const a of state.agents){
+    const prev=lastStatus.get(a.id);
+    if(prev&&prev!==a.status){changes.set(a.id,{from:prev,to:a.status,at:now});if(WAIT.includes(a.status))signal('blocked',a.name+' attend ta réponse','Ouvre son poste dans le bureau pour lui répondre dans Herdr.');}
+    lastStatus.set(a.id,a.status);
+    const p=quotaPause(a);
+    if(p&&!pausedSeen.has(a.id)){pausedSeen.add(a.id);if(prev)signal('pause',a.name+' est en pause de limite',p.until?'Retour annoncé à '+hhmm(p.until)+', relance prévue 5 minutes après.':'Heure de retour non annoncée.');}
+    else if(!p)pausedSeen.delete(a.id);
+  }
 }
 const hash=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.codePointAt(0),16777619);return h>>>0;};
 const rng=seed=>()=>(seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
@@ -746,7 +755,8 @@ function station(a,i,cx,y0,time,L){
     const p=fit('EN PAUSE'+(pause.until?' '+hhmm(pause.until):''),max);text(p,cx-textWidth(p)/2,y0+67,'#b5a8e6');
   }else text(status,cx-textWidth(status)/2,y0+67,state.connected?c:'#71839a');
   if(chosen)px(cx-9,y0+74,18,1,'#a0dfc4');
-  spots.push({x:(cx-L.cw/2)*L.S,y:y0*L.S,w:L.cw*L.S,h:L.rowH*L.S,id:a.id});
+  if(a===L.boss&&vipRect)spots.push({x:vipRect.x*L.S,y:vipRect.y*L.S,w:vipRect.w*L.S,h:vipRect.h*L.S,id:a.id});
+  else spots.push({x:(cx-L.cw/2)*L.S,y:y0*L.S,w:L.cw*L.S,h:L.rowH*L.S,id:a.id});
 }
 // Sous-agents mis en scène. Seuls deux faits réels pilotent tout : l'apparition d'un sous-agent actif
 // dans le journal de son agent, puis sa disparition. Le chef remet un dossier, l'assistant part en salle de réflexion,
@@ -905,6 +915,7 @@ function syncOffice(L,now){
     const t=agentByTarget(d.target);
     if(!officeBooted||paused||!t||t===L.boss)continue;
     officeActors.set('deleg|'+d.id,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
+    signal('delegation',null);
   }
   for(const a of state.agents){
     if(a===L.boss)continue;
@@ -915,6 +926,7 @@ function syncOffice(L,now){
     if(!officeBooted)continue;
     const deleg=(L.boss.delegations||[]).filter(d=>agentByTarget(d.target)===a).at(-1);
     mailLog.unshift({agentId:a.id,name:a.name,at:new Date(),from:c.from,to:c.to,title:deleg?.title||null});renderMail();
+    signal('mail',a.name+' a terminé',(deleg?.title?'Tâche : '+deleg.title+'. ':'')+'Résultat à vérifier dans ses sorties.');
     if(!paused)officeActors.set(key,{type:'mail',agent:a.id,t0:now});else mailCount++;
   }
   officeBooted=true;
@@ -988,7 +1000,7 @@ const spotAt=event=>{
 const onMail=event=>{if(!mailSpot)return false;const p=toLogical(event);return p.x>=mailSpot.x&&p.x<=mailSpot.x+mailSpot.w&&p.y>=mailSpot.y&&p.y<=mailSpot.y+mailSpot.h;};
 canvas.addEventListener('click',event=>{
   if(editLayout)return;
-  if(onMail(event)){showTab('equipe');$('mailbox').scrollIntoView({block:'start'});$('mailbox').classList.remove('flash');void $('mailbox').offsetWidth;$('mailbox').classList.add('flash');return;}
+  if(onMail(event)){mailCount=0;draw(lastFrame);showTab('equipe');$('mailbox').scrollIntoView({block:'start'});$('mailbox').classList.remove('flash');void $('mailbox').offsetWidth;$('mailbox').classList.add('flash');return;}
   const spot=spotAt(event);if(spot)selectAgent(spot.id);
 });
 let vipRect=null,lastLayout=null;
@@ -1023,7 +1035,17 @@ function syncLayoutEdit(){
 }
 $('layout-edit').addEventListener('click',()=>{editLayout=!editLayout;syncLayoutEdit();});
 $('layout-reset').addEventListener('click',()=>{custom={stations:{},vip:null};saveLayout();draw(lastFrame);});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();}});
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
+  // Disposer au clavier : les flèches déplacent le poste sélectionné (Maj pour un grand pas).
+  if(!editLayout||!lastLayout||!/^Arrow/.test(e.key)||/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||''))return;
+  const a=activeAgent(),L=lastLayout,f=floorBox(L),step=e.shiftKey?10:2,d=a&&deskSpots.get(a.id);if(!d)return;
+  e.preventDefault();
+  const dx={ArrowLeft:-step,ArrowRight:step}[e.key]||0,dy={ArrowUp:-step,ArrowDown:step}[e.key]||0;
+  if(a===L.boss&&vipRect)custom.vip={fx:(vipRect.x+vipRect.w/2+dx)/L.W,fy:(vipRect.y+dy-f.top)/f.h,fw:vipRect.w/L.W,fh:vipRect.h/f.h};
+  else custom.stations[layoutKeyOf(a)]={fx:(d.cx+dx)/L.W,fy:(d.y0+dy-f.top)/f.h};
+  saveLayout();draw(lastFrame);
+});
 canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';canvas.title=mail?'Courrier du chef : voir qui a terminé':'';if(id!==hovered){hovered=id;draw(lastFrame);}});
 canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFrame);}});
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
@@ -1033,6 +1055,26 @@ document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.full
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+'Bureau des agents · DrSmoke';if(document.title!==title)document.title=title;}
 function frame(time){if(!paused&&time-lastFrame>80){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+// Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
+const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
+function signal(kind,title,body){
+  if(window.BureauSounds?.enabled)try{window.BureauSounds.play(kind);}catch{}
+  if(!title||prefs.get('bureau.notifs')!=='on'||typeof Notification==='undefined'||Notification.permission!=='granted'||!document.hidden)return;
+  try{const n=new Notification(title,{body,tag:'bureau-'+kind});n.onclick=()=>{focus();n.close();};}catch{}
+}
+function syncSignals(){
+  const notif=prefs.get('bureau.notifs')==='on'&&typeof Notification!=='undefined'&&Notification.permission==='granted';
+  $('notif-toggle').setAttribute('aria-pressed',String(notif));$('notif-toggle').textContent='Notifications Windows : '+(notif?'activées':typeof Notification!=='undefined'&&Notification.permission==='denied'?'refusées par le navigateur':'désactivées');
+  const snd=Boolean(window.BureauSounds?.enabled);$('sound-toggle').setAttribute('aria-pressed',String(snd));$('sound-toggle').textContent=window.BureauSounds?'Sons : '+(snd?'activés':'désactivés'):'Sons : module absent';$('sound-toggle').disabled=!window.BureauSounds;
+}
+$('notif-toggle').addEventListener('click',async()=>{
+  if(typeof Notification==='undefined')return;
+  if(prefs.get('bureau.notifs')==='on')prefs.set('bureau.notifs','off');
+  else if((await Notification.requestPermission())==='granted')prefs.set('bureau.notifs','on');
+  syncSignals();
+});
+$('sound-toggle').addEventListener('click',()=>{if(!window.BureauSounds)return;window.BureauSounds.setEnabled(!window.BureauSounds.enabled);if(window.BureauSounds.enabled)window.BureauSounds.play('mail');syncSignals();});
+syncSignals();
 // Aide : panneau latéral, ouvert seul à la première visite, puis par le bouton ou la touche « ? ».
 function toggleHelp(open=$('help').hidden){
   $('help').hidden=!open;$('help-open').setAttribute('aria-expanded',String(open));

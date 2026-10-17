@@ -209,6 +209,18 @@ button.file-main{cursor:pointer}.file-main:hover{background:#15233a}
   .term-tools{flex-wrap:wrap}.term-tools input{flex-basis:100%}
   .page-footer{margin:0 16px;flex-direction:column;gap:4px}
 }
+/* Alerte intégrée à la barre de la scène, informations du poste repliables. */
+.office-top .attention{flex:1;min-width:0;margin:0 6px;padding:4px 4px 4px 10px;border-radius:8px;gap:8px}
+.office-top .attention svg{width:16px;height:16px}
+.office-top .attention p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.office-top .attention button{min-height:28px;padding:5px 10px;font-size:11.5px;white-space:nowrap}
+.office-top .attention:not([hidden])~.office-tools #office-count{display:none}
+.agent-info{margin:0 0 18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.agent-info summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:12px;color:var(--muted)}
+.agent-info summary::-webkit-details-marker{display:none}
+.agent-info summary::after{content:"+";font-size:15px;color:var(--muted)}.agent-info[open] summary::after{content:"−"}
+.agent-info summary:hover{color:var(--text)}
+.agent-info .agent-meta{border:0;margin:0;padding:0 0 10px}
 kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px;border:1px solid #3a4c65;border-bottom-width:2px;border-radius:5px;color:#d5e2f1;background:#0f1a2c}
 .icon-button kbd{margin-left:2px;opacity:.8}
 #send.queue-mode{background:#b5a8e6;color:#1d1636}#send.queue-mode:hover:enabled{background:#cdc3f2}
@@ -243,6 +255,7 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px;border:1
 .dot.working{background:var(--blue)}.dot.waiting{background:var(--amber)}.dot.idle{background:var(--mint)}.dot.paused{background:#b5a8e6}
 .help-keys{border-collapse:collapse;width:100%}.help-keys td{padding:6px 0;border-bottom:1px solid #1d2b40;vertical-align:top}.help-keys td:first-child{width:140px;white-space:nowrap}
 .help-foot{color:var(--muted);font-size:12px;margin-top:16px}
+.help-toggles{display:flex;flex-wrap:wrap;gap:6px}.help-toggles .tool-button[aria-pressed="true"]{border-color:var(--mint);color:var(--mint)}
 
 /* Palette de commandes */
 .palette-backdrop{position:fixed;inset:0;z-index:30;background:#050a14b3;display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 0}
@@ -274,5 +287,20 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px;border:1
   .tabs{position:sticky;top:0;z-index:2;background:var(--bg);box-shadow:0 6px 10px -6px #0c1423}
   pre{min-height:200px;max-height:42vh}
   .page-footer{flex:none;margin:0 24px;padding:6px 0 8px}
+  /* Gains de place (revue de Codex) : légende dans l'aide, cartes d'une ligne, en-tête sur une ligne. */
+  .office-bottom{display:none}
+  .chips{order:0;width:auto;margin:0 0 0 8px}
+  .team-heading{margin:8px 0 5px}.team-heading h2{font-size:13px}
+  .agent-button{min-height:40px;padding:6px 10px;gap:8px}
+  .agent-button>span:last-child{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .agent-status{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .agent-logo{width:22px;height:22px}
+  .read-note{margin:6px 0 16px}
+}
+@media(min-width:1100px) and (max-width:1380px) and (min-height:620px){
+  .brand-sub{display:none}
+  .top-actions .icon-button span,.top-actions .icon-button kbd{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .top-actions .icon-button{padding:8px;min-width:40px}
+  .topbar{gap:14px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
