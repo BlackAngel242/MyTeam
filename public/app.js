@@ -596,7 +596,8 @@ const glyphs={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110
 const off=document.createElement('canvas'), g=off.getContext('2d');
 let hovered=null, ariaText='', lastFrame=0, layoutKey='', boardBottom=0;
 const lastStatus=new Map(), changes=new Map();
-const pausedSeen=new Set();
+// Départs et retours de pause de quota : déclenchés seulement par un passage observé, jamais au chargement.
+const pausedSeen=new Set(),quotaTrips=new Map();
 function trackChanges(){
   const now=performance.now();
   for(const a of state.agents){
@@ -604,8 +605,8 @@ function trackChanges(){
     if(prev&&prev!==a.status){changes.set(a.id,{from:prev,to:a.status,at:now});if(WAIT.includes(a.status))signal('blocked',a.name+' attend ta réponse','Ouvre son poste dans le bureau pour lui répondre dans Herdr.');}
     lastStatus.set(a.id,a.status);
     const p=quotaPause(a);
-    if(p&&!pausedSeen.has(a.id)){pausedSeen.add(a.id);if(prev)signal('pause',a.name+' est en pause de limite',p.until?'Retour annoncé à '+hhmm(p.until)+', relance prévue 5 minutes après.':'Heure de retour non annoncée.');}
-    else if(!p)pausedSeen.delete(a.id);
+    if(p&&!pausedSeen.has(a.id)){pausedSeen.add(a.id);if(prev&&!paused)quotaTrips.set(a.id,{dir:'out',t0:now,h:hash(a.id)});if(prev)signal('pause',a.name+' est en pause de limite',p.until?'Retour annoncé à '+hhmm(p.until)+', relance prévue 5 minutes après.':'Heure de retour non annoncée.');}
+    else if(!p&&pausedSeen.has(a.id)){pausedSeen.delete(a.id);if(!paused)quotaTrips.set(a.id,{dir:'in',t0:now,h:hash(a.id)});}
   }
 }
 const hash=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.codePointAt(0),16777619);return h>>>0;};
@@ -843,7 +844,7 @@ function station(a,i,cx,y0,time,L){
   px(cx-25,y0+55,50,3,'#0a1322',.55);
   px(cx-3,y0+15,16,16,'#22324f');px(cx-2,y0+16,14,14,'#2a3c5e');
   const pause=live&&quotaPause(a);
-  const pose=pause?'sleep':work?'work':wait?'wait':st==='done'&&live?'happy':'rest',x=cx-1,away=a&&(awayAgents.has(a.id)||Boolean(pause));
+  const pose=pause?'sleep':work?'work':wait?'wait':st==='done'&&live?'happy':'rest',x=cx-1,away=a&&(awayAgents.has(a.id)||Boolean(pause)||quotaTrips.get(a.id)?.dir==='in');
   const skin=a&&!away?person(x,y0,shirt,h,pose,c,live):null;
   px(cx-24,y0+30,48,3,'#7a604f');px(cx-24,y0+30,48,1,'#957660');px(cx-24,y0+33,48,18,'#4a3a3c');px(cx-23,y0+34,46,1,'#55434a');
   px(cx-22,y0+51,3,4,'#3a2e33');px(cx+19,y0+51,3,4,'#3a2e33');
@@ -860,7 +861,7 @@ function station(a,i,cx,y0,time,L){
   }
   monitor(cx-22,y0+15,a,c,live,work,time,anim,h);
   // Lampe de bureau : s'allume le soir pour un agent présent ; éteinte s'il est parti en pause de limite.
-  const lamp=lampLevel(),lampOn=live&&!pause&&lamp>.02;
+  const lamp=lampLevel(),lampOn=live&&!away&&lamp>.02;
   px(cx+19,y0+29,5,1,'#2a3247');px(cx+21,y0+22,1,7,'#3a4560');px(cx+18,y0+20,7,2,lampOn?'#e8c47e':'#4a5570');
   if(lampOn){px(cx+19,y0+22,5,1,'#fff1c9',.6+.4*lamp);glow(cx+12,y0+31,16,'#ffd89a',1.3*lamp);}
   if(a&&live){if(wait)bubble(cx+12,y0,'wait',anim,time);else if(st==='done')bubble(cx+12,y0,'done',anim,time);else if(!work&&!free)bubble(cx+12,y0,'unknown',anim,time);}
@@ -879,7 +880,10 @@ function station(a,i,cx,y0,time,L){
     px(cx-21,y0+16,15,10,'#070d18');
     const glowOn=paused||Math.floor(time/900)%2===0;px(cx-8,y0+27,1,1,'#b5a8e6',glowOn?1:.35);
     px(cx+1,y0+15,27,15,'#0b1426');px(cx+2,y0+16,25,13,'#dfe6ee');px(cx+5,y0+29,2,2,'#7a604f');px(cx+22,y0+29,2,2,'#7a604f');
-    text('RETOUR',cx+3,y0+17,'#0c1423');text(pause.until?hhmm(pause.until):'??:??',cx+5,y0+23,'#5b4a9e');
+    // Le chevalet alterne l'heure de retour annoncée et le temps restant, recalculé sur l'heure du poste.
+    const left=pause.until?Math.max(0,Math.round((pause.until-Date.now())/60000)):null,showLeft=left!=null&&!paused&&Math.floor(time/3000)%2===1;
+    const sign=showLeft?(left<60?left+'MIN':Math.floor(left/60)+'H'+String(left%60).padStart(2,'0')):pause.until?hhmm(pause.until):'??:??';
+    text(showLeft?'DANS':'RETOUR',cx+2+Math.floor((25-textWidth(showLeft?'DANS':'RETOUR'))/2),y0+17,'#0c1423');text(sign,cx+2+Math.floor((25-textWidth(sign))/2),y0+23,'#5b4a9e');
   }
   // Proposition P2 d'OpenCode : le nom seul sous le bureau, souligné de la couleur d'état. Hors ligne, on le dit.
   if(!state.connected)text(status,cx-textWidth(status)/2,y0+67,'#71839a');
@@ -1132,6 +1136,23 @@ function drawOffice(L,vip,time,now){
     walkingHelper(Math.round(p.x),Math.round(p.y),hash(L.boss.id),p.moving,time,returning?null:'aller',colors[Math.max(0,state.agents.indexOf(L.boss))%colors.length]);
   }
 }
+// Pause de quota : l'agent éteint son écran et quitte le bureau par la gauche, batterie vide ;
+// au retour observé, il revient batterie pleine et se rassoit. Scène en pause : pas de trajet.
+function drawQuotaTrips(L,time,now){
+  for(const [id,trip] of quotaTrips){
+    const d=deskSpots.get(id),a=state.agents.find(x=>x.id===id);
+    if(!d||!a||paused){quotaTrips.delete(id);continue;}
+    const stand=[d.cx+29,d.y0+55],lane=L.roomY-3,path=[stand,[stand[0],lane],[-8,lane]];
+    const p=walk(trip.dir==='out'?path:[...path].reverse(),now-trip.t0,30+(trip.h%6));
+    if(p.done){quotaTrips.delete(id);continue;}
+    const x=Math.round(p.x),y=Math.round(p.y);
+    walkingHelper(x,y,trip.h,p.moving,time,null,colors[Math.max(0,state.agents.indexOf(a))%colors.length]);
+    // Batterie au-dessus de la tête : vide au départ, pleine au retour.
+    const full=trip.dir==='in',bx=x-4,by=y-32;
+    px(bx,by,8,5,'#0b1426');px(bx+8,by+1,1,3,'#0b1426');px(bx+1,by+1,6,3,'#1a2740');
+    px(bx+1,by+1,full?6:1,3,full?'#a0dfc4':'#ff8a7a');
+  }
+}
 function draw(time){
   const L=layout(),key=L.W+'x'+L.H+'@'+L.S,now=performance.now();
   if(key!==layoutKey){layoutKey=key;off.width=L.W;off.height=L.H;canvas.width=L.W*L.S;canvas.height=L.H*L.S;canvas.parentElement.style.aspectRatio=L.W+' / '+L.H;}
@@ -1152,7 +1173,7 @@ function draw(time){
   });
   syncActors(L,now);syncOffice(L,now);
   drawActors(L,G,time,now,'back');if(roomOpen())tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');
-  drawOffice(L,vip,time,now);
+  drawOffice(L,vip,time,now);drawQuotaTrips(L,time,now);
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(off,0,0,canvas.width,canvas.height);
   const summary=!state.connected?'Bureau hors ligne : Herdr est déconnecté.':!state.agents.length?'Bureau vide : aucun agent détecté dans Herdr.':'Bureau des agents. '+state.agents.map(a=>a.name+' : '+label(a).toLowerCase()).join(', ')+'. Utilise la liste sous le bureau pour sélectionner un agent.';
   if(summary!==ariaText){ariaText=summary;canvas.setAttribute('aria-label',summary);}
