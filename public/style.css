@@ -152,15 +152,16 @@ form>p,.broadcast>p{color:var(--muted);font-size:12px;min-height:16px;margin:8px
 @keyframes flash{from{box-shadow:0 0 0 2px var(--mint)}to{box-shadow:0 0 0 2px transparent}}
 .mail-list{list-style:none;margin:0;padding:0;font-size:12px;max-height:260px;overflow:auto}
 .mail-list .mail{display:grid;gap:3px;padding:10px 0;border-bottom:1px solid #1d2b40;justify-items:start}
-.mail-list .mail .log-head{color:var(--mint)}.mail-list .mail .log-why{color:var(--muted)}
+.mail-list .mail .log-head{color:var(--mint);text-align:left}.mail-list .mail .log-why{color:var(--muted);text-align:left}
+.mail-list .mail .log-body{display:block;width:100%;text-align:left}
 .mail-list .tool-button{margin-top:4px;min-height:30px}
 .send-log-section{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .send-log-section h3{font-size:15px;font-weight:550;margin:0 0 10px}
 .send-log{list-style:none;margin:0;padding:0;font-size:12px;max-height:320px;overflow:auto}
-.send-log li{display:grid;gap:2px;padding:9px 0;border-bottom:1px solid #1d2b40}
-.log-head{color:var(--muted);font-variant-numeric:tabular-nums}
+.send-log li{display:grid;gap:2px;padding:9px 0;border-bottom:1px solid #1d2b40;justify-items:start}
+.log-head{color:var(--muted);font-variant-numeric:tabular-nums;text-align:left}
 .send-log .sent .log-head{color:var(--mint)}.send-log :is(.refused,.unknown) .log-head{color:var(--amber)}
-.log-body{color:#d5e2f1;overflow-wrap:anywhere}.log-why{color:var(--amber)}
+.log-body{color:#d5e2f1;overflow-wrap:anywhere;display:block;width:100%;text-align:left}.log-why{color:var(--amber);text-align:left}
 
 /* Fichiers : liste façon explorateur, lieux de dépôt pour le glisser-déposer. */
 .files-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
