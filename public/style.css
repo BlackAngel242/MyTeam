@@ -839,5 +839,16 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 }
 .pane-badge,.tab-badge,kbd{font-size:12px}
 
+/* Tableau mural : fenêtre de lecture des fichiers piliers. */
+.board-backdrop{position:fixed;inset:0;z-index:30;background:#050a14b3;display:flex;justify-content:center;align-items:flex-start;padding:8vh 16px 16px}
+.board-box{width:min(760px,100%);max-height:84vh;display:flex;flex-direction:column;background:#0f1a2c;border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 24px 60px -20px #000;overflow:hidden}
+.board-intro{margin:12px 18px 0}
+.board-body{padding:8px 18px 20px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.board-card{background:#132238;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.55;color:#d5e2f1}
+.board-card h3{margin:0 0 2px;font-size:14px;font-weight:600;color:var(--text)}
+.board-card .board-source{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.board-card ul{margin:0;padding-left:18px}.board-card li{margin:0 0 5px}
+.board-card.wide{grid-column:1/-1}
+
 /* Hauteur bornée : le terminal garde son propre défilement et suit la dernière ligne. */
 .term-expanded #output{min-height:min(62vh,62dvh);max-height:min(80vh,80dvh)}

@@ -28,7 +28,10 @@ function errorText(error,context='lecture') {
   // Herdr déconnecté, lecture en panne. Le contexte « envoi » adapte le mot.
   const message=error?.message||'';
   if(error?.status===403||/Session expir/i.test(message)) return 'Session expirée : actualise le bureau avec le bouton Actualiser.';
-  if((typeof state!=='undefined'&&state&&state.connected===false)||error?.status===502||/Herdr/i.test(message)) return 'Herdr est déconnecté ou ne répond plus : '+(context==='envoi'?'la consigne n’a pas été transmise.':'les lectures reprendront quand il reviendra.');
+  // Les messages précis du serveur (agent occupé, envoi peut-être reçu, refus) sont gardés tels quels :
+  // les remplacer par « la consigne n'a pas été transmise » serait faux et pousserait à un double envoi.
+  if(message&&!(error instanceof TypeError)&&error?.name!=='TimeoutError'&&!(error instanceof SyntaxError))return message;
+  if(typeof state!=='undefined'&&state&&state.connected===false)return 'Herdr est déconnecté ou ne répond plus : les lectures reprendront quand il reviendra.';
   const detail=(error.name==='TimeoutError'?'délai dépassé':error instanceof TypeError?'le serveur local ne répond plus, vérifie que le bureau est toujours lancé':error instanceof SyntaxError?'réponse illisible':message||'cause inconnue').replace(/[.\s]+$/,'');
   return (context==='envoi'?'Envoi non abouti : ':'Lecture en panne : ')+detail+'. Réessaie dans un instant.';
 }
@@ -717,6 +720,16 @@ function clock(x,y){
 // Tableau d'équipe : uniquement les comptes réels fournis par Herdr.
 // Tableau de la scène (proposition P1 d'OpenCode) : seulement des faits absents du reste de la scène,
 // les états étant déjà portés par les cartes et les postures. Une ligne s'allume quand son fait est observé.
+// Panneau de liège : ouvre le tableau de l'équipe. Ses notes reflètent le nombre réel de tâches ouvertes.
+let boardSpot=null,boardData=null;
+function cork(x,y){
+  px(x-1,y-1,36,28,'#3a2a20');px(x,y,34,26,'#9a6f45');for(let i=0;i<12;i++){const r=rng(31+i);px(x+2+Math.floor(r()*30),y+2+Math.floor(r()*22),1,1,'#7d5835');}
+  const open=boardData?.todo?Math.max(0,boardData.todo.total-boardData.todo.done):null,notes=open==null?3:Math.min(6,open);
+  const colorsN=['#f4d36b','#a0dfc4','#f2b0c9','#9dbbff'];
+  for(let k=0;k<notes;k++){const nx=x+3+(k%3)*10,ny=y+3+Math.floor(k/3)*11;px(nx,ny,8,8,colorsN[k%4]);px(nx+1,ny+3,6,1,'#5a4a3a',.5);px(nx+1,ny+5,4,1,'#5a4a3a',.5);px(nx+3,ny,2,1,'#c0392b');}
+  if(open!=null&&open>6)text('+',x+29,y+19,'#f2f4f7');
+  boardSpot={x:x-1,y:y-1,w:36,h:28};
+}
 function board(x,y,w){
   const paused=state.agents.map(quotaPause).filter(Boolean),back=paused.map(q=>q.until).filter(Boolean).sort((a,b)=>a-b)[0];
   const waitingQ=queueItems.filter(q=>q.state==='attente').length,subs=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
@@ -759,10 +772,12 @@ function room(L,time){
   for(let y=wallH+3,i=0;y<H;y+=6,i++){px(0,y,W,1,plank);for(let x=i%2?7:27;x<W;x+=40)px(x,y-5,1,5,plank);}
   px(0,wallH,W,1,'#0f1a2c');
   const nightLight=Math.max(0,1-d*1.4);
+  if(narrow)boardSpot=null;
   if(narrow){cityWindow(6,10,58,44);sunbeam(L,6,58,10,44);board(70,10,68);clock(70,44);if(nightLight)glow(35,wallH+8,16,'#9dbbff',.7*nightLight);}
   else{
     cityWindow(8,10,112,50);sunbeam(L,8,112,10,50);if(nightLight)glow(64,wallH+9,26,'#9dbbff',.7*nightLight);
     board(128,12,64);clock(198,12);neon('BUREAU DE DRSMOKE',128,Math.max(50,boardBottom+5),'#a0dfc4');
+    if(W>=352)cork(W-96,14);else boardSpot=null;
     plant(W-52,wallH+4);rack(W-26,16,wallH+6,time);plant(1,wallH+6);
   }
   const v=.12*(1-.6*d);
@@ -1074,7 +1089,7 @@ function syncOffice(L,now){
   officeBooted=true;
 }
 function drawOffice(L,vip,time,now){
-  awayAgents.clear();
+  awayAgents.clear();let bossBusy=false;
   const boss=vip&&deskSpots.get(L.boss.id);
   for(const [key,act] of officeActors){
     const d=deskSpots.get(act.agent);
@@ -1091,19 +1106,23 @@ function drawOffice(L,vip,time,now){
       }
       continue;
     }
-    // Délégation : l'agent quitte son poste, va chercher son dossier chez le chef, puis revient travailler.
-    const stand=[d.cx+29,d.y0+55],door=[boss.cx,vip.doorY+4],bossSpot=[boss.cx-30,boss.y0+55];
-    const there=[stand,[stand[0],door[1]],door,[door[0],bossSpot[1]],[bossSpot[0],bossSpot[1],1600]];
-    const back=[bossSpot,[door[0],bossSpot[1]],door,[stand[0],door[1]],stand];
+    // Délégation observée : le chef se lève, sort de la Direction, porte le dossier jusqu'au poste de l'agent,
+    // le pose sur son bureau, puis revient s'asseoir. Une seule tournée à la fois : les suivantes attendent.
+    if(bossBusy){act.t0=now;continue;}
+    bossBusy=true;
+    const bossSpot=[boss.cx-30,boss.y0+55],door=[boss.cx,vip.doorY+4],stand=[d.cx+29,d.y0+55];
+    const there=[bossSpot,[door[0],bossSpot[1]],door,[stand[0],door[1]],[stand[0],stand[1],1800]];
+    const back=[stand,[stand[0],door[1]],door,[door[0],bossSpot[1]],bossSpot];
     const speed=34+(act.h%8),goT=now-act.t0;
-    let p=walk(there,goT,speed),carrying=false;
-    if(p.done){p=walk(back,goT-act.goDur,speed);carrying=true;}
+    let p=walk(there,goT,speed),returning=false;
+    if(p.done){p=walk(back,goT-act.goDur,speed);returning=true;}
     else act.goDur=goT+1;
-    if(carrying&&p.done){officeActors.delete(key);continue;}
-    awayAgents.add(act.agent);
-    const agent=state.agents.find(x=>x.id===act.agent);
-    walkingHelper(Math.round(p.x),Math.round(p.y),act.h,p.moving,time,carrying?'aller':null,colors[Math.max(0,state.agents.indexOf(agent))%colors.length]);
-    if(p.pause){const bx=boss.cx-36,by=boss.y0+30;px(bx,by,5,4,'#c9a46a');}
+    if(returning&&p.done){officeActors.delete(key);continue;}
+    awayAgents.add(L.boss.id);
+    // Remise : le dossier apparaît sur le bureau de l'agent, avec le titre de la tâche s'il est connu.
+    if(p.pause||returning){px(d.cx+4,d.y0+26,8,5,'#c9a46a');px(d.cx+4,d.y0+26,8,1,'#e0c08a');px(d.cx+5,d.y0+28,5,1,'#8a6a40');}
+    if(p.pause&&act.title){const t=fit(act.title,Math.min(110,L.W-8)),tx=Math.max(2,Math.min(L.W-textWidth(t)-6,d.cx-textWidth(t)/2));px(tx-3,d.y0-3,textWidth(t)+6,9,'#0b1426');text(t,tx,d.y0-1,'#f4d36b');}
+    walkingHelper(Math.round(p.x),Math.round(p.y),hash(L.boss.id),p.moving,time,returning?null:'aller',colors[Math.max(0,state.agents.indexOf(L.boss))%colors.length]);
   }
 }
 function draw(time){
@@ -1142,6 +1161,7 @@ const spotAt=event=>{
 const onMail=event=>{if(!mailSpot)return false;const p=toLogical(event);return p.x>=mailSpot.x&&p.x<=mailSpot.x+mailSpot.w&&p.y>=mailSpot.y&&p.y<=mailSpot.y+mailSpot.h;};
 canvas.addEventListener('click',event=>{
   if(editLayout)return;
+  if(boardSpot){const p=toLogical(event);if(p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h){openBoard();return;}}
   if(onMail(event)){mailCount=0;draw(lastFrame);showTab('equipe');$('mailbox').scrollIntoView({block:'start'});$('mailbox').classList.remove('flash');void $('mailbox').offsetWidth;$('mailbox').classList.add('flash');return;}
   const spot=spotAt(event);if(spot)selectAgent(spot.id);
 });
@@ -1189,7 +1209,7 @@ addEventListener('keydown',e=>{
   else custom.stations[layoutKeyOf(a)]={fx:(d.cx+dx)/L.W,fy:(d.y0+dy-f.top)/f.h};
   saveLayout();draw(lastFrame);
 });
-canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';canvas.title=mail?'Courrier du chef : voir qui a terminé':'';if(id!==hovered){hovered=id;draw(lastFrame);}});
+canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';const onBoard=boardSpot&&(()=>{const p=toLogical(event);return p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h;})();if(onBoard&&!editLayout)canvas.style.cursor='pointer';canvas.title=mail?'Courrier du chef : voir qui a terminé':onBoard?'Tableau de l’équipe':'';if(id!==hovered){hovered=id;draw(lastFrame);}});
 canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFrame);}});
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
 $('fullscreen').hidden=!document.fullscreenEnabled;
@@ -1242,6 +1262,7 @@ function commands(){
   list.push({label:'Message à plusieurs agents',hint:'Équipe',run:()=>{showTab('equipe');setTimeout(()=>$('broadcast-message').focus(),50);}});
   list.push({label:'Courrier du chef',hint:'Équipe',run:()=>{showTab('equipe');$('mailbox').scrollIntoView({block:'start'});}});
   list.push({label:'File d’attente',hint:'Équipe',run:()=>{showTab('equipe');$('queue-list').scrollIntoView({block:'start'});}});
+  list.push({label:'Tableau de l’équipe',hint:'Mémoire partagée',run:()=>setTimeout(openBoard,0)});
   list.push({label:'Tâches du projet et des agents',hint:'Tâches',run:()=>showTab('taches')});
   list.push({label:editLayout?'Terminer la disposition':'Disposer les postes',hint:'Scène',run:()=>{editLayout=!editLayout;syncLayoutEdit();}});
   list.push({label:paused?'Animer le bureau':'Mettre le bureau en pause',hint:'Scène',run:()=>$('motion').click()});
@@ -1264,7 +1285,7 @@ function renderPalette(){
 }
 // Palette modale : fond inerte pendant son ouverture, focus rendu au déclencheur ou à la destination de la commande.
 let paletteTrigger=null;
-const backdrop=()=>[...document.body.children].filter(el=>el!==$('palette')&&el.tagName!=='SCRIPT');
+const backdrop=(keep=$('palette'))=>[...document.body.children].filter(el=>el!==keep&&el.tagName!=='SCRIPT');
 function openPalette(){
   paletteTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
   for(const el of backdrop())el.inert=true;
@@ -1274,6 +1295,45 @@ function closePalette(restore=true){
   $('palette').hidden=true;for(const el of backdrop())el.inert=false;
   if(restore)(paletteTrigger?.isConnected?paletteTrigger:$('palette-open')).focus({preventScroll:true});
 }
+// Tableau de l'équipe : fenêtre modale en lecture seule, alimentée par /api/tableau.
+let boardTrigger=null;
+async function loadBoard(){
+  if(!state.connected||!state.token)return null;
+  try{boardData=await request('/api/tableau',{headers:{'X-Bureau-Token':state.token}});}catch(error){boardData=null;throw error;}
+  return boardData;
+}
+function boardCard(title,source,items,wide){
+  const sec=document.createElement('section');sec.className='board-card'+(wide?' wide':'');
+  const h=document.createElement('h3');h.textContent=title;
+  const f=boardData?.files?.find(x=>x.name===source),src=document.createElement('p');src.className='board-source';
+  src.textContent=source+(f?' · modifié '+ago(f.modified):'');
+  const ul=document.createElement('ul');for(const t of items){const li=document.createElement('li');li.textContent=t;ul.append(li);}
+  sec.append(h,src,items.length?ul:Object.assign(document.createElement('p'),{textContent:'Rien à afficher dans ce fichier.'}));return sec;
+}
+function renderBoard(){
+  const b=boardData,cards=[];
+  if(b?.focus)cards.push(boardCard('Étape en cours : '+b.focus.title,'HANDOFF.md',b.focus.items,true));
+  if(b?.todo)cards.push(boardCard('À faire · '+b.todo.done+' sur '+b.todo.total+' cochées','TODO.md',b.todo.remaining));
+  if(b?.roles)cards.push(boardCard('Rôles de l’équipe','AGENTS.md',b.roles.items));
+  if(b?.lessons)cards.push(boardCard('Dernières leçons · '+b.lessons.total+' au total','LESSONS.md',b.lessons.latest,true));
+  if(cards.length)$('board-body').replaceChildren(...cards);
+  else{const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,'Aucun fichier pilier lisible dans le projet.','taches');}
+}
+async function openBoard(){
+  boardTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
+  for(const el of backdrop($('board')))el.inert=true;
+  $('board').hidden=false;$('board-close').focus();
+  if(!boardData)$('board-body').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Lecture du tableau…'}));
+  try{await loadBoard();renderBoard();}catch(error){const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,errorText(error),'taches');}
+}
+function closeBoard(){
+  $('board').hidden=true;for(const el of backdrop($('board')))el.inert=false;
+  (boardTrigger?.isConnected?boardTrigger:$('board-open')).focus({preventScroll:true});
+}
+$('board-open').addEventListener('click',openBoard);
+$('board-close').addEventListener('click',closeBoard);
+$('board').addEventListener('mousedown',e=>{if(e.target===$('board'))closeBoard();});
+$('board').addEventListener('keydown',e=>{if(e.key==='Tab'){const f=[...$('board').querySelectorAll('button,[tabindex]')].filter(x=>!x.disabled);const i=f.indexOf(document.activeElement);if(e.shiftKey?i<=0:i===f.length-1){e.preventDefault();f[e.shiftKey?f.length-1:0]?.focus();}}});
 function runCommand(i){
   const c=paletteItems[i];closePalette(!c);if(!c)return;c.run();
   // Une commande qui ne place pas le focus elle-même le laisse sur l'onglet ouvert.
@@ -1291,16 +1351,18 @@ $('palette-input').addEventListener('keydown',e=>{
 // Une seule couche répond à une touche : palette, puis disposition, puis aide.
 addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.isContentEditable;
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&$('board').hidden){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
   if(!$('palette').hidden){if(e.key==='Escape'){e.preventDefault();closePalette();}return;}
+  if(!$('board').hidden){if(e.key==='Escape'){e.preventDefault();closeBoard();}return;}
   if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
   if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
+setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();if(currentTab()==='taches')loadTodos();},5000);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
-termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);
+termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});requestAnimationFrame(frame);
 // En arrière-plan, avec les notifications activées, seul l'état des agents est relu (toutes les 15 s) :
 // draw(0) y repère les changements sans animer la scène. Le navigateur peut encore espacer ces relectures.
 let hiddenTicks=0;
