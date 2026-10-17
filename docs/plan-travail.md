@@ -1,0 +1,48 @@
+# Plan de travail (18 octobre 2026)
+
+Source de vérité de l'avancement : les cases ci-dessous. Le bureau les lit (onglet Tâches) et calcule le pourcentage par cases cochées. Une case se coche seulement après évaluation par le chef : `npm run check`, `npm test`, relecture du commit et vérification à l'écran si l'interface change.
+
+Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seuls fichiers) → évaluation du chef → correction si besoin → leçon ajoutée à `LESSONS.md` et agents informés → case cochée.
+
+## Lot A. Réponses lisibles (avis de Codex Desktop, P0 à P4)
+
+- [ ] A1 (OpenCode) Réponses structurées côté serveur : `src/responses.mjs`, route `GET /api/reponses`, `test/responses.test.mjs`
+- [ ] A2 (Antigravity) Carte de réponse avec Markdown sûr : `public/response-card.js`
+- [ ] A3 (Antigravity) Copier et exporter `.md` par réponse puis par session
+- [ ] A4 (Antigravity) Mise à jour par clés stables sans perdre sélection ni défilement
+- [ ] A5 (Claude) Intégration dans `public/app.js`, vérification Playwright à 1440, 390 et 360 px
+
+## Lot B. Sécurité des installeurs (revue de Codex)
+
+- [ ] B1 (Codex) Injection par nom de dossier dans `scripts/installer.sh` (`sh -c`) : passer les arguments séparément
+- [ ] B2 (Codex) Même risque dans le profil et les raccourcis générés : échapper selon le format, retirer le shell intermédiaire
+- [ ] B3 (Codex) Retirer `-Oui` et `--oui` pour Herdr et les extensions : vrai o/n exigé
+- [ ] B4 (Codex) Chemin de Herdr : exiger un exécutable résolu littéralement, pas `installer.ps1`
+- [ ] B5 (Claude) Évaluation et test des installeurs en simulation
+
+## Lot C. Avancement visible dans l'OS
+
+- [ ] C1 (Claude) Onglet Tâches : tableau « À faire » et « Réalisées » par fichier de plan, avec pourcentage et barre
+- [ ] C2 (Claude) Pourcentage de cases cochées de chaque agent sur sa carte et dans son poste (plan publié par l'agent seulement)
+- [ ] C3 (Claude) Mention explicite à l'écran : pourcentage = cases cochées sur cases totales, jamais une estimation
+
+## Lot D. Les agents apprennent ensemble
+
+- [ ] D1 (Claude) Règle « boucle de correction » dans `AGENTS.md` : chaque correction devient une leçon dans `LESSONS.md`, les agents sont informés par message
+- [ ] D2 (Claude) Message de leçon envoyé à chaque agent après chaque correction, relu avant sa prochaine mission
+- [ ] D3 (Antigravity) Rangement de `LESSONS.md` par thèmes pour que la relecture reste courte
+
+## Lot E. Fonctions de l'OS d'agents
+
+- [ ] E1 (Claude) Audit : priorité des envois et transfert de direction déjà livrés, conformes aux contrats
+- [ ] E2 (Claude) Audit : envoi d'un fichier avec une consigne, conforme à `docs/contrat-fichiers.md`
+- [ ] E3 (OpenCode) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
+- [ ] E4 (Antigravity) Fil de discussion dans l'interface
+
+## Lot F. Clôture
+
+- [ ] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)
+- [ ] F2 (Antigravity) `CHANGELOG.md`, `README.md` et `docs/aide.md` à jour
+- [ ] F3 (Claude) `TODO.md`, `HANDOFF.md`, `JOURNAL.md` à jour
+- [ ] F4 (Claude) `npm run check` et `npm test` verts, fusion dans `main`, aucun fichier en attente
+- [ ] F5 (DrSmoke) Création du dépôt GitHub public et publication : jamais faite sans son feu vert

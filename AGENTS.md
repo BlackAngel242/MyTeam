@@ -39,6 +39,13 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 - Le compte rendu dit ce qui n'a pas pu être vérifié.
 - Une nouvelle erreur rencontrée devient une ligne de `LESSONS.md`.
 
+## Boucle de correction (apprendre ensemble)
+
+- `LESSONS.md` est la mémoire commune : une seule copie, lue par chaque IA avant chaque mission et relue quand le chef signale une nouvelle leçon.
+- Quand le chef corrige le travail d'un agent, il ajoute la leçon à `LESSONS.md` (erreur, cause, règle) puis prévient tous les agents par message. Chaque agent relit `LESSONS.md` avant sa mission suivante.
+- Chaque agent qui rencontre une nouvelle erreur l'ajoute lui-même à `LESSONS.md` et le dit dans son compte rendu. Ne jamais répéter une erreur déjà inscrite.
+- Avancement : `docs/plan-travail.md` fait foi. Seul le chef coche une case, après évaluation. Un agent signale « prêt à évaluer » avec le hash de son commit.
+
 ## Écriture
 
 Français accentué et simple, sans tiret cadratin. Code : commentaires seulement pour la logique non évidente, sans dépendance ajoutée sans raison.
