@@ -95,3 +95,55 @@ Par Antigravity (panneau w5:p2), evaluation independante du 17 octobre 2026.
 2. Signal visuel d'envoi sur la scène : Lors de l'envoi d'une consigne (« Envoi en cours… »), une brève impulsion lumineuse ou un indicateur réseau sur le bureau de l'agent confirmerait visuellement le départ de la consigne dans le décor en pixels.
 3. Raccourci clavier pour basculer d'onglet : Permettre de passer rapidement de l'onglet « Poste » à l'onglet « Équipe » via un raccourci clavier global (par exemple Alt+1 et Alt+2).
 4. Alerte en cas de prise de travail impromptue : Si un agent passe à l'état occupé alors que l'utilisateur rédigeait une consigne, afficher une notification contextuelle immédiate plutôt que de simplement griser le bouton.
+
+## 6. Troisième passage (nouvelles fonctionnalités et maturité)
+
+Évaluation approfondie du 17 octobre 2026 portant sur les évolutions majeures : vue globale sans défilement, mode « Disposer », bureau de direction VIP, courrier du chef, pause de quota avec chevalet, sous-agents en salle de réflexion et barre d'état par IA.
+
+### Notes d'évaluation (sur 10)
+
+- Lisibilité : 9,0 / 10 (+0,2)
+  L'adaptation dynamique de la scène sans barres de défilement externes (`min-width: 1100px` et `min-height: 620px`) offre un confort visuel exceptionnel : la scène remplit harmonieusement l'espace restant, les badges d'état et le chevalet « RETOUR » sont immédiatement compréhensibles.
+
+- Hiérarchie visuelle : 9,0 / 10 (+0,5)
+  Le découpage spatial gagne en clarté narrative. Le bureau VIP matérialise l'autorité du premier agent démarré, la salle de réflexion vitrée isole visuellement les calculs annexes, et le panneau latéral à trois onglets (Poste, Équipe, Fichiers) structure parfaitement les commandes.
+
+- Utilité pour piloter des agents : 8,8 / 10 (+0,1)
+  L'expérience opérationnelle franchit un palier majeur. Voir un agent quitter son fauteuil avec l'heure exacte de reprise annoncée évite toute sollicitation inutile. La consultation sécurisée des fichiers et le saut direct vers les sorties depuis le courrier du chef renforcent l'efficacité.
+
+- Note globale : 8,9 / 10 (progression continue depuis 6,7 puis 8,7).
+
+### Les 5 défauts les plus gênants et leurs correctifs
+
+1. Envoi de consigne autorisé pour un agent en pause de quota
+   - Emplacement : `public/app.js` (ligne 16, fonction `canSend`, et lignes 325 à 328 pour l'envoi groupé).
+   - Constat : `canSend(a)` vérifie uniquement si `['idle','done'].includes(a.status)`. Si un agent a terminé son tour mais que son quota est atteint (`quotaPause(a)` actif avec chevalet RETOUR), le formulaire d'envoi individuel reste déverrouillé et le bouton « Cocher tous les disponibles » continue de le sélectionner. Une consigne peut ainsi être envoyée à un agent qui ne peut plus répondre.
+   - Correctif : Ajouter `&& !quotaPause(a)` dans la condition de `canSend(a)`.
+
+2. Détection du quota dans le terminal limitée à l'agent actif
+   - Emplacement : `public/app.js` (lignes 222 à 224, fonction `quotaPause`, et lignes 417 à 422, fonction `readOutput`).
+   - Constat : `quotaPause(a)` s'appuie sur `statusCache.get(a.id)?.status?.quota`. Or `statusCache` n'est enrichi que par `readOutput()`, qui n'interroge que l'agent sélectionné. Tant que DrSmoke n'a pas cliqué individuellement sur un agent bloqué par son terminal, son poste n'affiche pas le chevalet RETOUR et le compteur « EN PAUSE » du tableau de bord reste à zéro.
+   - Correctif : Déplacer la détection du quota terminal côté serveur dans `/api/state` pour tous les agents lors du sondage périodique, afin d'alimenter `quotaPause` sans exiger une sélection manuelle préalable.
+
+3. La pile de courriers du chef ne se vide jamais après lecture
+   - Emplacement : `public/app.js` (lignes 508, 811, 846, 860 et 919).
+   - Constat : `mailCount` s'incrémente à chaque fin de tâche observée et fait grandir la pile sur le bureau VIP. Cependant, aucune action utilisateur ne décrémente ce compteur, même après un clic sur la pile (`onMail`, ligne 919) ou la consultation complète de l'onglet Équipe. La pile de courrier reste encombrée indéfiniment pendant toute la session.
+   - Correctif : Réinitialiser `mailCount = 0` lors du clic sur la pile de courrier ou à l'ouverture de l'onglet Équipe, puis redessiner la scène pour marquer visuellement la relève du courrier.
+
+4. Mode « Disposer » totalement inaccessible au clavier
+   - Emplacement : `public/app.js` (lignes 928 à 947, écouteurs `pointerdown` sur `canvas`) et `public/index.html` (ligne 33).
+   - Constat : Le mode réorganisation repose exclusivement sur des coordonnées de pointeur souris ou tactile. Les bureaux dans le canvas ne peuvent pas recevoir le focus clavier et aucune touche fléchée ne permet de déplacer un poste. Seule la touche Échap permet de sortir. Pour un pilotage exclusif au clavier, le mode Disposer est inutilisable.
+   - Correctif : Permettre de naviguer au clavier entre les bureaux avec Tab en mode édition, puis déplacer le poste ciblé avec les flèches directionnelles (associées à Maj pour les pas de 10 pixels).
+
+5. Zone cliquable du bureau VIP tronquée sur ses extrémités
+   - Emplacement : `public/app.js` (ligne 677 dans `station`, comparée aux lignes 488 et 499).
+   - Constat : Dans `station()`, la zone interactive `spots.push` est enregistrée avec une largeur fixe de `L.cw * L.S` (au maximum 78 pixels logiques). Or le bureau de direction fait entre 120 et 150 pixels logiques de large (ligne 499). Un clic sur la partie gauche ou droite du bureau de direction ne sélectionne pas le chef, obligeant à cliquer précisément au centre.
+   - Correctif : Dans `station()`, vérifier si `a === L.boss` et utiliser la largeur réelle `vipRect.w * L.S` pour définir l'emprise cliquable de son poste.
+
+### Ce qui manque encore pour un véritable « OS d'agents »
+
+1. Palette de commandes universelle (`Ctrl+K`) : Pour rechercher un agent, basculer d'onglet, changer de modèle ou envoyer une consigne rapide sans quitter le clavier des mains.
+2. Panneau direct des tâches (`/api/todos`) : Afficher en superposition la liste ordonnée des tâches extraites en direct des journaux pour suivre la feuille de route sans lire le texte brut du terminal.
+3. Notifications et signaux sonores discrets : Un retour sonore 8-bit très sobre (ou une notification de bureau native) lors des fins de mission, des alertes de blocage et des remises à zéro de quotas.
+4. Multifenêtrage ou comparaison côte à côte : Pouvoir épingler les sorties de deux agents simultanément (par exemple le chef et son collaborateur délégué) pour suivre un échange en direct.
+5. Commandes d'interruption et de bascule : Permettre d'interrompre proprement un agent (équivalent d'un signal `SIGINT` contrôlé) ou de commuter son modèle directement depuis le bureau dès que l'outil l'expose.

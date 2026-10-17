@@ -564,7 +564,11 @@ function layout(){
   };
   // En vue globale, la largeur logique suit la forme de la fenêtre : la scène la remplit au lieu de flotter entre deux bandes vides.
   let best=shape(narrow?144:256,false);
-  if(fitMode.matches&&!narrow){const target=cssW/cssH;for(const W of [256,288,320,352,384,416,448,480])for(const side of boss&&W>=352?[false,true]:[false]){const s=shape(W,side);if(Math.abs(s.W/s.H-target)<Math.abs(best.W/best.H-target))best=s;}}
+  // On retient la disposition qui donne les plus gros pixels (personnages les plus lisibles) ; à égalité, celle qui remplit le mieux le cadre.
+  if(fitMode.matches&&!narrow){
+    const score=s=>{const k=Math.min(cssW/s.W,cssH/s.H);return k*1000+(s.W*s.H*k*k)/(cssW*cssH);};
+    for(const W of [256,288,320,352,384,416,448,480])for(const side of boss&&W>=352?[false,true]:[false]){const s=shape(W,side);if(score(s)>score(best))best=s;}
+  }
   const {W,cols,rows,roomY,H,top,bossH,areaW,side}=best,S=Math.max(2,Math.round(Math.min(cssW,fitMode.matches?cssH*W/H:cssW)*(window.devicePixelRatio||1)/W));
   return {W,H,S,cols,rows,wallH,rowH,top,bossTop,bossH,boss,roomY,narrow,areaW,sideBoss:side,cw:Math.min(78,Math.floor((areaW-8)/cols))};
 }

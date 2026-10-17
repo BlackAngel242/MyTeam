@@ -293,7 +293,8 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px;border:1
   .team-heading{margin:8px 0 5px}.team-heading h2{font-size:13px}
   .agent-button{min-height:40px;padding:6px 10px;gap:8px}
   .agent-button>span:last-child{display:flex;align-items:baseline;gap:8px;min-width:0}
-  .agent-status{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .agent-name{flex-shrink:0;overflow:visible}
+  .agent-status{margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   .agent-logo{width:22px;height:22px}
   .read-note{margin:6px 0 16px}
 }
