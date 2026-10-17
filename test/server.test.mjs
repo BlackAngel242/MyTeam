@@ -204,9 +204,9 @@ test('/api/state lit les activites Claude en parallele sans divulguer les sessio
   assert.equal(response.data.connected,true);
   assert.equal(started,2);
   assert.deepEqual(response.data.agents,[
-    {id:'c1',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
-    {id:'c2',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
-    {id:'x',kind:'Codex'},
+    {id:'c1',kind:'Claude',boss:false,activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
+    {id:'c2',kind:'Claude',boss:false,activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
+    {id:'x',kind:'Codex',boss:false},
   ]);
   assert.ok(!JSON.stringify(response.data).includes('session-privee'));
   assert.ok(!JSON.stringify(response.data).includes('CHEMIN PRIVE'));
@@ -222,7 +222,7 @@ test('/api/state reste connecte si une activite echoue ou est absente',async t=>
   const response=await send('/api/state');
   assert.equal(response.status,200);
   assert.equal(response.data.connected,true);
-  assert.deepEqual(response.data.agents,[{id:'c1',kind:'Claude'},{id:'c2',kind:'Claude'},{id:'c3',kind:'Claude'}]);
+  assert.deepEqual(response.data.agents,[{id:'c1',kind:'Claude',boss:false},{id:'c2',kind:'Claude',boss:false},{id:'c3',kind:'Claude',boss:false}]);
 });
 
 test('/api/state expose seulement les champs publics des activites locales',async t=>{
@@ -240,7 +240,7 @@ test('/api/state expose seulement les champs publics des activites locales',asyn
   const response=await send('/api/state');
   assert.equal(response.data.connected,true);
   assert.deepEqual(response.data.agents,[{
-    id:'x',kind:'Codex',cwd:'C:/projet-factice',
+    id:'x',kind:'Codex',cwd:'C:/projet-factice',boss:false,
     activity:{tokens:{input:3,output:4,cacheRead:5,cacheCreation:6},limits:[{label:'Principale',usedPercent:12,window:300,resetsAt:null}],model:'modele-factice',effort:'high',limitReached:false,source:'journal local',match:'dossier et activité récente',subagents:[{id:'call_123',description:'formats locaux'}]},
   }]);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET_|creator_|sessionId/);
@@ -251,7 +251,7 @@ test('/api/state reste utilisable si le lecteur des autres journaux echoue',asyn
   const response=await send('/api/state');
   assert.equal(response.status,200);
   assert.equal(response.data.connected,true);
-  assert.deepEqual(response.data.agents,[{id:'x',kind:'OpenCode'}]);
+  assert.deepEqual(response.data.agents,[{id:'x',kind:'OpenCode',boss:false}]);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET_/);
 });
 
@@ -430,4 +430,67 @@ test('la file d\'attente utilise la remise à zéro du terminal plus cinq minute
   maintenant=Date.parse('2026-10-17T13:06:00Z');
   await server.queue.tick();
   assert.deepEqual(envois,['Après la pause']);
+});
+
+test('la priorité des envois passe par le serveur avec ses gardes',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'a@fp',status:'idle',ready:true}];
+  const {send,origin,server}=await bureau(t,{list:async()=>agents},{queueFile:join(dossier,'file-attente.json')});
+  const {data:{token}}=await send('/api/state');
+  const headers={'Content-Type':'application/json',Origin:origin,'X-Bureau-Token':token};
+  const ajout=await send('/api/queue',{method:'POST',headers,body:JSON.stringify({id:'a@fp',message:'Normale'})});
+  assert.equal(ajout.status,200);
+  assert.equal(ajout.data.priority,'normale');
+  const haute=await send('/api/queue',{method:'POST',headers,body:JSON.stringify({id:'a@fp',message:'Haute',priority:'haute'})});
+  assert.equal(haute.data.priority,'haute');
+  const refus=await send('/api/queue',{method:'POST',headers,body:JSON.stringify({id:'a@fp',message:'x',priority:'urgente'})});
+  assert.equal(refus.status,400);
+  const liste=await send('/api/queue',{headers:{Origin:origin,'X-Bureau-Token':token}});
+  assert.deepEqual(liste.data.items.map(i=>i.message),['Haute','Normale'],'la liste donne l\'ordre réel d\'envoi prévu');
+  const change=await send('/api/queue/priority',{method:'POST',headers,body:JSON.stringify({itemId:ajout.data.itemId,priority:'haute'})});
+  assert.equal(change.status,200);
+  assert.equal(change.data.priority,'haute');
+  assert.equal((await send('/api/queue/priority',{method:'POST',headers,body:JSON.stringify({itemId:'inconnu',priority:'haute'})})).status,409);
+  assert.equal((await send('/api/queue/priority',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'})).status,403,'jeton et origine exigés');
+  await server.queue.tick();
+  assert.equal((await send('/api/queue/priority',{method:'POST',headers,body:JSON.stringify({itemId:ajout.data.itemId,priority:'normale'})})).status,409,'plus rien ne change après l\'envoi');
+});
+
+test('la direction : un seul chef, choix confirmé, retour à la règle',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[
+    {id:'w5:p1@aaaa',paneId:'w5:p1',kind:'Claude',name:'Claude',sessionId:'12345678-1234-1234-1234-123456789abc',status:'idle',ready:true},
+    {id:'w5:p4@bbbb',paneId:'w5:p4',kind:'Claude',name:'Codex',sessionId:'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',status:'idle',ready:true},
+  ];
+  const lectures=[];
+  const {send,origin}=await bureau(t,{list:async()=>agents},{
+    readActivity:async()=>({found:false}),
+    delegations:async id=>{lectures.push(id);return {found:true,delegations:[{id:'t1',at:'2026-10-17T11:30:00.000Z',target:'w5:p2',title:'x',result:null}]};},
+    now:()=>Date.parse('2026-10-17T12:00:00Z'),
+    queueFile:join(dossier,'file-attente.json'),
+    directionFile:join(dossier,'direction.json'),
+  });
+  const premiere=await send('/api/state');
+  const token=premiere.data.token;
+  const headers={'Content-Type':'application/json',Origin:origin,'X-Bureau-Token':token};
+  assert.deepEqual(premiere.data.agents.map(a=>a.boss),[true,false],'la règle donne le plus petit panneau');
+  assert.deepEqual(premiere.data.direction,{source:'regle',since:null});
+  assert.deepEqual(lectures,[agents[0].sessionId],'les délégations suivent le chef effectif');
+  const choix=await send('/api/direction',{method:'POST',headers,body:JSON.stringify({agentId:'w5:p4@bbbb'})});
+  assert.equal(choix.status,200);
+  assert.deepEqual(choix.data.direction,{source:'choix',since:'2026-10-17T12:00:00.000Z'});
+  assert.equal((await send('/api/direction',{method:'POST',headers,body:JSON.stringify({agentId:'w5:p9@inconnu'})})).status,404);
+  const etat=await send('/api/state');
+  assert.deepEqual(etat.data.agents.map(a=>a.boss),[false,true],'le choix devient le seul chef');
+  assert.equal(etat.data.direction.source,'choix');
+  assert.equal(lectures.at(-1),agents[1].sessionId,'les délégations suivent le nouveau chef');
+  assert.deepEqual(etat.data.agents[1].delegations.map(d=>d.id),['t1']);
+  const retour=await send('/api/direction',{method:'DELETE',headers:{Origin:origin,'X-Bureau-Token':token}});
+  assert.equal(retour.status,200);
+  assert.deepEqual(retour.data.direction,{source:'regle',since:null});
+  const final=await send('/api/state');
+  assert.deepEqual(final.data.agents.map(a=>a.boss),[true,false],'retour à la règle');
+  assert.equal((await send('/api/direction',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'})).status,403,'jeton et origine exigés');
 });

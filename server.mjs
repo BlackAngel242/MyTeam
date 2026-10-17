@@ -13,12 +13,13 @@ import {readTodos,normalizeTodos} from './src/todos.mjs';
 import {bossOf,readDelegations} from './src/delegations.mjs';
 import {createQueue,QueueError} from './src/queue.mjs';
 import {createTerminalStatusReader} from './src/terminal-status.mjs';
+import {createDirection,DirectionError} from './src/direction.mjs';
 import {readBlackboard} from './src/blackboard.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -70,6 +71,9 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     return {...base,limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null,usedPercent:typeof etat.usedPercent==='number'?etat.usedPercent:null,source:'terminal'};
   }
   const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,file:queueFile,now});
+  // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
+  // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
+  const equipe=direction??createDirection({file:directionFile,now});
   async function allowedRoots() {
     const roots=new Map();
     const add=async(key,label,kind,path)=>{
@@ -212,9 +216,11 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(req.method==='GET'&&url.pathname==='/api/state') {
         try {
           const listed=await bridge.list();
-          const chef=bossOf(listed);
+          // Chef effectif : choix de DrSmoke s'il vaut encore, sinon la règle.
+          const {boss:chef,source:sourceDirection,since:depuisDirection}=equipe.effective(listed);
           const agents=await Promise.all(listed.map(async agent=>{
             const {sessionId,creator_user_id,creator_account_id,activity:previousActivity,...publicAgent}=agent;
+            publicAgent.boss=agent===chef;
             if(agent.kind==='Claude'&&sessionId) {
               try {
                 const activity=await readActivity(sessionId);
@@ -248,7 +254,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
             }
             return publicAgent;
           }));
-          return json(200,{connected:true,agents,updatedAt:new Date().toISOString(),token});
+          return json(200,{connected:true,agents,direction:{source:sourceDirection,since:depuisDirection},updatedAt:new Date().toISOString(),token});
         }
         catch(error) {return json(errorStatus(error),{connected:false,agents:[],error:error.message,updatedAt:new Date().toISOString(),token});}
       }
@@ -274,10 +280,41 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         const parsed=await readJson(req);
         if(parsed===null) return;
         try {
-          if(url.pathname==='/api/queue') return json(200,await fileAttente.enqueue({id:parsed.id,message:parsed.message,notBefore:parsed.notBefore}));
+          if(url.pathname==='/api/queue') return json(200,await fileAttente.enqueue({id:parsed.id,message:parsed.message,notBefore:parsed.notBefore,priority:parsed.priority,requestKey:parsed.requestKey}));
           return json(200,await fileAttente.cancel(parsed.itemId));
         } catch(error) {
-          return json(error instanceof QueueError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
+          return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
+        }
+      }
+      if(req.method==='POST'&&url.pathname==='/api/queue/priority') {
+        if(!guard(req)) return;
+        const parsed=await readJson(req);
+        if(parsed===null) return;
+        try {return json(200,await fileAttente.prioritize(parsed.itemId,parsed.priority));}
+        catch(error) {
+          return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La priorité n’a pas changé.'});
+        }
+      }
+      if(url.pathname==='/api/direction') {
+        if(req.method==='POST') {
+          if(!guard(req)) return;
+          const parsed=await readJson(req);
+          if(parsed===null) return;
+          try {
+            const vue=await equipe.set(await bridge.list(),parsed.agentId);
+            // Aucun message n'est envoyé aux agents : la passation est écrite par
+            // DrSmoke dans l'interface, puis passe par la file ou l'envoi normal.
+            return json(200,{direction:{source:vue.source,since:vue.since}});
+          } catch(error) {
+            return json(error instanceof DirectionError?error.status:errorStatus(error),{error:error.message||'Le choix de direction n’a pas abouti.'});
+          }
+        }
+        if(req.method==='DELETE') {
+          if(!guard(req,{body:false})) return;
+          try {return json(200,{direction:await equipe.clear()});}
+          catch(error) {
+            return json(error instanceof DirectionError?error.status:errorStatus(error),{error:error.message||'Le retour à la règle n’a pas abouti.'});
+          }
         }
       }
       const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
@@ -292,6 +329,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   server.requestTimeout=20000;
   server.queue=fileAttente;
   server.pauses=pauses;
+  server.direction=equipe;
   return server;
 }
 

@@ -180,3 +180,67 @@ test('file : deux tick() simultanés n\'envoient pas deux fois', async t => {
   assert.equal(envois.length, 1);
   assert.equal(queue.list().items[0].state, 'envoyee');
 });
+
+test('file : la priorité haute passe devant, puis vient l\'ancienneté', async t => {
+  const { queue, envois, horloge } = await montage(t);
+  await queue.enqueue({ id: 'a', message: 'Normale ancienne' });
+  horloge.ms += 60000;
+  await queue.enqueue({ id: 'a', message: 'Normale récente' });
+  horloge.ms += 60000;
+  await queue.enqueue({ id: 'a', message: 'Haute récente', priority: 'haute' });
+  assert.deepEqual(queue.list().items.map(i => i.message), ['Haute récente', 'Normale ancienne', 'Normale récente'], 'la liste donne l\'ordre réel d\'envoi prévu');
+  await queue.tick();
+  await queue.tick();
+  await queue.tick();
+  assert.deepEqual(envois.map(e => e.message), ['Haute récente', 'Normale ancienne', 'Normale récente']);
+});
+
+test('file : une normale attendue depuis plus de 30 minutes rejoint le rang des hautes', async t => {
+  const { queue, envois, horloge } = await montage(t);
+  await queue.enqueue({ id: 'a', message: 'Normale ancienne' });
+  horloge.ms += 60000;
+  await queue.enqueue({ id: 'a', message: 'Haute récente', priority: 'haute' });
+  horloge.ms += 60000;
+  await queue.enqueue({ id: 'a', message: 'Normale fraîche' });
+  await queue.tick();
+  assert.deepEqual(envois.map(e => e.message), ['Haute récente'], 'à 2 minutes d\'attente, la haute passe d\'abord');
+  horloge.ms += 29 * 60000;
+  await queue.tick();
+  assert.deepEqual(envois.map(e => e.message), ['Haute récente', 'Normale ancienne'], 'à 31 minutes, elle rejoint le rang des hautes');
+  await queue.tick();
+  assert.deepEqual(envois.map(e => e.message), ['Haute récente', 'Normale ancienne', 'Normale fraîche']);
+});
+
+test('file : la priorité est validée et ne change que sur une attente', async t => {
+  const { queue } = await montage(t);
+  await assert.rejects(() => queue.enqueue({ id: 'a', message: 'x', priority: 'urgente' }), /priorité/);
+  const item = await queue.enqueue({ id: 'a', message: 'Normale' });
+  assert.equal(item.priority, 'normale');
+  const change = await queue.prioritize(item.itemId, 'haute');
+  assert.equal(change.priority, 'haute');
+  await assert.rejects(() => queue.prioritize(item.itemId, 'urgente'), /priorité/);
+  await queue.tick();
+  await assert.rejects(() => queue.prioritize(item.itemId, 'haute'), erreur => erreur.status === 409);
+  await assert.rejects(() => queue.prioritize('inconnu', 'haute'), erreur => erreur.status === 409);
+});
+
+test('file : la priorité survit à la restauration', async t => {
+  const { file, dossier } = await montage(t);
+  await writeFile(file, JSON.stringify({ version: 2, items: [{
+    itemId: 'q-anc', id: 'a', message: 'Haute gardée', priority: 'haute', state: 'attente',
+    createdAt: '2026-10-17T11:00:00Z', updatedAt: '2026-10-17T11:00:00Z',
+  }] }), 'utf8');
+  const relancer = () => createQueue({
+    listAgents: async () => [{ id: 'a', status: 'idle', ready: true }],
+    prompt: async () => ({ ok: true }),
+    file,
+    now: () => Date.parse('2026-10-17T12:00:00Z'),
+  });
+  assert.equal(relancer().list().items[0].priority, 'haute');
+  assert.ok(dossier);
+  await writeFile(file, JSON.stringify({ version: 2, items: [{
+    itemId: 'q-bis', id: 'a', message: 'Priorité inconnue', priority: 'impossible', state: 'attente',
+    createdAt: '2026-10-17T11:00:00Z', updatedAt: '2026-10-17T11:00:00Z',
+  }] }), 'utf8');
+  assert.equal(relancer().list().items[0].priority, 'normale');
+});

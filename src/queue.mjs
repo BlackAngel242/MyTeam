@@ -13,18 +13,25 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { dirname } from 'node:path';
 
-export class QueueError extends Error {}
+export class QueueError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
 
 const ETATS = ['attente', 'envoi_en_cours', 'envoyee', 'annulee', 'a_revoir'];
 const DELAI_QUOTA = 5 * 60 * 1000;
 const MAX_FICHIER = 512 * 1024;  // fichier de persistance au plus grand que ça
 const MAX_CLES = 200;            // clés de demande conservées (distinct des éléments)
+const PRIORITES = ['haute', 'normale'];
+const DELAI_PRIORITE = 30 * 60 * 1000;  // une normale attendue depuis 30 min rejoint le rang des hautes
 
 const iso = ms => new Date(ms).toISOString();
 const tronquer = (texte, max) => Array.from(String(texte ?? '')).slice(0, max).join('');
 const dateLisible = valeur => (typeof valeur === 'string' && !Number.isNaN(Date.parse(valeur))) ? iso(Date.parse(valeur)) : null;
 
-function valider({ id, message, notBefore, requestKey }) {
+function valider({ id, message, notBefore, requestKey, priority }) {
   if (typeof id !== 'string' || !id.trim() || id.length > 200) throw new QueueError('Sélectionnez un agent.');
   if (typeof message !== 'string' || !message.trim() || message.length > 12000 || message.includes('\0')) {
     throw new QueueError('Écrivez une consigne de 1 à 12 000 caractères, sans caractère nul.');
@@ -42,7 +49,10 @@ function valider({ id, message, notBefore, requestKey }) {
     }
     cle = requestKey;
   }
-  return { id, message, notBefore: depart, requestKey: cle };
+  if (priority !== undefined && priority !== null && priority !== '' && !PRIORITES.includes(priority)) {
+    throw new QueueError('La priorité doit être « haute » ou « normale ».');
+  }
+  return { id, message, notBefore: depart, requestKey: cle, priority: priority || 'normale' };
 }
 
 // Restauration : seule une liste blanche de champs est gardée, avec les mêmes
@@ -61,6 +71,7 @@ function restaurer(brut) {
     id,
     message,
     notBefore: null,
+    priority: PRIORITES.includes(brut.priority) ? brut.priority : 'normale',
     state,
     createdAt,
     updatedAt: dateLisible(brut.updatedAt) ?? createdAt,
@@ -112,13 +123,21 @@ export function createQueue({
   let tour = null;
   let minuterie = null;
 
-  function nouveau({ id, message, notBefore, requestKey }, etat = 'attente', raison = null) {
+  function nouveau({ id, message, notBefore, requestKey, priority }, etat = 'attente', raison = null) {
     const date = iso(now());
-    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison, holdUntil: null, requestKey };
+    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, priority: priority || 'normale', state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison, holdUntil: null, requestKey };
   }
 
   function publique(element) {
     return structuredClone(element);
+  }
+
+  // Ordre réel d'envoi : priorité haute d'abord (et une normale en attente
+  // depuis plus de 30 minutes rejoint ce rang, à ancienneté égale), puis
+  // l'ancienneté. La priorité ne change rien aux règles de disponibilité.
+  function ordreEnvoi(a, b) {
+    const rang = element => (element.priority === 'haute' || now() - Date.parse(element.createdAt) > DELAI_PRIORITE) ? 0 : 1;
+    return rang(a) - rang(b) || a.createdAt.localeCompare(b.createdAt) || a.itemId.localeCompare(b.itemId);
   }
 
   // Écriture atomique : fichier temporaire puis remplacement. Une erreur de
@@ -250,8 +269,25 @@ export function createQueue({
     return publique(element);
   }
 
+  async function prioritize(itemId, priority) {
+    if (!PRIORITES.includes(priority)) throw new QueueError('La priorité doit être « haute » ou « normale ».');
+    const element = items.find(candidate => candidate.itemId === itemId);
+    // Seule une consigne encore en attente change de priorité : le reste est déjà joué.
+    if (!element || element.state !== 'attente') throw new QueueError('Seule une consigne encore en attente change de priorité.', 409);
+    const avant = element.priority;
+    element.priority = priority;
+    element.updatedAt = iso(now());
+    try {
+      await persister();
+    } catch {
+      element.priority = avant;
+      throw new QueueError('Sauvegarde impossible : la priorité n\'a pas été gardée.', 500);
+    }
+    return publique(element);
+  }
+
   function list() {
-    return { items: [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.itemId.localeCompare(b.itemId)).map(publique) };
+    return { items: [...items].sort(ordreEnvoi).map(publique) };
   }
 
   async function tick() {
@@ -289,7 +325,7 @@ export function createQueue({
         if (!agent || !['idle', 'done'].includes(agent.status) || agent.ready !== true) continue;
         const pause = await pauseDe(id);
         const attente = items.filter(candidate => candidate.state === 'attente' && candidate.id === id)
-          .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.itemId.localeCompare(b.itemId));
+          .sort(ordreEnvoi);
         if (pause.incertain) continue;   // contrôle en panne : aucun envoi automatique
         if (pause.limitReached && Number.isNaN(pause.resetsAt)) continue;  // pause sans date : jamais forcée
         if (pause.limitReached && !Number.isNaN(pause.resetsAt)) {
@@ -362,5 +398,5 @@ export function createQueue({
     minuterie = null;
   }
 
-  return { enqueue, cancel, list, tick, start, stop };
+  return { enqueue, cancel, prioritize, list, tick, start, stop };
 }
