@@ -17,10 +17,10 @@ Tout ce qui s'affiche à l'écran provient d'observations réelles : processus H
 Cette visite rapide présente le fonctionnement essentiel de votre bureau. Vous pouvez passer cette étape à tout moment avec le bouton « Passer la visite ».
 
 ### Étape 1 : Observer l'équipe dans la scène pixel art
-La fenêtre principale présente votre équipe dans un décor animé en pixel art. Le ciel change en continu selon l'heure de votre ordinateur (lever à 6 h 30, coucher à 19 h 30). Le chef de l'équipe occupe le bureau Direction. Chaque personnage montre son état réel par sa posture et ses couleurs.
+La fenêtre principale présente votre équipe dans un décor animé en pixel art. Le ciel change en continu selon l'heure de votre ordinateur (lever à 6 h 30, coucher à 19 h 30), et l'éclairage intérieur s'allume automatiquement en soirée (suspensions et lampes de bureau). Le tableau d'affichage résume les faits utiles (RETOUR, EN FILE, COURRIER, SOUS-AGENTS). Le chef de l'équipe occupe le bureau Direction. Chaque personnage montre son état réel par sa posture, son écran et le soulignement coloré de son nom.
 
 ### Étape 2 : Sélectionner un poste
-Cliquez sur n'importe quel personnage dans la scène, sur son nom dans la liste des postes sous le bureau, ou directement dans la vue d'accueil du poste. Sur téléphone ou écran étroit, la page fait défiler l'affichage automatiquement jusqu'au panneau de pilotage.
+Cliquez sur n'importe quel personnage dans la scène (ou touchez-le sur écran tactile), sur son nom dans la liste des postes sous le bureau, ou directement dans la vue d'accueil du poste. Sur téléphone ou écran étroit, la page fait défiler l'affichage automatiquement jusqu'au panneau de pilotage.
 
 ### Étape 3 : Inspecter et guider dans l'onglet « Poste »
 L'onglet « Poste » affiche les informations détaillées de l'agent : son modèle, son activité, sa consommation et les dernières lignes de son terminal. Vous pouvez figer le défilement, agrandir le terminal en pleine hauteur, rechercher du texte et lui envoyer une consigne avec le raccourci Ctrl+Entrée (ou cliquer sur « Mettre en file » s'il est occupé).
@@ -41,20 +41,38 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 
 #### À quoi elle sert
 - Surveiller d'un coup d'œil l'état de chaque agent connecté à Herdr.
-- Repérer immédiatement les blocages et les fins de mission.
+- Repérer immédiatement les blocages, fins de mission et pauses de limite.
 - Observer les interactions réelles entre le chef, les agents et leurs sous-agents.
+- Suivre les faits utiles et les indicateurs clés au tableau d'affichage mural.
+
+#### Le tableau d'affichage de la scène
+- Placée sur le mur du fond, cette ardoise regroupe les faits utiles non répétés sur les bureaux et les cartes.
+- Ligne `RETOUR` : s'affiche en violet lorsqu'un agent est en pause de quota, avec l'heure exacte de reprise annoncée par l'outil (ou `??:??` si non communiquée).
+- Ligne `EN FILE` : indique le nombre de consignes en attente d'expédition dans la file d'attente sécurisée (s'allume en bleu dès qu'une consigne est en attente).
+- Ligne `COURRIER` : compte les courriers non lus annonçant la fin d'une tâche (s'allume en menthe quand des courriers attendent consultation).
+- Ligne `SOUS-AGENTS` : dénombre les assistants actuellement au travail dans la salle de réflexion (s'allume en gris clair si des sous-agents sont actifs).
+- Chaque ligne s'allume en couleur vive dès que son fait est observé ; les lignes sans activité restent sombres et discrètes.
 
 #### Le bureau Direction
 - Attribué au premier agent démarré dans Herdr (le chef d'équipe).
 - Reconnaissable à sa moquette violette, ses boiseries élégantes et sa grande baie vitrée.
 - Une pile de courriers s'accumule sur son bureau dès qu'un agent termine une tâche. Un clic sur cette pile ouvre directement l'onglet Équipe et le courrier du chef.
+- Lorsqu'une commande du chef comporte des ordres pour plusieurs agents, chaque collaborateur visé vient chercher sa tâche à son bureau.
 
 #### Cycle jour-nuit continu et ambiance lumineuse
 - Le ciel visible par la baie vitrée évolue en temps réel selon l'heure exacte de votre machine (nuit, aube, jour, crépuscule).
 - Le soleil et la lune suivent un arc horaire dans le ciel (soleil orangé près de l'horizon, lever fixe à 6 h 30 et coucher fixe à 19 h 30, approximation sans saisons).
 - Les fenêtres de la ville et les étoiles s'effacent progressivement avec la montée du jour.
-- L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte à l'intensité du soleil ou à la lueur nocturne des moniteurs.
+- Suspensions au plafond : dès 17 h 30 (pleine intensité atteinte à 19 h jusqu'au matin), les suspensions lumineuses au plafond s'allument automatiquement pour éclairer le bureau d'une douce lueur dorée.
+- Lampes de bureau : chaque poste dispose d'une lampe individuelle qui s'allume le soir pour un agent présent, et reste éteinte si l'agent est parti en pause de limite.
+- L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte en temps réel à l'ambiance du ciel et des moniteurs.
 - Réduction des mouvements : si votre système active la réduction des mouvements (`prefers-reduced-motion`), la scène est automatiquement figée par défaut (sans choix manuel enregistré). Dans cet état figé, le décor continue d'être redessiné une fois par minute pour suivre l'heure et l'éclairage.
+
+#### Identification des postes et nom souligné
+- En façade de chaque bureau, le logo 16x16 en pixel art identifie clairement l'outil (Claude, Codex, Antigravity, OpenCode).
+- Sous chaque bureau, le nom seul de l'agent est affiché, souligné d'un trait fin de la couleur de son état (bleu pour travail, menthe pour disponible, ambre pour attente, violet pour pause).
+- Si l'application perd la liaison avec Herdr, la mention `HORS LIGNE` s'affiche sous le bureau.
+- L'état n'a pas besoin d'être répété en texte : il est clairement exprimé par la posture de l'agent, le contenu de son écran, sa bulle et le soulignement coloré de son nom.
 
 #### Postures des personnages
 - Frappe au clavier : agent au travail sur une tâche (bleu ciel).
@@ -77,14 +95,16 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 
 #### Pause de quota et chevalet « RETOUR »
 - Quand un outil atteint son plafond de requêtes ou de jetons, l'agent quitte son fauteuil.
-- L'écran de son ordinateur s'éteint et une veilleuse violette clignote discrètement.
+- L'écran de son ordinateur s'éteint, sa lampe de bureau s'éteint et une veilleuse violette clignote discrètement.
 - Un chevalet blanc portant la mention « RETOUR » affiche l'heure exacte de reprise annoncée par l'outil.
 - Le serveur local planifie la relance automatique des consignes en attente 5 minutes après cette heure.
 
 #### Salle de réflexion repliable des sous-agents
+- Pièce vitrée dédiée portant le libellé fixe « SALLE DE REFLEXION » (ou « REFLEXION » sur écran étroit), jamais tronqué quelle que soit l'activité.
 - Lorsqu'un agent délègue une partie de son travail à des sous-agents, de petits assistants quittent son poste en portant un dossier doré.
 - Ils traversent le couloir et entrent dans la salle de réflexion vitrée.
 - Ils s'installent à table sur leurs ordinateurs portables ou travaillent au tableau blanc.
+- Le nombre exact de sous-agents en réflexion est indiqué en direct sur le tableau mural de la scène.
 - Dès que leurs analyses sont terminées, ils reviennent déposer le dossier complété sur le bureau de leur agent avant de quitter la pièce.
 - La salle de réflexion dispose d'une option de repli pour adapter l'affichage de la scène aux écrans compacts.
 
@@ -228,7 +248,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | :--- | :--- | :--- |
 | **Général** | `Ctrl + K` | Ouvre la palette de commandes modale. |
 | **Général** | Touche `?` | Ouvre ou ferme ce volet d'aide. |
-| **Scène** | Clic sur un personnage | Ouvre son poste individuel (fait défiler sur mobile). |
+| **Scène** | Clic sur un personnage (ou toucher sur écran tactile) | Ouvre son poste individuel (fait défiler sur mobile). |
 | **Scène** | Clic sur la pile de courrier | Ouvre l'onglet Équipe et la section Courrier du chef. |
 | **Scène** | Bouton « Disposer » | Active la réorganisation manuelle des bureaux. |
 | **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la palette d'abord, puis le mode « Disposer », puis l'aide. |

@@ -2,7 +2,8 @@
 
 Ce dossier rassemble les captures candidates pour la présentation et la documentation du projet, réalisées avec des états simulés sécurisés (aucun secret ni chemin personnel, requêtes d'envoi bloquées).
 
-- `01-ordinateur-scene.png` : Vue d'ensemble sur ordinateur (1440x900) avec le chef au bureau Direction et trois agents (travail, pause de limite, disponible).
+- `01-ordinateur-scene.png` : Vue d'ensemble sur ordinateur (1440x900) en journée (14 h 30) avec ciel clair, chef au bureau Direction, tableau mural et trois agents.
+- `01-ordinateur-scene-soir.png` : Vue d'ensemble sur ordinateur (1440x900) en soirée (21 h) avec suspensions au plafond et lampes de bureau allumées.
 - `02-ordinateur-poste.png` : Vue du poste ouvert sur ordinateur avec lecture des sorties du terminal et barre d'état de l'outil.
 - `03-ordinateur-equipe.png` : Onglet Équipe sur ordinateur montrant le courrier du chef, la file d'attente sécurisée et l'envoi groupé.
 - `04-ordinateur-palette.png` : Palette de commandes modale (Ctrl+K) ouverte au centre de l'écran avec recherche d'actions au clavier.

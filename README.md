@@ -10,9 +10,9 @@ Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et pilo
 Le Bureau des agents a été conçu pour les développeurs, créateurs et orchestrateurs qui font collaborer plusieurs agents d'IA (Claude, Codex, Antigravity, OpenCode) en parallèle et souhaitent garder une vision claire de leur atelier sans jongler entre plusieurs fenêtres de terminal.
 
 - Organisation Chef et Agents : Le premier agent démarré dans Herdr est désigné comme le chef d'équipe (bureau Direction). Les autres agents sont ses collaborateurs directs.
-- Cycle de délégation et courriers : Lorsque le chef délègue une mission (détection de la commande `herdr agent prompt` dans son journal), l'agent concerné vient chercher sa tâche, retourne à son poste pour travailler, puis envoie son « courrier » de fin de mission au chef.
+- Cycle de délégation et courriers : Lorsque le chef délègue une mission (détection de commandes `herdr agent prompt` dans son journal), chaque agent visé vient chercher sa tâche au bureau Direction, retourne à son poste pour travailler, puis envoie son « courrier » de fin de mission au chef.
 - Évaluation et humeur : Le chef reçoit le travail et l'apprécie ; l'humeur affichée reflète strictement les résultats observés, et les erreurs constatées alimentent directement `LESSONS.md`.
-- Salle de réflexion repliable : Les sous-agents actifs se réunissent dans une salle de réflexion animée sur la scène, avec commande de repli pour adapter la scène aux écrans compacts.
+- Salle de réflexion repliable : Les sous-agents actifs se réunissent dans une salle de réflexion vitrée au libellé fixe « SALLE DE REFLEXION », avec commande de repli pour adapter la scène aux écrans compacts.
 - File d'attente sécurisée : Possibilité de mettre en file une consigne pour un agent occupé ou en pause de quota, avec relance automatique planifiée à la remise à zéro + 5 min et protection absolue contre les doubles envois.
 - Suivi des tâches réelles : Onglet dédié observant les cases cochées dans les fichiers du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux.
 - Palette de commandes et aide contextuelle : Accès rapide par `Ctrl+K` et touche `?` pour naviguer, inspecter et piloter entièrement au clavier.
@@ -41,13 +41,14 @@ Pour déployer le Bureau des agents sur une autre machine sous Windows, Linux ou
 
 ## Lire la scène et le bureau Direction
 
-- Ambiance et cycle jour-nuit continu : Le ciel de la baie vitrée évolue en continu selon l'horloge de ton ordinateur (nuit, aube, jour, crépuscule). Le soleil et la lune parcourent un arc horaire (soleil orangé près de l'horizon, lever fixe à 6 h 30 et coucher fixe à 19 h 30, approximation sans saisons). Les étoiles et les fenêtres extérieures s'effacent le jour. L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte en temps réel.
-- Le chef au bureau Direction : Le premier agent démarré dans Herdr occupe le bureau Direction mis en valeur. Une pile de courriers s'y empile dès qu'un agent termine une tâche ; cliquer dessus ouvre directement l'onglet Équipe.
-- Chaque poste en un coup d'œil : Chaque bureau arbore en façade le logo en pixels de son outil (Claude, Codex, Antigravity, OpenCode).
+- Ambiance, cycle jour-nuit et éclairage du soir : Le ciel de la baie vitrée évolue en continu selon l'horloge de ton ordinateur (nuit, aube, jour, crépuscule), avec lever fixe à 6 h 30 et coucher fixe à 19 h 30 (approximation sans saisons). En soirée (dès 17 h 30 et à pleine puissance à 19 h jusqu'au matin), les suspensions au plafond et les lampes de bureau s'allument automatiquement pour éclairer l'atelier. La lampe d'un poste s'éteint si l'agent part en pause de limite.
+- Tableau d'affichage de la scène : Un tableau mural synthétise les faits utiles absents du reste de la scène. Il affiche l'heure de reprise d'une pause de quota (`RETOUR`), le nombre de consignes en attente (`EN FILE`), les courriers non lus (`COURRIER`) et les sous-agents en activité (`SOUS-AGENTS`). Chaque ligne s'allume dès que son fait est observé.
+- Le chef au bureau Direction : Le premier agent démarré dans Herdr occupe le bureau Direction mis en valeur. Une pile de courriers s'y empile dès qu'un agent termine une tâche ; cliquer dessus ouvre directement l'onglet Équipe. Une commande avec plusieurs ordres de délégation fait venir chaque collaborateur visé chercher son travail.
+- Chaque poste en un coup d'œil : Chaque bureau arbore en façade le logo en pixels de son outil (Claude, Codex, Antigravity, OpenCode). Sous chaque bureau, le nom seul de l'agent est affiché, souligné d'un trait fin de la couleur de son état (bleu travail, menthe disponible, ambre attente, violet pause), sans texte d'état redondant avec sa posture et son écran.
 - Postures visibles : Frappe au clavier quand l'agent est au travail (bleu ciel), mug en main quand il est disponible (menthe), main levée quand il attend ta réponse (ambre).
-- Pause de quota et chevalet « RETOUR » : Si un agent atteint son plafond d'utilisation, son fauteuil se vide, une veilleuse violette clignote et un chevalet blanc affiche l'heure exacte de reprise annoncée par l'outil.
+- Pause de quota et chevalet « RETOUR » : Si un agent atteint son plafond d'utilisation, son fauteuil se vide, sa lampe de bureau s'éteint, une veilleuse violette clignote et un chevalet blanc affiche l'heure exacte de reprise annoncée par l'outil.
 - Bulles d'état : Bulle jaune « ? » quand l'agent attend une consigne ou une autorisation, coche verte quand il vient de terminer, points de suspension « ... » pour un état inconnu.
-- Salle de réflexion repliable : Pièce dédiée où les sous-agents se concentrent avant de déposer leur dossier complété sur le bureau de leur agent.
+- Salle de réflexion repliable : Pièce dédiée portant le libellé fixe « SALLE DE REFLEXION », où les sous-agents se réunissent avant de déposer leur dossier complété sur le bureau de leur agent. Le nombre de sous-agents actifs est visible au tableau mural.
 - Mode « Disposer » : Le bouton « Disposer » permet de réorganiser librement les bureaux sur le sol et de redimensionner le bureau Direction par son coin doré. Une barre d'aide dédiée rappelle les commandes et la touche Échap enregistre la disposition.
 
 ## Onglet Poste, terminal et file d'attente
