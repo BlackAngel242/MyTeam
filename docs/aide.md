@@ -53,11 +53,23 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Ligne `SOUS-AGENTS` : dénombre les assistants actuellement au travail dans la salle de réflexion (s'allume en gris clair si des sous-agents sont actifs).
 - Chaque ligne s'allume en couleur vive dès que son fait est observé ; les lignes sans activité restent sombres et discrètes.
 
-#### Le bureau Direction
+#### Panneau de liège et Tableau de l'équipe
+- Un panneau de liège en pixel art est accroché au mur du fond (à droite du néon). Ses punaises colorées indiquent le nombre de tâches encore ouvertes dans `TODO.md` (avec un symbole `+` au-delà de 6 tâches ouvertes).
+- Cliquer sur le panneau de liège ou sur le bouton « Tableau » dans le cadre de la scène ouvre la fenêtre modale du **Tableau de l'équipe**.
+- Cette vue rassemble en lecture seule les 4 documents piliers du projet :
+  1. **Étape en cours** : extrait synthétique de `HANDOFF.md` présentant la phase actuelle du projet.
+  2. **À faire / idées** : liste des tâches et chantiers restant à accomplir extraite de `TODO.md`.
+  3. **Rôles de l'équipe** : responsabilités et propriété des fichiers définies dans `AGENTS.md`.
+  4. **Dernières leçons** : erreurs recensées et consignes de prudence issues de `LESSONS.md`.
+- Chaque bloc indique le nom de son fichier source et la date de dernière mise à jour sur le disque.
+- Sécurité et intégrité : route `/api/tableau` protégée par jeton, liste fermée de fichiers autorisés, chemins absolus et identifiants privés masqués.
+- Fermeture facile : touche Échap, bouton croix ou clic sur l'arrière-plan sombre. Le focus clavier revient automatiquement au bouton ou panneau déclencheur.
+
+#### Le bureau Direction et la tournée du chef
 - Attribué au premier agent démarré dans Herdr (le chef d'équipe).
 - Reconnaissable à sa moquette violette, ses boiseries élégantes et sa grande baie vitrée.
 - Une pile de courriers s'accumule sur son bureau dès qu'un agent termine une tâche. Un clic sur cette pile ouvre directement l'onglet Équipe et le courrier du chef.
-- Lorsqu'une commande du chef comporte des ordres pour plusieurs agents, chaque collaborateur visé vient chercher sa tâche à son bureau.
+- Tournée du chef lors d'une délégation : à chaque mission déléguée observée dans son journal (`herdr agent prompt`), le chef se lève de son fauteuil, franchit la porte de la Direction, traverse la pièce pour aller déposer le dossier (avec le titre de la tâche en bannière dorée) directement sur le bureau du collaborateur visé, puis revient s'asseoir à sa place. Une seule tournée a lieu à la fois pour que chaque geste reste parfaitement lisible.
 
 #### Cycle jour-nuit continu et ambiance lumineuse
 - Le ciel visible par la baie vitrée évolue en temps réel selon l'heure exacte de votre machine (nuit, aube, jour, crépuscule).
@@ -228,7 +240,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 
 #### Palette de commandes (Ctrl+K)
 - Accessible par le bouton « Commandes » ou le raccourci clavier Ctrl+K.
-- Permet de chercher un agent, ouvrir son poste, rédiger un message, basculer d'onglet ou lancer une action sans lâcher le clavier.
+- Permet de chercher un agent, ouvrir son poste, rédiger un message, ouvrir le tableau de l'équipe (« Mémoire partagée »), basculer d'onglet ou lancer une action sans lâcher le clavier.
 - Navigation fluide : flèches haut et bas pour choisir, Entrée pour valider, Échap pour fermer.
 
 #### Panneau d'aide latéral (Touche ?)
@@ -247,11 +259,13 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | Zone | Action ou raccourci | Effet |
 | :--- | :--- | :--- |
 | **Général** | `Ctrl + K` | Ouvre la palette de commandes modale. |
+| **Général** | Palette Ctrl+K : « Tableau de l'équipe » | Ouvre la fenêtre modale du tableau de l'équipe (mémoire partagée). |
 | **Général** | Touche `?` | Ouvre ou ferme ce volet d'aide. |
+| **Scène** | Clic sur le panneau de liège ou bouton « Tableau » | Ouvre le tableau de l'équipe en lecture seule (fichiers piliers). |
 | **Scène** | Clic sur un personnage (ou toucher sur écran tactile) | Ouvre son poste individuel (fait défiler sur mobile). |
 | **Scène** | Clic sur la pile de courrier | Ouvre l'onglet Équipe et la section Courrier du chef. |
 | **Scène** | Bouton « Disposer » | Active la réorganisation manuelle des bureaux. |
-| **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la palette d'abord, puis le mode « Disposer », puis l'aide. |
+| **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la palette d'abord, puis le tableau de l'équipe, puis le mode « Disposer », puis l'aide. |
 | **Scène** | Bouton « Plein écran » | Agrandit la scène et le panneau dans une vue unifiée. |
 | **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations du canvas (figée, la scène suit l'heure chaque minute). |
 | **Navigation**| `Flèche droite` / `Flèche gauche` | Passe d'un onglet à l'autre (Poste, Équipe, Fichiers, Tâches). |
