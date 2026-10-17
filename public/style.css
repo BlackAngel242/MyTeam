@@ -252,6 +252,7 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 .tasks-progress{margin:0 0 16px}
 .task-group{margin:0 0 16px}.task-group h3{font-size:12.5px;font-weight:550;color:#d5e2f1;margin:0 0 6px}
 .tasks-sub{font-size:15px;font-weight:550;margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--line)}
+.task-group .limit-track{margin:0 0 8px}.task-sub{font-size:11.5px;font-weight:550;color:var(--muted);margin:10px 0 2px}
 .task-list{list-style:none;margin:0;padding:0;font-size:12px}
 .task-list li{display:flex;gap:9px;align-items:flex-start;padding:5px 0;color:#d5e2f1}
 .task-list .box{width:12px;height:12px;flex-shrink:0;margin-top:2px;border:1.5px solid #5a6e88;border-radius:3px}
