@@ -1,0 +1,14 @@
+# Captures du Bureau des agents
+
+Ce dossier rassemble les captures candidates pour la présentation et la documentation du projet, réalisées avec des états simulés sécurisés (aucun secret ni chemin personnel, requêtes d'envoi bloquées).
+
+- `01-ordinateur-scene.png` : Vue d'ensemble sur ordinateur (1440x900) avec le chef au bureau Direction et trois agents (travail, pause de limite, disponible).
+- `02-ordinateur-poste.png` : Vue du poste ouvert sur ordinateur avec lecture des sorties du terminal et barre d'état de l'outil.
+- `03-ordinateur-equipe.png` : Onglet Équipe sur ordinateur montrant le courrier du chef, la file d'attente sécurisée et l'envoi groupé.
+- `04-ordinateur-palette.png` : Palette de commandes modale (Ctrl+K) ouverte au centre de l'écran avec recherche d'actions au clavier.
+- `05-ordinateur-aide.png` : Panneau latéral d'aide intégrée ouvert avec la visite guidée en 5 étapes et les légendes des postures.
+- `06-telephone-scene.png` : Scène pixel art et en-tête d'équipe adaptés sur écran de téléphone (390x844).
+- `07-telephone-poste.png` : Onglet Poste sur téléphone avec le terminal de sorties et le formulaire de consigne.
+- `08-telephone-equipe.png` : Onglet Équipe sur téléphone avec le courrier, la file d'attente et l'envoi à plusieurs agents.
+- `09-telephone-palette.png` : Palette de commandes modale adaptée à la largeur d'un écran mobile.
+- `10-telephone-aide.png` : Panneau d'aide intégrée affiché en plein écran sur téléphone pour une lecture confortable.

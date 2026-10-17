@@ -24,44 +24,61 @@ L'application « Bureau des agents » est une tour de contrôle locale dans le n
 
 Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux locaux, fichiers du disque, horloge de la machine. Jamais de pourcentage fictif, de tâche imaginaire ou d'humeur inventée. Toute lacune d'un outil est signalée par « Non exposé par cet outil ».
 
-## État d'avancement au 17 octobre 2026 (Version 0.2.0 stabilisée)
+## État d'avancement au 17 octobre 2026 (Version 0.3.0 livrée et stabilisée)
 
-- Sauvegarde majeure : Version stabilisée enregistrée au commit `7817574`.
-- Suite de tests : 129 tests automatisés passants sur 131 (2 tests ignorés sur les liens symboliques Windows, 0 échec). La syntaxe de tous les fichiers JavaScript est validée (`npm run check`).
-- Évaluation ergonomique : Deux passages d'évaluation critique réalisés et documentés dans `docs/revue-antigravity.md` (note globale de 8,7/10).
-- Licence logicielle : Licence MIT retenue par DrSmoke, actée dans `LICENSE` avec mention des marques tierces dans `NOTICE.md`.
+- Suite de tests : 161 tests automatisés (159 réussis, 2 ignorés sur les liens symboliques Windows, 0 échec). Syntaxe irréprochable validée avec `npm run check`.
+- File d'attente serveur sécurisée (`src/queue.mjs`) :
+  - Bouton « Mettre en file » sur le poste quand un agent est au travail ou en pause de limite.
+  - Gestion collective dans l'onglet Équipe avec liste des consignes et retrait unitaire possible.
+  - Relance automatique planifiée 5 minutes après la remise à zéro de quota annoncée par l'outil (`remise à zéro + 5 min`).
+  - Protection absolue contre les doubles envois (clé d'idempotence, statut d'envoi persistant avant tout appel externe, écriture atomique sur disque et sauvegarde des fichiers corrompus en `.corrompu`).
+- Onglet Tâches connecté :
+  - Analyse des cases réellement cochées dans les fichiers de documentation (`TODO.md`) et des plans publiés par les agents dans leurs journaux.
+  - Progression strictement factuelle, sans extrapolation ni calcul inventé.
+- Palette de commandes modale (`Ctrl+K`) et aide escamotable (`aside.help`, touche `?`) :
+  - Navigation complète au clavier pour ouvrir un poste, rédiger une consigne, changer d'onglet ou ajuster la scène.
+  - Volet d'aide latéral ouvert à la première visite avec visite guidée en 5 étapes, table des raccourcis et commandes des signaux.
+- Module sonore et notifications :
+  - Module Web Audio 8 bits autonome sans fichier audio (`public/sounds.js`, 4 signaux : fin de travail, blocage, pause de limite, délégation).
+  - Notifications de bureau Windows en arrière-plan avec bascules d'activation dans l'aide et mémorisation dans `localStorage`.
+- Ambiance visuelle et cycle jour-nuit continu :
+  - Transition progressive du ciel selon l'heure réelle de la machine (nuit, aube, jour, crépuscule), lever fixe à 6 h 30 et coucher fixe à 19 h 30 (approximation sans saisons).
+  - Arc horaire pour le soleil et la lune, éclairage dynamique de la pièce, de la salle de réflexion et du bureau Direction.
+- Scène pixel art et organisation de l'équipe :
+  - Salle de réflexion repliable pour les sous-agents d'analyse.
+  - Bureau Direction valorisé pour le premier agent démarré (le chef), avec pile de courriers cliquable ouvrant directement l'onglet Équipe.
+  - Suivi des ordres de délégation (`herdr agent prompt`) et courriers de fin de travail remis à zéro dès consultation.
+- Synthèse de design D1 à D8 appliquée :
+  - D1 : État principal « En pause (limite) » unifié sur l'ensemble de l'interface.
+  - D2 : Barre d'aide à la disposition isolée sur sa propre ligne pour éviter tout chevauchement avec l'alerte d'attention.
+  - D3 : Cartes d'agents restructurées sur deux lignes avec identifiant Herdr en pastille (`.pane-pill`) et passage en grille 2 colonnes sous 1360 px sans troncature.
+  - D4 : Onglet Équipe épuré avec compteurs intégrés dans les titres de section.
+  - D5 : Terminal occupant la hauteur disponible avec bouton « Agrandir » / « Réduire » pour une lecture pleine page.
+  - D6 : Blocs d'erreur unifiés avec bouton « Actualiser le bureau » et 6 icônes d'états vides pixel art 16x16 (`public/empty-icons.js`).
+  - D7 : Écran d'accueil de poste invitant à la sélection directe dès l'ouverture.
+  - D8 : Adaptation responsive mobile soignée et validée à 390 et 360 px sans débordement horizontal.
 
-## Préparation à la publication GitHub et chantiers en cours
+## Deuxième revue de Codex traitée (17 octobre 2026, après 0.3.0)
 
-Le projet est préparé pour un partage public sur GitHub, sans publication automatique :
+- Les 11 constats de `docs/revue-codex-interface-2.md` sont corrigés (détail dans la section « Non publié » de `CHANGELOG.md`). 177 tests, 175 réussis, 2 ignorés.
+- Vérifications Playwright sur états simulés dans le scratchpad de Claude (`pw/revue2*.mjs`) ; G2 confirmé sans interception sur le vrai serveur par l'essai d'OpenCode (`%TEMP%/opencode/essai-g2`).
+- Après tout changement de `server.mjs` : redémarrer le processus qui écoute sur 4317, sinon l'ancien code reste servi.
+- Codex est au repos (quota bas, 19 % le 17 octobre) : ne pas lui confier de mission avant sa remise à zéro. OpenCode reprend ses fichiers si besoin.
+- Non vérifié : notifications Windows réelles page cachée (le délai réel dépend du navigateur), lecteur d'écran sur la palette.
 
-1. Fichiers créés et maintenus par Antigravity :
-   - `README.md` : Guide complet avec présentation publique, nouveau concept de chef et délégations, installation et contribution, signature originale de DrSmoke préservée.
-   - `CONTRIBUTING.md` : Règles de contribution, philosophie zéro dépendance, environnement de test.
-   - `CHANGELOG.md` : Historique des versions 0.1.0 et 0.2.0 enrichi avec les derniers ajouts.
-   - `docs/publication-github.md` : Audit des chemins, absence de secrets, configuration du dépôt, licence MIT et captures d'écran requises.
-   - `docs/idees-os.md` : 8 innovations pour faire du bureau un véritable système d'exploitation d'agents.
-   - `docs/commandes-outils.md` : Référentiel vérifié des commandes locales de changement de modèle et lancement de compétences.
-   - `TODO.md` : Tableau de bord des tâches accomplies et restantes.
+## Préparation à la publication GitHub et prochaines étapes
 
-2. Répartition du travail en équipe :
-   - OpenCode : Finalise le module de détection des délégations (`src/delegations.mjs`), rédige les scripts d'installation dans `scripts/` et le guide `docs/INSTALLATION.md`.
-   - Claude : Coordonne la session et maintient l'interface `public/`.
-   - Codex : Veille sur la cohérence des tests et du moteur Herdr.
-   - Antigravity : Gère la documentation publique, l'ergonomie, la conformité aux faits et la préparation GitHub.
+1. Fichiers maintenus par Antigravity :
+   - `README.md` : Guide d'accueil public complet avec cycle de délégation, bureau Direction, file d'attente, tâches réelles, sons et raccourcis.
+   - `CONTRIBUTING.md` : Consignes pour contribuer en respectant l'architecture zéro dépendance.
+   - `CHANGELOG.md` : Historique des versions 0.1.0, 0.2.0 et 0.3.0.
+   - `docs/aide.md` : Guide d'aide complet et fidèle à l'interface réelle.
+   - `docs/publication-github.md` : Audit de publication, politique de sécurité et préparation des illustrations.
+   - `docs/idees-os.md` : 8 pistes d'innovations pour transformer le bureau en OS d'agents.
+   - `docs/commandes-outils.md` : Référentiel vérifié des commandes locales pour modèles et compétences.
+   - `TODO.md` : Suivi précis des livraisons et des tâches futures.
 
-3. Décisions et actions de DrSmoke :
-   - Validation des captures d'illustration pour `docs/captures/`.
-   - Création manuelle du dépôt GitHub et publication initiale.
-
-## Reprise du chef après sa pause de limite (17 octobre 2026, 02 h 55)
-
-Claude (chef, w5:p1) a atteint 91 % de sa limite de session, remise à zéro vers 04 h 40 ; Codex (w5:p4) est en pause jusqu'à 04 h 37. Restent actifs : OpenCode (w5:p3) et Antigravity (w5:p2).
-
-Dernier état vérifié : 131 tests, 129 réussis, 2 ignorés ; dernier commit sauvegardé visible avec `git log -1`. Aucun dépôt distant : la publication GitHub (dépôt public `bureau-des-agents`, licence MIT, branche `main`) a été refusée par le garde-fou de Claude Code faute d'accord explicite ; DrSmoke peut la lancer lui-même (commande dans le compte rendu du chef).
-
-En cours au moment de la pause :
-- OpenCode : file d'attente serveur avec relance automatique à « remise à zéro + 5 min », pause de quota (`limitReached`, `resetsAt`), délégations dans `/api/state`, sous-agents Codex. Puis corriger les 4 constats confirmés de `docs/revue-codex-delegations.md`.
-- Antigravity : documentation du concept chef et agents, README, CHANGELOG.
-
-À la reprise, le chef doit : lire ce fichier, `git log`, les comptes rendus d'OpenCode et d'Antigravity ; relire et tester leur code ; redémarrer seulement le processus du port 4317 ; vérifier avec Playwright ; puis s'attaquer à la fenêtre des tâches (`/api/todos` est prêt côté serveur) et aux idées Mobbin retenues (palette Ctrl+K, aide « ? », visite guidée).
+2. Décisions et validation de DrSmoke :
+   - Choix des captures finales pour `docs/captures/`.
+   - Création manuelle du dépôt public GitHub (`bureau-des-agents`) et publication initiale sur la branche `main`.
+   - Arbitrage sur les évolutions d'OS d'agents (bureau en tuiles ou en fenêtres libres).

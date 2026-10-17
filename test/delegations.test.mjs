@@ -120,6 +120,29 @@ test('les délégations par variable et par chemin complet sont reconnues', asyn
   assert.equal(delegations[1].title, 'Avec variable nue'.slice(0, -1));
 });
 
+test('une commande peut porter plusieurs ordres, chacun compté', async t => {
+  const root = await journal(t, [
+    appel('m1', 'herdr agent prompt w5:p1 "Premier envoi"; herdr agent prompt w5:p2 "Second envoi"'),
+    resultat('m1', '{"result":{"type":"agent_prompted"}}'),
+  ]);
+  const { delegations } = await readDelegations(SESSION, { root });
+  assert.deepEqual(delegations.map(d => [d.id, d.target]), [['m1', 'w5:p1'], ['m1', 'w5:p2']]);
+  assert.deepEqual(delegations.map(d => d.result), [
+    { ok: true, type: 'agent_prompted' },
+    { ok: true, type: 'agent_prompted' },
+  ]);
+});
+
+test('opérateur PowerShell et binaire herdr.exe nu sont reconnus', async t => {
+  const root = await journal(t, [
+    appel('p1', 'H=/opt/herdr/herdr.exe; & $H agent prompt w5:p2 "Avec esperluette"'),
+    appel('p2', 'herdr.exe agent prompt w5:p3 "Binaire nu"'),
+    appel('p3', 'H=autre; & $H agent prompt w5:p1 "Toujours rien"'),
+  ]);
+  const { delegations } = await readDelegations(SESSION, { root });
+  assert.deepEqual(delegations.map(d => [d.id, d.target]), [['p1', 'w5:p2'], ['p2', 'w5:p3']]);
+});
+
 test('les lignes corrompues et les structures inattendues sont ignorées', async t => {
   const root = await journal(t, [
     '{"broken"',

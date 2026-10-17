@@ -7,8 +7,9 @@ const drafts = new Map();
 let state = { connected:false, agents:[], token:null }, selected = null, stateBusy = false, readBusy = false, sending = false, readSequence = 0, spots = [];
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 // Animation active par défaut (choix de DrSmoke) ; sa préférence est mémorisée dans ce navigateur.
+// Sans choix mémorisé, la réduction des mouvements du système fige la scène.
 const readMotion=()=>{try{return localStorage.getItem('bureau.animation');}catch{return null;}};
-let paused = readMotion()==='off';
+let paused = readMotion()==='off'||(readMotion()==null&&motionPreference.matches);
 const labels = { idle:'Disponible', done:'Terminé', busy:'Au travail', working:'Au travail', running:'Au travail', waiting:'Attend une réponse', blocked:'Attend une réponse', unknown:'État inconnu', stopped:'Arrêté' };
 const label = a => quotaPause(a) ? 'En pause (limite)' : labels[a.status] || 'État inconnu';
 const tint = a => quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
@@ -63,7 +64,14 @@ function renderAgents() {
   if(avatarLogo)$('detail-avatar').replaceChildren(avatarLogo);else if(!$('detail-avatar').querySelector('svg'))$('detail-avatar').replaceChildren(defaultAvatar.cloneNode(true));
   $('agent-info').hidden=!a;
   $('panel-poste').classList.toggle('no-agent',!a);$('poste-empty').hidden=Boolean(a);
-  if(!a)$('pick-list').replaceChildren(...state.agents.map(x=>{const b=document.createElement('button');b.type='button';b.className='tool-button pick';b.textContent=x.name+' · '+label(x).toLowerCase();b.addEventListener('click',()=>selectAgent(x.id));return b;}));
+  // Invitation reconstruite seulement si les noms ou états changent, en gardant le bouton focalisé.
+  const pickKey=a?'':state.agents.map(x=>x.id+'|'+x.name+'|'+label(x)).join('\n');
+  if(!a&&$('pick-list').dataset.key!==pickKey){
+    const focusedPick=document.activeElement?.closest?.('#pick-list button')?.dataset.id;$('pick-list').dataset.key=pickKey;
+    $('pick-list').replaceChildren(...state.agents.map(x=>{const b=document.createElement('button');b.type='button';b.className='tool-button pick';b.dataset.id=x.id;b.textContent=x.name+' · '+label(x).toLowerCase();b.addEventListener('click',()=>selectAgent(x.id));return b;}));
+    if(focusedPick)$('pick-list').querySelector('[data-id="'+CSS.escape(focusedPick)+'"]')?.focus({preventScroll:true});
+  }
+  if(a)$('pick-list').dataset.key='';
   if(a){$('agent-kind').textContent=a.kind||'Non précisé';$('agent-pane').textContent=a.paneId||'Non précisé';$('agent-cwd').textContent=a.cwd||'Non précisé';}
   renderActivity(a);renderStatusbar(a);updateForm();renderBroadcast();renderSummary();
 }
@@ -93,9 +101,11 @@ function showTab(name){
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
 const queueLabels={attente:'en attente',envoyee:'envoyée',annulee:'annulée',a_revoir:'à revoir'};
-let queueItems=[];
+let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='';
 function errorBlock(container,message,icon='erreur'){
-  const box=document.createElement('div');box.className='error-block';box.setAttribute('role','alert');
+  // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
+  const old=container.querySelector(':scope>.error-block');if(old&&old.dataset.message===message)return;
+  const box=document.createElement('div');box.dataset.message=message;box.className='error-block';box.setAttribute('role','alert');
   const pic=iconCanvas(icon);if(pic)box.append(pic);
   const p=document.createElement('p');p.textContent='Lecture indisponible : '+message;
   const btn=document.createElement('button');btn.type='button';btn.className='tool-button';btn.textContent='Actualiser le bureau';
@@ -109,15 +119,20 @@ function iconCanvas(name){
 }
 async function loadQueue(){
   if(!state.connected||!state.token)return;
-  try{queueItems=(await request('/api/queue',{headers:{'X-Bureau-Token':state.token}})).items||[];}catch(error){errorBlock($('queue-list'),errorText(error),'file');return;}
-  renderQueue();
+  // Seule la lecture la plus récente s'affiche : une réponse lente ne remplace jamais une plus récente.
+  const gen=++queueGen;let items;
+  try{items=(await request('/api/queue',{headers:{'X-Bureau-Token':state.token}})).items||[];}catch(error){if(gen===queueGen){queueShown='';errorBlock($('queue-list'),errorText(error),'file');}return;}
+  if(gen!==queueGen)return;
+  queueItems=items;renderQueue();
 }
 function renderQueue(){
   const list=$('queue-list'),visible=queueItems.filter(q=>q.state!=='annulee').slice(-20).reverse(),waitingN=queueItems.filter(q=>q.state==='attente').length;
   $('queue-count').textContent=waitingN?'('+waitingN+' en attente)':'';
+  const shown=JSON.stringify([visible,state.agents.map(a=>a.id+a.name)]);if(shown===queueShown)return;queueShown=shown;
   if(!visible.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucune consigne en attente.';list.replaceChildren(li);return;}
+  const focusedItem=document.activeElement?.closest?.('#queue-list [data-item]')?.dataset.item;
   list.replaceChildren(...visible.map(q=>{
-    const agent=state.agents.find(a=>a.id===q.id),li=document.createElement('li');li.className='queue-item '+q.state;
+    const agent=state.agents.find(a=>a.id===q.id),li=document.createElement('li');li.className='queue-item '+q.state;li.dataset.item=q.itemId;
     const head=document.createElement('span');head.className='log-head';
     head.textContent=(agent?.name||'Agent disparu')+' · '+queueLabels[q.state]+(q.state==='attente'&&q.notBefore&&new Date(q.notBefore)>Date.now()?' · pas avant '+hhmm(new Date(q.notBefore)):'')+(q.sentAt?' · '+hhmm(new Date(q.sentAt)):'');
     const body=document.createElement('span');body.className='log-body';body.textContent=q.message.length>140?q.message.slice(0,140)+'…':q.message;
@@ -130,11 +145,14 @@ function renderQueue(){
     }
     return li;
   }));
+  if(focusedItem)list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button')?.focus({preventScroll:true});
 }
 // Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
 async function loadTodos(){
   if(!state.connected||!state.token)return;
-  let data;try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),errorText(error),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Plans non chargés.'}));return;}
+  const gen=++todosGen;let data;
+  try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){if(gen!==todosGen)return;todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),errorText(error),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Plans non chargés.'}));return;}
+  const shown=JSON.stringify([data,state.agents.map(a=>a.id+a.name)]);if(gen!==todosGen||shown===todosShown)return;todosShown=shown;
   const project=data.project||[],done=project.filter(t=>t.done).length;
   const prog=$('tasks-progress');prog.replaceChildren();
   if(project.length){
@@ -282,10 +300,21 @@ function splitChrome(text){
 const statusCache=new Map();
 // Pause de quota : l'outil annonce lui-même la fin de sa limite (« try again at 4:37 AM », « resets 7pm »),
 // ou son journal donne l'heure exacte de remise à zéro (Codex). Relance prévue 5 minutes après.
+// Une annonce relue garde l'échéance de sa première lecture : sinon « 4:45 PM » relu à 16:46 deviendrait demain.
+const clockSeen=new Map();
 function parseClock(txt){
+  const key=txt.trim(),seen=clockSeen.get(key);
+  if(seen&&Date.now()-seen.at<12*3600000)return seen.until;
   const m=/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?/i.exec(txt)||/(\d{1,2})[:h](\d{2})/.exec(txt);if(!m)return null;
-  let h=Number(m[1])%12,min=Number(m[2]||0);if(m[3]){if(m[3].toLowerCase()==='p')h+=12;}else h=Number(m[1]);
-  const d=new Date();d.setHours(h,min,0,0);if(d<Date.now()-60000)d.setDate(d.getDate()+1);return d;
+  let h=Number(m[1]),min=Number(m[2]||0);
+  if(m[3]){if(h<1||h>12)return null;h=h%12+(m[3].toLowerCase()==='p'?12:0);}
+  if(h>23||min>59)return null;
+  const d=new Date();
+  if(/\b(UTC|GMT)\b/i.test(txt))d.setUTCHours(h,min,0,0);else d.setHours(h,min,0,0);
+  if(d<Date.now()-60000)d.setDate(d.getDate()+1);
+  clockSeen.set(key,{until:d,at:Date.now()});
+  if(clockSeen.size>50)clockSeen.delete(clockSeen.keys().next().value);
+  return d;
 }
 function limitFromText(text){
   const tail=text.split('\n').slice(-40).join('\n');
@@ -293,13 +322,17 @@ function limitFromText(text){
   const when=/(?:try again at|resets?(?: at)?|reset at|réessaie(?:z)? à)\s+([^\n.·]+)/i.exec(tail);
   return {until:when?parseClock(when[1]):null};
 }
+// Durée en minutes : 300 → « 5 h », 1440 → « 24 h », 10080 → « 7 j ».
+const windowLabel=min=>!min?null:min%1440===0&&min>1440?min/1440+' j':min%60===0?min/60+' h':min+' min';
 function quotaPause(a){
   if(!a)return null;
   const act=a.activity;
   if(act?.limitReached){
-    const times=(act.limits||[]).filter(l=>l.resetsAt&&(l.usedPercent>=100||act.limitReached)).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
-    const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100).map(l=>l.window>=1440?'hebdomadaire':l.window?Math.round(l.window/60)+' h':null).filter(Boolean);
-    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:blocking[0]||null};
+    // Seules les limites épuisées décident du retour ; si aucune ne l'est, l'outil ne dit pas laquelle bloque.
+    const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100);
+    const times=blocking.filter(l=>l.resetsAt).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
+    const which=blocking.map(l=>windowLabel(l.window)).filter(Boolean);
+    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:which[0]||null};
   }
   const s=statusCache.get(a.id)?.status?.quota;
   if(s&&(!s.until||s.until>Date.now()))return {until:s.until,source:'terminal'};
@@ -476,7 +509,7 @@ async function refreshState() {
     if(selected&&state.connected&&!activeAgent()) {
       keepDraft(selected,$('message').value);selected=null;readSequence++;$('message').value='';termPlaceholder('Cet agent a quitté Herdr. Sélectionne un autre poste.');$('read-state').textContent='Poste fermé';$('send-result').hidden=true;
     } else if(selected&&!state.connected){readSequence++;termPlaceholder('Herdr ne répond plus. Ce poste sera retrouvé dès le retour de la connexion.');$('read-state').textContent='Lecture indisponible';}
-    if(state.connected){const live=new Set(state.agents.map(a=>a.id));for(const m of [lastStatus,changes])for(const id of m.keys())if(!live.has(id))m.delete(id);}
+    if(state.connected){const live=new Set(state.agents.map(a=>a.id));for(const m of [lastStatus,changes,statusCache,pausedSeen])for(const id of m.keys())if(!live.has(id))m.delete(id);}
     $('state-error').hidden=!data.error;$('state-error').textContent=data.error||'';
     $('last-update').textContent='Actualisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   }catch(error){
@@ -513,11 +546,12 @@ $('message').addEventListener('input',()=>{if(selected)keepDraft(selected,$('mes
 $('prompt-form').addEventListener('submit',async event=>{
   event.preventDefault();const a=activeAgent(),message=$('message').value.trim();
   if(canQueue(a)&&!sending&&message){
-    sending=true;updateForm();$('send-result').hidden=true;
+    const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
     try{
-      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message})});
-      drafts.delete(a.id);$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;loadQueue();
-    }catch(error){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}
+      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message})});
+      drafts.delete(target);loadQueue();
+      if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;}
+    }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}
     return;
   }
@@ -534,6 +568,7 @@ $('prompt-form').addEventListener('submit',async event=>{
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
 function syncMotion(){ $('motion').setAttribute('aria-pressed',String(paused));$('motion').querySelector('span').textContent=paused?'Animer le bureau':'Mettre en pause';$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
+motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
 const WORK=['busy','working','running'], FREE=['idle','done'], WAIT=['waiting','blocked'];
 const sceneLabels={working:'AU TRAVAIL',busy:'AU TRAVAIL',running:'AU TRAVAIL',idle:'DISPONIBLE',done:'TERMINÉ',waiting:'ATTEND RÉPONSE',blocked:'ATTEND RÉPONSE'};
@@ -715,7 +750,16 @@ function room(L,time){
   }
   const v=.12*(1-.6*d);
   for(let i=0;i<3;i++){px(0,0,2+i*2,H,'#050a14',v);px(W-2-i*2,0,2+i*2,H,'#050a14',v);px(0,0,W,1+i,'#050a14',v);}
+  // Suspensions du plafond : allumées dès que le jour baisse, comme dans un vrai bureau en soirée.
+  const lamp=lampLevel();
+  for(let x=narrow?36:44;x<W-20;x+=narrow?72:88){
+    px(x,0,1,8,'#0d1729');px(x-4,8,9,3,mix('#24344f','#3a4d6b',d));px(x-5,11,11,1,'#1a2740');
+    if(lamp>.02){px(x-3,12,7,1,'#ffe2a8',.35+.65*lamp);glow(x,wallH+20,30,'#ffd89a',1.1*lamp);px(x-14,13,29,wallH-10,'#ffd89a',.025*lamp);}
+  }
 }
+// Éclairage intérieur, sur l'heure du poste : allumé de 17 h 30 (pleine puissance à 19 h) jusqu'au matin,
+// éteint progressivement entre le lever et 8 h. Le bureau s'éclaire avant la nuit noire, comme un vrai.
+const lampLevel=()=>{const h=amb.h;return h<12?1-smooth(SUNRISE,SUNRISE+1.5,h):smooth(SUNSET-2,SUNSET-.5,h);};
 function monitor(x,y,a,c,live,work,time,anim,h){
   px(x,y,17,13,'#0b1424');px(x+1,y+1,15,10,live?'#0d1f35':'#111a29');
   if(live){
@@ -783,6 +827,10 @@ function station(a,i,cx,y0,time,L){
     else if(free&&!a.activity?.subagents?.length){px(x+13,y0+26,3,4,'#dfe6ee');px(x+16,y0+27,1,2,'#dfe6ee');px(x+13,y0+26,3,1,'#5a3d2e');px(x+12,y0+27,2,2,skin);}
   }
   monitor(cx-22,y0+15,a,c,live,work,time,anim,h);
+  // Lampe de bureau : s'allume le soir pour un agent présent ; éteinte s'il est parti en pause de limite.
+  const lamp=lampLevel(),lampOn=live&&!pause&&lamp>.02;
+  px(cx+19,y0+29,5,1,'#2a3247');px(cx+21,y0+22,1,7,'#3a4560');px(cx+18,y0+20,7,2,lampOn?'#e8c47e':'#4a5570');
+  if(lampOn){px(cx+19,y0+22,5,1,'#fff1c9',.6+.4*lamp);glow(cx+12,y0+31,16,'#ffd89a',1.3*lamp);}
   if(a&&live){if(wait)bubble(cx+12,y0,'wait',anim,time);else if(st==='done')bubble(cx+12,y0,'done',anim,time);else if(!work&&!free)bubble(cx+12,y0,'unknown',anim,time);}
   if(!a)return;
   // Petite fête de fin : seulement pendant quelques secondes après un passage réel de « travail » à « disponible » ou « terminé ».
@@ -947,12 +995,15 @@ function drawActors(L,G,time,now,layer){
 }
 // Vie de bureau entre le chef et ses agents, pilotée par deux faits :
 // une délégation observée dans le journal du chef (`herdr agent prompt`), et la fin réelle d'un travail (état Herdr).
-const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null;
+const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null,mailTotal=0;
+// Mémoire bornée : on oublie les plus anciens identifiants vus, que le journal du chef (12 h) ne renverra plus.
+function remember(key){seenDelegations.add(key);if(seenDelegations.size>500)seenDelegations.delete(seenDelegations.values().next().value);}
 // Courrier du chef : chaque fin de travail observée, avec la tâche déléguée quand le journal du chef la montre.
+// Le compteur couvre toute la session ; seuls les 30 derniers courriers sont gardés en détail.
 function renderMail(){
-  const list=$('mail-list');$('mail-count').textContent=mailLog.length?'('+mailLog.length+')':'';
+  const list=$('mail-list');$('mail-count').textContent=mailTotal?'('+mailTotal+')':'';
   if(!mailLog.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucun courrier depuis l’ouverture du bureau.';list.replaceChildren(li);return;}
-  list.replaceChildren(...mailLog.slice(0,30).map(m=>{
+  list.replaceChildren(...mailLog.map(m=>{
     const li=document.createElement('li');li.className='mail';
     const head=document.createElement('span');head.className='log-head';head.textContent=m.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' · '+m.name+' a terminé ('+(labels[m.from]||m.from).toLowerCase()+' → '+(labels[m.to]||m.to).toLowerCase()+')';
     const body=document.createElement('span');body.className='log-body';body.textContent=m.title?'Tâche déléguée : '+m.title:'Aucune délégation du chef trouvée pour ce travail.';
@@ -968,7 +1019,7 @@ function agentByTarget(target){
 function syncOffice(L,now){
   if(!state.connected||!L.boss)return;
   for(const d of L.boss.delegations||[]){
-    if(seenDelegations.has(d.id))continue;seenDelegations.add(d.id);
+    if(seenDelegations.has(d.id))continue;remember(d.id);
     const t=agentByTarget(d.target);
     if(!officeBooted||paused||!t||t===L.boss)continue;
     officeActors.set('deleg|'+d.id,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
@@ -979,10 +1030,10 @@ function syncOffice(L,now){
     const c=changes.get(a.id);
     if(!c||!WORK.includes(c.from)||!FREE.includes(c.to))continue;
     const key='mail|'+a.id+'|'+Math.round(c.at);
-    if(officeActors.has(key)||seenDelegations.has(key))continue;seenDelegations.add(key);
+    if(officeActors.has(key)||seenDelegations.has(key))continue;remember(key);
     if(!officeBooted)continue;
     const deleg=(L.boss.delegations||[]).filter(d=>agentByTarget(d.target)===a).at(-1);
-    mailLog.unshift({agentId:a.id,name:a.name,at:new Date(),from:c.from,to:c.to,title:deleg?.title||null});renderMail();
+    mailLog.unshift({agentId:a.id,name:a.name,at:new Date(),from:c.from,to:c.to,title:deleg?.title||null});mailLog.length=Math.min(mailLog.length,30);mailTotal++;renderMail();
     signal('mail',a.name+' a terminé',(deleg?.title?'Tâche : '+deleg.title+'. ':'')+'Résultat à vérifier dans ses sorties.');
     if(!paused)officeActors.set(key,{type:'mail',agent:a.id,t0:now});else mailCount++;
   }
@@ -1093,9 +1144,10 @@ function syncLayoutEdit(){
 $('layout-edit').addEventListener('click',()=>{editLayout=!editLayout;syncLayoutEdit();});
 $('layout-reset').addEventListener('click',()=>{custom={stations:{},vip:null};saveLayout();draw(lastFrame);});
 addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
   // Disposer au clavier : les flèches déplacent le poste sélectionné (Maj pour un grand pas).
-  if(!editLayout||!lastLayout||!/^Arrow/.test(e.key)||/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||''))return;
+  // Elles restent aux onglets, listes et champs qui les traitent déjà ; Échap est géré avec les autres couches.
+  if(!editLayout||!lastLayout||!/^Arrow/.test(e.key)||e.defaultPrevented||e.isComposing||!$('palette').hidden)return;
+  const t=document.activeElement;if(/^(INPUT|TEXTAREA|SELECT)$/.test(t?.tagName||'')||t?.isContentEditable||t?.closest?.('[role="tab"],[role="listbox"],.help'))return;
   const a=activeAgent(),L=lastLayout,f=floorBox(L),step=e.shiftKey?10:2,d=a&&deskSpots.get(a.id);if(!d)return;
   e.preventDefault();
   const dx={ArrowLeft:-step,ArrowRight:step}[e.key]||0,dy={ArrowUp:-step,ArrowDown:step}[e.key]||0;
@@ -1111,7 +1163,8 @@ $('fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)docu
 document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.fullscreenElement);$('fullscreen').setAttribute('aria-pressed',String(on));$('fullscreen').querySelector('span').textContent=on?'Quitter le plein écran':'Plein écran';draw(lastFrame);});
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+'Bureau des agents · DrSmoke';if(document.title!==title)document.title=title;}
-function frame(time){if(!paused&&time-lastFrame>80){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+// Figée, la scène se redessine encore chaque minute pour suivre l'heure et la lumière.
+function frame(time){if(time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1139,7 +1192,9 @@ function toggleHelp(open=$('help').hidden){
 }
 $('help-open').addEventListener('click',()=>toggleHelp());
 $('help-close').addEventListener('click',()=>toggleHelp(false));
-try{if(!localStorage.getItem('bureau.aideVue'))setTimeout(()=>toggleHelp(true),900);}catch{}
+// Première visite : l'aide ne s'ouvre pas si DrSmoke a déjà commencé une action (clic, touche, palette).
+let acted=false;for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{acted=true;},{once:true,capture:true});
+try{if(!localStorage.getItem('bureau.aideVue'))setTimeout(()=>{if(!acted&&$('palette').hidden)toggleHelp(true);},900);}catch{}
 // Palette de commandes (Ctrl+K) : toutes les actions du bureau au clavier, construites à partir des agents réels.
 let paletteIndex=0,paletteItems=[];
 function commands(){
@@ -1148,7 +1203,7 @@ function commands(){
     list.push({label:'Ouvrir le poste de '+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');}});
     if(canSend(a)||canQueue(a))list.push({label:(canSend(a)?'Écrire à ':'Mettre une consigne en file pour ')+a.name,hint:label(a),run:()=>{selectAgent(a.id);showTab('poste');setTimeout(()=>$('message').focus(),50);}});
     // La sélection rouvre l'onglet Poste au tour suivant : on passe aux fichiers juste après.
-    list.push({label:'Fichiers de '+a.name,hint:'récents',run:()=>{selectAgent(a.id);setTimeout(()=>showTab('fichiers'),0);}});
+    list.push({label:'Fichiers de '+a.name,hint:'Fichiers',run:()=>{selectAgent(a.id);setTimeout(()=>showTab('fichiers'),0);}});
   }
   list.push({label:'Message à plusieurs agents',hint:'Équipe',run:()=>{showTab('equipe');setTimeout(()=>$('broadcast-message').focus(),50);}});
   list.push({label:'Courrier du chef',hint:'Équipe',run:()=>{showTab('equipe');$('mailbox').scrollIntoView({block:'start'});}});
@@ -1173,9 +1228,23 @@ function renderPalette(){
   }):[Object.assign(document.createElement('li'),{className:'list-placeholder',textContent:'Aucune commande ne correspond.'})]));
   $('palette-input').setAttribute('aria-activedescendant',paletteItems.length?'cmd-'+paletteIndex:'');
 }
-function openPalette(){ $('palette').hidden=false;$('palette-input').value='';paletteIndex=0;renderPalette();$('palette-input').focus(); }
-function closePalette(){ $('palette').hidden=true; }
-function runCommand(i){const c=paletteItems[i];closePalette();if(c)c.run();}
+// Palette modale : fond inerte pendant son ouverture, focus rendu au déclencheur ou à la destination de la commande.
+let paletteTrigger=null;
+const backdrop=()=>[...document.body.children].filter(el=>el!==$('palette')&&el.tagName!=='SCRIPT');
+function openPalette(){
+  paletteTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
+  for(const el of backdrop())el.inert=true;
+  $('palette').hidden=false;$('palette-input').value='';paletteIndex=0;renderPalette();$('palette-input').focus();
+}
+function closePalette(restore=true){
+  $('palette').hidden=true;for(const el of backdrop())el.inert=false;
+  if(restore)(paletteTrigger?.isConnected?paletteTrigger:$('palette-open')).focus({preventScroll:true});
+}
+function runCommand(i){
+  const c=paletteItems[i];closePalette(!c);if(!c)return;c.run();
+  // Une commande qui ne place pas le focus elle-même le laisse sur l'onglet ouvert.
+  setTimeout(()=>{const f=document.activeElement;if(!f||f===document.body||$('palette').contains(f))$('tab-'+currentTab())?.focus({preventScroll:true});},80);
+}
 $('palette-open').addEventListener('click',openPalette);
 $('palette').addEventListener('mousedown',e=>{if(e.target===$('palette'))closePalette();});
 $('palette-input').addEventListener('input',()=>{paletteIndex=0;renderPalette();});
@@ -1183,15 +1252,26 @@ $('palette-input').addEventListener('keydown',e=>{
   if(e.key==='ArrowDown'){e.preventDefault();paletteIndex=(paletteIndex+1)%Math.max(1,paletteItems.length);renderPalette();}
   else if(e.key==='ArrowUp'){e.preventDefault();paletteIndex=(paletteIndex-1+paletteItems.length)%Math.max(1,paletteItems.length);renderPalette();}
   else if(e.key==='Enter'){e.preventDefault();runCommand(paletteIndex);}
+  else if(e.key==='Tab')e.preventDefault();
 });
+// Une seule couche répond à une touche : palette, puis disposition, puis aide.
 addEventListener('keydown',e=>{
-  const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'');
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('palette').hidden?openPalette():closePalette();}
-  else if(e.key==='Escape'&&!$('palette').hidden)closePalette();
-  else if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
-  else if(e.key==='?'&&!typing){e.preventDefault();toggleHelp();}
+  const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.isContentEditable;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
+  if(!$('palette').hidden){if(e.key==='Escape'){e.preventDefault();closePalette();}return;}
+  if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
+  if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
+  else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(document.hidden)return;const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();},5000);
+// Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
+if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);
-setInterval(()=>{if(!document.hidden){refreshState();readOutput();}},3000);
+// En arrière-plan, avec les notifications activées, seul l'état des agents est relu (toutes les 15 s) :
+// draw(0) y repère les changements sans animer la scène. Le navigateur peut encore espacer ces relectures.
+let hiddenTicks=0;
+setInterval(()=>{
+  if(!document.hidden){hiddenTicks=0;refreshState();readOutput();return;}
+  if(prefs.get('bureau.notifs')==='on'&&++hiddenTicks%5===0)refreshState();
+},3000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();readOutput();}});

@@ -12,27 +12,62 @@ import {standardPlaces,recentFiles,listDir,transfer,resolveInside,FileError} fro
 import {readTodos,normalizeTodos} from './src/todos.mjs';
 import {bossOf,readDelegations} from './src/delegations.mjs';
 import {createQueue,QueueError} from './src/queue.mjs';
+import {createTerminalStatusReader} from './src/terminal-status.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
+  const etats=new Map();
+  let sondeur=null;
   // Pause de quota : la fin de pause retenue est la remise à zéro la plus tardive
   // parmi les limites atteintes. Une erreur de lecture est laissée remonter : la
   // file gèle alors l'envoi au lieu de l'autoriser (revue croisée, constat 3).
+  // Le journal reste prioritaire ; l'état du terminal ne remplit que les trous.
   const limiteQuota=async(id,agents)=>{
     const agent=agents.find(cible=>cible.id===id);
-    if(!agent||agent.kind==='Claude') return {limitReached:false,resetsAt:null};
-    const activite=await readOtherActivity(agent,agents);
-    const limites=Array.isArray(activite?.limits)?activite.limits:[];
-    const atteintes=limites.filter(limite=>typeof limite?.usedPercent==='number'&&limite.usedPercent>=100);
-    const candidates=atteintes.length>0?atteintes:(activite?.limitReached===true?limites:[]);
-    const dates=candidates.map(limite=>typeof limite?.resetsAt==='string'?Date.parse(limite.resetsAt):NaN).filter(temps=>!Number.isNaN(temps));
-    const derniere=dates.length?new Date(Math.max(...dates)).toISOString():null;
-    return {limitReached:activite?.limitReached===true||atteintes.length>0,resetsAt:derniere};
+    if(!agent) return {limitReached:false,resetsAt:null};
+    if(agent.kind!=='Claude') {
+      const activite=await readOtherActivity(agent,agents);
+      const limites=Array.isArray(activite?.limits)?activite.limits:[];
+      const atteintes=limites.filter(limite=>typeof limite?.usedPercent==='number'&&limite.usedPercent>=100);
+      if(activite?.limitReached===true||atteintes.length>0) {
+        const candidates=atteintes.length>0?atteintes:limites;
+        const dates=candidates.map(limite=>typeof limite?.resetsAt==='string'?Date.parse(limite.resetsAt):NaN).filter(temps=>!Number.isNaN(temps));
+        return {limitReached:true,resetsAt:dates.length?new Date(Math.max(...dates)).toISOString():null};
+      }
+    }
+    const etat=etats.get(id);
+    return etat?{limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null}:{limitReached:false,resetsAt:null};
   };
+  // Sondage léger des terminaux : messages de limite observés dans le panneau.
+  const sonderEtats=async()=>{
+    const liste=await bridge.list();
+    for(const agent of liste) {
+      try {
+        const etat=await lireEtat(agent);
+        if(etat) etats.set(agent.id,etat); else etats.delete(agent.id);
+      } catch { /* Lecture impossible : on garde le dernier état connu. */ }
+    }
+  };
+  const pauses={
+    tick:sonderEtats,
+    start(intervalMs=20000){pauses.stop();sondeur=setInterval(()=>{sonderEtats().catch(()=>{});},intervalMs);sondeur.unref?.();},
+    stop(){if(sondeur) clearInterval(sondeur);sondeur=null;},
+    etatDe:id=>etats.get(id)??null,
+  };
+  // Fusion d'un état de terminal dans l'activité : une donnée de journal plus
+  // précise n'est jamais écrasée ; le terminal signe sa source « terminal ».
+  function fusionnerEtat(activite,etat){
+    if(!etat) return activite;
+    // Une pause déjà prouvée par le journal n'est jamais écrasée par le terminal.
+    const journalPrecis=activite&&(activite.limitReached===true||(activite.limits??[]).some(limite=>typeof limite?.usedPercent==='number'&&limite.usedPercent>=100));
+    if(journalPrecis) return activite;
+    const base=activite??{tokens:null,limits:[],model:null,effort:null};
+    return {...base,limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null,usedPercent:typeof etat.usedPercent==='number'?etat.usedPercent:null,source:'terminal'};
+  }
   const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,file:queueFile,now});
   async function allowedRoots() {
     const roots=new Map();
@@ -82,8 +117,18 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const guard=(req,{body=true}={})=>{
       const sent=Buffer.from(req.headers['x-bureau-token']||'');
       const expected=Buffer.from(token);
-      if(req.headers.origin!==origin||sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
-      if(body&&!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
+      if(sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+      // Un POST exige l'origine exacte. Un GET de navigateur n'envoie pas
+      // toujours Origin : la provenance est alors prouvée par Sec-Fetch-Site
+      // = same-origin (en-tête posé par le navigateur, non modifiable par une
+      // page). Sans aucune preuve, le refus reste la règle.
+      const origine=req.headers.origin;
+      if(body) {
+        if(origine!==origin) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+        if(!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
+      } else if(!(origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin'))) {
+        json(403,{error:'Session expirée. Actualisez le bureau.'});return false;
+      }
       return true;
     };
     const readJson=async req=>{
@@ -174,6 +219,8 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
                 if(activity) publicAgent.activity=normalizeActivity(activity);
               } catch { /* Un journal facultatif ne coupe pas la liste des agents. */ }
             }
+            const etatPause=etats.get(agent.id);
+            if(etatPause||publicAgent.activity) publicAgent.activity=fusionnerEtat(publicAgent.activity,etatPause);
             if(agent===chef&&agent.kind==='Claude'&&sessionId) {
               // Délégations observées du chef, douze dernières heures : seuls id,
               // at, target, title et result sortent, jamais la session ni un chemin.
@@ -226,7 +273,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(error instanceof QueueError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;
@@ -237,6 +284,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   });
   server.requestTimeout=20000;
   server.queue=fileAttente;
+  server.pauses=pauses;
   return server;
 }
 
@@ -247,6 +295,8 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
   server.listen(port,'127.0.0.1',()=>{
     // Planificateur de la file d'attente : un tour toutes les 15 secondes.
     server.queue.start(15000);
+    // Pause de quota : lecture légère des terminaux toutes les 20 secondes.
+    server.pauses.start(20000);
     console.log(`Bureau des agents ouvert sur http://127.0.0.1:${port}`);
   });
 }
