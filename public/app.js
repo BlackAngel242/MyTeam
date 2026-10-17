@@ -422,6 +422,58 @@ function outcomeOf(error){
   if(!error||error.name==='TimeoutError'||error instanceof TypeError||error instanceof SyntaxError)return 'unknown';
   return /peut avoir été reçu|pas été confirmé|ne répond pas|trop de temps/i.test(error.message||String(error))?'unknown':'refused';
 }
+// Copie commune (P1) : succès ou échec annoncé de façon accessible. Si le
+// presse-papiers est refusé ou indisponible, une zone de texte en lecture seule
+// avec « Tout sélectionner » prend le relais ; aucun raccourci clavier global
+// n'est détourné, Ctrl+A reste utilisable ailleurs sur la page.
+function announceCopy(message,ok){
+  let zone=$('copy-status');
+  if(!zone){
+    zone=document.createElement('div');zone.id='copy-status';
+    zone.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:95;max-width:min(560px,92vw);padding:9px 14px;border-radius:10px;font-size:13px;line-height:1.4;box-shadow:0 6px 18px rgba(0,0,0,.35);';
+    document.body.append(zone);
+  }
+  zone.setAttribute('role',ok?'status':'alert');
+  zone.style.background=ok?'#123c2a':'#4a1d22';
+  zone.style.color=ok?'#a7e8c6':'#ffc0c0';
+  zone.textContent=message;
+  clearTimeout(zone._masque);
+  zone._masque=setTimeout(()=>zone.remove(),5000);
+}
+function openCopyFallback(texte,message,declencheur){
+  const fond=document.createElement('div');
+  fond.style.cssText='position:fixed;inset:0;background:rgba(6,12,24,.72);z-index:96;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const boite=document.createElement('div');
+  boite.setAttribute('role','dialog');boite.setAttribute('aria-label','Copie manuelle');
+  boite.style.cssText='background:#101d33;border:1px solid #2c4468;border-radius:12px;padding:14px;max-width:640px;width:100%;';
+  const titre=document.createElement('p');
+  titre.style.cssText='margin:0 0 8px;';
+  titre.textContent=message+' : la copie automatique a été refusée, sélectionne le texte ci-dessous puis copie-le (Ctrl+C).';
+  const zone=document.createElement('textarea');
+  zone.readOnly=true;zone.value=texte;zone.rows=12;
+  zone.style.cssText='width:100%;box-sizing:border-box;white-space:pre-wrap;user-select:text;background:#0b1526;color:#e7edf5;border:1px solid #2c4468;border-radius:8px;padding:8px;font-size:13px;';
+  const actions=document.createElement('div');actions.style.cssText='margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;';
+  const choisir=document.createElement('button');choisir.type='button';choisir.className='tool-button';choisir.textContent='Tout sélectionner';
+  choisir.addEventListener('click',()=>{zone.focus();zone.select();announceCopy('Texte sélectionné : copie-le avec Ctrl+C.',true);});
+  const fermer=document.createElement('button');fermer.type='button';fermer.className='tool-button';fermer.textContent='Fermer';
+  const fin=()=>{fond.remove();if(declencheur&&declencheur.isConnected)declencheur.focus({preventScroll:true});};
+  fermer.addEventListener('click',fin);
+  fond.addEventListener('mousedown',e=>{if(e.target===fond)fin();});
+  actions.append(choisir,fermer);boite.append(titre,zone,actions);fond.append(boite);document.body.append(fond);
+  choisir.focus();
+}
+async function copyText(texte,message,declencheur){
+  try{
+    if(!navigator.clipboard||typeof navigator.clipboard.writeText!=='function')throw new Error('presse-papiers indisponible');
+    await navigator.clipboard.writeText(texte);
+    announceCopy(message+' : copié.',true);
+    return true;
+  }catch{
+    announceCopy(message+' : copie refusée, repli manuel ouvert.',false);
+    openCopyFallback(texte,message,declencheur);
+    return false;
+  }
+}
 const sendLog=[];
 function logSend(names,message,outcome,detail){
   sendLog.unshift({at:new Date(),names,message,outcome,detail});sendLog.length=Math.min(sendLog.length,30);
@@ -429,7 +481,22 @@ function logSend(names,message,outcome,detail){
     const li=document.createElement('li');li.className=e.outcome;
     const head=document.createElement('span');head.className='log-head';head.textContent=e.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' · '+e.names.join(', ')+' · '+outcomeLabels[e.outcome];
     const body=document.createElement('span');body.className='log-body';body.textContent=e.message.length>110?e.message.slice(0,110)+'…':e.message;
-    li.append(head,body);if(e.outcome!=='sent'){const why=document.createElement('span');why.className='log-why';why.textContent=e.detail;li.append(why);}return li;
+    li.append(head,body);if(e.outcome!=='sent'){const why=document.createElement('span');why.className='log-why';why.textContent=e.detail;li.append(why);}
+    // P1 : l'aperçu reste court, mais la consigne INTÉGRALE se lit et se copie
+    // d'un clic, toujours depuis e.message, jamais depuis le texte raccourci.
+    const actions=document.createElement('span');actions.className='log-actions';actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;';
+    const lire=document.createElement('button');lire.type='button';lire.className='tool-button';lire.textContent='Lire tout';
+    let ouvert=null;
+    lire.addEventListener('click',()=>{
+      if(ouvert){ouvert.remove();ouvert=null;lire.textContent='Lire tout';return;}
+      ouvert=document.createElement('span');ouvert.className='log-full';
+      ouvert.style.whiteSpace='pre-wrap';ouvert.style.userSelect='text';
+      ouvert.textContent=e.message;
+      li.append(ouvert);lire.textContent='Réduire';
+    });
+    const copier=document.createElement('button');copier.type='button';copier.className='tool-button';copier.textContent='Copier la consigne';
+    copier.addEventListener('click',()=>copyText(e.message,'Consigne de '+e.names.join(', '),copier));
+    actions.append(lire,copier);li.append(actions);return li;
   }));
 }
 const compact=n=>n>=1e6?(n/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1})+' M':n>=1e3?(n/1e3).toLocaleString('fr-FR',{maximumFractionDigits:1})+' k':String(n);
@@ -1069,7 +1136,23 @@ function renderMail(){
     const open=document.createElement('button');open.type='button';open.className='tool-button';open.textContent='Ouvrir son poste';
     open.hidden=!cible;
     open.addEventListener('click',()=>{if(cible&&state.agents.some(x=>x.id===cible.id))selectAgent(cible.id);showTab('poste');});
-    li.append(head,body,why,open);return li;
+    // P1 : copie de la délégation OBSERVÉE, jamais « copier la réponse » : ce
+    // contenu n'est pas une réponse d'agent. Les champs copiés sont nommés.
+    const copier=document.createElement('button');copier.type='button';copier.className='tool-button';copier.textContent='Copier la délégation';
+    const aide='Copie la délégation observée : cible, heure, titre de la tâche, état d\'envoi.';
+    copier.title=aide;copier.setAttribute('aria-label',aide);
+    copier.addEventListener('click',()=>{
+      const texte=[
+        'Cible : '+(cible?cible.name+' ('+d.target+')':d.target),
+        'Heure : '+new Date(d.at).toLocaleString('fr-FR'),
+        'Tâche déléguée : '+(d.title||'non lisible dans le journal'),
+        'État d\'envoi : '+resultLabel(d.result),
+      ].join('\n');
+      copyText(texte,'Délégation de '+hhmm(new Date(d.at)),copier);
+    });
+    const actions=document.createElement('span');actions.className='log-actions';actions.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;';
+    actions.append(open,copier);
+    li.append(head,body,why,actions);return li;
   }));
 }
 function agentByTarget(target){

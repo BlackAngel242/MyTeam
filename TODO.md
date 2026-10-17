@@ -61,6 +61,7 @@
 - [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.
 - [x] Propositions d'OpenCode P3, P6 et P7 (bandeau de pause, courrier sur 12 h, trois messages d'erreur).
+- [x] P1 de l'avis de Codex : copie unitaire des contenus déjà disponibles (« Lire tout » et « Copier la consigne » sur la consigne intégrale dans le journal des envois, « Copier la délégation » avec ses champs nommés dans le courrier, fonction de copie commune avec repli manuel accessible, par OpenCode).
 - [x] Chef qui porte le dossier à l'agent lors d'une délégation (retenu par DrSmoke).
 - [x] Tableau mural de mémoire partagée en lecture seule (retenu par DrSmoke, `/api/tableau`).
 - [x] Pause de quota mise en scène : départ, compte à rebours, retour (retenu par DrSmoke).
