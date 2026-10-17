@@ -97,6 +97,29 @@ test('ignore les cibles impossibles à lire, les exemples imprimés et l\'aide',
   assert.deepEqual(delegations, []);
 });
 
+test('les délégations par variable et par chemin complet sont reconnues', async t => {
+  const root = await journal(t, [
+    appel('v1', 'H="$HOME/.herdr/packages/standalone/releases/0.9.5-x86_64-pc-windows-msvc/herdr.exe"; "$H" agent prompt w5:p4 "$(cat fichier)"'),
+    appel('v2', 'H=/opt/herdr/herdr.exe; $H agent prompt w5:p2 "Avec variable nue"'),
+    appel('v3', 'H="${HOME}/.herdr/herdr"; ${H} agent prompt mon-agent "Avec accolades"'),
+    appel('v4', 'H=autre-chose; "$H" agent prompt w5:p1 "Ne pas compter"'),
+    appel('v5', 'H="$HOME/.herdr/herdr.exe"; echo "$H" agent prompt w5:p1 "Faux positif echo"'),
+    appel('v6', 'H="$HOME/.herdr/herdr.exe"; "$H" agent prompt --help'),
+    appel('v7', '"$HOME/.herdr/packages/standalone/releases/0.9.5-x86_64-pc-windows-msvc/herdr.exe" agent prompt w5:p3 "Chemin direct"'),
+    appel('v8', 'export H=/usr/local/bin/herdr; "$H" agent prompt w5:p5 "Avec export"'),
+  ]);
+  const { delegations } = await readDelegations(SESSION, { root });
+  assert.deepEqual(delegations.map(d => [d.id, d.target]), [
+    ['v1', 'w5:p4'],
+    ['v2', 'w5:p2'],
+    ['v3', 'mon-agent'],
+    ['v7', 'w5:p3'],
+    ['v8', 'w5:p5'],
+  ]);
+  assert.equal(delegations[0].title, null, 'le message $(cat fichier) n\'est pas en clair');
+  assert.equal(delegations[1].title, 'Avec variable nue'.slice(0, -1));
+});
+
 test('les lignes corrompues et les structures inattendues sont ignorées', async t => {
   const root = await journal(t, [
     '{"broken"',
