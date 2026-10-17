@@ -65,3 +65,24 @@ test('/api/reponses exige origine et jeton et ne renvoie aucun identifiant',asyn
   assert.equal(codex.data.supported,true);assert.equal(codex.data.found,false);assert.deepEqual(codex.data.responses,[]);
   assert.equal((await send('/api/reponses?id=inconnu',auth)).status,400);
 });
+
+test('/api/discussion fusionne les réponses lisibles, du plus récent au plus ancien, sans identifiant de session',async t=>{
+  const bridge={list:async()=>[
+    {id:'c',name:'Claude',kind:'Claude',status:'idle',sessionId:SESSION},{id:'x',name:'Codex',kind:'Codex',status:'idle'},
+    {id:'a',name:'Antigravity',kind:'Antigravity',status:'idle'},{id:'o',name:'OpenCode',kind:'OpenCode',status:'idle'}],read:async()=>({text:''})};
+  const long='é'.repeat(400);
+  const server=createBureauServer({bridge,
+    getResponses:async()=>({found:true,complete:true,responses:[{key:'k1',startedAt:'2026-10-18T10:00:00Z',endedAt:'2026-10-18T10:00:09Z',state:'terminée',blocks:[{text:long}]}]}),
+    getOtherResponses:async agent=>agent.kind==='Codex'?{found:true,complete:true,responses:[{key:'k2',startedAt:'2026-10-18T11:00:00Z',endedAt:null,state:'fin non déterminée',blocks:[{text:'Codex écrit'}]}]}:{found:false,complete:false,responses:[]}});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
+  const port=server.address().port,origin=`http://127.0.0.1:${port}`;
+  const send=(path,headers={})=>new Promise((resolve,reject)=>{const req=request({hostname:'127.0.0.1',port,path,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{let s='';res.on('data',c=>s+=c);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(s)}));});req.on('error',reject);req.end();});
+  const {data:{token}}=await send('/api/state');
+  assert.equal((await send('/api/discussion')).status,403);
+  const r=await send('/api/discussion',{Origin:origin,'X-Bureau-Token':token});
+  assert.equal(r.status,200);
+  assert.deepEqual(r.data.bulles.map(b=>b.agent),['Codex','Claude']);
+  assert.equal(Array.from(r.data.bulles[1].extrait).length,240);
+  assert.deepEqual(Object.fromEntries(r.data.sources.map(s=>[s.agent,s.etat])),{Claude:'lu',Codex:'lu',Antigravity:'non exposé',OpenCode:'non rattaché'});
+  assert.doesNotMatch(JSON.stringify(r.data),/12345678|sessionId/);
+});

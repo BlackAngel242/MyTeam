@@ -71,6 +71,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const base=activite??{tokens:null,limits:[],model:null,effort:null};
     return {...base,limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null,usedPercent:typeof etat.usedPercent==='number'?etat.usedPercent:null,source:'terminal'};
   }
+  const reponsesDe=(agent,agents)=>agent.kind==='Claude'?(agent.sessionId?getResponses(agent.sessionId):{found:false,complete:false,responses:[]}):getOtherResponses(agent,agents);
   const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,prepareFiles:prepareQueuedFiles,file:queueFile,now});
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
@@ -292,9 +293,30 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           const agents=await bridge.list(),agent=agents.find(a=>a.id===url.searchParams.get('id'));
           if(!agent) return json(400,{error:'Agent introuvable.'});
           if(!['Claude','Codex','OpenCode'].includes(agent.kind)) return json(200,{supported:false,reason:'Les réponses de cet outil ne sont pas exposées pour le moment.',responses:[]});
-          const lu=agent.kind==='Claude'?(agent.sessionId?await getResponses(agent.sessionId):{found:false,complete:false,responses:[]}):await getOtherResponses(agent,agents);
+          const lu=await reponsesDe(agent,agents);
           return json(200,{supported:true,found:lu.found===true,complete:lu.complete===true,responses:Array.isArray(lu.responses)?lu.responses:[]});
         } catch(error) {return json(errorStatus(error),{error:'Impossible de lire les réponses pour le moment.'});}
+      }
+      // Fil de la salle de contrôle : dernières réponses de tous les agents lisibles, extraits courts, du plus récent au plus ancien.
+      // Jamais les messages inter-agents chiffrés ni ce que « pense » un agent : seulement des textes déjà masqués par les lecteurs.
+      if(req.method==='GET'&&url.pathname==='/api/discussion') {
+        if(!guard(req,{body:false})) return;
+        try {
+          const agents=await bridge.list(),bulles=[],sources=[];
+          await Promise.all(agents.map(async agent=>{
+            if(!['Claude','Codex','OpenCode'].includes(agent.kind)) {sources.push({agent:agent.name,id:agent.id,etat:'non exposé'});return;}
+            let lu;
+            try {lu=await reponsesDe(agent,agents);} catch {lu=null;}
+            if(!lu||lu.found!==true) {sources.push({agent:agent.name,id:agent.id,etat:'non rattaché'});return;}
+            sources.push({agent:agent.name,id:agent.id,etat:'lu'});
+            for(const r of (Array.isArray(lu.responses)?lu.responses:[]).slice(-10)) {
+              const at=r.endedAt||r.startedAt;
+              if(at) bulles.push({agent:agent.name,id:agent.id,key:r.key,at,state:r.state,extrait:Array.from(String(r.blocks?.[0]?.text??'')).slice(0,240).join('')});
+            }
+          }));
+          bulles.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
+          return json(200,{bulles:bulles.slice(0,50),sources});
+        } catch(error) {return json(errorStatus(error),{error:'Impossible de lire la discussion pour le moment.'});}
       }
       if(req.method==='GET'&&url.pathname==='/api/read') return json(200,await bridge.read(url.searchParams.get('id')));
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {

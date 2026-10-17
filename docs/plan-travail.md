@@ -7,11 +7,11 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 ## Lot A. Réponses lisibles (avis de Codex Desktop, P0 à P4)
 
 - [x] A1a (Claude) Réponses structurées côté serveur pour Claude (session exacte) : `src/responses.mjs`, route `GET /api/reponses`, `test/responses.test.mjs`
-- [ ] A1b (OpenCode) Même contrat pour Codex et OpenCode (rattachement par dossier, ambigu = rien), dans `src/responses.mjs`
-- [ ] A2 (Antigravity) Carte de réponse avec Markdown sûr : `public/response-card.js`
-- [ ] A3 (Antigravity) Copier et exporter `.md` par réponse puis par session
-- [ ] A4 (Antigravity) Mise à jour par clés stables sans perdre sélection ni défilement
-- [ ] A5 (Claude) Intégration dans `public/app.js`, vérification Playwright à 1440, 390 et 360 px
+- [x] A1b (OpenCode) Même contrat pour Codex et OpenCode (rattachement par dossier, ambigu = rien), dans `src/responses.mjs`
+- [x] A2 (Antigravity) Carte de réponse avec Markdown sûr : `public/response-card.js`
+- [x] A3 (Antigravity) Copier et exporter `.md` par réponse puis par session
+- [x] A4 (Antigravity) Mise à jour par clés stables sans perdre sélection ni défilement
+- [x] A5 (Claude) Intégration dans `public/app.js`, vérification Playwright à 1440, 390 et 360 px
 
 ## Lot B. Sécurité des installeurs (revue de Codex)
 
@@ -36,9 +36,9 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 ## Lot E. Fonctions de l'OS d'agents
 
 - [x] E1 (Claude) Audit : priorité des envois et transfert de direction livrés, tests `queue` et `direction` verts
-- [ ] E2 (OpenCode) Envoi d'un fichier avec une consigne : `files` dans `POST /api/queue`, copie sans écrasement avant l'envoi, plafond de volume (`docs/os-fonctions-opencode.md`, section 5)
+- [x] E2 (OpenCode) Envoi d'un fichier avec une consigne : `files` dans `POST /api/queue`, copie sans écrasement avant l'envoi, plafond de volume (`docs/os-fonctions-opencode.md`, section 5)
 - [ ] E3 (Claude) Interface « Joindre un fichier » sur la consigne, nom de fichier seul affiché
-- [ ] E4 (OpenCode) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
+- [x] E4 (Claude, OpenCode bloqué) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
 - [ ] E5 (Antigravity) Fil de discussion dans l'interface
 - [ ] E6 (OpenCode) Traitement de fichier suivi jusqu'au résultat : `GET /api/traitement`, faits sourcés, jamais « réussi » (section 6)
 - [ ] E7 (Claude) Interface du dossier de traitement

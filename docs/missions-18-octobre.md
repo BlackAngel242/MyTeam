@@ -45,3 +45,16 @@ Ton quota le permet (28 % et 52 % utilisés). Propriété réattribuée par le c
 **E2.** Envoi d'un fichier avec une consigne : `docs/os-fonctions-opencode.md` section 5 et `docs/contrat-fichiers.md`. `files: [{root, path}]` accepté par `POST /api/queue`, copie sans écrasement dans le dossier de l'agent avant l'envoi (réutilise `transfer` de `src/files.mjs`), plafond de deux fichiers de 20 Mo, échec de copie = l'élément passe « à revoir » avec la raison, aucun envoi, la consigne cite le nom du fichier copié. Tests avec dossiers temporaires. Documente la forme exacte de la réponse en tête de ta section de `docs/contrat-fichiers.md` : le chef branche l'interface dessus.
 
 Compte rendu court après chaque point (A1b d'abord), avec hash de commit.
+
+## Antigravity : suite (D3, E5, F1, F2), dans cet ordre
+
+Évaluation de A2 à A4 : acceptée, intégrée par le chef (volet « Réponses lisibles » du poste, commit 40e0dc1). Relis `LESSONS.md` (nouvelles leçons du 18 octobre) avant de continuer.
+
+- **D3.** Range `LESSONS.md` par thèmes (Herdr et agents, serveur et données, interface et Playwright, Git et équipe, sécurité, installeurs) sans perdre ni modifier aucune leçon : même nombre de lignes de fond, seul l'ordre et les titres changent. Une leçon par ligne.
+- **E5.** Fil de discussion dans l'interface : `GET /api/discussion` (jeton `X-Bureau-Token`) renvoie `{bulles:[{agent,id,key,at,state,extrait}], sources:[{agent,id,etat}]}`, `etat` parmi `lu`, `non rattaché`, `non exposé`. Écris `public/discussion.js` (fonction `window.Discussion.render(container, data)`, DOM sûr sans `innerHTML`, même style que la carte de réponse) : bulles du plus récent au plus ancien, nom de l'agent, heure, état, extrait ; sous la liste, une ligne par agent non lu avec sa raison (« non exposé par cet outil », « non rattaché avec certitude »). Le chef l'intègre dans l'onglet Équipe et ajoute `/discussion.js` au serveur. Vérifie avec Playwright sur états simulés, 360 et 1440 px.
+- **F1.** Le nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`, `docs/publication-github.md`, README, CONTRIBUTING).
+- **F2.** `CHANGELOG.md` (section « Non publié »), `README.md` et `docs/aide.md` à jour : tableau des tâches avec pourcentage, réponses lisibles, fichiers joints, fil de discussion, installeurs plus sûrs.
+
+## Codex : E6, traitement d'un fichier confié
+
+`docs/os-fonctions-opencode.md` section 6. `GET /api/traitement?id=<agent>` (même garde que les autres lectures) : pour un fichier joint à une consigne par `POST /api/queue` (E2), un dossier `{id, fichierConfie (nom seul), cible, faits:[{at, fait, source}]}` construit par recoupement de ce que le serveur observe : consigne mise en file / envoyée (file d'attente), copie faite (`copiedFiles`), état Herdr de la cible, date de modification du fichier copié dans le dossier de l'agent, fin de réponse observée (`src/responses.mjs`). Chaque fait cite sa source (`file`, `disque`, `herdr`, `journal`). Jamais « réussi » ni « traité » : seulement des faits datés, avec « le fichier a changé pendant le traitement » si sa date de modification est postérieure à l'envoi. Nom de fichier seul, jamais de chemin. Tests. Documente la forme exacte en tête de ta section de `docs/contrat-fichiers.md`. Même règle : ne commite que si les tests ont pu être lancés.
