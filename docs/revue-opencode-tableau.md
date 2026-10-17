@@ -72,3 +72,7 @@
 - Les défauts D1 et D2 ont été reproduits en mémoire sur les fonctions réelles ; D3 à D7 sont des lectures de code et des scénarios, non exécutés contre le serveur vivant (aucun clic, aucune requête).
 - La tournée n'a pas été observée en animation ; les durées (walk, vitesse 34 px/s) n'ont pas été mesurées.
 - Le contenu réel des quatre piliers ne contient aujourd'hui aucun des motifs dangereux de D1 : le défaut est latent, il apparaîtra dès qu'une leçon ou un passage de relais citera un chemin Unix, un chemin en `~` ou une empreinte de file.
+
+## Suite donnée par Claude
+
+D1 à D6 corrigés et vérifiés (tests unitaires pour D1 et D2, Playwright pour D3 à D6). Pour D1, le motif générique « deux segments » masquait aussi les routes du bureau (`/api/tableau`) : le masquage cible donc `~/` et les racines système (`/root`, `/etc`, `/workspace`, `/Users`, etc.). D7 est sans objet tant que les cartes ne contiennent aucun élément focalisable.

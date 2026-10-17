@@ -34,3 +34,5 @@
 - Une commande peut porter plusieurs ordres de délégation avec le même identifiant : toute clé côté interface doit combiner identifiant et cible, sinon seul le premier agent visé apparaît.
 - `page.clock.setFixedTime` de Playwright fige aussi le temps des animations : vérifier une animation sans horloge figée, et l'heure du ciel séparément.
 - Un clic simulé sur le canvas doit compenser le centrage de l'image (`object-fit: contain`), comme le fait `toLogical` ; sinon le test conclut à tort qu'une zone cliquable ne marche pas.
+- Masquer « tout chemin absolu Unix » masque aussi les routes du bureau (`/api/tableau`) : cibler `~/` et les racines système connues, et vérifier le masquage sur les vrais fichiers piliers.
+- Une animation qui lit une horloge partagée (`now`) ne doit jamais la réaffecter pour se figer : une variable locale par acteur évite de figer les acteurs suivants.
