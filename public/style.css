@@ -320,3 +320,511 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
   .topbar{gap:14px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* D8 : composition sur téléphone, règles proposées par Codex (docs/patch-mobile.md). */
+@media (max-width: 860px) {
+  main,
+  main:fullscreen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 24px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+  }
+
+  main > .office-section,
+  main > .detail {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .office-frame,
+  .office-top,
+  .office-tools,
+  .scene-wrap,
+  .tab-panel,
+  .output-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .detail {
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    overflow: visible;
+  }
+
+  .tab-panel {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 520px) {
+  /* En-tête : identité et connexion, puis actions, puis résumé compact. */
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 0;
+    margin: 0 12px;
+    padding: 10px 0;
+  }
+
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    gap: 8px;
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .brand > span:last-child {
+    min-width: 0;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .brand-mark {
+    flex-shrink: 0;
+    padding: 7px;
+  }
+
+  .connection {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    max-width: 100px;
+    margin-left: 0;
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  /* Le statut reste lisible : le point seul ne suffit pas. */
+  .connection span:last-child {
+    position: static;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .top-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .top-actions .icon-button {
+    width: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  /* Les textes des boutons restent accessibles comme dans le CSS actuel. */
+  .top-actions .icon-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .top-actions .icon-button kbd {
+    display: none;
+  }
+
+  .chips {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    order: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+  }
+
+  .chip {
+    min-width: 0;
+    gap: 4px;
+    padding: 5px 6px;
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .chip i {
+    flex-shrink: 0;
+  }
+
+  /* Le contenu utilise la largeur disponible, sans largeur de bureau fixe. */
+  main,
+  main:fullscreen {
+    padding: 12px;
+    gap: 20px;
+  }
+
+  /* La barre devient verticale : libellé, alerte, puis outils. */
+  .office-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .office-top > span:first-child {
+    display: flex;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  /* Remplace aussi les règles .office-top .attention placées après
+     les anciens médias : ni ellipse, ni bouton écrasé. */
+  .office-top .attention {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .office-top .attention svg {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+  }
+
+  .office-top .attention p {
+    min-width: 0;
+    margin: 0;
+    font-size: 13px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .office-top .attention button {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    font-size: 13px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Les outils ont leur propre rangée et peuvent passer sur deux lignes.
+     L'aide de disposition et le compteur ne rivalisent pas avec les boutons. */
+  .office-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .office-tools #office-count,
+  .office-tools #layout-hint {
+    flex: 0 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .office-tools #office-count {
+    order: -2;
+  }
+
+  .office-tools #layout-hint {
+    order: -1;
+  }
+
+  .office-tools .frame-button {
+    flex: 1 1 120px;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    padding: 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .office-tools .frame-button svg {
+    flex-shrink: 0;
+  }
+
+  /* La scène entière suit les proportions du dessin fourni par app.js.
+     Ne pas imposer ici de hauteur ni de ratio fixe avec !important. */
+  .scene-wrap {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .scene-wrap > canvas#office {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  .scene-notice {
+    top: 50%;
+    width: calc(100% - 24px);
+    min-width: 0;
+    max-width: 320px;
+    padding: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .office-bottom {
+    padding: 10px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Cartes : deux colonnes, noms et états complets, grandes cibles tactiles. */
+  .team-heading {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    margin: 12px 0 8px;
+  }
+
+  .team-heading > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .agents-list {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    gap: 8px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .agent-button {
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+    gap: 8px;
+    padding: 10px 8px;
+  }
+
+  .agent-button > span:last-child {
+    display: block;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .agent-name,
+  .agent-status {
+    display: block;
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  .agent-status {
+    margin-top: 3px;
+  }
+
+  .agent-button .agent-logo {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Panneau : quatre onglets contenus dans la largeur et terminal local. */
+  .tabs {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    flex-wrap: wrap;
+    min-width: 0;
+    min-height: 44px;
+    gap: 4px;
+    padding: 8px 4px;
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .detail-heading > div:not(.small-avatar) {
+    min-width: 0;
+  }
+
+  .term-tools {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .term-tools input {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .term-tools .tool-button {
+    min-height: 44px;
+  }
+
+  #output {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 180px;
+    max-height: 340px;
+    padding: 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    overflow: auto;
+  }
+
+  .detail textarea {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .detail #send,
+  .detail #broadcast-send {
+    min-height: 44px;
+    gap: 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .agent-meta div {
+    flex-wrap: wrap;
+    gap: 2px 8px;
+  }
+
+  .agent-meta dd {
+    min-width: 0;
+    max-width: 100%;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .files-head {
+    flex-wrap: wrap;
+  }
+
+  .target,
+  .place,
+  .crumbs button {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* L'aide et la palette ouvertes ne doivent pas agrandir la page. */
+  .help {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .help-body {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .help-toggles .tool-button {
+    max-width: 100%;
+    min-height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .palette-backdrop {
+    padding: 16px 12px;
+  }
+
+  .palette-box {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #palette-input {
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  #palette-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    min-width: 0;
+    min-height: 44px;
+    overflow-wrap: anywhere;
+  }
+
+  .palette-foot {
+    overflow-wrap: anywhere;
+  }
+
+  .page-footer {
+    flex-direction: column;
+    min-width: 0;
+    margin: 16px 12px 0;
+    padding: 12px 0;
+    gap: 4px;
+    overflow-wrap: anywhere;
+  }
+}
