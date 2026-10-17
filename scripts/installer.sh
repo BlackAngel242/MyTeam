@@ -2,9 +2,11 @@
 # Installe les prerequis du Bureau des agents sur macOS et Linux.
 #
 # Verifie Node.js, Herdr et les outils d'IA en ligne de commande, propose chaque
-# installation avec une confirmation (o/n), configure le port et le chemin de
-# Herdr, peut creer le raccourci « Ouvrir le bureau », puis lance npm test et
-# npm run check. Relancable sans degat : le script verifie avant d'agir.
+# installation avec une confirmation (o/n), prepare un espace Herdr a 4 panneaux
+# (le premier = chef), propose les extensions utiles du projet, configure le port
+# et le chemin de Herdr, peut creer le raccourci « Ouvrir le bureau » (au choix :
+# Herdr ou le bureau dans le navigateur), puis lance npm test et npm run check.
+# Relancable sans degat : le script verifie avant d'agir.
 # Aucune cle API ni aucun jeton n'est demande, lu ou enregistre.
 #
 # Usage : bash scripts/installer.sh [options]
@@ -125,7 +127,7 @@ else
         noter 'Node.js : a installer depuis nodejs.org.'
       fi
     else
-      noter 'Node.js : simulation de l''installation.'
+      noter "Node.js : simulation de l'installation."
     fi
   else
     dire 'Installez Node 22 ou plus depuis la page officielle : https://nodejs.org/en/download'
@@ -186,7 +188,7 @@ else
         noter 'Herdr : a verifier.'
       fi
     else
-      noter 'Herdr : simulation de l''installation officielle.'
+      noter "Herdr : simulation de l'installation officielle."
     fi
   else
     dire 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/'
@@ -196,8 +198,73 @@ else
 fi
 dire ''
 
-# --- 3. IA en ligne de commande (optionnelles) ---------------------------
-dire "--- 3. Outils d'IA en ligne de commande (entierement optionnels) ---"
+# --- 3. Panneaux Herdr --------------------------------------------------
+dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
+# Commandes verifiées dans l'aide de Herdr 0.9.5 : herdr workspace create,
+# herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
+# --pane <id>. NON VERIFIÉ : le format exact des sorties de ces commandes.
+# Si une commande échoue ou si sa sortie n'est pas lisible, la procédure
+# manuelle est affichée au lieu d'échouer silencieusement.
+# Aucun outil d'IA n'est lancé automatiquement : herdr agent start démarrerait
+# un vrai agent, c'est à DrSmoke de le faire.
+if [ -n "$HERDR_TROUVE" ]; then
+  if confirmer 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?'; then
+    if [ "$DRY_RUN" = "1" ]; then
+      simuler "Création de l'espace « Bureau des agents » puis 3 découpes de panneaux."
+      simuler 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.'
+      noter 'Panneaux Herdr : simulation.'
+    else
+      panneaux_ok=1
+      "$HERDR_TROUVE" workspace create --label 'Bureau des agents' >/dev/null 2>&1 || panneaux_ok=0
+      if [ "$panneaux_ok" = "1" ]; then
+        "$HERDR_TROUVE" pane split --direction right >/dev/null 2>&1 || panneaux_ok=0
+        "$HERDR_TROUVE" pane split --direction down >/dev/null 2>&1 || panneaux_ok=0
+        "$HERDR_TROUVE" pane split --direction down >/dev/null 2>&1 || panneaux_ok=0
+      fi
+      if [ "$panneaux_ok" = "1" ]; then
+        liste=$("$HERDR_TROUVE" pane list 2>/dev/null || true)
+        ids=$(printf '%s' "$liste" | grep -oE '[A-Za-z0-9_-]+:p[0-9]+' | awk '!vu[$0]++' | head -n 4)
+        compte=$(printf '%s' "$ids" | grep -c . || true)
+        if [ "$compte" -ge 4 ]; then
+          noms=("Chef" "Agent 2" "Agent 3" "Agent 4")
+          i=0
+          for id in $ids; do
+            [ "$i" -ge 4 ] && break
+            "$HERDR_TROUVE" pane rename "$id" "${noms[$i]}" >/dev/null 2>&1 || true
+            i=$((i + 1))
+          done
+          dire "Panneaux créés et nommés : ${noms[*]}."
+          noter 'Panneaux Herdr : 4 panneaux créés et nommés.'
+        else
+          panneaux_ok=0
+        fi
+      fi
+      if [ "$panneaux_ok" = "0" ]; then
+        dire "La création automatique n'a pas abouti."
+        dire 'Procédure manuelle (commandes vérifiées de Herdr) :'
+        dire '  herdr workspace create --label "Bureau des agents"'
+        dire '  herdr pane list                      # repérer les identifiants, ex. w6:p1'
+        dire '  herdr pane split --direction right   # deuxième panneau'
+        dire '  herdr pane split --direction down    # troisième panneau'
+        dire '  herdr pane split --direction down    # quatrième panneau'
+        dire '  herdr pane rename w6:p1 Chef         # puis Agent 2, Agent 3, Agent 4'
+        dire "  # optionnel : lancer un outil d'IA dans un panneau (non fait par ce script)"
+        dire '  # herdr agent start <nom> --kind claude --pane w6:p1'
+        dire '  # types vérifiés : pi, claude, codex, gemini, cursor, agy, opencode, copilot...'
+        noter 'Panneaux Herdr : procédure manuelle affichée.'
+      fi
+    fi
+  else
+    noter 'Panneaux Herdr : non créés (refus).'
+  fi
+else
+  dire "Herdr absent : l'espace de panneaux est ignoré. Installez Herdr puis relancez ce script."
+  noter 'Panneaux Herdr : ignorés (Herdr absent).'
+fi
+dire ''
+
+# --- 4. IA en ligne de commande (optionnelles) ---------------------------
+dire "--- 4. Outils d'IA en ligne de commande (entierement optionnels) ---"
 dire "Aucune cle ni aucun jeton n'est demande ici. Si un outil vous demande de vous"
 dire 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.'
 dire ''
@@ -250,8 +317,36 @@ dire '  https://developers.googleblog.com/an-important-update-transitioning-gemi
 noter 'Antigravity : documentation seule (methode non verifiee).'
 dire ''
 
-# --- 4. Configuration ---------------------------------------------------
-dire '--- 4. Configuration du bureau ---'
+# --- 5. Extensions utiles (optionnelles) --------------------------------
+dire '--- 5. Extensions utiles pour ce projet (optionnelles) ---'
+# Trois extensions vérifiées sur le marché VS Code le 17 octobre 2026, avec
+# leurs éditeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
+# (Microsoft), esbenp.prettier-vscode (Prettier).
+if confirmer 'Veux-tu voir la liste des extensions proposées pour ce projet ?'; then
+  dire '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matières et confort Markdown.'
+  dire '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : contrôle du JavaScript et du TypeScript.'
+  dire '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme cohérente du code.'
+  if ! command -v code >/dev/null 2>&1; then
+    dire "VS Code n'est pas détecté sur cet ordinateur : l'installation des extensions est ignorée."
+    noter 'Extensions : ignorées (VS Code absent).'
+  else
+    for ext in 'Markdown All in One|yzhang.markdown-all-in-one' 'ESLint|dbaeumer.vscode-eslint' 'Prettier - Code formatter|esbenp.prettier-vscode'; do
+      nom="${ext%%|*}"; id="${ext##*|}"
+      if confirmer "Installer l'extension $nom ($id) ?"; then
+        executer "Installation de $id avec code --install-extension." "code --install-extension $id"
+        noter "Extension $id : proposée à l'installation."
+      else
+        noter "Extension $id : refusée."
+      fi
+    done
+  fi
+else
+  noter 'Extensions : liste non demandée.'
+fi
+dire ''
+
+# --- 6. Configuration ---------------------------------------------------
+dire '--- 6. Configuration du bureau ---'
 FICHIERS_PROFIL="$HOME/.profile"
 [ -f "$HOME/.bashrc" ] && FICHIERS_PROFIL="$FICHIERS_PROFIL $HOME/.bashrc"
 
@@ -326,13 +421,67 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
   else
     DOSSIER_BUREAU="$HOME"
   fi
-  if [ "$(uname)" = "Darwin" ]; then
+  # Nouveau choix : le raccourci lance Herdr directement, ou le bureau ouvert
+  # dans le navigateur. Le lanceur existant est réutilisé pour ce second cas :
+  # aucun doublon n'est créé.
+  CHOIX_LANCEUR='bureau'
+  if [ "$DRY_RUN" = "1" ]; then
+    simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur (défaut 2).'
+  elif [ "$OUI" = "1" ]; then
+    dire 'Raccourci : choix automatique « le bureau » (--oui).'
+  else
+    printf 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur (défaut 2) : '
+    read -r choix_saisi
+    [ "$choix_saisi" = "1" ] && CHOIX_LANCEUR='herdr'
+  fi
+  if [ "$CHOIX_LANCEUR" = "herdr" ]; then
+    HERDR_LANCEUR="$HERDR_TROUVE"
+    [ -z "$HERDR_LANCEUR" ] && HERDR_LANCEUR=$(command -v herdr 2>/dev/null || true)
+    if [ -z "$HERDR_LANCEUR" ]; then
+      dire 'Herdr est introuvable : le raccourci Herdr est ignoré.'
+      noter 'Raccourci : Herdr absent.'
+    elif confirmer 'Créer le raccourci « Ouvrir le bureau » qui lance Herdr ?'; then
+      if [ "$(uname)" = "Darwin" ]; then
+        RACCOURCI="$DOSSIER_BUREAU/Ouvrir le bureau.command"
+        if [ "$DRY_RUN" = "1" ]; then
+          simuler "Création du raccourci $RACCOURCI (lance Herdr)."
+        else
+          cat > "$RACCOURCI" <<FIN_RACCOURCI
+#!/bin/bash
+exec "$HERDR_LANCEUR"
+FIN_RACCOURCI
+          chmod +x "$RACCOURCI"
+          dire "Raccourci créé : $RACCOURCI"
+        fi
+      else
+        RACCOURCI="$DOSSIER_BUREAU/ouvrir-le-bureau.desktop"
+        if [ "$DRY_RUN" = "1" ]; then
+          simuler "Création du raccourci $RACCOURCI (lance Herdr)."
+        else
+          cat > "$RACCOURCI" <<FIN_RACCOURCI
+[Desktop Entry]
+Type=Application
+Name=Ouvrir le bureau
+Comment=Herdr
+Exec=$HERDR_LANCEUR
+Terminal=true
+Categories=Utility;
+FIN_RACCOURCI
+          chmod +x "$RACCOURCI"
+          dire "Raccourci créé : $RACCOURCI"
+        fi
+      fi
+      noter 'Raccourci : créé (lance Herdr).'
+    else
+      noter 'Raccourci : non créé (refus).'
+    fi
+  elif [ "$(uname)" = "Darwin" ]; then
     RACCOURCI="$DOSSIER_BUREAU/Ouvrir le bureau.command"
-    question="Creer le raccourci « Ouvrir le bureau » dans $DOSSIER_BUREAU ?"
-    [ -f "$RACCOURCI" ] && question="Le raccourci existe deja. Le remplacer ($RACCOURCI) ?"
+    question="Créer le raccourci « Ouvrir le bureau » qui ouvre le bureau dans le navigateur ?"
+    [ -f "$RACCOURCI" ] && question="Le raccourci existe déjà. Le remplacer ($RACCOURCI) ?"
     if confirmer "$question"; then
       if [ "$DRY_RUN" = "1" ]; then
-        simuler "Creation du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
+        simuler "Création du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
       else
         cat > "$RACCOURCI" <<FIN_RACCOURCI
 #!/bin/bash
@@ -342,19 +491,19 @@ sleep 2
 open "http://127.0.0.1:$PORT_CHOISI"
 FIN_RACCOURCI
         chmod +x "$RACCOURCI"
-        dire "Raccourci cree : $RACCOURCI"
+        dire "Raccourci créé : $RACCOURCI"
       fi
-      noter 'Raccourci : cree.'
+      noter 'Raccourci : créé.'
     else
-      noter 'Raccourci : non cree (refuse).'
+      noter 'Raccourci : non créé (refus).'
     fi
   else
     RACCOURCI="$DOSSIER_BUREAU/ouvrir-le-bureau.desktop"
-    question="Creer le raccourci « Ouvrir le bureau » dans $DOSSIER_BUREAU ?"
-    [ -f "$RACCOURCI" ] && question="Le raccourci existe deja. Le remplacer ($RACCOURCI) ?"
+    question="Créer le raccourci « Ouvrir le bureau » qui ouvre le bureau dans le navigateur ?"
+    [ -f "$RACCOURCI" ] && question="Le raccourci existe déjà. Le remplacer ($RACCOURCI) ?"
     if confirmer "$question"; then
       if [ "$DRY_RUN" = "1" ]; then
-        simuler "Creation du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
+        simuler "Création du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
       else
         cat > "$RACCOURCI" <<FIN_RACCOURCI
 [Desktop Entry]
@@ -366,18 +515,18 @@ Terminal=false
 Categories=Utility;
 FIN_RACCOURCI
         chmod +x "$RACCOURCI"
-        dire "Raccourci cree : $RACCOURCI"
+        dire "Raccourci créé : $RACCOURCI"
       fi
-      noter 'Raccourci : cree.'
+      noter 'Raccourci : créé.'
     else
-      noter 'Raccourci : non cree (refuse).'
+      noter 'Raccourci : non créé (refus).'
     fi
   fi
 fi
 dire ''
 
-# --- 5. Tests -----------------------------------------------------------
-dire '--- 5. Tests du projet ---'
+# --- 7. Tests -----------------------------------------------------------
+dire '--- 7. Tests du projet ---'
 if [ "$NODE_OK" != "1" ]; then
   dire 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.'
   noter 'Tests : ignores (Node.js absent).'

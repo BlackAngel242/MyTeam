@@ -63,6 +63,29 @@ test('les installeurs sont relancables : contrôle avant action', async () => {
   assert.ok((t2.match(/confirmer /g) ?? []).length >= 6, 'installer.sh : chaque installation est confirmée');
 });
 
+test('les installeurs préparent les panneaux Herdr et les extensions utiles', async () => {
+  const { ps1: t1, sh: t2 } = await textes();
+  for (const [nom, texte] of [['installer.ps1', t1], ['installer.sh', t2]]) {
+    // Panneaux : uniquement des commandes vérifiées dans l'aide de Herdr 0.9.5.
+    for (const attendu of ['workspace create', 'pane split', 'pane rename']) {
+      assert.ok(texte.includes(attendu), `${nom} : ${attendu}`);
+    }
+    assert.match(texte, /Proc[eé]dure manuelle/, `${nom} : repli manuel affiché`);
+    for (const ligne of texte.split('\n').filter(l => l.includes('agent start'))) {
+      assert.ok(ligne.includes('#'), `${nom} : agent start n'apparaît qu'en commentaire`);
+    }
+    // Extensions : les trois identifiants vérifiés, chacun confirmé à part.
+    for (const id of ['yzhang.markdown-all-in-one', 'dbaeumer.vscode-eslint', 'esbenp.prettier-vscode']) {
+      assert.ok(texte.includes(id), `${nom} : ${id}`);
+    }
+    assert.match(texte, /code --install-extension/, `${nom} : installation VS Code`);
+    assert.match(texte, /Veux-tu voir la liste des extensions/, `${nom} : question explicite`);
+    // Raccourci : une question de choix, sans doublon de lanceur.
+    assert.match(texte, /1 = Herdr, 2 = le bureau/, `${nom} : choix du raccourci`);
+    assert.ok((texte.match(/Ouvrir le bureau\.cmd|Ouvrir le bureau\.command|ouvrir-le-bureau\.desktop/g) ?? []).length >= 1, `${nom} : lanceur existant réutilisé`);
+  }
+});
+
 test('syntaxe PowerShell de installer.ps1 (parse seul, sans exécution)', async t => {
   if (!existsSync('C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe') && !existsSync('C:\\Program Files\\PowerShell\\7\\pwsh.exe')) {
     t.skip('PowerShell absent de cette machine');

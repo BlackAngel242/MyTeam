@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
 bash scripts/installer.sh
 ```
 
-Le script vérifie d'abord, puis propose chaque installation avec une question « o/n ». Il n'installe rien sans votre accord. Options utiles :
+Le script vérifie d'abord, puis propose chaque installation avec une question « o/n ». Il n'installe rien sans votre accord. Il prépare aussi un espace Herdr à 4 panneaux (le premier = chef), propose trois extensions utiles du projet, et crée le raccourci du Bureau au choix. Options utiles :
 
 | Option Windows | Option macOS / Linux | Effet |
 |---|---|---|
@@ -35,6 +35,12 @@ Le script vérifie d'abord, puis propose chaque installation avec une question �
 | `-Aide` | `--aide` | Affiche l'aide du script |
 
 Le script peut être relancé autant de fois qu'on veut : il vérifie ce qui est déjà en place et ne touche qu'à ce qui manque. À la fin, il affiche un résumé de ce qui est installé, de ce qui reste à faire et de ce qui a été refusé.
+
+### Étapes supplémentaires proposées par le script
+
+1. **Espace Herdr à 4 panneaux** (le premier = chef) : création avec `herdr workspace create --label "Bureau des agents"`, puis trois découpes (`herdr pane split`) et le nommage (`herdr pane rename`) en Chef, Agent 2, Agent 3, Agent 4. Si une commande échoue ou si ses sorties ne sont pas lisibles, le script affiche la procédure manuelle au lieu d'échouer. Aucun outil d'IA n'est lancé automatiquement : pour démarrer un agent dans un panneau, la commande vérifiée est `herdr agent start <nom> --kind claude --pane <identifiant>`.
+2. **Extensions utiles** (facultatif) : le script demande d'abord si vous voulez voir la liste, puis propose une par une les extensions vérifiées sur le marché VS Code le 17 octobre 2026 : `yzhang.markdown-all-in-one` (Markdown All in One, Yu Zhang), `dbaeumer.vscode-eslint` (ESLint, Microsoft) et `esbenp.prettier-vscode` (Prettier). Elles s'installent avec `code --install-extension` si VS Code est détecté, sinon l'étape est ignorée.
+3. **Raccourci du Bureau au choix** : une question demande s'il doit lancer Herdr directement, ou le bureau ouvert dans le navigateur (le lanceur « Ouvrir le bureau » existant, sans doublon).
 
 ## Installation manuelle
 

@@ -5,9 +5,11 @@
 
 .DESCRIPTION
   Verifie Node.js, Herdr et les outils d'IA en ligne de commande, propose chaque
-  installation avec une confirmation (o/n), configure le port et le chemin de
-  Herdr, peut creer le raccourci « Ouvrir le bureau », puis lance npm test et
-  npm run check. Le script est relancable sans degat : il verifie avant d'agir.
+  installation avec une confirmation (o/n), prepare un espace Herdr a 4 panneaux
+  (le premier = chef), propose les extensions utiles du projet, configure le port
+  et le chemin de Herdr, peut creer le raccourci « Ouvrir le bureau » (au choix :
+  Herdr ou le bureau dans le navigateur), puis lance npm test et npm run check.
+  Le script est relancable sans degat : il verifie avant d'agir.
   Aucune cle API ni aucun jeton n'est demande, lu ou enregistre.
 
 .PARAMETER DryRun
@@ -200,8 +202,59 @@ if ($herdrTrouve) {
 }
 Dire ''
 
-# --- 3. IA en ligne de commande (optionnelles) ---------------------------
-Dire '--- 3. Outils d''IA en ligne de commande (entierement optionnels) ---'
+# --- 3. Panneaux Herdr --------------------------------------------------
+Dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
+# Commandes verifiees dans l'aide de Herdr 0.9.5 : herdr workspace create,
+# herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
+# --pane <id>. NON VERIFIE : le format exact des sorties de ces commandes.
+# Si une commande echoue ou si sa sortie n'est pas lisible, la procedure
+# manuelle est affichee au lieu d'echouer silencieusement.
+# Aucun outil d'IA n'est lance automatiquement : herdr agent start demarrerait
+# un vrai agent, c'est a DrSmoke de le faire.
+if ($herdrTrouve) {
+  if (Confirmer 'Creer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?') {
+    if ($DryRun) {
+      Simuler 'Creation de l''espace « Bureau des agents » puis 3 decoupes de panneaux.'
+      Simuler 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.'
+      Noter 'Panneaux Herdr : simulation.'
+    } else {
+      try {
+        Dire 'Creation de l''espace Herdr « Bureau des agents »...'
+        $sortie = & $herdrTrouve workspace create --label 'Bureau des agents' 2>&1 | Out-String
+        & $herdrTrouve pane split --direction right 2>&1 | Out-Null
+        & $herdrTrouve pane split --direction down 2>&1 | Out-Null
+        & $herdrTrouve pane split --direction down 2>&1 | Out-Null
+        $liste = & $herdrTrouve pane list 2>&1 | Out-String
+        $ids = [regex]::Matches($liste, '[A-Za-z0-9_-]+:p\d+') | ForEach-Object { $_.Value } | Select-Object -Unique
+        $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
+        if ($ids.Count -lt 4) { throw "identifiants de panneaux illisibles ($($ids.Count) trouves)" }
+        for ($i = 0; $i -lt 4; $i++) { & $herdrTrouve pane rename $ids[$i] $noms[$i] 2>&1 | Out-Null }
+        Dire "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))."
+        Noter 'Panneaux Herdr : 4 panneaux crees et nommes.'
+      } catch {
+        Dire "La creation automatique n'a pas abouti : $($_.Exception.Message)"
+        Dire 'Procedure manuelle (commandes verifiees de Herdr) :'
+        Dire '  herdr workspace create --label "Bureau des agents"'
+        Dire '  herdr pane list                      # reperer les identifiants, ex. w6:p1'
+        Dire '  herdr pane split --direction right   # deuxieme panneau'
+        Dire '  herdr pane split --direction down    # troisieme panneau'
+        Dire '  herdr pane split --direction down    # quatrieme panneau'
+        Dire '  herdr pane rename w6:p1 Chef         # puis Agent 2, Agent 3, Agent 4'
+        Dire '  # optionnel : lancer un outil d''IA dans un panneau (non fait par ce script)'
+        Dire '  # herdr agent start <nom> --kind claude --pane w6:p1'
+        Dire '  # types verifies : pi, claude, codex, gemini, cursor, agy, opencode, copilot...'
+        Noter 'Panneaux Herdr : procedure manuelle affichee.'
+      }
+    }
+  } else { Noter 'Panneaux Herdr : non crees (refuse).' }
+} else {
+  Dire 'Herdr absent : l''espace de panneaux est ignore. Installez Herdr puis relancez ce script.'
+  Noter 'Panneaux Herdr : ignores (Herdr absent).'
+}
+Dire ''
+
+# --- 4. IA en ligne de commande (optionnelles) ---------------------------
+Dire '--- 4. Outils d''IA en ligne de commande (entierement optionnels) ---'
 Dire 'Aucune cle ni aucun jeton n''est demande ici. Si un outil vous demande de vous'
 Dire 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.'
 Dire ''
@@ -250,8 +303,42 @@ Dire 'comptes gratuits et Google One : https://developers.googleblog.com/an-impo
 Noter 'Antigravity : documentation seule (methode non verifiee).'
 Dire ''
 
-# --- 4. Configuration ---------------------------------------------------
-Dire '--- 4. Configuration du bureau ---'
+# --- 5. Extensions utiles (optionnelles) --------------------------------
+Dire '--- 5. Extensions utiles pour ce projet (optionnelles) ---'
+# Trois extensions verifiees sur le marche VS Code le 17 octobre 2026, avec
+# leurs editeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
+# (Microsoft), esbenp.prettier-vscode (Prettier).
+if (Confirmer 'Veux-tu voir la liste des extensions proposees pour ce projet ?') {
+  Dire '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matieres et confort Markdown.'
+  Dire '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : controle du JavaScript et du TypeScript.'
+  Dire '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme coherente du code.'
+  $extensions = @(
+    @{ nom = 'Markdown All in One'; id = 'yzhang.markdown-all-in-one' },
+    @{ nom = 'ESLint'; id = 'dbaeumer.vscode-eslint' },
+    @{ nom = 'Prettier - Code formatter'; id = 'esbenp.prettier-vscode' }
+  )
+  $vscode = Get-Command code -ErrorAction SilentlyContinue
+  if (-not $vscode) {
+    Dire 'VS Code n''est pas detecte sur cet ordinateur : l''installation des extensions est ignoree.'
+    Noter 'Extensions : ignorees (VS Code absent).'
+  } else {
+    foreach ($ext in $extensions) {
+      if (Confirmer "Installer l'extension $($ext.nom) ($($ext.id)) ?") {
+        try {
+          Executer "Installation de $($ext.id) avec code --install-extension." { & $vscode.Source --install-extension $ext.id }
+          Noter "Extension $($ext.id) : installee."
+        } catch {
+          Dire "L'installation de $($ext.id) a echoue : $($_.Exception.Message)"
+          Noter "Extension $($ext.id) : echec."
+        }
+      } else { Noter "Extension $($ext.id) : refusee." }
+    }
+  }
+} else { Noter 'Extensions : liste non demandee.' }
+Dire ''
+
+# --- 6. Configuration ---------------------------------------------------
+Dire '--- 6. Configuration du bureau ---'
 $portChoisi = 0
 $portActuel = [Environment]::GetEnvironmentVariable('BUREAU_PORT', 'User')
 if ($Port -gt 0) { $portChoisi = $Port }
@@ -284,30 +371,60 @@ if ("$portActuel" -ne "$portChoisi") {
 
 if (-not $SansRaccourci) {
   $bureau = [Environment]::GetFolderPath('Desktop')
-  $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
   $lienRaccourci = Join-Path $bureau 'Ouvrir le bureau.lnk'
-  if (-not (Test-Path $cible)) {
-    Dire "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignore."
-    Noter 'Raccourci : lanceur absent.'
+  # Nouveau choix : le raccourci lance Herdr directement, ou le bureau ouvert
+  # dans le navigateur. Le lanceur « Ouvrir le bureau.cmd » existant est reutilise
+  # pour ce second cas : aucun doublon n'est cree.
+  $choixLanceur = 'bureau'
+  if ($DryRun) {
+    Simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur (defaut 2).'
+  } elseif ($Oui) {
+    Dire 'Raccourci : choix automatique « le bureau » (-Oui).'
   } else {
-    $dejaLa = Test-Path $lienRaccourci
-    $question = if ($dejaLa) { 'Le raccourci existe deja sur le Bureau. Le remplacer ?' } else { 'Creer le raccourci « Ouvrir le bureau » sur le Bureau ?' }
-    if (Confirmer $question) {
-      Executer "Creation du raccourci $lienRaccourci." {
+    $saisie = Read-Host 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur (defaut 2)'
+    if ($saisie.Trim() -eq '1') { $choixLanceur = 'herdr' }
+  }
+  if ($choixLanceur -eq 'herdr') {
+    $cible = $herdrTrouve
+    if (-not $cible) { $cible = (Get-Command herdr -ErrorAction SilentlyContinue).Source }
+    if (-not $cible) {
+      Dire 'Herdr est introuvable : le raccourci Herdr est ignore.'
+      Noter 'Raccourci : Herdr absent.'
+    } elseif (Confirmer 'Creer le raccourci « Ouvrir le bureau » qui lance Herdr ?') {
+      Executer "Creation du raccourci $lienRaccourci (lance Herdr)." {
         $wsh = New-Object -ComObject WScript.Shell
         $raccourci = $wsh.CreateShortcut($lienRaccourci)
         $raccourci.TargetPath = $cible
         $raccourci.WorkingDirectory = $racine
         $raccourci.Save()
       } | Out-Null
-      Noter 'Raccourci : cree sur le Bureau.'
+      Noter 'Raccourci : cree sur le Bureau (lance Herdr).'
     } else { Noter 'Raccourci : non cree (refuse).' }
+  } else {
+    $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
+    if (-not (Test-Path $cible)) {
+      Dire "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignore."
+      Noter 'Raccourci : lanceur absent.'
+    } else {
+      $dejaLa = Test-Path $lienRaccourci
+      $question = if ($dejaLa) { 'Le raccourci existe deja sur le Bureau. Le remplacer ?' } else { 'Creer le raccourci « Ouvrir le bureau » qui ouvre le bureau dans le navigateur ?' }
+      if (Confirmer $question) {
+        Executer "Creation du raccourci $lienRaccourci." {
+          $wsh = New-Object -ComObject WScript.Shell
+          $raccourci = $wsh.CreateShortcut($lienRaccourci)
+          $raccourci.TargetPath = $cible
+          $raccourci.WorkingDirectory = $racine
+          $raccourci.Save()
+        } | Out-Null
+        Noter 'Raccourci : cree sur le Bureau.'
+      } else { Noter 'Raccourci : non cree (refuse).' }
+    }
   }
 }
 Dire ''
 
-# --- 5. Tests -----------------------------------------------------------
-Dire '--- 5. Tests du projet ---'
+# --- 7. Tests -----------------------------------------------------------
+Dire '--- 7. Tests du projet ---'
 if (-not $nodeOk) {
   Dire 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.'
   Noter 'Tests : ignores (Node.js absent).'
