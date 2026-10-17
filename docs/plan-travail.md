@@ -22,13 +22,13 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot C. Avancement visible dans l'OS
 
-- [ ] C1 (Claude) Onglet Tâches : tableau « À faire » et « Réalisées » par fichier de plan, avec pourcentage et barre
-- [ ] C2 (Claude) Pourcentage de cases cochées de chaque agent sur sa carte et dans son poste (plan publié par l'agent seulement)
-- [ ] C3 (Claude) Mention explicite à l'écran : pourcentage = cases cochées sur cases totales, jamais une estimation
+- [x] C1 (Claude) Onglet Tâches : tableau « À faire » et « Réalisées » par fichier de plan, avec pourcentage et barre
+- [x] C2 (Claude) Pourcentage de cases cochées de chaque agent sur sa carte et dans son poste (plan publié par l'agent seulement)
+- [x] C3 (Claude) Mention explicite à l'écran : pourcentage = cases cochées sur cases totales, jamais une estimation
 
 ## Lot D. Les agents apprennent ensemble
 
-- [ ] D1 (Claude) Règle « boucle de correction » dans `AGENTS.md` : chaque correction devient une leçon dans `LESSONS.md`, les agents sont informés par message
+- [x] D1 (Claude) Règle « boucle de correction » dans `AGENTS.md` : chaque correction devient une leçon dans `LESSONS.md`, les agents sont informés par message
 - [ ] D2 (Claude) Message de leçon envoyé à chaque agent après chaque correction, relu avant sa prochaine mission
 - [ ] D3 (Antigravity) Rangement de `LESSONS.md` par thèmes pour que la relecture reste courte
 
