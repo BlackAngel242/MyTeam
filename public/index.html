@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/style.css">
   <script src="/logos.js" defer></script>
   <script src="/terminal.js" defer></script>
+  <script src="/response-card.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -56,6 +57,7 @@
         <div class="term-tools"><label class="visually-hidden" for="term-search">Rechercher dans les sorties</label><input id="term-search" type="search" placeholder="Rechercher dans les sorties" autocomplete="off"><span id="term-hits" aria-live="polite"></span><button type="button" class="tool-button" id="term-freeze" aria-pressed="false">Figer</button><button type="button" class="tool-button" id="term-copy">Copier</button><button type="button" class="tool-button" id="term-expand" aria-pressed="false">Agrandir</button></div>
         <div class="output-wrap"><pre id="output" tabindex="0">Sélectionne un personnage dans le bureau ou un agent dans la liste pour lire les dernières lignes de son terminal.</pre></div>
         <p class="read-note" id="read-note">Les sorties viennent directement du terminal de l’agent.</p>
+        <details class="responses-box" id="responses-box"><summary>Réponses lisibles <span class="responses-hint">journal local de l’agent</span></summary><div id="responses" aria-live="off"></div></details>
         <form id="prompt-form"><label for="message">La prochaine consigne</label><textarea id="message" rows="3" maxlength="12000" placeholder="Écris ta consigne à cet agent…" disabled></textarea><p id="send-help">Sélectionne un agent pour lui écrire.</p><label class="priority-check" id="priority-wrap" hidden><input type="checkbox" id="priority"> Prioritaire : passe avant ses autres consignes en file</label><button id="send" type="submit" disabled><span>Envoyer la consigne</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-5 14-3-7-6 0Zm6 0 8-7"/></svg></button><p id="send-result" role="status" hidden></p></form>
       </div>
       <div class="tab-panel" role="tabpanel" id="panel-equipe" aria-labelledby="tab-equipe" hidden>

@@ -600,7 +600,7 @@ function selectAgent(id) {
   if(onFiles){filesView='recent';syncFilesView();filesPath='';}
   queueMicrotask(()=>showTab(onFiles?'fichiers':'poste'));
   if(selected) keepDraft(selected,$('message').value);
-  selected=id;readSequence++;
+  selected=id;readSequence++;loadResponses();
   $('message').value=drafts.get(id)||'';$('send-result').hidden=true;
   termPlaceholder('Lecture des dernières sorties…');$('read-state').textContent='Lecture en cours…';
   renderAgents();readOutput();draw(0);
@@ -647,6 +647,26 @@ async function readOutput() {
   }catch(error){if(id===selected&&sequence===readSequence){$('read-state').textContent='Lecture indisponible';termPlaceholder(errorText(error));}}
   finally{readBusy=false;if(id!==selected&&selected)readOutput();}
 }
+// Réponses lisibles : journal de l'agent, chargé seulement quand le volet est ouvert.
+let respBusy=false;
+async function loadResponses(){
+  const box=$('responses-box'),zone=$('responses'),a=activeAgent();
+  if(!box.open||!a||!state.connected||!state.token||!window.ResponseCard)return;
+  if(zone.dataset.agent!==a.id){zone.dataset.agent=a.id;zone.replaceChildren();}
+  if(respBusy)return;
+  respBusy=true;
+  const note=text=>zone.replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:text}));
+  try{
+    const data=await request('/api/reponses?id='+encodeURIComponent(a.id),{headers:{'X-Bureau-Token':state.token}});
+    if(a.id!==selected)return;
+    if(!data.supported)note(data.reason||'Les réponses de cet outil ne sont pas exposées pour le moment.');
+    else if(!data.found)note('Journal de cet agent introuvable ou non rattaché avec certitude : rien n’est affiché plutôt qu’un doute.');
+    else if(!data.responses.length)note('Aucune réponse écrite par cet agent dans le journal lu.');
+    else ResponseCard.render(zone,{agent:a.name,agentId:a.id,found:true,complete:data.complete,responses:data.responses});
+  }catch(error){if(a.id===selected)note(errorText(error));}
+  finally{respBusy=false;}
+}
+$('responses-box').addEventListener('toggle',loadResponses);
 $('message').addEventListener('input',()=>{if(selected)keepDraft(selected,$('message').value);updateForm();});
 $('prompt-form').addEventListener('submit',async event=>{
   event.preventDefault();const a=activeAgent(),message=$('message').value.trim();
@@ -1545,7 +1565,7 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();},5000);
 setTimeout(loadTodos,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
