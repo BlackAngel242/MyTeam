@@ -137,24 +137,45 @@ function isHerdrToken(text) {
   return /^(?:.*[\\/])?herdr(\.exe)?$/i.test(text);
 }
 
+// Une variable dont la valeur se termine par herdr ou herdr.exe peut être
+// invoquée plus loin : `H="$HOME/.herdr/.../herdr.exe"; "$H" agent prompt ...`.
+function estExecutable(mot, variables) {
+  if (isHerdrToken(mot)) return true;
+  const appel = /^\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?$/.exec(mot);
+  if (!appel) return false;
+  const valeur = variables.get(appel[1]);
+  return typeof valeur === 'string' && /(?:^|[\\/])herdr(\.exe)?$/i.test(valeur.trim());
+}
+
 // Une cible valide ressemble à un panneau (w5:p4) ou à un nom d'agent, jamais à
 // une option ni à un chemin. Le module ne connaît pas la liste des agents : la
 // validation reste celle de la forme, le serveur peut revalider.
 const CIBLE = /^[A-Za-z0-9_.:-]{1,120}$/;
 // Séparateurs du shell : après eux commence une nouvelle commande.
 const SEPARATEURS = [';', '&&', '||', '|', '&', '('];
+// Déclarations de variables qui ne sont pas des commandes.
+const DECLARATIONS = ['export', 'declare', 'local', 'readonly', 'unset'];
 
 // Reconnaît `herdr ... agent prompt <cible> <message>` UNIQUEMENT en début de
 // commande du shell ou juste après un séparateur : un exemple imprimé par echo,
 // une commande d'aide (--help) ou un appel sans consigne ne prouve aucun envoi.
 function parseDelegation(command) {
   const words = tokenize(command);
+  const variables = new Map();
   let debut = 0;
   for (let h = 0; h < words.length; h++) {
-    if (SEPARATEURS.includes(words[h].text)) { debut = h + 1; continue; }
-    if (h !== debut || !isHerdrToken(words[h].text)) continue;
+    const mot = words[h].text;
+    const affectation = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(mot);
+    if (affectation) {
+      variables.set(affectation[1], affectation[2]);
+      if (h === debut) debut = h + 1;   // une affectation n'est pas une commande
+      continue;
+    }
+    if (SEPARATEURS.includes(mot)) { debut = h + 1; continue; }
+    if (h === debut && DECLARATIONS.includes(mot.toLowerCase())) { debut = h + 1; continue; }
+    if (h !== debut || !estExecutable(mot, variables)) continue;
     const segment = words.slice(h);
-    if (segment.some(mot => ['--help', '-h', 'help', '/?'].includes(mot.text))) return null;
+    if (segment.some(palier => ['--help', '-h', 'help', '/?'].includes(palier.text))) return null;
     let i = 1;
     // Options éventuelles avant la sous-commande, par exemple --session nom.
     while (i < segment.length && segment[i].text.startsWith('-')) {
@@ -166,12 +187,12 @@ function parseDelegation(command) {
     if (!cible || !cible.literal || !CIBLE.test(cible.text) || cible.text.startsWith('-')) return null;
     const message = [];
     for (let j = i + 3; j < segment.length; j++) {
-      const mot = segment[j];
-      if (SEPARATEURS.includes(mot.text)) break;
-      message.push(mot);
+      const motMessage = segment[j];
+      if (SEPARATEURS.includes(motMessage.text)) break;
+      message.push(motMessage);
     }
     if (message.length === 0) return null;
-    const titre = message.every(mot => mot.literal) ? titreDe(message.map(mot => mot.text).join(' ')) : null;
+    const titre = message.every(motMessage => motMessage.literal) ? titreDe(message.map(motMessage => motMessage.text).join(' ')) : null;
     return { target: cible.text, title: titre };
   }
   return null;
