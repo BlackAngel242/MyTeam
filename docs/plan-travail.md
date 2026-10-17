@@ -34,10 +34,13 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot E. Fonctions de l'OS d'agents
 
-- [ ] E1 (Claude) Audit : priorité des envois et transfert de direction déjà livrés, conformes aux contrats
-- [ ] E2 (Claude) Audit : envoi d'un fichier avec une consigne, conforme à `docs/contrat-fichiers.md`
-- [ ] E3 (OpenCode) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
-- [ ] E4 (Antigravity) Fil de discussion dans l'interface
+- [x] E1 (Claude) Audit : priorité des envois et transfert de direction livrés, tests `queue` et `direction` verts
+- [ ] E2 (OpenCode) Envoi d'un fichier avec une consigne : `files` dans `POST /api/queue`, copie sans écrasement avant l'envoi, plafond de volume (`docs/os-fonctions-opencode.md`, section 5)
+- [ ] E3 (Claude) Interface « Joindre un fichier » sur la consigne, nom de fichier seul affiché
+- [ ] E4 (OpenCode) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
+- [ ] E5 (Antigravity) Fil de discussion dans l'interface
+- [ ] E6 (OpenCode) Traitement de fichier suivi jusqu'au résultat : `GET /api/traitement`, faits sourcés, jamais « réussi » (section 6)
+- [ ] E7 (Claude) Interface du dossier de traitement
 
 ## Lot F. Clôture
 
