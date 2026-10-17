@@ -117,8 +117,18 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const guard=(req,{body=true}={})=>{
       const sent=Buffer.from(req.headers['x-bureau-token']||'');
       const expected=Buffer.from(token);
-      if(req.headers.origin!==origin||sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
-      if(body&&!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
+      if(sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+      // Un POST exige l'origine exacte. Un GET de navigateur n'envoie pas
+      // toujours Origin : la provenance est alors prouvée par Sec-Fetch-Site
+      // = same-origin (en-tête posé par le navigateur, non modifiable par une
+      // page). Sans aucune preuve, le refus reste la règle.
+      const origine=req.headers.origin;
+      if(body) {
+        if(origine!==origin) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+        if(!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
+      } else if(!(origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin'))) {
+        json(403,{error:'Session expirée. Actualisez le bureau.'});return false;
+      }
       return true;
     };
     const readJson=async req=>{
@@ -263,7 +273,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(error instanceof QueueError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;

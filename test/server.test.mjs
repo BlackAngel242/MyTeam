@@ -104,14 +104,39 @@ test('/logos.js est servi en javascript ou renvoie un 404 propre',async t=>{
   }
 });
 
-test('/sounds.js est servi comme script classique avec les protections du serveur',async t=>{
+test('les GET du navigateur prouvent leur provenance sans en-tête Origin',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const {send,origin}=await bureau(t,{},{queueFile:join(dossier,'file-attente.json'),getTodos:async()=>({project:[],agents:{}})});
+  const {data:{token}}=await send('/api/state');
+  const jeton={'X-Bureau-Token':token};
+  // Cas réel du navigateur : aucun Origin sur un GET de même origine.
+  assert.equal((await send('/api/queue',{headers:{...jeton,'Sec-Fetch-Site':'same-origin'}})).status,200);
+  assert.equal((await send('/api/todos',{headers:{...jeton,'Sec-Fetch-Site':'same-origin'}})).status,200);
+  // L'origine exacte reste acceptée, avec ou sans Sec-Fetch-Site.
+  assert.equal((await send('/api/queue',{headers:{...jeton,Origin:origin}})).status,200);
+  assert.equal((await send('/api/queue',{headers:{...jeton,Origin:origin,'Sec-Fetch-Site':'same-origin'}})).status,200);
+  // Sans aucune preuve de provenance, refus.
+  assert.equal((await send('/api/queue',{headers:jeton})).status,403);
+  assert.equal((await send('/api/queue',{headers:{...jeton,'Sec-Fetch-Site':'none'}})).status,403);
+  // Un POST garde l'exigence stricte d'origine, même en provenance same-origin.
+  assert.equal((await send('/api/queue',{method:'POST',headers:{...jeton,'Content-Type':'application/json','Sec-Fetch-Site':'same-origin'},body:'{}'})).status,403);
+  assert.equal((await send('/api/queue',{method:'POST',headers:{...jeton,'Content-Type':'application/json',Origin:origin},body:'{"id":"a","message":"ok"}'})).status,200);
+});
+
+test('/sounds.js et /empty-icons.js sont servis en script, un script inconnu renvoie un 404 propre',async t=>{
   const {send}=await bureau(t);
-  const response=await send('/sounds.js');
-  assert.equal(response.status,200);
-  assert.match(response.headers['content-type'],/^text\/javascript/);
-  assert.equal(response.headers['x-content-type-options'],'nosniff');
-  assert.equal(response.headers['cache-control'],'no-store');
-  assert.ok(response.headers['content-security-policy']!==undefined);
+  for(const chemin of ['/sounds.js','/empty-icons.js']) {
+    const response=await send(chemin);
+    assert.equal(response.status,200,chemin);
+    assert.match(response.headers['content-type'],/^text\/javascript/);
+    assert.equal(response.headers['x-content-type-options'],'nosniff');
+    assert.equal(response.headers['cache-control'],'no-store');
+    assert.ok(response.headers['content-security-policy']!==undefined);
+  }
+  const inconnu=await send('/script-inconnu.js');
+  assert.equal(inconnu.status,404);
+  assert.deepEqual(inconnu.data,{error:'Page introuvable.'});
 });
 
 test('un envoi groupe exige jeton, origine exacte, JSON et cibles valides',async t=>{
