@@ -18,6 +18,15 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 - Rafraîchissements stables (M6) : invitation, file d'attente et tâches ne sont redessinées que si leur contenu change, le bouton focalisé est conservé, une même panne n'est annoncée qu'une fois, et une réponse lente ne remplace plus une lecture plus récente.
 - Mémoire bornée (M7) : 30 courriers gardés en détail (le compteur couvre toute la session), 500 identifiants de délégations vus au plus, caches des agents disparus purgés.
 
+### Modifié
+
+- Éclairage du soir : suspensions au plafond et lampes de bureau allumées de 17 h 30 au matin selon l'heure du poste ; la lampe d'un agent en pause de limite reste éteinte.
+- Tableau de la scène (P1 d'OpenCode) : il ne répète plus les états des cartes et montre l'heure de retour d'une pause, les consignes en file, les courriers non lus et les sous-agents actifs.
+- Sous chaque bureau, le nom seul souligné de la couleur d'état (P2 d'OpenCode) ; l'état est porté par la carte, la posture, l'écran et la bulle.
+- Salle de réflexion au libellé fixe, jamais tronqué (P4 d'OpenCode).
+- Téléphone : « Touche » au lieu de « Clique », pastille du panneau qui ne fait plus déborder la carte, pastilles et touches à 12 px.
+- Une commande du chef portant plusieurs ordres fait venir chaque agent visé, et plus seulement le premier.
+
 ## [0.3.0] - 17 octobre 2026
 
 ### Ajouté

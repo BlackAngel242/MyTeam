@@ -698,18 +698,18 @@ function clock(x,y){
   px(x,y,25,11,'#0b1426');px(x+1,y+1,23,9,'#101c33');text(s,x+3,y+3,'#a0dfc4');
 }
 // Tableau d'équipe : uniquement les comptes réels fournis par Herdr.
+// Tableau de la scène (proposition P1 d'OpenCode) : seulement des faits absents du reste de la scène,
+// les états étant déjà portés par les cartes et les postures. Une ligne s'allume quand son fait est observé.
 function board(x,y,w){
-  const count=list=>state.agents.filter(a=>list.includes(a.status)).length;
-  const rows=[['TRAVAIL',count(WORK),'#9dbbff'],['DISPONIBLE',state.agents.filter(a=>FREE.includes(a.status)&&!quotaPause(a)).length,'#a0dfc4'],['ATTENTE',count(WAIT),'#f4c780']];
-  const pausedN=state.agents.filter(a=>quotaPause(a)).length;
-  const unknown=state.agents.length-rows.reduce((s,r)=>s+r[1],0)-pausedN;
-  if(unknown>0)rows.push(['INCONNU',unknown,'#a7b8ce']);
-  if(pausedN>0)rows.push(['EN PAUSE',pausedN,'#b5a8e6']);
+  const paused=state.agents.map(quotaPause).filter(Boolean),back=paused.map(q=>q.until).filter(Boolean).sort((a,b)=>a-b)[0];
+  const waitingQ=queueItems.filter(q=>q.state==='attente').length,subs=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
+  const rows=[['EN FILE',String(waitingQ),'#9dbbff',waitingQ>0],['COURRIER',String(mailCount),'#a0dfc4',mailCount>0],['SOUS-AGENTS',String(subs),'#c4d2e4',subs>0]];
+  if(paused.length)rows.unshift(['RETOUR',back?hhmm(back):'??:??','#b5a8e6',true]);
   const h=rows.length*8+5;boardBottom=y+h;
   px(x,y,w,h,'#0b1426');px(x+1,y+1,w-2,h-2,'#111e33');
-  rows.forEach(([name,n,c],i)=>{
-    const ry=y+4+i*8,value=state.connected?String(n):'-',lit=state.connected&&n>0;
-    px(x+4,ry+1,3,3,lit?c:'#3a4c65');text(name,x+10,ry,lit?'#c4d2e4':'#71839a');text(value,x+w-4-textWidth(value),ry,lit?'#f2f4f7':'#71839a');
+  rows.forEach(([name,value,c,on],i)=>{
+    const ry=y+4+i*8,v=state.connected?value:'-',lit=state.connected&&on;
+    px(x+4,ry+1,3,3,lit?c:'#3a4c65');text(name,x+10,ry,lit?'#c4d2e4':'#71839a');text(v,x+w-4-textWidth(v),ry,lit?'#f2f4f7':'#71839a');
   });
 }
 // La baie « HERDR » clignote seulement quand le bureau est réellement relié à Herdr.
@@ -843,15 +843,16 @@ function station(a,i,cx,y0,time,L){
   const max=L.cw-4,name=fit(a.name,max),status=fit(state.connected?sceneLabels[st]||'INCONNU':'HORS LIGNE',max);
   text(name,cx-textWidth(name)/2,y0+60,chosen?'#a0dfc4':'#e2eaf4');
   if(pause){
-    // Pause de quota : écran éteint, « z » qui montent, heure de retour annoncée par l'outil.
     // L'agent a quitté son poste : écran éteint, voyant de veille, chevalet avec son heure de retour.
     px(cx-21,y0+16,15,10,'#070d18');
     const glowOn=paused||Math.floor(time/900)%2===0;px(cx-8,y0+27,1,1,'#b5a8e6',glowOn?1:.35);
     px(cx+1,y0+15,27,15,'#0b1426');px(cx+2,y0+16,25,13,'#dfe6ee');px(cx+5,y0+29,2,2,'#7a604f');px(cx+22,y0+29,2,2,'#7a604f');
     text('RETOUR',cx+3,y0+17,'#0c1423');text(pause.until?hhmm(pause.until):'??:??',cx+5,y0+23,'#5b4a9e');
-    const p=fit('EN PAUSE'+(pause.until?' '+hhmm(pause.until):''),max);text(p,cx-textWidth(p)/2,y0+67,'#b5a8e6');
-  }else text(status,cx-textWidth(status)/2,y0+67,state.connected?c:'#71839a');
-  if(chosen)px(cx-9,y0+74,18,1,'#a0dfc4');
+  }
+  // Proposition P2 d'OpenCode : le nom seul sous le bureau, souligné de la couleur d'état. Hors ligne, on le dit.
+  if(!state.connected)text(status,cx-textWidth(status)/2,y0+67,'#71839a');
+  else px(cx-Math.min(10,textWidth(name)/2),y0+67,Math.min(20,textWidth(name)),1,c,.9);
+  if(chosen)px(cx-9,y0+70,18,1,'#a0dfc4');
   if(a===L.boss&&vipRect)spots.push({x:vipRect.x*L.S,y:vipRect.y*L.S,w:vipRect.w*L.S,h:vipRect.h*L.S,id:a.id});
   else spots.push({x:(cx-L.cw/2)*L.S,y:y0*L.S,w:L.cw*L.S,h:L.rowH*L.S,id:a.id});
 }
@@ -871,16 +872,15 @@ function meetingRoom(L,time){
   const {roomY,W,H}=L,G=meetingGeometry(L);
   if(!roomOpen()){
     px(0,roomY,W,H-roomY,mix('#1a2740','#344b6e',amb.d*.85));px(0,roomY,W,3,'#2c4468');px(0,roomY,W,1,'#4a6a94');
-    text(L.narrow?'REFLEXION - VIDE':'SALLE DE REFLEXION - VIDE',G.doorX+18,roomY+6,'#5d7190');return G;
+    text(L.narrow?'REFLEXION':'SALLE DE REFLEXION',G.doorX+18,roomY+6,'#5d7190');return G;
   }
   px(0,roomY,W,H-roomY,mix('#1a2740','#344b6e',amb.d*.85));
   for(let x=4;x<W;x+=12)for(let y=roomY+6;y<H;y+=8)px(x+((y>>3)%2)*6,y,1,1,'#22324d');
   // Cloison vitrée avec une porte à gauche.
   px(G.doorX+12,roomY,W-G.doorX-12,3,'#2c4468');px(G.doorX+12,roomY,W-G.doorX-12,1,'#4a6a94');
   px(0,roomY,G.doorX,3,'#2c4468');px(G.doorX-1,roomY-1,2,5,'#4a6a94');px(G.doorX+11,roomY-1,2,5,'#4a6a94');
-  const n=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
-  const owners=state.agents.filter(a=>a.activity?.subagents?.length).map(a=>a.name);
-  text(fit((L.narrow?'REFLEXION':'SALLE DE REFLEXION')+(n?' - '+n+' SOUS-AGENT'+(n>1?'S':'')+(owners.length===1?' DE '+owners[0]:''):''),W-G.doorX-70),G.doorX+18,roomY+6,'#8fa3c0');
+  // Libellé fixe (proposition P4 d'OpenCode) : jamais tronqué ; le nombre de sous-agents est au tableau.
+  text(L.narrow?'REFLEXION':'SALLE DE REFLEXION',G.doorX+18,roomY+6,'#8fa3c0');
   // Tableau blanc : ses traits ne grandissent que si un assistant y travaille vraiment.
   const bx=G.boardX,by=roomY+6;
   px(bx-1,by-1,34,19,'#0b1426');px(bx,by,32,17,'#dfe6ee');
@@ -1019,10 +1019,10 @@ function agentByTarget(target){
 function syncOffice(L,now){
   if(!state.connected||!L.boss)return;
   for(const d of L.boss.delegations||[]){
-    if(seenDelegations.has(d.id))continue;remember(d.id);
+    const dk=d.id+'|'+d.target;if(seenDelegations.has(dk))continue;remember(dk);
     const t=agentByTarget(d.target);
     if(!officeBooted||paused||!t||t===L.boss)continue;
-    officeActors.set('deleg|'+d.id,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
+    officeActors.set('deleg|'+dk,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
     signal('delegation',null);
   }
   for(const a of state.agents){
@@ -1263,7 +1263,7 @@ addEventListener('keydown',e=>{
   if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
-setInterval(()=>{if(document.hidden)return;const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();if(currentTab()==='taches')loadTodos();},5000);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);

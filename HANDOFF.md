@@ -66,6 +66,12 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - Codex est au repos (quota bas, 19 % le 17 octobre) : ne pas lui confier de mission avant sa remise à zéro. OpenCode reprend ses fichiers si besoin.
 - Non vérifié : notifications Windows réelles page cachée (le délai réel dépend du navigateur), lecteur d'écran sur la palette.
 
+## Soir du 17 octobre 2026
+
+- Fusion dans `main` faite (42fa960), branche alignée. Éclairage du soir, P1, P2, P4 et P5 d'OpenCode appliqués.
+- Le tableau de la scène relit la file toutes les 5 s, quel que soit l'onglet.
+- Restent : P3, P6, P7, accès direct au poste sur téléphone, idées « wow » proposées à DrSmoke (chef qui porte le dossier, replay de la journée, météo réelle à confirmer car requête extérieure).
+
 ## Préparation à la publication GitHub et prochaines étapes
 
 1. Fichiers maintenus par Antigravity :

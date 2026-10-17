@@ -31,3 +31,4 @@
 - Un correctif serveur n'est vérifié qu'après redémarrage du processus du port 4317 : l'essai G2 d'OpenCode échouait parce que le serveur tournait encore avec le code d'avant le commit. Comparer l'heure de démarrage du processus à celle du commit.
 - Une hauteur `max-height:none` sur un `pre` qui défile fait grandir la page entière (2471 px) au lieu du terminal : toujours borner la hauteur agrandie pour garder le défilement interne.
 - Edge ne rend pas tout de suite le focus à `body` quand on masque l'élément focalisé : tester `conteneur.contains(document.activeElement)` et pas seulement `activeElement === body`.
+- Une commande peut porter plusieurs ordres de délégation avec le même identifiant : toute clé côté interface doit combiner identifiant et cible, sinon seul le premier agent visé apparaît.

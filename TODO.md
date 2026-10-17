@@ -54,10 +54,12 @@
 - [x] Inventaire des commandes locales vérifiées pour modèles et compétences (`docs/commandes-outils.md`).
 - [x] Synthèse des 8 innovations pour l'OS d'agents (`docs/idees-os.md`).
 - [x] Guide d'aide complet et fidèle à l'interface réelle (`docs/aide.md`).
-- [ ] Détection automatique des ordres de délégation (`src/delegations.mjs`, en cours par OpenCode).
+- [x] Détection automatique des ordres de délégation (`src/delegations.mjs`, plusieurs ordres par commande, par OpenCode).
 - [x] Deuxième revue de Codex (`docs/revue-codex-interface-2.md`) : G1, G2, M1 à M9 corrigés et vérifiés.
 - [x] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, terminée par OpenCode).
 - [ ] Scripts d'installation automatique (`scripts/`, en cours par OpenCode).
 - [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.
+- [ ] Propositions restantes d'OpenCode : P3 (bandeau de pause sur une ligne), P6 (courrier fondé sur le journal de 12 h), P7 (trois messages d'erreur distincts).
+- [ ] Téléphone : accès direct au poste sans 1 500 px de défilement (Codex, contre-évaluation).
 - [ ] Évolution vers un OS d'agents en fenêtres ou tuiles libres (décision DrSmoke).
