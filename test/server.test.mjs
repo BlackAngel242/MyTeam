@@ -32,7 +32,7 @@ async function bureau(t, overrides={}, options={}) {
     req.on('error',reject);
     req.end(body);
   });
-  return {send,origin,calls};
+  return {send,origin,calls,server};
 }
 
 test('le serveur refuse adresse étrangère, origine étrangère et accès extérieur',async t=>{
@@ -319,4 +319,68 @@ test('une lecture de délégations en panne donne une liste vide sans casser l\'
   assert.equal(response.status,200);
   assert.deepEqual(response.data.agents[0].delegations,[]);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET_/);
+});
+
+test('la pause de quota vue du terminal remplit l\'activité avec source terminal',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'w5:p2@fp',paneId:'w5:p2',kind:'Antigravity',name:'Antigravity',status:'idle',ready:true}];
+  const {send,server}=await bureau(t,{list:async()=>agents},{
+    readOtherActivity:async()=>null,
+    lireEtat:async()=>({limitReached:true,resetsAt:'2026-10-17T18:00:00.000Z',usedPercent:91,source:'terminal'}),
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  await server.pauses.tick();
+  const response=await send('/api/state');
+  assert.equal(response.status,200);
+  assert.deepEqual(response.data.agents[0].activity,{
+    tokens:null,limits:[],model:null,effort:null,
+    limitReached:true,resetsAt:'2026-10-17T18:00:00.000Z',usedPercent:91,source:'terminal',
+  });
+});
+
+test('une pause de journal plus précise n\'est pas écrasée par le terminal',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'x',kind:'Codex',cwd:'C:/projet-factice'}];
+  const {send,server}=await bureau(t,{list:async()=>agents},{
+    readOtherActivity:async()=>({tokens:{input:1,output:2,cacheRead:3,cacheCreation:4},limits:[{label:'Principale',usedPercent:100,window:300,resetsAt:'2026-10-17T13:00:00.000Z'}],model:null,effort:null,limitReached:true}),
+    lireEtat:async()=>({limitReached:true,resetsAt:'2026-10-17T23:59:00.000Z',usedPercent:50,source:'terminal'}),
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  await server.pauses.tick();
+  const response=await send('/api/state');
+  const activite=response.data.agents[0].activity;
+  assert.equal(activite.limitReached,true);
+  assert.equal(activite.source,'journal local');
+  assert.equal(activite.limits[0].resetsAt,'2026-10-17T13:00:00.000Z');
+  assert.notEqual(activite.resetsAt,'2026-10-17T23:59:00.000Z','le terminal n\'écrase pas le journal');
+  assert.equal(activite.usedPercent,undefined);
+});
+
+test('la file d\'attente utilise la remise à zéro du terminal plus cinq minutes',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  let maintenant=Date.parse('2026-10-17T12:00:00Z');
+  const agents=[{id:'w5:p2@fp',paneId:'w5:p2',kind:'Antigravity',status:'idle',ready:true}];
+  const envois=[];
+  const {server}=await bureau(t,{
+    list:async()=>agents,
+    prompt:async(id,message)=>{envois.push(message);return {sent:true};},
+  },{
+    readOtherActivity:async()=>null,
+    lireEtat:async()=>({limitReached:true,resetsAt:'2026-10-17T13:00:00.000Z',usedPercent:null,source:'terminal'}),
+    now:()=>maintenant,
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  await server.pauses.tick();
+  await server.queue.enqueue({id:'w5:p2@fp',message:'Après la pause'});
+  await server.queue.tick();
+  assert.deepEqual(envois,[],'la pause de quota bloque l\'envoi');
+  maintenant=Date.parse('2026-10-17T13:04:00Z');
+  await server.queue.tick();
+  assert.deepEqual(envois,[],'les cinq minutes ne sont pas écoulées');
+  maintenant=Date.parse('2026-10-17T13:06:00Z');
+  await server.queue.tick();
+  assert.deepEqual(envois,['Après la pause']);
 });
