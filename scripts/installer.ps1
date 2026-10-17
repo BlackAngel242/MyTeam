@@ -16,7 +16,7 @@
   Affiche les actions sans rien executer (simulation).
 
 .PARAMETER Oui
-  Accepte sauf Herdr et chaque extension, qui exigent un o/n individuel.
+  Accepte sauf toute installation (Node.js, Herdr, outils, extensions), qui exigent un o/n individuel.
 
 .PARAMETER Port
   Port du bureau (variable BUREAU_PORT). Sinon, question pendant l'installation.
@@ -55,7 +55,7 @@ Usage :
 
 Options :
   -DryRun          Simulation : affiche les actions sans rien executer.
-  -Oui             Accepte sauf Herdr et chaque extension (o/n obligatoire).
+  -Oui             Accepte sauf toute installation (Node.js, Herdr, outils, extensions) (o/n obligatoire).
   -Port <numero>   Port du bureau (defaut : 4317 ou valeur existante).
   -HerdrChemin <fichier>  Chemin de herdr.exe si absent du PATH.
   -SansRaccourci   Ne propose pas le raccourci « Ouvrir le bureau ».
@@ -121,7 +121,7 @@ if ($null -ne $majeur -and $majeur -ge 22) {
 } else {
   if ($null -eq $majeur) { Dire 'Node.js est absent de cet ordinateur.' }
   else { Dire "Node.js est present mais trop ancien (version majeure $majeur) : il faut la version 22 ou plus." }
-  if (Confirmer 'Installer Node.js (version LTS) avec winget ?') {
+  if (Confirmer 'Installer Node.js (version LTS) avec winget ?' -Individuel) {
     try {
       Executer 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
@@ -279,7 +279,7 @@ function Proposer-Outil([string]$nom, [string]$commande, [string]$detection, [st
   }
   Dire "Commande d'installation officielle : $installation"
   if ($lien) { Dire "Documentation : $lien" }
-  if (Confirmer "Installer $nom ?") {
+  if (Confirmer "Installer $nom ?" -Individuel) {
     try {
       Executer "Installation de $nom." ([scriptblock]::Create($installation)) | Out-Null
       if (-not $DryRun) {

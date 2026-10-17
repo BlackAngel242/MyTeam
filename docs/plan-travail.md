@@ -15,11 +15,11 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot B. Sécurité des installeurs (revue de Codex)
 
-- [ ] B1 (Codex) Injection par nom de dossier dans `scripts/installer.sh` (`sh -c`) : passer les arguments séparément
-- [ ] B2 (Codex) Même risque dans le profil et les raccourcis générés : échapper selon le format, retirer le shell intermédiaire
-- [ ] B3 (Codex) Retirer `-Oui` et `--oui` pour Herdr et les extensions : vrai o/n exigé
-- [ ] B4 (Codex) Chemin de Herdr : exiger un exécutable résolu littéralement, pas `installer.ps1`
-- [ ] B5 (Claude) Évaluation et test des installeurs en simulation
+- [x] B1 (Codex) Injection par nom de dossier dans `scripts/installer.sh` (`sh -c`) : passer les arguments séparément
+- [x] B2 (Codex) Même risque dans le profil et les raccourcis générés : échapper selon le format, retirer le shell intermédiaire
+- [x] B3 (Codex) Retirer `-Oui` et `--oui` pour Herdr et les extensions : vrai o/n exigé
+- [x] B4 (Codex) Chemin de Herdr : exiger un exécutable résolu littéralement, pas `installer.ps1`
+- [x] B5 (Claude) Évaluation et test des installeurs en simulation
 
 ## Lot C. Avancement visible dans l'OS
 
@@ -30,7 +30,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 ## Lot D. Les agents apprennent ensemble
 
 - [x] D1 (Claude) Règle « boucle de correction » dans `AGENTS.md` : chaque correction devient une leçon dans `LESSONS.md`, les agents sont informés par message
-- [ ] D2 (Claude) Message de leçon envoyé à chaque agent après chaque correction, relu avant sa prochaine mission
+- [x] D2 (Claude) Message de leçon envoyé à chaque agent après chaque correction, relu avant sa prochaine mission
 - [ ] D3 (Antigravity) Rangement de `LESSONS.md` par thèmes pour que la relecture reste courte
 
 ## Lot E. Fonctions de l'OS d'agents

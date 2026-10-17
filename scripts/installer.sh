@@ -11,7 +11,7 @@
 #
 # Usage : bash scripts/installer.sh [options]
 #   --dry-run            Simulation : affiche les actions sans rien executer.
-#   --oui                Accepte sauf Herdr et chaque extension (o/n obligatoire).
+#   --oui                Accepte sauf toute installation (Node.js, Herdr, outils, extensions) (o/n obligatoire).
 #   --port <numero>      Port du bureau (defaut : 4317 ou valeur existante).
 #   --herdr-chemin <fichier>  Chemin de herdr s'il n'est pas dans le PATH.
 #   --sans-raccourci     Ne propose pas le raccourci « Ouvrir le bureau ».
@@ -179,7 +179,7 @@ else
   if [ -z "$MAJEURE" ]; then dire 'Node.js est absent de cet ordinateur.'
   else dire "Node.js est present mais trop ancien (version majeure $MAJEURE) : il faut la version 22 ou plus."; fi
   CMD_NODE=$(commande_node)
-  if [ -n "$CMD_NODE" ] && confirmer "Installer Node.js avec votre gestionnaire de paquets ($CMD_NODE) ?"; then
+  if [ -n "$CMD_NODE" ] && confirmer "Installer Node.js avec votre gestionnaire de paquets ($CMD_NODE) ?" individuel; then
     executer "Installation de Node.js : $CMD_NODE" installer_node
     if [ "$DRY_RUN" != "1" ]; then
       MAJEURE=$(version_node_majeure || true)
@@ -346,7 +346,7 @@ proposer_outil() {
   dire "Commande d'installation officielle : $installation"
   [ -n "$lien" ] && dire "Documentation : $lien"
   [ -n "$lien2" ] && dire "Documentation complémentaire : $lien2"
-  if confirmer "Installer $nom ?"; then
+  if confirmer "Installer $nom ?" individuel; then
     executer "Installation de $nom : $installation" installer_outil "$detection"
     if [ "$DRY_RUN" != "1" ]; then
       if command -v "$detection" >/dev/null 2>&1; then

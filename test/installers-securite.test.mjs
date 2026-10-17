@@ -40,7 +40,12 @@ async function bash(t, script, env = {}) {
   })();
   const binaire = await bashDisponible;
   if (!binaire) { t.skip('Bash absent ou bloqué par les droits de cette machine'); return null; }
-  return execute(binaire, ['--noprofile', '--norc', '-c', script], {
+  // Un fichier évite le guillemetage d'arguments de Windows, qui mutile les guillemets du script.
+  const dossierScript = await mkdtemp(join(tmpdir(), 'bureau-script-'));
+  t.after(() => rm(dossierScript, { recursive: true, force: true }));
+  const fichier = join(dossierScript, 'essai.sh').replaceAll('\\', '/');
+  await writeFile(fichier, script);
+  return execute(binaire, ['--noprofile', '--norc', fichier], {
     ...options, env: { ...process.env, BASH_ENV: '', DRY_RUN: '0', OUI: '1', ...env },
   });
 }
