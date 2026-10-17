@@ -43,7 +43,7 @@ function updateForm() {
   $('send').disabled = !(allowed || queue) || sending || !$('message').value.trim();
   $('send').classList.toggle('queue-mode', queue);
   $('priority-wrap').hidden = !queue;if(!queue)$('priority').checked=false;
-  $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : queue ? 'Mettre en file pour ' + a.name : 'Envoyer la consigne';
+  $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : queue ? 'Mettre en file pour ' + a.name : attached.length ? 'Envoyer avec le fichier par la file' : 'Envoyer la consigne';
   const pause = queue && quotaPause(a);
   $('send-help').textContent = !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : queue ? a.name + (pause ? ' est en pause' + (pause.until ? ' jusqu’à ' + hhmm(pause.until) : '') : ' n’est pas disponible') + ' : la consigne attendra dans la file et partira seule dès qu’il sera prêt.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
 }
@@ -108,7 +108,7 @@ function showTab(name){
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
 const queueLabels={attente:'en attente',envoyee:'envoyée',annulee:'annulée',a_revoir:'à revoir'};
-let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='',todosData=null;
+let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='',todosData=null,attached=[];
 function errorBlock(container,message,icon='erreur',retry=null){
   // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
   // Le message est affiché tel quel : aucune liste vide ne remplace jamais une erreur.
@@ -146,6 +146,7 @@ function renderQueue(){
     const body=document.createElement('span');body.className='log-body';body.textContent=q.message.length>140?q.message.slice(0,140)+'…':q.message;
     if(q.priority==='haute'){const tag=document.createElement('span');tag.className='prio';tag.textContent='Prioritaire';head.prepend(tag,' · ');}
     li.append(head,body);
+    if(q.files?.length){const att=document.createElement('span');att.className='log-why';att.textContent='Fichier'+(q.files.length>1?'s':'')+' joint'+(q.files.length>1?'s':'')+' : '+(q.copiedFiles?.length?q.copiedFiles.map(f=>f.name).join(', '):q.files.map(f=>f.path.split(/[/\\]/).pop()).join(', '))+(q.copiedFiles?.length?' (copié dans le dossier de l’agent)':' (copie au départ)');li.append(att);}
     if(q.reason){const why=document.createElement('span');why.className='log-why';why.textContent=q.reason;li.append(why);}
     if(q.state==='attente'){
       const tools=document.createElement('div');tools.className='queue-tools';
@@ -600,7 +601,7 @@ function selectAgent(id) {
   if(onFiles){filesView='recent';syncFilesView();filesPath='';}
   queueMicrotask(()=>showTab(onFiles?'fichiers':'poste'));
   if(selected) keepDraft(selected,$('message').value);
-  selected=id;readSequence++;loadResponses();
+  selected=id;readSequence++;resetAttach();loadAttach();loadResponses();
   $('message').value=drafts.get(id)||'';$('send-result').hidden=true;
   termPlaceholder('Lecture des dernières sorties…');$('read-state').textContent='Lecture en cours…';
   renderAgents();readOutput();draw(0);
@@ -647,6 +648,34 @@ async function readOutput() {
   }catch(error){if(id===selected&&sequence===readSequence){$('read-state').textContent='Lecture indisponible';termPlaceholder(errorText(error));}}
   finally{readBusy=false;if(id!==selected&&selected)readOutput();}
 }
+// Pièces jointes : fichiers récents du dossier de l'agent, copiés par le serveur au départ de la consigne (par la file).
+const attachSize=n=>n<1048576?Math.max(1,Math.round(n/1024))+' Ko':(n/1048576).toLocaleString('fr-FR',{maximumFractionDigits:1})+' Mo';
+function attachSummary(){const n=attached.length;$('attach-summary').textContent=n?n+' fichier'+(n>1?'s':'')+' joint'+(n>1?'s':''):'Joindre un fichier';}
+function resetAttach(){attached=[];$('attach-list').replaceChildren();attachSummary();}
+async function loadAttach(){
+  const a=activeAgent(),box=$('attach');
+  if(!box.open||!a||!state.token)return;
+  const list=$('attach-list'),note=text=>list.replaceChildren(Object.assign(document.createElement('li'),{className:'list-placeholder',textContent:text}));
+  try{
+    const data=await request('/api/files/recent?id='+encodeURIComponent(a.id),{headers:{'X-Bureau-Token':state.token}});
+    if(a.id!==selected)return;
+    const files=(data.files||[]).filter(f=>f.size<=20*1048576).slice(0,30);
+    if(!files.length){note('Aucun fichier récent de moins de 20 Mo dans le dossier de '+a.name+'.');return;}
+    list.replaceChildren(...files.map(f=>{
+      const li=document.createElement('li'),label=document.createElement('label'),box=document.createElement('input');
+      box.type='checkbox';box.checked=attached.some(x=>x.path===f.path);
+      box.addEventListener('change',()=>{
+        attached=attached.filter(x=>x.path!==f.path);
+        if(box.checked)attached.push({root:data.root,path:f.path,name:f.name});
+        if(attached.length>2){attached.shift();[...list.querySelectorAll('input')].forEach(i=>{i.checked=attached.some(x=>x.name===i.dataset.name);});}
+        attachSummary();updateForm();
+      });
+      box.dataset.name=f.name;
+      label.append(box,' ',Object.assign(document.createElement('span'),{textContent:f.name+' · '+attachSize(f.size)}));li.append(label);return li;
+    }));
+  }catch(error){if(a.id===selected)note(errorText(error));}
+}
+$('attach').addEventListener('toggle',loadAttach);
 // Réponses lisibles : journal de l'agent, chargé seulement quand le volet est ouvert.
 let respBusy=false;
 async function loadResponses(){
@@ -670,11 +699,11 @@ $('responses-box').addEventListener('toggle',loadResponses);
 $('message').addEventListener('input',()=>{if(selected)keepDraft(selected,$('message').value);updateForm();});
 $('prompt-form').addEventListener('submit',async event=>{
   event.preventDefault();const a=activeAgent(),message=$('message').value.trim();
-  if(canQueue(a)&&!sending&&message){
+  if((canQueue(a)||(attached.length&&canSend(a)))&&!sending&&message){
     const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
     try{
-      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message,priority:$('priority').checked?'haute':'normale'})});
-      drafts.delete(target);$('priority').checked=false;loadQueue();
+      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message,priority:$('priority').checked?'haute':'normale',...(attached.length?{files:attached.map(({root,path})=>({root,path}))}:{})})});
+      drafts.delete(target);$('priority').checked=false;resetAttach();loadAttach();loadQueue();
       if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;}
     }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error,'envoi');$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}

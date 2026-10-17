@@ -922,3 +922,4 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 }
 
 .responses-box{margin:10px 0 0;border:1px solid #243650;border-radius:8px;padding:8px 10px}.responses-box>summary{cursor:pointer;font-size:12.5px;font-weight:550;color:#d5e2f1}.responses-hint{font-weight:400;color:var(--quiet);margin-left:6px}.responses-box[open]>summary{margin-bottom:8px}
+.attach{margin:6px 0;font-size:12.5px}.attach>summary{cursor:pointer;color:#d5e2f1}.attach-help{margin:6px 0;color:var(--muted);font-size:12px}.attach-list{list-style:none;margin:0;padding:0;max-height:160px;overflow:auto}.attach-list li{padding:3px 0}.attach-list label{display:flex;gap:6px;align-items:center;color:#d5e2f1;overflow-wrap:anywhere}
