@@ -23,11 +23,14 @@ async function request(url, options = {}) {
   if (!response.ok) throw new Error(data.error || 'La demande a échoué. Réessaie dans un instant.');
   return data;
 }
-function errorText(error) {
-  if (error.name === 'TimeoutError') return 'Herdr met trop de temps à répondre. Réessaie dans un instant.';
-  if (error instanceof TypeError) return 'Le serveur local ne répond plus. Vérifie que le bureau est toujours lancé.';
-  if (error instanceof SyntaxError) return 'Le serveur local a renvoyé une réponse illisible. Réessaie dans un instant.';
-  return error.message || 'Impossible de joindre Herdr. Réessaie dans un instant.';
+function errorText(error,context='lecture') {
+  // Trois causes distinctes, jamais un message unique : session expirée,
+  // Herdr déconnecté, lecture en panne. Le contexte « envoi » adapte le mot.
+  const message=error?.message||'';
+  if(error?.status===403||/Session expir/i.test(message)) return 'Session expirée : actualise le bureau avec le bouton Actualiser.';
+  if((typeof state!=='undefined'&&state&&state.connected===false)||error?.status===502||/Herdr/i.test(message)) return 'Herdr est déconnecté ou ne répond plus : '+(context==='envoi'?'la consigne n’a pas été transmise.':'les lectures reprendront quand il reviendra.');
+  const detail=(error.name==='TimeoutError'?'délai dépassé':error instanceof TypeError?'le serveur local ne répond plus, vérifie que le bureau est toujours lancé':error instanceof SyntaxError?'réponse illisible':message||'cause inconnue').replace(/[.\s]+$/,'');
+  return (context==='envoi'?'Envoi non abouti : ':'Lecture en panne : ')+detail+'. Réessaie dans un instant.';
 }
 // Agent occupé ou en pause : la consigne peut être mise en file ; le serveur l'enverra seul quand il sera prêt.
 const canQueue = a => Boolean(state.connected && a && !canSend(a));
@@ -96,7 +99,7 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe'){loadQueue();if(mailCount){mailCount=0;draw(lastFrame);}}
+  if(name==='equipe'){loadQueue();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
@@ -104,10 +107,11 @@ const queueLabels={attente:'en attente',envoyee:'envoyée',annulee:'annulée',a_
 let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='';
 function errorBlock(container,message,icon='erreur'){
   // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
+  // Le message est affiché tel quel : aucune liste vide ne remplace jamais une erreur.
   const old=container.querySelector(':scope>.error-block');if(old&&old.dataset.message===message)return;
   const box=document.createElement('div');box.dataset.message=message;box.className='error-block';box.setAttribute('role','alert');
   const pic=iconCanvas(icon);if(pic)box.append(pic);
-  const p=document.createElement('p');p.textContent='Lecture indisponible : '+message;
+  const p=document.createElement('p');p.textContent=message;
   const btn=document.createElement('button');btn.type='button';btn.className='tool-button';btn.textContent='Actualiser le bureau';
   btn.addEventListener('click',async()=>{await refreshState();const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
   box.append(p,btn);container.replaceChildren(box);
@@ -118,12 +122,12 @@ function iconCanvas(name){
   icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(icon.palette[ch]){g3.fillStyle=icon.palette[ch];g3.fillRect(x,y,1,1);}}));return c;
 }
 async function loadQueue(){
-  if(!state.connected||!state.token)return;
+  if(!state.connected||!state.token){queueShown='';errorBlock($('queue-list'),'Herdr est déconnecté : la file d’attente réapparaîtra à la reconnexion.','file');return;}
   // Seule la lecture la plus récente s'affiche : une réponse lente ne remplace jamais une plus récente.
   const gen=++queueGen;let items;
   try{items=(await request('/api/queue',{headers:{'X-Bureau-Token':state.token}})).items||[];}catch(error){if(gen===queueGen){queueShown='';errorBlock($('queue-list'),errorText(error),'file');}return;}
   if(gen!==queueGen)return;
-  queueItems=items;renderQueue();
+  queueItems=items;renderQueue();renderStatusbar(activeAgent());
 }
 function renderQueue(){
   const list=$('queue-list'),visible=queueItems.filter(q=>q.state!=='annulee').slice(-20).reverse(),waitingN=queueItems.filter(q=>q.state==='attente').length;
@@ -140,7 +144,7 @@ function renderQueue(){
     if(q.reason){const why=document.createElement('span');why.className='log-why';why.textContent=q.reason;li.append(why);}
     if(q.state==='attente'){
       const cancel=document.createElement('button');cancel.type='button';cancel.className='tool-button';cancel.textContent='Retirer de la file';
-      cancel.addEventListener('click',async()=>{try{await request('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId})});}catch(error){head.textContent=errorText(error);}loadQueue();});
+      cancel.addEventListener('click',async()=>{try{await request('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId})});}catch(error){head.textContent=errorText(error,'envoi');}loadQueue();});
       li.append(cancel);
     }
     return li;
@@ -149,7 +153,7 @@ function renderQueue(){
 }
 // Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
 async function loadTodos(){
-  if(!state.connected||!state.token)return;
+  if(!state.connected||!state.token){todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),'Herdr est déconnecté : les tâches réapparaîtront à la reconnexion.','taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Plans non chargés.'}));return;}
   const gen=++todosGen;let data;
   try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){if(gen!==todosGen)return;todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),errorText(error),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Plans non chargés.'}));return;}
   const shown=JSON.stringify([data,state.agents.map(a=>a.id+a.name)]);if(gen!==todosGen||shown===todosShown)return;todosShown=shown;
@@ -330,36 +334,49 @@ function quotaPause(a){
   if(act?.limitReached){
     // Seules les limites épuisées décident du retour ; si aucune ne l'est, l'outil ne dit pas laquelle bloque.
     const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100);
-    const times=blocking.filter(l=>l.resetsAt).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
+    const times=[...blocking.filter(l=>l.resetsAt).map(l=>new Date(l.resetsAt)),act.resetsAt?new Date(act.resetsAt):null].filter(d=>d&&d>Date.now());
     const which=blocking.map(l=>windowLabel(l.window)).filter(Boolean);
-    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:which[0]||null};
+    return {until:times.length?new Date(Math.max(...times)):null,source:act.source==='terminal'?'terminal':'journal',which:which[0]||null};
   }
   const s=statusCache.get(a.id)?.status?.quota;
   if(s&&(!s.until||s.until>Date.now()))return {until:s.until,source:'terminal'};
   return null;
 }
+// P3 : la pause de quota tient en une seule ligne, avec sa source et l'heure de
+// relance ; la relance vient de holdUntil quand la file la donne, sinon +5 min.
+function holdUntilOf(a){
+  const dates=queueItems.filter(q=>q.id===a.id&&q.holdUntil).map(q=>new Date(q.holdUntil)).filter(d=>!Number.isNaN(d));
+  return dates.length?new Date(Math.max(...dates)):null;
+}
+function pauseBanner(a,pause){
+  const source=pause.source;
+  if(!pause.until)return 'Pause de quota : retour non annoncé (source : '+source+')';
+  const relance=holdUntilOf(a)||new Date(pause.until.getTime()+300000);
+  return 'Pause de quota : retour '+hhmm(pause.until)+', relance '+hhmm(relance)+' (source : '+source+')';
+}
 const hhmm=d=>d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 function renderStatusbar(a){
-  const bar=$('statusbar'),s=a&&statusCache.get(a.id);
-  if(!a||!s||!Object.keys(s.status).length){bar.hidden=true;return;}
-  const st=s.status;bar.hidden=false;
-  const head=st.title||(st.thought?'En cours : '+st.thought:'');
+  const bar=$('statusbar'),s=a&&statusCache.get(a.id),pause=a&&quotaPause(a);
+  const st=s?.status&&Object.keys(s.status).length?s.status:null;
+  if(!a||(!st&&!pause)){bar.hidden=true;return;}
+  bar.hidden=false;
+  const head=st?.title||(st?.thought?'En cours : '+st.thought:'');
   $('task-title').hidden=!head;$('task-title').textContent=head;
-  const chips=[],pause=quotaPause(a);
-  if(pause)chips.push(['warn',pause.until?'Limite'+(pause.which?' '+pause.which:'')+' atteinte · retour à '+hhmm(pause.until)+' ('+until(pause.until)+') · relance prévue à '+hhmm(new Date(pause.until.getTime()+300000)):'Limite atteinte · heure de retour non annoncée']);
-  if(st.activity&&!pause)chips.push(['activity',st.activity+(st.elapsed?' · '+st.elapsed:'')]);
-  if(st.model)chips.push(['model',(st.mode?st.mode+' · ':'')+st.model+(st.effort?' · '+st.effort:'')]);
-  if(st.context)chips.push(['context','Contexte '+st.context.used+' · '+st.context.pct+' %']);
-  if(st.flow)chips.push(['context',st.flow+' tokens sur ce tour']);
-  if(st.warnings)chips.push(['warn',st.warnings+' avertissement'+(st.warnings>1?'s':'')]);
+  const chips=[];
+  if(pause)chips.push(['warn',pauseBanner(a,pause)]);
+  if(st?.activity&&!pause)chips.push(['activity',st.activity+(st.elapsed?' · '+st.elapsed:'')]);
+  if(st?.model)chips.push(['model',(st.mode?st.mode+' · ':'')+st.model+(st.effort?' · '+st.effort:'')]);
+  if(st?.context)chips.push(['context','Contexte '+st.context.used+' · '+st.context.pct+' %']);
+  if(st?.flow)chips.push(['context',st.flow+' tokens sur ce tour']);
+  if(st?.warnings)chips.push(['warn',st.warnings+' avertissement'+(st.warnings>1?'s':'')]);
   $('status-chips').replaceChildren(...chips.map(([k,t])=>{const li=document.createElement('li');li.className='schip '+k;li.textContent=t;return li;}));
-  $('limit').hidden=!st.limit;
-  if(!st.limit){$('limit-label').textContent='';$('limit-value').textContent='';}
+  $('limit').hidden=!st?.limit;
+  if(!st?.limit){$('limit-label').textContent='';$('limit-value').textContent='';}
   else{
     $('limit-label').textContent='Limite'+(st.limit.window?' '+st.limit.window:'')+' restante'+(st.limit.reset?' · remise à zéro '+hhmm(st.limit.reset):'');$('limit-value').textContent=st.limit.left+' %';
     $('limit-bar').style.width=Math.max(0,Math.min(100,st.limit.left))+'%';$('limit').classList.toggle('low',st.limit.left<=20);
   }
-  $('status-source').textContent='Lu dans la barre de l’outil à '+s.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  $('status-source').textContent=s?'Lu dans la barre de l’outil à '+s.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
 }
 // Terminal : recherche, défilement figé et copie. Le module de Codex surligne les signaux réels s'il est chargé.
 // Le texte est lié à l'agent qui l'a produit : jamais de sortie de A affichée ou copiée sous le nom de B.
@@ -476,8 +493,8 @@ $('broadcast-send').addEventListener('click',async()=>{
     }
     if((data.results||[]).every(r=>r.ok))$('broadcast-message').value='';
   }catch(error){
-    const li=document.createElement('li');li.className='unknown';li.textContent=errorText(error)+' Vérifie les terminaux avant de renvoyer : une partie des consignes peut avoir été reçue.';results.append(li);
-    logSend(state.agents.filter(a=>ids.includes(a.id)).map(a=>a.name),message,outcomeOf(error),errorText(error));
+    const li=document.createElement('li');li.className='unknown';li.textContent=errorText(error,'envoi')+' Vérifie les terminaux avant de renvoyer : une partie des consignes peut avoir été reçue.';results.append(li);
+    logSend(state.agents.filter(a=>ids.includes(a.id)).map(a=>a.name),message,outcomeOf(error),errorText(error,'envoi'));
     broadcastTargets.clear();
   }
   results.hidden=false;broadcasting=false;await refreshState();
@@ -551,7 +568,7 @@ $('prompt-form').addEventListener('submit',async event=>{
       await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message})});
       drafts.delete(target);loadQueue();
       if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;}
-    }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}}
+    }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error,'envoi');$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}
     return;
   }
@@ -562,7 +579,7 @@ $('prompt-form').addEventListener('submit',async event=>{
     drafts.delete(target);logSend([a.name],message,'sent',data.message||'Consigne transmise à Herdr.');
     if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent=data.message||'Consigne transmise à Herdr.';$('send-result').hidden=false;}
     await refreshState();
-  }catch(error){logSend([a.name],message,outcomeOf(error),errorText(error));if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error)+' Vérifie les sorties de l’agent avant de renvoyer : la consigne peut avoir été reçue.';$('send-result').hidden=false;}}
+  }catch(error){logSend([a.name],message,outcomeOf(error),errorText(error,'envoi'));if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error,'envoi')+' Vérifie les sorties de l’agent avant de renvoyer : la consigne peut avoir été reçue.';$('send-result').hidden=false;}}
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
@@ -995,21 +1012,38 @@ function drawActors(L,G,time,now,layer){
 }
 // Vie de bureau entre le chef et ses agents, pilotée par deux faits :
 // une délégation observée dans le journal du chef (`herdr agent prompt`), et la fin réelle d'un travail (état Herdr).
-const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null,mailTotal=0;
+const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null,mailTotal=0,mailShown='';
 // Mémoire bornée : on oublie les plus anciens identifiants vus, que le journal du chef (12 h) ne renverra plus.
 function remember(key){seenDelegations.add(key);if(seenDelegations.size>500)seenDelegations.delete(seenDelegations.values().next().value);}
-// Courrier du chef : chaque fin de travail observée, avec la tâche déléguée quand le journal du chef la montre.
-// Le compteur couvre toute la session ; seuls les 30 derniers courriers sont gardés en détail.
+// Courrier du chef : les délégations réellement observées dans son journal (12 h),
+// avec l'heure du dernier envoi observé. Le champ result ne parle QUE de l'envoi :
+// jamais une réussite de travail non confirmée n'est affichée.
+function resultLabel(result){
+  if(result&&result.ok===true)return 'Envoi confirmé par Herdr ; le résultat du travail reste à vérifier dans ses sorties.';
+  if(result&&result.ok===false)return 'Envoi en échec ; revoyez cette consigne avant tout autre envoi.';
+  return 'Envoi non confirmé ; vérifie le terminal avant de conclure.';
+}
 function renderMail(){
-  const list=$('mail-list');$('mail-count').textContent=mailTotal?'('+mailTotal+')':'';
-  if(!mailLog.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucun courrier depuis l’ouverture du bureau.';list.replaceChildren(li);return;}
-  list.replaceChildren(...mailLog.map(m=>{
+  const list=$('mail-list');
+  const delegs=state.agents.flatMap(a=>(Array.isArray(a.delegations)?a.delegations:[]).map(d=>({d,a})))
+    .filter(({d})=>d&&d.at&&!Number.isNaN(new Date(d.at))&&Date.now()-new Date(d.at)<=12*3600*1000)
+    .sort((x,y)=>new Date(y.d.at)-new Date(x.d.at));
+  // Même affichage, même dessin : la liste n'est pas rebâtie pour rien.
+  const signature=JSON.stringify([delegs.map(({d})=>[d.id,d.at,d.target,d.title,d.result]),state.agents.map(a=>a.id+a.name)]);
+  if(signature===mailShown)return;mailShown=signature;
+  $('mail-count').textContent=delegs.length?'dernier envoi observé à '+hhmm(new Date(delegs[0].d.at)):'';
+  if(!delegs.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent='Aucune délégation observée sur les 12 dernières heures.';list.replaceChildren(li);return;}
+  list.replaceChildren(...delegs.slice(0,30).map(({d})=>{
     const li=document.createElement('li');li.className='mail';
-    const head=document.createElement('span');head.className='log-head';head.textContent=m.at.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' · '+m.name+' a terminé ('+(labels[m.from]||m.from).toLowerCase()+' → '+(labels[m.to]||m.to).toLowerCase()+')';
-    const body=document.createElement('span');body.className='log-body';body.textContent=m.title?'Tâche déléguée : '+m.title:'Aucune délégation du chef trouvée pour ce travail.';
-    const why=document.createElement('span');why.className='log-why';why.textContent='Objectif non vérifié par le bureau : lis le résultat dans ses sorties.';
+    const cible=agentByTarget(d.target);
+    const head=document.createElement('span');head.className='log-head';
+    head.textContent=hhmm(new Date(d.at))+' · vers '+(cible?cible.name:d.target);
+    const body=document.createElement('span');body.className='log-body';
+    body.textContent=d.title?'Tâche déléguée : '+d.title:'Consigne envoyée, contenu non lisible dans le journal.';
+    const why=document.createElement('span');why.className='log-why';why.textContent=resultLabel(d.result);
     const open=document.createElement('button');open.type='button';open.className='tool-button';open.textContent='Ouvrir son poste';
-    open.addEventListener('click',()=>{if(state.agents.some(a=>a.id===m.agentId))selectAgent(m.agentId);showTab('poste');});
+    open.hidden=!cible;
+    open.addEventListener('click',()=>{if(cible&&state.agents.some(x=>x.id===cible.id))selectAgent(cible.id);showTab('poste');});
     li.append(head,body,why,open);return li;
   }));
 }
@@ -1263,7 +1297,7 @@ addEventListener('keydown',e=>{
   if(e.key==='Escape'&&!$('help').hidden)toggleHelp(false);
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
-setInterval(()=>{if(document.hidden)return;loadQueue();if(currentTab()==='taches')loadTodos();},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();if(currentTab()==='taches')loadTodos();},5000);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState();requestAnimationFrame(frame);
