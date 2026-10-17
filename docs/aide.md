@@ -153,22 +153,34 @@ Cet onglet permet d'inspecter l'agent sélectionné et d'échanger directement a
 - Bouton « Agrandir » : étend la hauteur du terminal pour occuper tout l'espace disponible et lire de longs historiques en pleine page, y compris sur téléphone où il déploie une hauteur dédiée confortable.
 - Pause automatique sur sélection : dès que vous sélectionnez du texte à la souris dans les sorties, l'actualisation se met en pause avec la mention « Sélection en cours, affichage en pause ». Votre sélection ne saute jamais.
 
-#### Envoi de consigne et mise en file
+#### Envoi de consigne, mise en file et priorité
 - Agent disponible : la zone de texte est déverrouillée et permet un envoi immédiat avec le raccourci clavier Ctrl+Entrée (ou Cmd+Entrée).
 - Agent occupé ou en pause de quota : le bouton affiche « Mettre en file ». La consigne est enregistrée dans la file d'attente sécurisée du serveur et partira toute seule dès que l'agent sera disponible ou 5 minutes après sa remise à zéro de limite.
+- Case « Prioritaire » (description du contrat) : en cochant cette case avant de cliquer sur « Mettre en file », la consigne reçoit une priorité haute (`priority: "haute"` au lieu de `"normale"`) pour être traitée en tête de file dès que l'agent redevient disponible.
 - Conservation des brouillons : si vous changez d'agent alors qu'un texte est commencé ou pendant l'envoi d'une consigne en file, chaque brouillon reste mémorisé indépendamment sans être écrasé par l'autre poste.
 
 ---
 
 ### Zone 3 : Onglet « Équipe » (Coordination collective)
 
-Cet onglet gère les échanges avec plusieurs agents, la file d'attente et la réception des rapports de fin de travail.
+Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la direction de l'équipe et la réception des rapports de fin de travail.
+
+> [!NOTE]
+> Les fonctionnalités de direction de l'équipe et de priorité des envois décrites ci-dessous correspondent au contrat d'architecture (`docs/contrat-priorite-direction.md`). Elles sont documentées par avance et seront relues et ajustées si l'interface finale diffère légèrement.
 
 #### À quoi il sert
 - Prendre connaissance des missions terminées grâce au courrier du chef.
-- Suivre et administrer les consignes en attente de départ dans la file d'attente.
+- Suivre et administrer les consignes en attente dans la file d'attente avec gestion des priorités.
+- Désigner le chef d'équipe et gérer les propositions de passation en cas de pause de quota.
 - Transmettre une même directive à plusieurs agents en une seule action.
 - Consulter le journal des transmissions de la session.
+
+#### Direction de l'équipe et passation (Description du contrat)
+- Chef effectif : le bureau Direction est occupé par le chef de l'équipe. Par défaut, c'est le premier agent démarré dans Herdr (règle du plus petit panneau).
+- Choix explicite de DrSmoke : une section « Direction de l'équipe » dans l'onglet Équipe permet de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut. Ce choix est conservé sur le disque (`.bureau/direction.json`). Si l'agent choisi disparaît de Herdr, le serveur revient à la règle par défaut sans altérer le fichier.
+- Bandeau de proposition de passation : si le chef effectif atteint son plafond d'utilisation et entre en pause de limite, un bandeau apparaît en haut de l'onglet Équipe pour proposer proactivement de passer la direction à un suppléant disponible.
+- Confirmation et message de passation relu : la passation n'est jamais automatique. DrSmoke valide le changement, et le message de passation préparé est relu et validé avant d'être expédié à l'équipe (par envoi direct ou via la file d'attente).
+- Suivi des délégations : les missions déléguées (`herdr agent prompt`) et la tournée du chef sont suivies dans le journal du chef effectif (qu'il soit issu du choix ou de la règle).
 
 #### Courrier du chef
 - Chaque fois qu'un agent passe de l'état « au travail » à « disponible » ou « terminé », un courrier est enregistré avec compteur dans le titre de section.
@@ -176,10 +188,13 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente et la r�
 - Un clic sur un courrier ou sur son bouton « Ouvrir son poste » permet d'accéder directement au terminal de l'agent pour vérifier son travail.
 - Rappel de prudence : le courrier confirme l'arrêt du processus de travail, pas la réussite de l'objectif. Vérifiez toujours les sorties réelles.
 
-#### File d'attente des consignes
-- Affiche la liste des consignes en attente d'expédition avec le nom de l'agent destinataire et le statut courant.
+#### File d'attente des consignes et priorités (Description du contrat)
+- Affiche la liste des consignes en attente d'expédition avec le destinataire, l'horodatage, le statut et le niveau de priorité (« haute » ou « normale »), ordonnée selon l'ordre réel d'envoi prévu.
+- Bouton « Passer en tête » : permet de promouvoir d'un clic une consigne normale en attente au rang de priorité haute.
+- Ordre de départ par agent : les consignes de priorité haute partent en premier (selon leur date d'arrivée), suivies des consignes normales.
+- Garde-fou d'attente (anti-famine) : une consigne normale en attente depuis plus de 30 minutes est automatiquement promue au rang des hautes pour ne jamais être bloquée indéfiniment.
+- Respect absolu des états : la priorité haute ne force jamais d'envoi vers un agent occupé ou en pause de limite. Le serveur attend la disponibilité effective de l'agent (ou 5 minutes après sa remise à zéro).
 - Chaque consigne peut être annulée d'un clic grâce à son bouton de retrait unitaire.
-- Le serveur déclenche le départ automatique dès que l'agent ciblé est libre, ou 5 minutes après sa remise à zéro en cas de pause de quota.
 - Protection anti-double envoi : persistance atomique sur disque, clé d'idempotence et gel d'envoi en cas de doute.
 
 #### Message à plusieurs agents (Envoi groupé en deux clics)
@@ -270,11 +285,14 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations du canvas (figée, la scène suit l'heure chaque minute). |
 | **Navigation**| `Flèche droite` / `Flèche gauche` | Passe d'un onglet à l'autre (Poste, Équipe, Fichiers, Tâches). |
 | **Poste** | `Ctrl + Entrée` (ou `Cmd + Entrée`) | Envoie la consigne à l'agent sélectionné. |
+| **Poste** | Case à cocher « Prioritaire » | Marque la consigne pour un traitement prioritaire en file (contrat). |
 | **Poste** | Bouton « Mettre en file » | Place la consigne dans la file d'attente si l'agent est occupé. |
 | **Poste** | Bouton « Agrandir » | Agrandit ou réduit le terminal en pleine hauteur (y compris sur mobile). |
 | **Poste** | Sélection de texte dans le terminal | Suspend temporairement l'actualisation pour copier. |
 | **Poste** | Bouton « Figer » | Bloque le suivi automatique vers le bas. |
 | **Poste** | Bouton « Copier » | Place le texte complet du terminal dans le presse-papier. |
+| **Équipe** | Section « Direction de l'équipe » | Choisit le chef d'équipe, rétablit la règle ou valide une passation (contrat). |
+| **Équipe** | Bouton « Passer en tête » | Promeut une consigne en attente au rang de priorité haute (contrat). |
 | **Équipe** | Bouton « Retirer » | Supprime une consigne en attente dans la file. |
 | **Équipe** | `Ctrl + Entrée` (ou `Cmd + Entrée`) | Déclenche l'envoi groupé armé. |
 | **Équipe** | Bouton « Cocher tous les disponibles » | Sélectionne tous les agents prêts en un seul clic. |
