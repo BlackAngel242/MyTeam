@@ -159,9 +159,11 @@ const DECLARATIONS = ['export', 'declare', 'local', 'readonly', 'unset'];
 // Reconnaît `herdr ... agent prompt <cible> <message>` UNIQUEMENT en début de
 // commande du shell ou juste après un séparateur : un exemple imprimé par echo,
 // une commande d'aide (--help) ou un appel sans consigne ne prouve aucun envoi.
-function parseDelegation(command) {
+// Une commande peut porter plusieurs ordres : chacun est renvoyé séparément.
+function parseDelegations(command) {
   const words = tokenize(command);
   const variables = new Map();
+  const trouvees = [];
   let debut = 0;
   for (let h = 0; h < words.length; h++) {
     const mot = words[h].text;
@@ -175,27 +177,27 @@ function parseDelegation(command) {
     if (h === debut && DECLARATIONS.includes(mot.toLowerCase())) { debut = h + 1; continue; }
     if (h !== debut || !estExecutable(mot, variables)) continue;
     const segment = words.slice(h);
-    if (segment.some(palier => ['--help', '-h', 'help', '/?'].includes(palier.text))) return null;
+    if (segment.some(palier => ['--help', '-h', 'help', '/?'].includes(palier.text))) continue;
     let i = 1;
     // Options éventuelles avant la sous-commande, par exemple --session nom.
     while (i < segment.length && segment[i].text.startsWith('-')) {
       i++;
       if (i < segment.length && !segment[i].text.startsWith('-') && segment[i].text.toLowerCase() !== 'agent') i++;
     }
-    if (segment[i]?.text.toLowerCase() !== 'agent' || segment[i + 1]?.text.toLowerCase() !== 'prompt') return null;
+    if (segment[i]?.text.toLowerCase() !== 'agent' || segment[i + 1]?.text.toLowerCase() !== 'prompt') continue;
     const cible = segment[i + 2];
-    if (!cible || !cible.literal || !CIBLE.test(cible.text) || cible.text.startsWith('-')) return null;
+    if (!cible || !cible.literal || !CIBLE.test(cible.text) || cible.text.startsWith('-')) continue;
     const message = [];
     for (let j = i + 3; j < segment.length; j++) {
       const motMessage = segment[j];
       if (SEPARATEURS.includes(motMessage.text)) break;
       message.push(motMessage);
     }
-    if (message.length === 0) return null;
+    if (message.length === 0) continue;
     const titre = message.every(motMessage => motMessage.literal) ? titreDe(message.map(motMessage => motMessage.text).join(' ')) : null;
-    return { target: cible.text, title: titre };
+    trouvees.push({ target: cible.text, title: titre });
   }
-  return null;
+  return trouvees;
 }
 
 // Liste fermée des issues observées : un succès exige la confirmation positive
@@ -232,22 +234,34 @@ function consumeLine(state, line) {
       if (state.byToolId.has(block.id)) continue;
       // Identifiant validé et borné, horodatage validé : rien d'autre ne sort.
       if (typeof block.id !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(block.id)) continue;
-      const found = parseDelegation(block.input.command);
-      if (!found) continue;
+      const trouvees = parseDelegations(block.input.command);
+      if (trouvees.length === 0) continue;
       const at = typeof entry.timestamp === 'string' && !Number.isNaN(Date.parse(entry.timestamp)) ? entry.timestamp : null;
-      const delegation = { id: block.id, at, target: found.target, title: found.title, result: null };
-      state.delegations.push(delegation);
-      state.byToolId.set(delegation.id, delegation);
-      if (state.delegations.length > MAX_DELEGATIONS) {
+      const groupe = [];
+      for (const trouve of trouvees) {
+        const delegation = { id: block.id, at, target: trouve.target, title: trouve.title, result: null };
+        state.delegations.push(delegation);
+        groupe.push(delegation);
+      }
+      state.byToolId.set(block.id, groupe);
+      while (state.delegations.length > MAX_DELEGATIONS) {
         const removed = state.delegations.shift();
-        if (removed && state.byToolId.get(removed.id) === removed) state.byToolId.delete(removed.id);
+        const reste = state.byToolId.get(removed.id);
+        if (reste) {
+          const index = reste.indexOf(removed);
+          if (index !== -1) reste.splice(index, 1);
+          if (reste.length === 0) state.byToolId.delete(removed.id);
+        }
       }
     }
   } else if (entry.type === 'user' && Array.isArray(message.content)) {
     for (const block of message.content) {
       if (block?.type !== 'tool_result' || typeof block.tool_use_id !== 'string') continue;
-      const delegation = state.byToolId.get(block.tool_use_id);
-      if (delegation) delegation.result = outcomeOf(block);
+      const groupe = state.byToolId.get(block.tool_use_id);
+      if (!groupe) continue;
+      // Le résultat de l'outil vaut pour tous les ordres de la même commande.
+      const issue = outcomeOf(block);
+      for (const delegation of groupe) delegation.result = issue;
     }
   }
 }
