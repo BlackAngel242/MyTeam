@@ -9,10 +9,14 @@ Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et pilo
 
 Le Bureau des agents a été conçu pour les développeurs, créateurs et orchestrateurs qui font collaborer plusieurs agents d'IA (Claude, Codex, Antigravity, OpenCode) en parallèle et souhaitent garder une vision claire de leur atelier sans jongler entre plusieurs fenêtres de terminal.
 
-- Organisation Chef et Agents : Le premier agent démarré dans Herdr est désigné comme le chef d'équipe (bureau VIP). Les autres agents sont ses collaborateurs directs.
-- Cycle de délégation animé : Lorsque le chef délègue une mission (détection de la commande `herdr agent prompt` dans son journal), l'agent concerné vient chercher sa tâche, retourne à son poste pour travailler, puis envoie son « courrier » de fin de mission au chef.
+- Organisation Chef et Agents : Le premier agent démarré dans Herdr est désigné comme le chef d'équipe (bureau Direction). Les autres agents sont ses collaborateurs directs.
+- Cycle de délégation et courriers : Lorsque le chef délègue une mission (détection de la commande `herdr agent prompt` dans son journal), l'agent concerné vient chercher sa tâche, retourne à son poste pour travailler, puis envoie son « courrier » de fin de mission au chef.
 - Évaluation et humeur : Le chef reçoit le travail et l'apprécie ; l'humeur affichée reflète strictement les résultats observés, et les erreurs constatées alimentent directement `LESSONS.md`.
-- Salle de réflexion : Les sous-agents actifs d'un agent se réunissent dans une salle de réflexion animée sur la scène, puis rapportent leur dossier de travail une fois leur analyse achevée.
+- Salle de réflexion repliable : Les sous-agents actifs se réunissent dans une salle de réflexion animée sur la scène, avec commande de repli pour adapter la scène aux écrans compacts.
+- File d'attente sécurisée : Possibilité de mettre en file une consigne pour un agent occupé ou en pause de quota, avec relance automatique planifiée à la remise à zéro + 5 min et protection absolue contre les doubles envois.
+- Suivi des tâches réelles : Onglet dédié observant les cases cochées dans les fichiers du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux.
+- Palette de commandes et aide contextuelle : Accès rapide par `Ctrl+K` et touche `?` pour naviguer, inspecter et piloter entièrement au clavier.
+- Notifications et sons 8 bits : Alertes visuelles de bureau Windows et signaux sonores Web Audio discrets pour les blocages, courriers et pauses de limite.
 - Outils intégrés : Explorateur de fichiers sécurisé, barre d'état détaillée sous chaque poste, et lecture de l'activité locale réelle pour Claude, Codex et OpenCode.
 - Règle de vérité des faits : Tout est piloté par des faits physiques observés (états Herdr, journaux locaux, fichiers du disque). Aucun statut, tâche, pourcentage ou humeur n'est inventé.
 - 100% local et sans dépendance : Écoute locale exclusive sur 127.0.0.1, aucune télémétrie, et zéro bibliothèque npm.
@@ -35,38 +39,42 @@ Pour déployer le Bureau des agents sur une autre machine sous Windows, Linux ou
 - Utilisez les scripts d'installation automatique mis à disposition dans le dossier [scripts/](scripts/).
 - Rappel : Aucun paquet externe n'est nécessaire (`npm install` est inutile). Il suffit de disposer de Node.js (version 22 ou supérieure) et de Herdr.
 
-## Lire la scène et le bureau VIP
+## Lire la scène et le bureau Direction
 
-- Décor et ambiance : La baie vitrée suit l'heure réelle de ton ordinateur (nuit, aube, jour, crépuscule). La baie HERDR clignote tant que la liaison locale est active. Les écrans projettent au sol une lueur de la couleur de l'état de chaque agent.
-- Le chef et les postes : Le premier agent démarré dans Herdr occupe le bureau VIP. Chaque poste arbore en façade le logo en pixels de son outil (Claude, Codex, Antigravity, OpenCode). Les silhouettes restent stables pour identifier chaque poste d'un coup d'œil.
-- Postures visibles : Frappe au clavier quand l'agent est au travail, mug en main quand il est disponible, main levée quand il attend une réponse de ta part.
-- Bulles d'état : Bulle jaune « ? » quand l'agent attend une consigne ou une autorisation, coche verte quand il vient de terminer, points de suspension « ... » pour un état inconnu. Une légère animation festive apparaît pendant quelques secondes dès qu'un agent passe du travail à la disponibilité.
-- Salle de réflexion : Pièce animée dédiée où les sous-agents d'un agent se concentrent avant de déposer leur dossier de travail.
-- Couleurs d'état : Bleu pour le travail, menthe pour disponible ou terminé, ambre pour l'attente, gris pour un état inconnu.
-- Bandeau d'alerte et compteurs : En haut de page, des pastilles comptent les agents au travail, en attente et disponibles. Une alerte en bandeau signale immédiatement tout agent bloquant pour ouvrir son poste en un clic.
-- Identification des panneaux Herdr : L'identifiant précis du panneau Herdr (par exemple w5:p1 ou w5:p4) apparaît directement sous le nom de chaque agent dans la liste, ainsi que dans les détails de son poste.
+- Ambiance et cycle jour-nuit continu : Le ciel de la baie vitrée évolue en continu selon l'horloge de ton ordinateur (nuit, aube, jour, crépuscule). Le soleil et la lune parcourent un arc horaire (soleil orangé près de l'horizon, lever fixe à 6 h 30 et coucher fixe à 19 h 30, approximation sans saisons). Les étoiles et les fenêtres extérieures s'effacent le jour. L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte en temps réel.
+- Le chef au bureau Direction : Le premier agent démarré dans Herdr occupe le bureau Direction mis en valeur. Une pile de courriers s'y empile dès qu'un agent termine une tâche ; cliquer dessus ouvre directement l'onglet Équipe.
+- Chaque poste en un coup d'œil : Chaque bureau arbore en façade le logo en pixels de son outil (Claude, Codex, Antigravity, OpenCode).
+- Postures visibles : Frappe au clavier quand l'agent est au travail (bleu ciel), mug en main quand il est disponible (menthe), main levée quand il attend ta réponse (ambre).
+- Pause de quota et chevalet « RETOUR » : Si un agent atteint son plafond d'utilisation, son fauteuil se vide, une veilleuse violette clignote et un chevalet blanc affiche l'heure exacte de reprise annoncée par l'outil.
+- Bulles d'état : Bulle jaune « ? » quand l'agent attend une consigne ou une autorisation, coche verte quand il vient de terminer, points de suspension « ... » pour un état inconnu.
+- Salle de réflexion repliable : Pièce dédiée où les sous-agents se concentrent avant de déposer leur dossier complété sur le bureau de leur agent.
+- Mode « Disposer » : Le bouton « Disposer » permet de réorganiser librement les bureaux sur le sol et de redimensionner le bureau Direction par son coin doré. Une barre d'aide dédiée rappelle les commandes et la touche Échap enregistre la disposition.
 
-## Onglet Poste et Explorateur de fichiers
+## Onglet Poste, terminal et file d'attente
 
-- Navigation mobile : Sur téléphone ou écran étroit, choisir un agent dans la scène ou dans la liste fait défiler automatiquement la page jusqu'à son poste de pilotage.
-- Sorties du terminal : Affiche les dernières lignes réelles du terminal de l'agent sélectionné. Pendant son travail, seule la partie visible est lue pour éviter de perturber son activité.
-- Recherche en direct : Le champ de recherche permet de filtrer ou de surligner instantanément des termes dans les sorties.
-- Pause automatique et sélection de texte : Dès qu'une sélection de texte est active à la souris dans les sorties, l'actualisation automatique se met en pause avec la mention « Sélection en cours, affichage en pause ». Tu peux ainsi sélectionner et copier n'importe quel extrait sans risquer d'être interrompu par le rafraîchissement.
-- Figer le défilement et copie : Le bouton « Figer » arrête le suivi automatique pour lire calmement, et le bouton « Copier » place l'intégralité du texte dans ton presse-papier.
-- Consigne individuelle : La zone de texte permet d'écrire à l'agent sélectionné avec envoi par Ctrl+Entrée. Les brouillons sont conservés lors du changement de poste.
-- Explorateur de fichiers : Permet de consulter les fichiers et dossiers récents liés au travail de l'équipe, avec garanties de sécurité strictes (aucun écrasement, aucune suppression).
+- Sélection directe : Dès l'ouverture, une vue d'accueil claire invite à choisir un agent parmi des boutons rapides. Sur mobile, choisir un agent fait défiler la vue automatiquement.
+- Sorties du terminal : Affiche les dernières lignes réelles du terminal Herdr de l'agent sélectionné.
+- Outils de confort : Champ de recherche avec surlignage des occurrences, bouton « Figer » pour suspendre le défilement, bouton « Copier » pour récupérer le texte, et bouton « Agrandir » pour lire le terminal en pleine hauteur.
+- Pause automatique sur sélection : Dès qu'une sélection de texte est active à la souris dans les sorties, le rafraîchissement se met en pause pour ne jamais faire sauter ta sélection.
+- Consigne et file d'attente : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée). S'il est occupé ou en pause de quota, le bouton devient « Mettre en file » pour différer l'envoi en toute sécurité.
 
-## Onglet Équipe et délégations
+## Onglet Équipe, délégations et file d'attente
 
-- Envoi groupé en deux clics : Coche les agents disponibles à qui tu souhaites parler, ou clique sur « Cocher tous les disponibles » pour sélectionner en un clic l'ensemble des agents prêts. Saisis une consigne commune, puis valide (Ctrl+Entrée supporté). Le premier clic sur le bouton arme l'envoi et affiche clairement les destinataires. Le second clic confirme l'expédition individuelle vers chacun d'eux.
-- Journal des envois : Consigne l'historique des envois de ta session avec l'heure exacte, les destinataires, le texte et la confirmation de transmission par Herdr.
-- Détection des délégations (en cours de finalisation) : Repère automatiquement les consignes transmises par le chef à ses agents et matérialise le passage de témoin.
+- Courrier du chef : Enregistre les fins de travail observées avec compteur dans le titre ; la liste se remet à zéro dès que tu la consultes.
+- File d'attente collective : Liste toutes les consignes différées avec leur cible et leur statut. Chaque consigne peut être retirée d'un clic. Le serveur déclenche le départ automatique dès que l'agent redevient disponible (ou 5 minutes après sa remise à zéro de quota).
+- Envoi groupé en deux clics : Coche les agents disponibles ou clique sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en listant les destinataires, le second confirme l'expédition individuelle.
+- Journal des envois : Consigne l'historique complet des transmissions de la session.
 
-## Télémétrie et activité locale réelle
+## Onglet Fichiers et Onglet Tâches
 
-- Pour Claude : Le bureau lit son journal local pour afficher sa consommation réelle de jetons (produits, lus, en cache) et ses sous-agents actifs.
-- Pour Codex et OpenCode : Le bureau lit désormais leurs activités locales réelles (modèle configuré, historique récent) sans jamais fabriquer de données manquantes.
-- Règle de vérité : Si une information n'est pas publiée par un outil, le bureau affiche fidèlement « Non exposé par cet outil ».
+- Onglet Fichiers : Consultation sécurisée des fichiers récents ou navigation dans les dossiers de travail. Copie par glisser-déposer standard, ou déplacement avec la touche Maj (requiert une confirmation). Aucun écrasement et aucune suppression ne sont autorisés.
+- Onglet Tâches : Tableau de bord des cases réelles cochées dans les fichiers Markdown (`TODO.md`) et des plans publiés par les agents dans leurs journaux. La progression affichée est strictement factuelle, sans projection artificielle.
+
+## Palette de commandes, aide et signaux
+
+- Palette de commandes (Ctrl+K) : Ouvre une boîte modale au clavier pour chercher un agent, ouvrir un poste, rédiger une consigne, changer d'onglet ou basculer les affichages.
+- Aide escamotable (touche ?) : Volet latéral présentant la visite guidée en 5 étapes, la légende de la scène, la table des raccourcis et les réglages des signaux.
+- Notifications et sons : Le bureau propose des notifications système Windows en arrière-plan et des sons 8 bits synthétisés avec Web Audio (`public/sounds.js`), activables d'un clic dans l'aide.
 
 ## Mode plein écran
 

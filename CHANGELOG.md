@@ -2,6 +2,54 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
+## [0.3.0] - 17 octobre 2026
+
+### Ajouté
+
+- File d'attente intelligente et sécurisée :
+  - Bouton « Mettre en file » accessible sur le poste lorsqu'un agent est occupé ou en pause de quota.
+  - Liste de la file d'attente dans l'onglet Équipe avec affichage des cibles, de l'état et bouton de retrait unitaire.
+  - Relance automatique planifiée 5 minutes après l'heure de remise à zéro annoncée par l'outil (`remise à zéro + 5 min`).
+  - Protection renforcée contre les doubles envois (clé d'idempotence, statut d'envoi persistant avant tout appel externe, écriture atomique sur disque et fichier corrompu préservé).
+- Onglet Tâches :
+  - Suivi des cases réelles cochées dans les fichiers de documentation du projet (`TODO.md`).
+  - Suivi des plans d'action publiés par les agents dans leurs journaux locaux.
+  - Calcul d'une progression stricte basée sur les faits observés, sans aucune estimation inventée.
+- Panneau d'aide escamotable :
+  - Volet latéral d'aide ouvert via le bouton dédié ou la touche `?`, activé lors de la première visite.
+  - Visite guidée en 5 étapes, guide des zones, postures et couleurs de la scène, table complète des raccourcis clavier.
+  - Commandes d'activation des signaux (notifications de bureau et sons).
+- Palette de commandes modale (`Ctrl+K`) :
+  - Fenêtre de recherche rapide avec navigation au clavier pour ouvrir un poste, rédiger une consigne, explorer les fichiers ou changer de mode.
+- Module sonore Web Audio 8 bits (`public/sounds.js`) :
+  - Synthétiseur audio autonome sans fichier externe proposant 4 alertes discrètes (< 0,6 s, gain max 0,05) : fin de travail ('mail'), agent en attente ('blocked'), pause de quota ('pause') et délégation ('delegation').
+  - Mémorisation du choix d'activation dans `localStorage` sous la clé `bureau.sons`.
+- Notifications de bureau Windows :
+  - Alertes système lorsque la page est en arrière-plan pour signaler les blocages, les fins de mission et les pauses de quota.
+- Cycle jour-nuit continu et ambiance lumineuse :
+  - Dégradé de ciel continu selon l'heure exacte du poste (nuit, aube, jour, crépuscule) avec disparition progressive des étoiles et des fenêtres allumées.
+  - Arc horaire pour la lune et le soleil (soleil orangé près de l'horizon).
+  - Éclairage dynamique de la pièce, du bureau Direction et de la salle de réflexion, avec lever fixe à 6 h 30 et coucher fixe à 19 h 30 (approximation sans saisons).
+- Salle de réflexion repliable :
+  - Animation des sous-agents en pièce dédiée avec commande de repli pour adapter la scène aux petits écrans.
+- Bureau Direction :
+  - Espace de travail valorisé pour le premier agent démarré dans Herdr (le chef d'équipe), avec pile de courriers cliquable ouvrant directement l'onglet Équipe.
+- Cycle de délégation et courriers du chef :
+  - Détection des ordres de délégation (`herdr agent prompt`), déplacement de l'agent cherchant sa mission et envoi du courrier au chef remis à zéro dès consultation.
+
+### Modifié
+
+- Synthèse de revue de design appliquée (décisions D1 à D8) :
+  - D1 : État principal unifié « En pause (limite) » partout (cartes d'agents, fiches de poste, palette de commandes) quand la pause est observée.
+  - D2 : Barre d'aide à la disposition (`.layout-bar`) placée sur sa propre ligne sous la barre d'outils pour éviter tout chevauchement avec l'alerte d'attention.
+  - D3 : Cartes d'agents restructurées sur deux lignes (nom puis statut) avec identifiant Herdr en pastille compacte (`.pane-pill`) et passage en grille de 2 colonnes sous 1360 px pour empêcher toute troncature.
+  - D4 : Onglet Équipe épuré avec une seule phrase synthétique par section et compteurs d'éléments directement dans les titres (`#mail-count`, `#queue-count`).
+  - D5 : Terminal de l'onglet Poste dimensionné pour occuper toute la hauteur disponible, enrichi d'un bouton « Agrandir » / « Réduire » (`#term-expand`) pour une lecture confortable.
+  - D6 : Blocs d'erreur unifiés avec message explicite et bouton « Actualiser le bureau » ; intégration de 6 icônes d'états vides pixel art 16x16 (`public/empty-icons.js`) remplaçant les listes silencieuses.
+  - D7 : Vue d'accueil engageante dans l'onglet Poste (`#poste-empty`) invitant à choisir un agent avec sélection directe par boutons rapides.
+  - D8 : Composition responsive mobile ajustée et validée à 390 et 360 px de largeur sans débordement horizontal.
+- Extension de la suite de tests automatisés : 161 tests au total (159 réussis, 2 ignorés sur liens symboliques Windows, 0 échec).
+
 ## [0.2.0] - 17 octobre 2026
 
 ### Ajouté

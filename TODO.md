@@ -28,17 +28,35 @@
 - [x] Extension de la suite de tests automatisés (129 tests réussis sur 131, 0 échec).
 - [x] Sauvegarde de référence au commit `7817574`.
 
-## Préparation à la publication GitHub : En cours
+## Troisième version (0.3.0) : Terminée et stabilisée
+
+- [x] File d'attente serveur avec bouton « Mettre en file » sur le poste pour les agents occupés ou en pause de quota.
+- [x] Retrait unitaire des consignes en file et départ automatique à « remise à zéro + 5 min ».
+- [x] Protection anti-double envoi absolue : statut d'envoi persistant, écriture atomique sur disque et clé d'idempotence.
+- [x] Onglet Tâches raccordé aux cases réelles de `TODO.md` et aux plans d'action publiés par les agents.
+- [x] Volet d'aide escamotable (`aside.help`, touche `?`) avec visite guidée en 5 étapes.
+- [x] Palette de commandes modale (`Ctrl+K`) pour naviguer et agir au clavier.
+- [x] Module sonore 8 bits Web Audio (`public/sounds.js`) et notifications de bureau Windows.
+- [x] Cycle jour-nuit continu synchronisé avec l'heure réelle de la machine (lever fixe à 6 h 30, coucher à 19 h 30).
+- [x] Salle de réflexion repliable pour les sous-agents d'analyse.
+- [x] Bureau Direction valorisé pour le premier agent démarré dans Herdr avec pile de courriers cliquable.
+- [x] Détection des délégations et courriers du chef remis à zéro dès consultation.
+- [x] Application rigoureuse de la synthèse de design D1 à D8 (ordinateurs et mobiles 360-390 px).
+- [x] Suite de tests étendue à 161 tests automatisés (159 réussis, 2 ignorés sur les liens symboliques Windows).
+
+## Préparation à la publication GitHub et chantiers futurs : En cours
 
 - [x] Audit de partage des chemins et données spécifiques à la machine (`docs/publication-github.md`).
 - [x] Rédaction du guide de contribution (`CONTRIBUTING.md`).
-- [x] Rédaction du journal des versions (`CHANGELOG.md`).
+- [x] Rédaction du journal des versions (`CHANGELOG.md` versions 0.1.0, 0.2.0 et 0.3.0).
 - [x] Enrichissement du guide d'accueil et présentation publique (`README.md`).
 - [x] Validation de la licence libre par DrSmoke (Licence MIT dans `LICENSE` et avis de marques dans `NOTICE.md`).
 - [x] Inventaire des commandes locales vérifiées pour modèles et compétences (`docs/commandes-outils.md`).
 - [x] Synthèse des 8 innovations pour l'OS d'agents (`docs/idees-os.md`).
+- [x] Guide d'aide complet et fidèle à l'interface réelle (`docs/aide.md`).
 - [ ] Détection automatique des ordres de délégation (`src/delegations.mjs`, en cours par OpenCode).
 - [ ] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, en cours par OpenCode).
 - [ ] Scripts d'installation automatique (`scripts/`, en cours par OpenCode).
-- [ ] Production des captures d'illustration pour le dossier `docs/captures/`.
+- [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.
+- [ ] Évolution vers un OS d'agents en fenêtres ou tuiles libres (décision DrSmoke).
