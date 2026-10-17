@@ -7,8 +7,9 @@ const drafts = new Map();
 let state = { connected:false, agents:[], token:null }, selected = null, stateBusy = false, readBusy = false, sending = false, readSequence = 0, spots = [];
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 // Animation active par défaut (choix de DrSmoke) ; sa préférence est mémorisée dans ce navigateur.
+// Sans choix mémorisé, la réduction des mouvements du système fige la scène.
 const readMotion=()=>{try{return localStorage.getItem('bureau.animation');}catch{return null;}};
-let paused = readMotion()==='off';
+let paused = readMotion()==='off'||(readMotion()==null&&motionPreference.matches);
 const labels = { idle:'Disponible', done:'Terminé', busy:'Au travail', working:'Au travail', running:'Au travail', waiting:'Attend une réponse', blocked:'Attend une réponse', unknown:'État inconnu', stopped:'Arrêté' };
 const label = a => quotaPause(a) ? 'En pause (limite)' : labels[a.status] || 'État inconnu';
 const tint = a => quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
@@ -282,10 +283,21 @@ function splitChrome(text){
 const statusCache=new Map();
 // Pause de quota : l'outil annonce lui-même la fin de sa limite (« try again at 4:37 AM », « resets 7pm »),
 // ou son journal donne l'heure exacte de remise à zéro (Codex). Relance prévue 5 minutes après.
+// Une annonce relue garde l'échéance de sa première lecture : sinon « 4:45 PM » relu à 16:46 deviendrait demain.
+const clockSeen=new Map();
 function parseClock(txt){
+  const key=txt.trim(),seen=clockSeen.get(key);
+  if(seen&&Date.now()-seen.at<12*3600000)return seen.until;
   const m=/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?/i.exec(txt)||/(\d{1,2})[:h](\d{2})/.exec(txt);if(!m)return null;
-  let h=Number(m[1])%12,min=Number(m[2]||0);if(m[3]){if(m[3].toLowerCase()==='p')h+=12;}else h=Number(m[1]);
-  const d=new Date();d.setHours(h,min,0,0);if(d<Date.now()-60000)d.setDate(d.getDate()+1);return d;
+  let h=Number(m[1]),min=Number(m[2]||0);
+  if(m[3]){if(h<1||h>12)return null;h=h%12+(m[3].toLowerCase()==='p'?12:0);}
+  if(h>23||min>59)return null;
+  const d=new Date();
+  if(/\b(UTC|GMT)\b/i.test(txt))d.setUTCHours(h,min,0,0);else d.setHours(h,min,0,0);
+  if(d<Date.now()-60000)d.setDate(d.getDate()+1);
+  clockSeen.set(key,{until:d,at:Date.now()});
+  if(clockSeen.size>50)clockSeen.delete(clockSeen.keys().next().value);
+  return d;
 }
 function limitFromText(text){
   const tail=text.split('\n').slice(-40).join('\n');
@@ -293,13 +305,17 @@ function limitFromText(text){
   const when=/(?:try again at|resets?(?: at)?|reset at|réessaie(?:z)? à)\s+([^\n.·]+)/i.exec(tail);
   return {until:when?parseClock(when[1]):null};
 }
+// Durée en minutes : 300 → « 5 h », 1440 → « 24 h », 10080 → « 7 j ».
+const windowLabel=min=>!min?null:min%1440===0&&min>1440?min/1440+' j':min%60===0?min/60+' h':min+' min';
 function quotaPause(a){
   if(!a)return null;
   const act=a.activity;
   if(act?.limitReached){
-    const times=(act.limits||[]).filter(l=>l.resetsAt&&(l.usedPercent>=100||act.limitReached)).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
-    const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100).map(l=>l.window>=1440?'hebdomadaire':l.window?Math.round(l.window/60)+' h':null).filter(Boolean);
-    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:blocking[0]||null};
+    // Seules les limites épuisées décident du retour ; si aucune ne l'est, l'outil ne dit pas laquelle bloque.
+    const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100);
+    const times=blocking.filter(l=>l.resetsAt).map(l=>new Date(l.resetsAt)).filter(d=>d>Date.now());
+    const which=blocking.map(l=>windowLabel(l.window)).filter(Boolean);
+    return {until:times.length?new Date(Math.max(...times)):null,source:'journal',which:which[0]||null};
   }
   const s=statusCache.get(a.id)?.status?.quota;
   if(s&&(!s.until||s.until>Date.now()))return {until:s.until,source:'terminal'};
@@ -513,11 +529,12 @@ $('message').addEventListener('input',()=>{if(selected)keepDraft(selected,$('mes
 $('prompt-form').addEventListener('submit',async event=>{
   event.preventDefault();const a=activeAgent(),message=$('message').value.trim();
   if(canQueue(a)&&!sending&&message){
-    sending=true;updateForm();$('send-result').hidden=true;
+    const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
     try{
-      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message})});
-      drafts.delete(a.id);$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;loadQueue();
-    }catch(error){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}
+      await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message})});
+      drafts.delete(target);loadQueue();
+      if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent='Consigne mise en file pour '+a.name+'. Suis-la dans l’onglet Équipe.';$('send-result').hidden=false;}
+    }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error);$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}
     return;
   }
@@ -534,6 +551,7 @@ $('prompt-form').addEventListener('submit',async event=>{
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
 function syncMotion(){ $('motion').setAttribute('aria-pressed',String(paused));$('motion').querySelector('span').textContent=paused?'Animer le bureau':'Mettre en pause';$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
+motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
 const WORK=['busy','working','running'], FREE=['idle','done'], WAIT=['waiting','blocked'];
 const sceneLabels={working:'AU TRAVAIL',busy:'AU TRAVAIL',running:'AU TRAVAIL',idle:'DISPONIBLE',done:'TERMINÉ',waiting:'ATTEND RÉPONSE',blocked:'ATTEND RÉPONSE'};
@@ -1111,7 +1129,8 @@ $('fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)docu
 document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.fullscreenElement);$('fullscreen').setAttribute('aria-pressed',String(on));$('fullscreen').querySelector('span').textContent=on?'Quitter le plein écran':'Plein écran';draw(lastFrame);});
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+'Bureau des agents · DrSmoke';if(document.title!==title)document.title=title;}
-function frame(time){if(!paused&&time-lastFrame>80){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+// Figée, la scène se redessine encore chaque minute pour suivre l'heure et la lumière.
+function frame(time){if(time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){

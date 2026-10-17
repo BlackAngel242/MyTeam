@@ -829,3 +829,7 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
     overflow-wrap: anywhere;
   }
 }
+
+/* Agrandir doit l’emporter sur les hauteurs mobiles ci-dessus (revue M9). */
+/* Hauteur bornée : le terminal garde son propre défilement et suit la dernière ligne. */
+.term-expanded #output{min-height:min(62vh,62dvh);max-height:min(80vh,80dvh)}
