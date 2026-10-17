@@ -1,15 +1,44 @@
 # Reprise IA
 
-Lire PRODUCT.md, docs/conception.md, docs/plan.md, JOURNAL.md, LESSONS.md et ERREURS.md avant de changer le projet.
+Lire attentivement ce document ainsi que `PRODUCT.md`, `DESIGN.md`, `JOURNAL.md`, `LESSONS.md` et `docs/publication-github.md` avant toute intervention sur le projet.
 
-DrSmoke a approuvé une application locale dans le navigateur, des personnages pixels dans un bureau bleu nuit et la construction directe. Il a explicitement autorisé l'accès à sa session Herdr depuis Codex Desktop extérieur, sans interruption des agents. Le guide intégré Herdr interdit normalement cet accès hors panneau ; l'autorisation ciblée de DrSmoke prévaut pour ce projet.
+## Contexte et architecture du projet
 
-Serveur : Node.js natif, sans dépendance. `node server.mjs`, port 4317, 127.0.0.1 uniquement. Les commandes Herdr sont appelées via execFile, arguments séparés. La liste est lue avant chaque accès et la cible inclut une empreinte d'identité pour empêcher l'envoi à un agent remplacé. Pas d'envoi automatique aux statuts working, blocked ou unknown. Pas de fermeture, d'interruption ou de validation d'autorisation Herdr.
+L'application « Bureau des agents » est une tour de contrôle locale dans le navigateur conçue pour DrSmoke et ses agents d'intelligence artificielle opérant dans Herdr.
 
-API interface : GET /api/state, GET /api/read?id=..., POST /api/prompt avec origine exacte et jeton X-Bureau-Token reçu de /api/state. La lecture CLI renvoie du texte brut, pas du JSON. Sur agent actif, utiliser la source visible.
+- Serveur d'application : Développé en Node.js natif (ES Modules, `server.mjs`), sans aucune bibliothèque tierce (`node_modules` n'existe pas). Il écoute exclusivement sur `http://127.0.0.1:4317`.
+- Passerelle Herdr (`src/herdr.mjs`) : Communique avec l'outil Herdr en local via `node:child_process` (arguments isolés, aucune interprétation shell). La liste des agents est rafraîchie toutes les trois secondes. Les envois de consignes sont strictement interdits aux agents occupés ou bloqués.
+- Activité de Claude (`src/claude-activity.mjs`) : Analyse son journal local pour extraire la consommation réelle de jetons et la liste des sous-agents actifs.
+- Interface web (`public/`) :
+  - Scène calculée dans un canvas (`public/app.js`), agrandie avec netteté intégrale en pixel art.
+  - Logos personnalisés 16x16 pour chaque outil (`public/logos.js`).
+  - Moteur de filtrage et surlignage de terminal sans altération du texte (`public/terminal.js`).
+  - Panneau latéral organisé en deux onglets : « Poste » (vue individuelle, console, recherche, consigne avec Ctrl+Entrée) et « Équipe » (envoi groupé avec confirmation en deux étapes, journal des envois).
+  - Mode plein écran étendu regroupant la scène et le panneau de pilotage.
 
-Agents réels observés : panneaux w5:p1 (Claude), w5:p4 (Codex), w5:p2 (Antigravity), w5:p3 (OpenCode). Ces identifiants sont des observations, pas une configuration à figer. Une mission de vérification en lecture seule a été transmise à w5:p4 ; lire son résultat lorsqu'il est disponible. Ne pas lui envoyer à nouveau la même mission.
+## État d'avancement au 17 octobre 2026 (Version 0.2.0)
 
-Aucun dépôt distant n'est configuré. Ne pas publier le projet ni les sorties des agents automatiquement. Aucune tâche détaillée ou sous-agent interne ne peut être inventé.
+- Suite de tests : 57 tests automatisés réussis (`npm test`, 0 échec). La syntaxe de tous les fichiers JavaScript est validée (`npm run check`).
+- Évaluation ergonomique : Deux passages d'évaluation critique réalisés et documentés dans `docs/revue-antigravity.md` (note globale de 8,7/10).
 
-Première version vérifiée : 13 tests réussis, vérification syntaxique des trois fichiers JavaScript réussie, rendu ordinateur et téléphone inspecté. Détecteur Impeccable exécuté une fois, textes agrandis. Guide humain : README.md. Démarrage par double-clic : Ouvrir le bureau.cmd. Le serveur de cette livraison tourne en arrière-plan avec Node ; vérifier l'identité et l'emplacement du processus avant toute action.
+## Préparation à la publication GitHub (Chantier en cours)
+
+Le projet est préparé pour un partage public sur GitHub, sans publication automatique :
+
+1. Fichiers créés et maintenus par Antigravity :
+   - `README.md` : Présentation accrocheuse, sections d'installation et de contribution, signature de DrSmoke préservée.
+   - `CONTRIBUTING.md` : Règles de contribution, philosophie zéro dépendance, environnement de test.
+   - `CHANGELOG.md` : Historique des versions 0.1.0 et 0.2.0.
+   - `docs/publication-github.md` : Audit des chemins locaux, vérification des secrets, configuration du dépôt, 3 choix de licence détaillés pour DrSmoke, liste des captures d'écran à produire.
+   - `TODO.md` : Tableau de bord des tâches accomplies et restantes.
+
+2. Répartition du travail en équipe :
+   - OpenCode rédige en parallèle les scripts d'installation automatique dans `scripts/` et le guide d'installation multi-plateforme dans `docs/INSTALLATION.md`. Ne pas modifier ces fichiers.
+   - Claude assure la coordination générale de la session.
+   - Codex veille sur la cohérence des tests et du moteur Herdr.
+   - Antigravity gère la documentation publique, l'ergonomie et la préparation GitHub.
+
+3. Décisions en attente de DrSmoke :
+   - Choix de la licence libre (MIT, Apache 2.0 ou GNU GPLv3).
+   - Validation des captures d'illustration pour `docs/captures/`.
+   - Création manuelle du dépôt GitHub et publication initiale.

@@ -1,1 +1,18 @@
-{"buildPath":"code"}
+{
+  "buildPath": "code",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "organic-clip-path",
+        "value": "*",
+        "files": [
+          "public/index.html"
+        ],
+        "createdAt": "2026-10-17T00:50:13.327Z",
+        "reason": "Claude: polygone à angles droits de l'avatar de secours, géométrie pixel volontaire, faux positif déjà documenté dans DESIGN.md"
+      }
+    ]
+  }
+}

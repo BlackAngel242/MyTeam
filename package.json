@@ -5,7 +5,7 @@
   "scripts":{
     "start":"node server.mjs",
     "test":"node --test",
-    "check":"node --check server.mjs && node --check src/herdr.mjs && node --check public/app.js"
+    "check":"node --check server.mjs && node --check src/herdr.mjs && node --check src/claude-activity.mjs && node --check src/agent-activity.mjs && node --check src/files.mjs && node --check public/app.js && node --check public/terminal.js"
   },
   "engines":{"node":">=22"}
 }

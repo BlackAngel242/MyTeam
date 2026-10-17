@@ -1,0 +1,399 @@
+#!/usr/bin/env bash
+# Installe les prerequis du Bureau des agents sur macOS et Linux.
+#
+# Verifie Node.js, Herdr et les outils d'IA en ligne de commande, propose chaque
+# installation avec une confirmation (o/n), configure le port et le chemin de
+# Herdr, peut creer le raccourci « Ouvrir le bureau », puis lance npm test et
+# npm run check. Relancable sans degat : le script verifie avant d'agir.
+# Aucune cle API ni aucun jeton n'est demande, lu ou enregistre.
+#
+# Usage : bash scripts/installer.sh [options]
+#   --dry-run            Simulation : affiche les actions sans rien executer.
+#   --oui                Accepte automatiquement chaque confirmation (o/n).
+#   --port <numero>      Port du bureau (defaut : 4317 ou valeur existante).
+#   --herdr-chemin <fichier>  Chemin de herdr s'il n'est pas dans le PATH.
+#   --sans-raccourci     Ne propose pas le raccourci « Ouvrir le bureau ».
+#   --aide               Affiche cette aide.
+
+DRY_RUN=0
+OUI=0
+PORT=""
+HERDR_CHEMIN=""
+SANS_RACCOURCI=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --oui) OUI=1 ;;
+    --port) PORT="${2:-}"; shift ;;
+    --herdr-chemin) HERDR_CHEMIN="${2:-}"; shift ;;
+    --sans-raccourci) SANS_RACCOURCI=1 ;;
+    --aide)
+      sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      echo "Option inconnue : $1"
+      echo "Lancez : bash scripts/installer.sh --aide"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+RACINE="$(cd "$(dirname "$0")/.." && pwd)"
+RAPPORT=""
+
+dire() { echo "$1"; }
+simuler() { echo "[simulation] $1"; }
+noter() { RAPPORT="$RAPPORT
+ - $1"; }
+
+confirmer() {
+  if [ "$DRY_RUN" = "1" ]; then simuler "$1 o/n : o (simule)"; return 0; fi
+  if [ "$OUI" = "1" ]; then dire "$1 o/n : o (accepte automatiquement)"; return 0; fi
+  while true; do
+    printf '%s (o/n) : ' "$1"
+    read -r reponse
+    reponse=$(printf '%s' "$reponse" | tr '[:upper:]' '[:lower:]')
+    case "$reponse" in
+      o|oui) return 0 ;;
+      n|non) return 1 ;;
+      *) dire 'Repondez par o ou par n.' ;;
+    esac
+  done
+}
+
+executer() {
+  if [ "$DRY_RUN" = "1" ]; then simuler "$1"; return 0; fi
+  dire "$1"
+  sh -c "$2"
+}
+
+version_node_majeure() {
+  if ! command -v node >/dev/null 2>&1; then return 1; fi
+  version=$(node --version 2>/dev/null) || return 1
+  majeure=$(printf '%s' "$version" | sed 's/^v//' | cut -d. -f1)
+  case "$majeure" in
+    ''|*[!0-9]*) return 1 ;;
+    *) echo "$majeure" ;;
+  esac
+}
+
+gestionnaire_paquets() {
+  if command -v brew >/dev/null 2>&1; then echo brew
+  elif command -v apt-get >/dev/null 2>&1; then echo apt
+  elif command -v dnf >/dev/null 2>&1; then echo dnf
+  else echo aucun
+  fi
+}
+
+commande_node() {
+  case "$(gestionnaire_paquets)" in
+    brew) echo 'brew install node' ;;
+    apt) echo 'sudo apt-get update && sudo apt-get install -y nodejs npm' ;;
+    dnf) echo 'sudo dnf install -y nodejs npm' ;;
+    *) echo '' ;;
+  esac
+}
+
+dire '=== Bureau des agents : installation ==='
+dire "Dossier du projet : $RACINE"
+if [ "$DRY_RUN" = "1" ]; then dire 'Mode simulation : rien ne sera installe ni modifie.'; fi
+dire ''
+
+# --- 1. Node.js ---------------------------------------------------------
+dire '--- 1. Node.js (version 22 ou plus) ---'
+MAJEURE=$(version_node_majeure || true)
+if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then
+  dire "Node.js est deja present (version majeure $MAJEURE). Rien a faire."
+  noter 'Node.js : deja present.'
+else
+  if [ -z "$MAJEURE" ]; then dire 'Node.js est absent de cet ordinateur.'
+  else dire "Node.js est present mais trop ancien (version majeure $MAJEURE) : il faut la version 22 ou plus."; fi
+  CMD_NODE=$(commande_node)
+  if [ -n "$CMD_NODE" ] && confirmer "Installer Node.js avec votre gestionnaire de paquets ($CMD_NODE) ?"; then
+    executer "Installation de Node.js : $CMD_NODE" "$CMD_NODE"
+    if [ "$DRY_RUN" != "1" ]; then
+      MAJEURE=$(version_node_majeure || true)
+      if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then
+        dire "Node.js est maintenant installe (version majeure $MAJEURE)."
+        noter 'Node.js : installe.'
+      else
+        dire "La version proposee reste trop ancienne ou Node.js manque encore."
+        dire "Installez Node 22 ou plus depuis la page officielle : https://nodejs.org/en/download"
+        noter 'Node.js : a installer depuis nodejs.org.'
+      fi
+    else
+      noter 'Node.js : simulation de l''installation.'
+    fi
+  else
+    dire 'Installez Node 22 ou plus depuis la page officielle : https://nodejs.org/en/download'
+    noter 'Node.js : non installe (refuse ou gestionnaire absent).'
+  fi
+fi
+NODE_OK=0
+if [ "$DRY_RUN" = "1" ]; then NODE_OK=1
+else
+  MAJEURE=$(version_node_majeure || true)
+  if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then NODE_OK=1; fi
+fi
+dire ''
+
+# --- 2. Herdr -----------------------------------------------------------
+dire '--- 2. Herdr (gestionnaire de terminaux) ---'
+chercher_herdr() {
+  if [ -n "$HERDR_CHEMIN" ] && [ -x "$HERDR_CHEMIN" ]; then echo "$HERDR_CHEMIN"; return 0; fi
+  if command -v herdr >/dev/null 2>&1; then command -v herdr; return 0; fi
+  if [ -d "$HOME/.herdr/packages" ]; then
+    trouve=$(find "$HOME/.herdr/packages" -type f \( -name herdr -o -name herdr.exe \) 2>/dev/null | head -n 1)
+    if [ -n "$trouve" ]; then echo "$trouve"; return 0; fi
+  fi
+  return 1
+}
+HERDR_TROUVE=$(chercher_herdr || true)
+if [ -n "$HERDR_TROUVE" ]; then
+  dire "Herdr est present : $HERDR_TROUVE"
+  noter 'Herdr : deja present.'
+  if ! command -v herdr >/dev/null 2>&1; then
+    dire "Herdr n'est pas dans le PATH : le bureau a besoin de la variable BUREAU_HERDR_PATH."
+    if confirmer 'Enregistrer BUREAU_HERDR_PATH avec ce chemin ?'; then
+      HERDR_A_ENREGISTRER="$HERDR_TROUVE"
+      dire "BUREAU_HERDR_PATH sera enregistre dans votre profil : $HERDR_TROUVE"
+      noter 'BUREAU_HERDR_PATH : a enregistrer (voir etape 4).'
+    else
+      HERDR_A_ENREGISTRER=""
+      noter 'BUREAU_HERDR_PATH : non enregistre (refuse).'
+    fi
+  else
+    HERDR_A_ENREGISTRER=""
+  fi
+else
+  HERDR_A_ENREGISTRER=""
+  dire 'Herdr est introuvable sur cet ordinateur.'
+  dire "Methode d'installation officielle (documentation Herdr) :"
+  dire '  macOS et Linux : curl -fsSL https://herdr.dev/install.sh | sh'
+  dire '  Puis documentation complete : https://herdr.dev/docs/install/'
+  if confirmer 'Installer Herdr maintenant avec la commande officielle ci-dessus ?'; then
+    executer 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' 'curl -fsSL https://herdr.dev/install.sh | sh'
+    if [ "$DRY_RUN" != "1" ]; then
+      HERDR_TROUVE=$(chercher_herdr || true)
+      if [ -n "$HERDR_TROUVE" ]; then
+        dire "Herdr est maintenant installe : $HERDR_TROUVE"
+        noter 'Herdr : installe.'
+      else
+        dire "Herdr n'a pas ete detecte. Consultez https://herdr.dev/docs/install/ puis relancez ce script."
+        noter 'Herdr : a verifier.'
+      fi
+    else
+      noter 'Herdr : simulation de l''installation officielle.'
+    fi
+  else
+    dire 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/'
+    dire 'Le bureau ne fonctionnera pas sans Herdr ouvert.'
+    noter 'Herdr : non installe (refuse).'
+  fi
+fi
+dire ''
+
+# --- 3. IA en ligne de commande (optionnelles) ---------------------------
+dire "--- 3. Outils d'IA en ligne de commande (entierement optionnels) ---"
+dire "Aucune cle ni aucun jeton n'est demande ici. Si un outil vous demande de vous"
+dire 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.'
+dire ''
+
+proposer_outil() {
+  nom="$1"; detection="$2"; installation="$3"; lien="$4"; lien2="${5:-}"
+  dire "### $nom"
+  if command -v "$detection" >/dev/null 2>&1; then
+    dire "$nom est deja installe (commande '$detection')."
+    noter "$nom : deja installe."
+    dire ''
+    return
+  fi
+  dire "Commande d'installation officielle : $installation"
+  [ -n "$lien" ] && dire "Documentation : $lien"
+  [ -n "$lien2" ] && dire "Documentation complémentaire : $lien2"
+  if confirmer "Installer $nom ?"; then
+    executer "Installation de $nom : $installation" "$installation"
+    if [ "$DRY_RUN" != "1" ]; then
+      if command -v "$detection" >/dev/null 2>&1; then
+        dire "$nom est installe."
+        noter "$nom : installe."
+      else
+        dire "$nom n'a pas ete detecte tout de suite. Ouvrez un nouveau terminal pour verifier."
+        noter "$nom : a verifier."
+      fi
+    else
+      noter "$nom : simulation de l'installation."
+    fi
+  else
+    dire "$nom : non installe (refuse)."
+    noter "$nom : non installe (refuse)."
+  fi
+  dire ''
+}
+
+proposer_outil 'Claude Code' 'claude' 'curl -fsSL https://claude.ai/install.sh | bash' 'https://code.claude.com/docs'
+proposer_outil 'Codex (OpenAI)' 'codex' 'curl -fsSL https://chatgpt.com/codex/install.sh | sh' 'https://developers.openai.com/codex'
+proposer_outil 'OpenCode' 'opencode' 'curl -fsSL https://opencode.ai/install | bash' 'https://opencode.ai/docs' 'Alternative avec Node.js : npm install -g opencode-ai'
+proposer_outil 'Gemini CLI (Google)' 'gemini' 'npm install -g @google/gemini-cli' 'https://www.geminicli.com/docs/get-started/installation' 'Alternative : brew install gemini-cli'
+
+dire '### Antigravity (Google)'
+dire "La commande d'installation d'Antigravity CLI n'a pas pu etre verifiee :"
+dire 'nous ne la donnons donc pas. Suivez sa documentation officielle :'
+dire '  https://antigravity.google/product/antigravity-cli'
+dire '  https://antigravity.google/docs/cli/getting-started'
+dire 'Note : Google annonce que Gemini CLI cede la place a Antigravity CLI pour les'
+dire 'comptes gratuits et Google One :'
+dire '  https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli'
+noter 'Antigravity : documentation seule (methode non verifiee).'
+dire ''
+
+# --- 4. Configuration ---------------------------------------------------
+dire '--- 4. Configuration du bureau ---'
+FICHIERS_PROFIL="$HOME/.profile"
+[ -f "$HOME/.bashrc" ] && FICHIERS_PROFIL="$FICHIERS_PROFIL $HOME/.bashrc"
+
+PORT_CHOISI=""
+if [ -n "$PORT" ]; then PORT_CHOISI="$PORT"
+else
+  existant=$(sed -n 's/^export BUREAU_PORT="\([0-9]*\)"$/\1/p' "$HOME/.profile" 2>/dev/null | tail -n 1)
+  if [ -n "$existant" ]; then
+    PORT_CHOISI="$existant"
+    dire "Port deja enregistre : $PORT_CHOISI"
+  else
+    PORT_CHOISI="4317"
+  fi
+fi
+
+if [ -z "$PORT" ] && [ "$DRY_RUN" != "1" ]; then
+  if ! confirmer "Utiliser le port $PORT_CHOISI pour le bureau ?"; then
+    while true; do
+      printf 'Entrez un port entre 1024 et 65535 : '
+      read -r saisie
+      case "$saisie" in
+        ''|*[!0-9]*) dire 'Port invalide.' ;;
+        *)
+          if [ "$saisie" -ge 1024 ] && [ "$saisie" -le 65535 ]; then PORT_CHOISI="$saisie"; break; fi
+          dire 'Port invalide.'
+          ;;
+      esac
+    done
+  fi
+fi
+case "$PORT_CHOISI" in
+  ''|*[!0-9]*) PORT_CHOISI="4317" ;;
+esac
+if [ "$PORT_CHOISI" -lt 1024 ] || [ "$PORT_CHOISI" -gt 65535 ]; then PORT_CHOISI="4317"; fi
+
+ecrire_profil() {
+  bloc="# >>> bureau-des-agents >>>
+export BUREAU_PORT=\"$PORT_CHOISI\""
+  if [ -n "$HERDR_A_ENREGISTRER" ]; then
+    bloc="$bloc
+export BUREAU_HERDR_PATH=\"$HERDR_A_ENREGISTRER\""
+  fi
+  bloc="$bloc
+# <<< bureau-des-agents <<<"
+  for fichier in $FICHIERS_PROFIL; do
+    if [ "$DRY_RUN" = "1" ]; then
+      simuler "Mise a jour du bloc de configuration dans $fichier (BUREAU_PORT=$PORT_CHOISI)."
+      continue
+    fi
+    tmp="$fichier.bureau.tmp"
+    if [ -f "$fichier" ]; then
+      awk '/# >>> bureau-des-agents >>>/{ignorer=1} /# <<< bureau-des-agents <<</{ignorer=0; next} !ignorer' "$fichier" > "$tmp"
+    else
+      : > "$tmp"
+    fi
+    printf '%s\n' "$bloc" >> "$tmp"
+    mv "$tmp" "$fichier"
+    dire "Configuration ecrite dans $fichier."
+  done
+}
+ecrire_profil
+noter "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)."
+if [ -n "$HERDR_A_ENREGISTRER" ]; then noter "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)."; fi
+
+if [ "$SANS_RACCOURCI" != "1" ]; then
+  if command -v xdg-user-dir >/dev/null 2>&1; then
+    DOSSIER_BUREAU=$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")
+  elif [ -d "$HOME/Desktop" ]; then
+    DOSSIER_BUREAU="$HOME/Desktop"
+  elif [ -d "$HOME/Bureau" ]; then
+    DOSSIER_BUREAU="$HOME/Bureau"
+  else
+    DOSSIER_BUREAU="$HOME"
+  fi
+  if [ "$(uname)" = "Darwin" ]; then
+    RACCOURCI="$DOSSIER_BUREAU/Ouvrir le bureau.command"
+    question="Creer le raccourci « Ouvrir le bureau » dans $DOSSIER_BUREAU ?"
+    [ -f "$RACCOURCI" ] && question="Le raccourci existe deja. Le remplacer ($RACCOURCI) ?"
+    if confirmer "$question"; then
+      if [ "$DRY_RUN" = "1" ]; then
+        simuler "Creation du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
+      else
+        cat > "$RACCOURCI" <<FIN_RACCOURCI
+#!/bin/bash
+cd "$RACINE" || exit 1
+node server.mjs > bureau.log 2> bureau-erreurs.log &
+sleep 2
+open "http://127.0.0.1:$PORT_CHOISI"
+FIN_RACCOURCI
+        chmod +x "$RACCOURCI"
+        dire "Raccourci cree : $RACCOURCI"
+      fi
+      noter 'Raccourci : cree.'
+    else
+      noter 'Raccourci : non cree (refuse).'
+    fi
+  else
+    RACCOURCI="$DOSSIER_BUREAU/ouvrir-le-bureau.desktop"
+    question="Creer le raccourci « Ouvrir le bureau » dans $DOSSIER_BUREAU ?"
+    [ -f "$RACCOURCI" ] && question="Le raccourci existe deja. Le remplacer ($RACCOURCI) ?"
+    if confirmer "$question"; then
+      if [ "$DRY_RUN" = "1" ]; then
+        simuler "Creation du raccourci $RACCOURCI (lance node server.mjs puis ouvre le navigateur)."
+      else
+        cat > "$RACCOURCI" <<FIN_RACCOURCI
+[Desktop Entry]
+Type=Application
+Name=Ouvrir le bureau
+Comment=Bureau des agents
+Exec=sh -c 'cd "$RACINE" && node server.mjs > bureau.log 2> bureau-erreurs.log & sleep 2; xdg-open "http://127.0.0.1:$PORT_CHOISI"'
+Terminal=false
+Categories=Utility;
+FIN_RACCOURCI
+        chmod +x "$RACCOURCI"
+        dire "Raccourci cree : $RACCOURCI"
+      fi
+      noter 'Raccourci : cree.'
+    else
+      noter 'Raccourci : non cree (refuse).'
+    fi
+  fi
+fi
+dire ''
+
+# --- 5. Tests -----------------------------------------------------------
+dire '--- 5. Tests du projet ---'
+if [ "$NODE_OK" != "1" ]; then
+  dire 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.'
+  noter 'Tests : ignores (Node.js absent).'
+elif confirmer 'Lancer npm test et npm run check maintenant ?'; then
+  executer 'Execution de npm test.' "cd \"$RACINE\" && npm test"
+  executer 'Execution de npm run check.' "cd \"$RACINE\" && npm run check"
+  noter 'Tests : executes.'
+else
+  noter 'Tests : non executes (refuse).'
+fi
+dire ''
+
+# --- Resume -------------------------------------------------------------
+dire '=== Resume ==='
+if [ -z "$RAPPORT" ]; then dire 'Rien a signaler.'; else printf '%s\n' "$RAPPORT" | sed '/^ *$/d'; fi
+dire ''
+dire "Pour ouvrir le bureau : lancez 'node server.mjs' dans $RACINE"
+dire "puis ouvrez http://127.0.0.1:$PORT_CHOISI (ou utilisez le raccourci cree)."
+dire 'Herdr doit etre ouvert pour que le bureau voie vos agents.'
