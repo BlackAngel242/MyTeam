@@ -19,16 +19,19 @@ const execute=promisify(execFile);
 export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
-  // Pause de quota : la limite la plus consommée donne sa date de remise à zéro.
+  // Pause de quota : la fin de pause retenue est la remise à zéro la plus tardive
+  // parmi les limites atteintes. Une erreur de lecture est laissée remonter : la
+  // file gèle alors l'envoi au lieu de l'autoriser (revue croisée, constat 3).
   const limiteQuota=async(id,agents)=>{
     const agent=agents.find(cible=>cible.id===id);
     if(!agent||agent.kind==='Claude') return {limitReached:false,resetsAt:null};
-    try {
-      const activite=await readOtherActivity(agent,agents);
-      const limites=Array.isArray(activite?.limits)?activite.limits:[];
-      const plusConsommee=[...limites].sort((a,b)=>(b.usedPercent??-1)-(a.usedPercent??-1))[0];
-      return {limitReached:activite?.limitReached===true,resetsAt:plusConsommee?.resetsAt??null};
-    } catch {return {limitReached:false,resetsAt:null};}
+    const activite=await readOtherActivity(agent,agents);
+    const limites=Array.isArray(activite?.limits)?activite.limits:[];
+    const atteintes=limites.filter(limite=>typeof limite?.usedPercent==='number'&&limite.usedPercent>=100);
+    const candidates=atteintes.length>0?atteintes:(activite?.limitReached===true?limites:[]);
+    const dates=candidates.map(limite=>typeof limite?.resetsAt==='string'?Date.parse(limite.resetsAt):NaN).filter(temps=>!Number.isNaN(temps));
+    const derniere=dates.length?new Date(Math.max(...dates)).toISOString():null;
+    return {limitReached:activite?.limitReached===true||atteintes.length>0,resetsAt:derniere};
   };
   const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,file:queueFile,now});
   async function allowedRoots() {

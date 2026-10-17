@@ -162,7 +162,7 @@ test('file : persistance, rechargement et JSON corrompu sans donnée privée', a
   const { queue, file, dossier } = await montage(t);
   await queue.enqueue({ id: 'a', message: 'À garder' });
   const brut = JSON.parse(await readFile(file, 'utf8'));
-  assert.equal(brut.version, 1);
+  assert.equal(brut.version, 2);
   assert.equal(brut.items.length, 1);
   assert.equal(brut.items[0].message, 'À garder');
   assert.ok(!JSON.stringify(brut).includes(dossier), 'aucun chemin dans le fichier');

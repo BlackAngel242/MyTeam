@@ -1,25 +1,31 @@
 // File d'attente de consignes côté serveur.
 //
 // Une consigne écrite à un agent occupé attend ici, puis part automatiquement
-// quand l'agent redevient disponible. Règles validées par DrSmoke (docs/plan-file-attente.md) :
+// quand l'agent redevient disponible. Règles validées par DrSmoke (docs/plan-file-attente.md)
+// et renforcées par la revue croisée (docs/revue-codex-file.md) :
 // au plus un envoi à la fois par agent, jamais vers un agent bloqué ou inconnu,
-// pause de quota respectée (remise à zéro de la limite + 5 minutes), et un envoi
-// non confirmé passe « à revoir » sans jamais être renvoyé seul.
-import { mkdir, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+// pause de quota respectée (remise à zéro de la limite + 5 minutes) et MÉMORISÉE,
+// envoi marqué « envoi en cours » de façon durable AVANT tout appel externe,
+// un envoi non confirmé passe « à revoir » sans jamais être renvoyé seul, et une
+// panne de contrôle de quota n'autorise jamais l'envoi automatique.
+import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { dirname } from 'node:path';
 
 export class QueueError extends Error {}
 
-const ETATS = ['attente', 'envoyee', 'annulee', 'a_revoir'];
+const ETATS = ['attente', 'envoi_en_cours', 'envoyee', 'annulee', 'a_revoir'];
 const DELAI_QUOTA = 5 * 60 * 1000;
+const MAX_FICHIER = 512 * 1024;  // fichier de persistance au plus grand que ça
+const MAX_CLES = 200;            // clés de demande conservées (distinct des éléments)
 
 const iso = ms => new Date(ms).toISOString();
 const tronquer = (texte, max) => Array.from(String(texte ?? '')).slice(0, max).join('');
+const dateLisible = valeur => (typeof valeur === 'string' && !Number.isNaN(Date.parse(valeur))) ? iso(Date.parse(valeur)) : null;
 
-function valider({ id, message, notBefore }) {
-  if (typeof id !== 'string' || !id.trim()) throw new QueueError('Sélectionnez un agent.');
+function valider({ id, message, notBefore, requestKey }) {
+  if (typeof id !== 'string' || !id.trim() || id.length > 200) throw new QueueError('Sélectionnez un agent.');
   if (typeof message !== 'string' || !message.trim() || message.length > 12000 || message.includes('\0')) {
     throw new QueueError('Écrivez une consigne de 1 à 12 000 caractères, sans caractère nul.');
   }
@@ -29,19 +35,67 @@ function valider({ id, message, notBefore }) {
     if (Number.isNaN(temps)) throw new QueueError('La date d\'envoi prévu n\'est pas lisible.');
     depart = iso(temps);
   }
-  return { id, message, notBefore: depart };
+  let cle = null;
+  if (requestKey !== undefined && requestKey !== null && requestKey !== '') {
+    if (typeof requestKey !== 'string' || requestKey.length > 64 || /[\u0000-\u001f]/.test(requestKey)) {
+      throw new QueueError('La clé de demande n\'est pas lisible.');
+    }
+    cle = requestKey;
+  }
+  return { id, message, notBefore: depart, requestKey: cle };
 }
 
-function elementValide(element) {
-  return element && typeof element === 'object'
-    && typeof element.itemId === 'string' && typeof element.id === 'string'
-    && typeof element.message === 'string' && ETATS.includes(element.state);
+// Restauration : seule une liste blanche de champs est gardée, avec les mêmes
+// règles qu'à l'ajout. Une échéance illisible produit une alerte et un état sans
+// envoi, jamais une date immédiate.
+function restaurer(brut) {
+  if (!brut || typeof brut !== 'object' || Array.isArray(brut)) return null;
+  const id = typeof brut.id === 'string' && brut.id.trim() && brut.id.length <= 200 ? brut.id : null;
+  const message = typeof brut.message === 'string' && brut.message.trim() && !brut.message.includes('\0')
+    ? tronquer(brut.message, 12000) : null;
+  if (!id || !message) return { probleme: 'structure' };
+  const state = ETATS.includes(brut.state) ? brut.state : 'a_revoir';
+  const createdAt = dateLisible(brut.createdAt) ?? iso(Date.parse(brut.updatedAt) || Date.now());
+  const element = {
+    itemId: typeof brut.itemId === 'string' && brut.itemId.length <= 128 ? brut.itemId : `q-restaure-${randomBytes(4).toString('hex')}`,
+    id,
+    message,
+    notBefore: null,
+    state,
+    createdAt,
+    updatedAt: dateLisible(brut.updatedAt) ?? createdAt,
+    sentAt: dateLisible(brut.sentAt),
+    reason: typeof brut.reason === 'string' ? tronquer(brut.reason, 200) : null,
+    holdUntil: null,
+    requestKey: typeof brut.requestKey === 'string' && brut.requestKey.length <= 64 ? brut.requestKey : null,
+  };
+  let probleme = null;
+  if (brut.notBefore !== undefined && brut.notBefore !== null && brut.notBefore !== '') {
+    const date = dateLisible(brut.notBefore);
+    if (date) element.notBefore = date;
+    else { probleme = 'La date d\'envoi prévu n\'est pas lisible : revoyez cette consigne.'; }
+  }
+  if (brut.holdUntil !== undefined && brut.holdUntil !== null && brut.holdUntil !== '') {
+    const date = dateLisible(brut.holdUntil);
+    if (date) element.holdUntil = date;
+  }
+  // Un envoi commencé dont on ne connaît pas l'issue ne repart jamais seul.
+  if (element.state === 'envoi_en_cours') {
+    element.state = 'a_revoir';
+    element.reason = 'Envoi non confirmé : revoyez cette consigne.';
+    probleme = null;
+  }
+  if (probleme && element.state === 'attente') {
+    element.state = 'a_revoir';
+    element.reason = probleme;
+  }
+  return { element, probleme };
 }
 
 export function createQueue({
   listAgents,
   prompt,
-  limitsOf = async () => ({ limitReached: false, resetsAt: null }),  // (id, agents) => {limitReached, resetsAt}
+  limitsOf = async () => ({ limitReached: false, resetsAt: null }),  // (id, listeAgents) => {limitReached, resetsAt}
   file,
   now = () => Date.now(),
   maxItems = 20,
@@ -51,42 +105,107 @@ export function createQueue({
     throw new QueueError('La file d\'attente est mal configurée.');
   }
   let items = [];
+  const cles = new Map();
+  let corruption = null;
   let compteur = 0;
   let ecriture = Promise.resolve();
   let tour = null;
   let minuterie = null;
 
-  function nouveau({ id, message, notBefore }, etat = 'attente', raison = null) {
+  function nouveau({ id, message, notBefore, requestKey }, etat = 'attente', raison = null) {
     const date = iso(now());
-    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison };
+    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison, holdUntil: null, requestKey };
   }
-
-  function persister() {
-    if (typeof file !== 'string' || !file) return;
-    const operation = async () => {
-      try {
-        await mkdir(dirname(file), { recursive: true });
-        await writeFile(file, JSON.stringify({ version: 1, items }, null, 2), 'utf8');
-      } catch { /* Une persistance en échec ne doit pas perdre la file en mémoire. */ }
-    };
-    ecriture = ecriture.then(operation, operation);
-    return ecriture;
-  }
-
-  // Chargement synchrone au démarrage : la file est disponible dès la création,
-  // sans course entre la construction et la première lecture.
-  try {
-    const brut = JSON.parse(readFileSync(file, 'utf8'));
-    if (brut && brut.version === 1 && Array.isArray(brut.items)) items = brut.items.filter(elementValide).slice(-maxItems);
-  } catch { /* Fichier absent ou illisible : on repart d'une file vide. */ }
 
   function publique(element) {
     return structuredClone(element);
   }
 
+  // Écriture atomique : fichier temporaire puis remplacement. Une erreur de
+  // sauvegarde est signalée à l'appelant, jamais avalée.
+  function persister() {
+    const operation = async () => {
+      await mkdir(dirname(file), { recursive: true });
+      if (corruption !== null) {
+        // Le fichier d'origine est préservé pour diagnostic avant d'être remplacé.
+        try { await writeFile(`${file}.corrompu`, corruption, { flag: 'wx', encoding: 'utf8' }); } catch { /* déjà préservé */ }
+        corruption = null;
+      }
+      const temporaire = `${file}.tmp`;
+      const forme = { version: 2, items, cles: [...cles.entries()].map(([key, valeur]) => ({ key, ...valeur })) };
+      await writeFile(temporaire, JSON.stringify(forme, null, 2), 'utf8');
+      await rename(temporaire, file);
+    };
+    const suite = ecriture.then(operation, operation);
+    ecriture = suite.catch(() => {});
+    return suite;
+  }
+
+  // Chargement synchrone au démarrage : la file est disponible dès la création.
+  try {
+    if (existsSync(file)) {
+      const taille = statSync(file).size;
+      const brutTexte = taille > MAX_FICHIER ? null : readFileSync(file, 'utf8');
+      if (brutTexte === null) corruption = 'Fichier trop grand pour être lu.';
+      else {
+        let forme = null;
+        try { forme = JSON.parse(brutTexte); } catch { forme = null; }
+        if (!forme || (forme.version !== 1 && forme.version !== 2) || !Array.isArray(forme.items)) {
+          corruption = brutTexte;
+        } else {
+          const problemes = [];
+          for (const brut of forme.items.slice(-maxItems)) {
+            const restaure = restaurer(brut);
+            if (!restaure) continue;
+            if (restaure.probleme === 'structure') { problemes.push('structure'); continue; }
+            if (restaure.probleme) problemes.push(restaure.probleme);
+            items.push(restaure.element);
+          }
+          // Plafonds par cible : le trop-plein passe « à revoir », sans envoi.
+          const vus = new Map();
+          for (const element of items) {
+            if (element.state !== 'attente') continue;
+            const compte = (vus.get(element.id) ?? 0) + 1;
+            vus.set(element.id, compte);
+            if (compte > maxPerAgent) {
+              element.state = 'a_revoir';
+              element.reason = `Trop de consignes en attente pour cet agent (maximum ${maxPerAgent}).`;
+            }
+          }
+          if (Array.isArray(forme.cles)) {
+            for (const entree of forme.cles.slice(-MAX_CLES)) {
+              if (entree && typeof entree.key === 'string' && typeof entree.itemId === 'string') {
+                cles.set(entree.key, { itemId: entree.itemId, state: ETATS.includes(entree.state) ? entree.state : 'a_revoir', at: dateLisible(entree.at) ?? iso(now()) });
+              }
+            }
+          }
+          if (problemes.length) corruption = brutTexte;
+        }
+      }
+    }
+  } catch (error) {
+    if (existsSync(file)) {
+      try { corruption = readFileSync(file, 'utf8').slice(0, MAX_FICHIER); } catch { corruption = 'Fichier illisible.'; }
+    }
+  }
+
   async function enqueue(entree) {
     const valide = valider(entree ?? {});
-    if (items.some(element => element.state === 'attente' && element.id === valide.id && element.message === valide.message)) {
+    // Une répétition de la même clé de demande retrouve le résultat existant,
+    // même après envoi ou redémarrage : jamais un second envoi.
+    if (valide.requestKey && cles.has(valide.requestKey)) {
+      const connu = cles.get(valide.requestKey);
+      const existant = items.find(element => element.itemId === connu.itemId);
+      return publique(existant ?? {
+        itemId: connu.itemId, id: valide.id, message: valide.message, notBefore: valide.notBefore,
+        state: connu.state, createdAt: connu.at, updatedAt: connu.at, sentAt: null,
+        reason: 'Consigne déjà traitée (clé de demande déjà utilisée).', holdUntil: null, requestKey: valide.requestKey,
+      });
+    }
+    // Sans clé de demande, une même consigne déjà en file ou déjà envoyée est un
+    // renvoi (réponse perdue) : refusé plutôt que risquer un double envoi.
+    if (items.some(element => ['attente', 'envoi_en_cours', 'envoyee'].includes(element.state)
+      && element.id === valide.id && element.message === valide.message)) {
       throw new QueueError('Cette consigne est déjà en file.');
     }
     if (items.filter(element => element.state === 'attente' && element.id === valide.id).length >= maxPerAgent) {
@@ -100,17 +219,34 @@ export function createQueue({
     if (items.length >= maxItems) throw new QueueError(`La file d'attente est pleine (${maxItems} éléments au maximum).`);
     const element = nouveau(valide);
     items.push(element);
-    await persister();
+    if (valide.requestKey) {
+      cles.set(valide.requestKey, { itemId: element.itemId, state: element.state, at: element.updatedAt });
+      while (cles.size > MAX_CLES) cles.delete(cles.keys().next().value);
+    }
+    try {
+      await persister();
+    } catch {
+      items.splice(items.indexOf(element), 1);
+      if (valide.requestKey) cles.delete(valide.requestKey);
+      throw new QueueError('Sauvegarde impossible : la consigne n\'a pas été gardée.');
+    }
     return publique(element);
   }
 
   async function cancel(itemId) {
     const element = items.find(candidate => candidate.itemId === itemId);
+    // Un envoi commencé ne peut plus être retiré : la consigne peut être reçue.
     if (!element || element.state !== 'attente') throw new QueueError('Cette consigne n\'est plus annulable.');
     element.state = 'annulee';
     element.reason = 'Annulée depuis le bureau.';
     element.updatedAt = iso(now());
-    await persister();
+    try {
+      await persister();
+    } catch {
+      element.state = 'attente';
+      element.reason = null;
+      throw new QueueError('Sauvegarde impossible : l\'annulation n\'a pas été gardée.');
+    }
     return publique(element);
   }
 
@@ -123,23 +259,28 @@ export function createQueue({
     const execution = async () => {
       const envoyes = [];
       const revoirs = [];
-      const agents = new Map((await listAgents()).filter(agent => agent && typeof agent.id === 'string').map(agent => [agent.id, agent]));
+      const liste = (await listAgents()).filter(agent => agent && typeof agent.id === 'string');
+      const agents = new Map(liste.map(agent => [agent.id, agent]));
       const pauses = new Map();
+      // Une panne du contrôle de quota n'est JAMAIS une absence de limite :
+      // elle gèle l'envoi automatique jusqu'à un contrôle valable.
       const pauseDe = async id => {
         if (!pauses.has(id)) {
-          pauses.set(id, Promise.resolve(limitsOf(id, agents)).then(
-            valeur => ({ limitReached: valeur?.limitReached === true, resetsAt: typeof valeur?.resetsAt === 'string' ? Date.parse(valeur.resetsAt) : NaN }),
-            () => ({ limitReached: false, resetsAt: NaN }),
+          pauses.set(id, Promise.resolve().then(() => limitsOf(id, liste)).then(
+            valeur => ({ limitReached: valeur?.limitReached === true, resetsAt: typeof valeur?.resetsAt === 'string' ? Date.parse(valeur.resetsAt) : NaN, incertain: false }),
+            () => ({ limitReached: false, resetsAt: NaN, incertain: true }),
           ));
         }
         return pauses.get(id);
       };
+      let modifie = false;
       // Une cible disparue est signalée tout entière : rien ne partira vers elle.
       for (const element of items.filter(candidate => candidate.state === 'attente')) {
         if (!agents.has(element.id)) {
           element.state = 'a_revoir';
           element.reason = 'La cible a changé, revoyez cette consigne.';
           element.updatedAt = iso(now());
+          modifie = true;
           revoirs.push(element);
         }
       }
@@ -149,15 +290,40 @@ export function createQueue({
         const pause = await pauseDe(id);
         const attente = items.filter(candidate => candidate.state === 'attente' && candidate.id === id)
           .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.itemId.localeCompare(b.itemId));
+        if (pause.incertain) continue;   // contrôle en panne : aucun envoi automatique
+        if (pause.limitReached && Number.isNaN(pause.resetsAt)) continue;  // pause sans date : jamais forcée
+        if (pause.limitReached && !Number.isNaN(pause.resetsAt)) {
+          // Fin de pause mémorisée sur chaque consigne : remise à zéro + 5 minutes.
+          // Elle reste valable même quand le signal de quota disparaît.
+          const fin = pause.resetsAt + DELAI_QUOTA;
+          for (const element of attente) {
+            const connue = element.holdUntil ? Date.parse(element.holdUntil) : 0;
+            if (!(connue >= fin)) {
+              element.holdUntil = iso(fin);
+              element.updatedAt = iso(now());
+              modifie = true;
+            }
+          }
+          if (now() < fin) continue;  // pause encore en cours : rien ne part ce tour
+        }
         for (const element of attente) {
           const depart = element.notBefore ? Date.parse(element.notBefore) : 0;
-          if (pause.limitReached) {
-            // Pause de quota : remise à zéro de la limite + 5 minutes. Sans date
-            // de remise à zéro connue, on n'envoie jamais sans être sûr.
-            if (Number.isNaN(pause.resetsAt)) break;
-            if (now() < pause.resetsAt + DELAI_QUOTA) break;
+          const relance = element.holdUntil ? Date.parse(element.holdUntil) : 0;
+          if (now() < Math.max(depart, relance)) continue;
+          // État durable AVANT tout appel externe : une reprise après un crash
+          // verra « envoi en cours » et ne renverra jamais la consigne.
+          element.state = 'envoi_en_cours';
+          element.reason = null;
+          element.updatedAt = iso(now());
+          modifie = true;
+          try {
+            await persister();
+          } catch {
+            element.state = 'attente';
+            element.reason = 'Sauvegarde impossible, envoi reporté.';
+            element.updatedAt = iso(now());
+            continue;
           }
-          if (now() < depart) continue;
           try {
             await prompt(element.id, element.message);
             element.state = 'envoyee';
@@ -171,10 +337,14 @@ export function createQueue({
             element.updatedAt = iso(now());
             revoirs.push(element);
           }
+          if (element.requestKey && cles.has(element.requestKey)) {
+            cles.get(element.requestKey).state = element.state;
+          }
+          modifie = true;
           break;
         }
       }
-      if (envoyes.length || revoirs.length) await persister();
+      if (modifie) await persister();
       return { sent: envoyes.map(publique), skipped: revoirs.map(publique) };
     };
     tour = execution().finally(() => { tour = null; });

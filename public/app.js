@@ -578,7 +578,7 @@ function layout(){
   const shape=(W,side)=>{
     const bossH=boss&&!side?88:0,top=wallH+12+bossH,areaW=side?W-160:W;
     const cols=Math.min(narrow?2:Math.max(1,Math.floor((areaW-8)/62)),n),rows=Math.ceil(n/cols),roomY=top+Math.max(rows*rowH,side?92:0)+4;
-    return {W,cols,rows,roomY,H:roomY+60,top,bossH,areaW,side};
+    return {W,cols,rows,roomY,H:roomY+(roomOpen()?60:16),top,bossH,areaW,side};
   };
   // En vue globale, la largeur logique suit la forme de la fenêtre : la scène la remplit au lieu de flotter entre deux bandes vides.
   let best=shape(narrow?144:256,false);
@@ -815,14 +815,21 @@ function meetingGeometry(L){
   const seats=[[tx-16,ty-2,'back'],[tx,ty-3,'back'],[tx+16,ty-2,'back'],[tx-34,ty+6,'side'],[tx+34,ty+6,'side'],[tx-8,ty+16,'front']];
   return {tx,ty,doorX,boardX,laneY:L.roomY-3,seats};
 }
+// Salle de réflexion ouverte seulement quand un sous-agent est actif ou encore en déplacement ; sinon une bande discrète.
+function roomOpen(){return (typeof actors!=='undefined'&&actors.size>0)||state.agents.some(a=>a.activity?.subagents?.length);}
 function meetingRoom(L,time){
   const {roomY,W,H}=L,G=meetingGeometry(L);
+  if(!roomOpen()){
+    px(0,roomY,W,H-roomY,mix('#1a2740','#344b6e',amb.d*.85));px(0,roomY,W,3,'#2c4468');px(0,roomY,W,1,'#4a6a94');
+    text(L.narrow?'REFLEXION - VIDE':'SALLE DE REFLEXION - VIDE',G.doorX+18,roomY+6,'#5d7190');return G;
+  }
   px(0,roomY,W,H-roomY,mix('#1a2740','#344b6e',amb.d*.85));
   for(let x=4;x<W;x+=12)for(let y=roomY+6;y<H;y+=8)px(x+((y>>3)%2)*6,y,1,1,'#22324d');
   // Cloison vitrée avec une porte à gauche.
   px(G.doorX+12,roomY,W-G.doorX-12,3,'#2c4468');px(G.doorX+12,roomY,W-G.doorX-12,1,'#4a6a94');
   px(0,roomY,G.doorX,3,'#2c4468');px(G.doorX-1,roomY-1,2,5,'#4a6a94');px(G.doorX+11,roomY-1,2,5,'#4a6a94');
-  text(L.narrow?'REFLEXION':'SALLE DE REFLEXION',G.doorX+18,roomY+6,'#71839a');
+  const n=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
+  text(fit((L.narrow?'REFLEXION':'SALLE DE REFLEXION')+(n?' - '+n+' SOUS-AGENT'+(n>1?'S':''):''),W-G.doorX-70),G.doorX+18,roomY+6,'#8fa3c0');
   // Tableau blanc : ses traits ne grandissent que si un assistant y travaille vraiment.
   const bx=G.boardX,by=roomY+6;
   px(bx-1,by-1,34,19,'#0b1426');px(bx,by,32,17,'#dfe6ee');
@@ -1030,7 +1037,7 @@ function draw(time){
     if(editLayout&&a){px(cx-26,y0+6,52,1,'#a0dfc4',.6);px(cx-26,y0+76,52,1,'#a0dfc4',.6);px(cx-26,y0+6,1,70,'#a0dfc4',.6);px(cx+25,y0+6,1,70,'#a0dfc4',.6);}
   });
   syncActors(L,now);syncOffice(L,now);
-  drawActors(L,G,time,now,'back');tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');
+  drawActors(L,G,time,now,'back');if(roomOpen())tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');
   drawOffice(L,vip,time,now);
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(off,0,0,canvas.width,canvas.height);
   const summary=!state.connected?'Bureau hors ligne : Herdr est déconnecté.':!state.agents.length?'Bureau vide : aucun agent détecté dans Herdr.':'Bureau des agents. '+state.agents.map(a=>a.name+' : '+label(a).toLowerCase()).join(', ')+'. Utilise la liste sous le bureau pour sélectionner un agent.';
