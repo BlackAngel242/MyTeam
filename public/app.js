@@ -434,11 +434,28 @@ function pool(cx,cy,rx,ry,c,a){for(let dy=-ry;dy<=ry;dy++){const hw=Math.round(r
 // Lumière par paliers successifs : effet de dégradé sans lissage.
 function glow(cx,cy,r,c,s){pool(cx,cy,Math.round(r*1.9),Math.round(r*.7),c,.045*s);pool(cx,cy,Math.round(r*1.3),Math.round(r*.48),c,.06*s);pool(cx,cy,Math.round(r*.75),Math.round(r*.28),c,.08*s);}
 
+// Le chef : le premier agent démarré. Herdr ne donne pas l'heure de démarrage ; on retient le plus petit
+// numéro de panneau de l'espace (w5:p1 avant w5:p4), approximation documentée.
+function bossOf(agents){
+  const num=a=>{const m=/:p(\d+)$/.exec(a.paneId||'');return m?Number(m[1]):Infinity;};
+  return agents.length>1?agents.reduce((b,a)=>num(a)<num(b)?a:b):null;
+}
 function layout(){
-  const cssW=canvas.parentElement.clientWidth||960, narrow=cssW<560, n=state.agents.length||2;
-  const W=narrow?144:256, cols=Math.min(narrow?2:4,n), rows=Math.ceil(n/cols), wallH=narrow?70:84, rowH=80, top=wallH+12;
+  const cssW=canvas.parentElement.clientWidth||960, narrow=cssW<560, boss=state.connected?bossOf(state.agents):null;
+  const n=Math.max(1,(state.agents.length||2)-(boss?1:0));
+  const W=narrow?144:256, cols=Math.min(narrow?2:4,n), rows=Math.ceil(n/cols), wallH=narrow?70:84, rowH=80, bossH=boss?88:0, bossTop=wallH+10, top=wallH+12+bossH;
   const roomY=top+rows*rowH+4, H=roomY+60, S=Math.max(2,Math.round(cssW*(window.devicePixelRatio||1)/W));
-  return {W,H,S,cols,rows,wallH,rowH,top,roomY,narrow,cw:Math.min(78,Math.floor((W-8)/cols))};
+  return {W,H,S,cols,rows,wallH,rowH,top,bossTop,bossH,boss,roomY,narrow,cw:Math.min(78,Math.floor((W-8)/cols))};
+}
+// Bureau VIP du chef : moquette, cloison vitrée avec porte au centre, enseigne et pile de courrier reçu.
+function vipOffice(L,time){
+  const y=L.bossTop,cx=Math.round(L.W/2),w=L.narrow?120:150,x=cx-w/2;
+  px(x,y,w,L.bossH-6,'#241f38');px(x,y,w,1,'#c9a46a',.6);px(x,y,1,L.bossH-6,'#c9a46a',.6);px(x+w-1,y,1,L.bossH-6,'#c9a46a',.6);
+  for(let gx=x+4;gx<x+w-4;gx+=8)for(let gy=y+6;gy<y+L.bossH-10;gy+=8)px(gx,gy,1,1,'#30294a');
+  const by=y+L.bossH-6;px(x,by,w/2-10,3,'#2c4468');px(cx+10,by,w/2-10,3,'#2c4468');px(x,by,w/2-10,1,'#4a6a94');px(cx+10,by,w/2-10,1,'#4a6a94');
+  text('DIRECTION',x+5,y+4,'#c9a46a');
+  if(mailCount){const mx=x+w-22;for(let k=0;k<Math.min(mailCount,5);k++){px(mx,y+8-k*2+20,9,6,'#dfe6ee');px(mx+1,y+9-k*2+20,7,1,'#9aabc1');}text(String(mailCount),mx+11,y+26,'#dfe6ee');}
+  return {cx,y0:y-6,doorY:by+1};
 }
 // Le ciel suit l'heure réelle de l'ordinateur : nuit, aube, jour, crépuscule.
 const skies={night:['#0e1d3a','#112347','#142a54','#183260','#1c396b'],dawn:['#262c5c','#46407a','#87598a','#cc7f7c','#eeb07c'],day:['#3a6aac','#477bbb','#588dc8','#6fa1d3','#8fbadf'],dusk:['#1b2250','#392d66','#77406f','#bf5e5f','#e5925d']};
@@ -546,7 +563,10 @@ function person(x,y0,shirt,h,pose,c,live){
   }
   const look=pose==='work'?-1:0;
   px(hx+2+look,hy+4,1,2,'#141c2b');px(hx+5+look,hy+4,1,2,'#141c2b');
-  px(hx+3,hy+7,2,1,pose==='wait'?'#141c2b':'#a36e65');
+  // Humeur lue uniquement dans l'état Herdr : sourire une fois fini, inquiétude en attente, concentration au travail.
+  if(pose==='wait'){px(hx+1,hy+2,2,1,'#141c2b');px(hx+5,hy+3,2,1,'#141c2b');px(hx+3,hy+7,2,1,'#141c2b');}
+  else if(pose==='happy'){px(hx+2,hy+6,1,1,'#a36e65');px(hx+3,hy+7,2,1,'#a36e65');px(hx+5,hy+6,1,1,'#a36e65');}
+  else px(hx+3,hy+7,2,1,'#a36e65');
   if(live)px(hx,hy+1,2,8,c,.28);
   if(pose==='work'){px(x-2,y0+22,2,7,shirt);px(x+12,y0+22,2,7,shirt);}
   else if(pose==='wait'){px(x-2,y0+22,2,8,shirt);px(x+12,y0+13,2,9,shirt);px(x+12,y0+10,2,3,skin);}
@@ -561,8 +581,8 @@ function station(a,i,cx,y0,time,L){
   if(live)glow(cx-13,y0+46,14,c,work?1.4:wait?1.2:.8);
   px(cx-25,y0+55,50,3,'#0a1322',.55);
   px(cx-3,y0+15,16,16,'#22324f');px(cx-2,y0+16,14,14,'#2a3c5e');
-  const pose=work?'work':wait?'wait':'rest',x=cx-1;
-  const skin=a?person(x,y0,shirt,h,pose,c,live):null;
+  const pose=work?'work':wait?'wait':st==='done'&&live?'happy':'rest',x=cx-1,away=a&&awayAgents.has(a.id);
+  const skin=a&&!away?person(x,y0,shirt,h,pose,c,live):null;
   px(cx-24,y0+30,48,3,'#7a604f');px(cx-24,y0+30,48,1,'#957660');px(cx-24,y0+33,48,18,'#4a3a3c');px(cx-23,y0+34,46,1,'#55434a');
   px(cx-22,y0+51,3,4,'#3a2e33');px(cx+19,y0+51,3,4,'#3a2e33');
   // Emblème de l'outil sur la façade : identité réelle tirée du champ « agent » de Herdr.
@@ -572,7 +592,7 @@ function station(a,i,cx,y0,time,L){
     else{const ini=pixelCase(a.name).slice(0,1)||'?';text(ini,cx-1,y0+40,'#c4d2e4');}
   }
   px(cx-1,y0+29,12,2,'#7f90a8');px(cx,y0+29,10,1,'#a5b4c8');
-  if(a){
+  if(a&&!away){
     if(pose==='work'){const p=anim?Math.floor(time/140)%2:0;px(x+1,y0+28-p,2,2,skin);px(x+8,y0+28-(1-p),2,2,skin);}
     else if(free&&!a.activity?.subagents?.length){px(x+13,y0+26,3,4,'#dfe6ee');px(x+16,y0+27,1,2,'#dfe6ee');px(x+13,y0+26,3,1,'#5a3d2e');px(x+12,y0+27,2,2,skin);}
   }
@@ -657,10 +677,10 @@ function seatedHelper(x,y,h,bubbleOn,time){
   px(x-3,y-8,7,6,'#c4d2e4');
   if(bubbleOn){const idea=Math.floor(time/1300)%2===0;px(x-1,y-22,7,6,'#0b1426');px(x,y-21,5,4,idea?'#ffe7a3':'#c4d2e4');if(idea)px(x+2,y-17,1,1,'#ffe7a3');else{px(x+1,y-19,1,1,'#0c1423');px(x+3,y-19,1,1,'#0c1423');}}
 }
-function walkingHelper(x,y,h,moving,time,folder){
+function walkingHelper(x,y,h,moving,time,folder,body='#c4d2e4'){
   const skin=['#f0cdb4','#debba6','#c69878','#9c6b4e'][h%4],hair=['#1d2738','#3a2a24','#5a4334','#2f3e57'][(h>>2)%4],step=moving&&!paused?Math.floor(time/150)%2:0;
   px(x-2,y-14,5,5,skin);px(x-2,y-15,5,2,hair);px(x-1,y-12,1,1,'#141c2b');px(x+1,y-12,1,1,'#141c2b');
-  px(x-3,y-9,7,6,'#c4d2e4');
+  px(x-3,y-9,7,6,body);
   px(x-2,y-3,2,3-step,'#1b2941');px(x+1,y-3,2,2+step,'#1b2941');
   if(folder==='aller'){px(x+3,y-8,4,5,'#c9a46a');px(x+3,y-8,4,1,'#e0c08a');}
   if(folder==='retour'){px(x+3,y-9,4,6,'#c9a46a');px(x+4,y-10,3,3,'#f2f4f7');}
@@ -668,8 +688,10 @@ function walkingHelper(x,y,h,moving,time,folder){
 function drawActors(L,G,time,now,layer){
   for(const act of actors.values()){
     const stand=standPoint(act.parent);if(!stand)continue;
-    const [sx,sy]=stand,seat=G.seats[act.seat%G.seats.length],door=[G.doorX+6,G.laneY],inside=[G.doorX+6,L.roomY+16];
-    const toSeat=[[sx,sy],[sx,G.laneY],door,inside,...(act.board?[[G.boardX+16,L.roomY+30,2600]]:[]),[seat[0],L.roomY+16],[seat[0],seat[1]]];
+    // Chaque assistant a sa propre voie dans le couloir pour ne pas se superposer.
+    const lane=G.laneY+((act.h%3)-1)*3;
+    const [sx,sy]=stand,seat=G.seats[act.seat%G.seats.length],door=[G.doorX+6,lane],inside=[G.doorX+6,L.roomY+16];
+    const toSeat=[[sx,sy],[sx,lane],door,inside,...(act.board?[[G.boardX+16,L.roomY+30,2600]]:[]),[seat[0],L.roomY+16],[seat[0],seat[1]]];
     if(act.phase==='aller'){
       const p=walk(toSeat,now-act.t0,act.speed);act.pos=[p.x,p.y];act.atBoard=Boolean(p.pause);
       if(p.done){act.phase='reunion';act.atBoard=false;}else{if(layer==='front')walkingHelper(Math.round(p.x),Math.round(p.y),act.h,p.moving,time,'aller');continue;}
@@ -683,7 +705,7 @@ function drawActors(L,G,time,now,layer){
       continue;
     }
     if(act.phase==='retour'){
-      const from=act.from||[seat[0],seat[1]],back=[from,[from[0],L.roomY+16],inside,door,[sx,G.laneY],[sx,sy]];
+      const from=act.from||[seat[0],seat[1]],back=[from,[from[0],L.roomY+16],inside,door,[sx,lane],[sx,sy]];
       const p=walk(back,now-act.t0,act.speed);
       if(p.done){act.phase='remise';act.t0=now;}else{if(layer==='front')walkingHelper(Math.round(p.x),Math.round(p.y),act.h,p.moving,time,'retour');continue;}
     }
@@ -694,10 +716,67 @@ function drawActors(L,G,time,now,layer){
       continue;
     }
     if(act.phase==='sortie'){
-      const p=walk([[sx,sy],[sx,G.laneY],[-6,G.laneY]],now-act.t0,act.speed+10);
+      const p=walk([[sx,sy],[sx,lane],[-6,lane]],now-act.t0,act.speed+10);
       if(p.done){actors.delete(act.key);continue;}
       if(layer==='front')walkingHelper(Math.round(p.x),Math.round(p.y),act.h,true,time,null);
     }
+  }
+}
+// Vie de bureau entre le chef et ses agents, pilotée par deux faits :
+// une délégation observée dans le journal du chef (`herdr agent prompt`), et la fin réelle d'un travail (état Herdr).
+const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set();let officeBooted=false,mailCount=0;
+function agentByTarget(target){
+  return state.agents.find(a=>a.paneId===target||a.name?.toLowerCase()===String(target).toLowerCase());
+}
+function syncOffice(L,now){
+  if(!state.connected||!L.boss)return;
+  for(const d of L.boss.delegations||[]){
+    if(seenDelegations.has(d.id))continue;seenDelegations.add(d.id);
+    const t=agentByTarget(d.target);
+    if(!officeBooted||paused||!t||t===L.boss)continue;
+    officeActors.set('deleg|'+d.id,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
+  }
+  for(const a of state.agents){
+    if(a===L.boss)continue;
+    const c=changes.get(a.id);
+    if(!c||!WORK.includes(c.from)||!FREE.includes(c.to))continue;
+    const key='mail|'+a.id+'|'+Math.round(c.at);
+    if(officeActors.has(key)||seenDelegations.has(key))continue;seenDelegations.add(key);
+    if(officeBooted&&!paused)officeActors.set(key,{type:'mail',agent:a.id,t0:now});else mailCount++;
+  }
+  officeBooted=true;
+}
+function drawOffice(L,vip,time,now){
+  awayAgents.clear();
+  const boss=vip&&deskSpots.get(L.boss.id);
+  for(const [key,act] of officeActors){
+    const d=deskSpots.get(act.agent);
+    if(!d||!boss){officeActors.delete(key);continue;}
+    if(act.type==='mail'){
+      // L'enveloppe vole du poste de l'agent jusqu'au chef, puis rejoint sa pile ; le chef lève le pouce.
+      const f=Math.min(1,(now-act.t0)/1600),x0=d.cx,y0=d.y0+18,x1=boss.cx-18,y1=boss.y0+26;
+      if(f<1){const x=x0+(x1-x0)*f,y=y0+(y1-y0)*f-Math.sin(f*Math.PI)*24;px(x-4,y-3,9,6,'#dfe6ee');px(x-3,y-2,7,1,'#9aabc1');px(x-1,y-1,3,1,'#9aabc1');}
+      else if(f>=1&&!act.landed){act.landed=now;mailCount++;}
+      if(act.landed){
+        const age=now-act.landed;
+        if(age<2200){const bx=boss.cx+12,by=boss.y0-1;px(bx,by,11,9,'#0b1426');px(bx+1,by+1,9,7,'#dfe6ee');px(bx+3,by+4,2,3,'#0c1423');px(bx+5,by+3,3,4,'#0c1423');px(bx+5,by+2,1,1,'#0c1423');px(bx,by+9,3,2,'#0b1426');}
+        else officeActors.delete(key);
+      }
+      continue;
+    }
+    // Délégation : l'agent quitte son poste, va chercher son dossier chez le chef, puis revient travailler.
+    const stand=[d.cx+29,d.y0+55],door=[boss.cx,vip.doorY+4],bossSpot=[boss.cx-30,boss.y0+55];
+    const there=[stand,[stand[0],door[1]],door,[door[0],bossSpot[1]],[bossSpot[0],bossSpot[1],1600]];
+    const back=[bossSpot,[door[0],bossSpot[1]],door,[stand[0],door[1]],stand];
+    const speed=34+(act.h%8),goT=now-act.t0;
+    let p=walk(there,goT,speed),carrying=false;
+    if(p.done){p=walk(back,goT-act.goDur,speed);carrying=true;}
+    else act.goDur=goT+1;
+    if(carrying&&p.done){officeActors.delete(key);continue;}
+    awayAgents.add(act.agent);
+    const agent=state.agents.find(x=>x.id===act.agent);
+    walkingHelper(Math.round(p.x),Math.round(p.y),act.h,p.moving,time,carrying?'aller':null,colors[Math.max(0,state.agents.indexOf(agent))%colors.length]);
+    if(p.pause){const bx=boss.cx-36,by=boss.y0+30;px(bx,by,5,4,'#c9a46a');}
   }
 }
 function draw(time){
@@ -705,15 +784,17 @@ function draw(time){
   if(key!==layoutKey){layoutKey=key;off.width=L.W;off.height=L.H;canvas.width=L.W*L.S;canvas.height=L.H*L.S;canvas.parentElement.style.aspectRatio=L.W+' / '+L.H;}
   spots=[];g.clearRect(0,0,L.W,L.H);trackChanges();
   room(L,time);
-  const G=meetingRoom(L,time);
-  const items=state.agents.length?state.agents:[null,null];
+  const G=meetingRoom(L,time),vip=L.boss?vipOffice(L,time):null;
+  const all=state.agents.length?state.agents:[null,null],items=all.filter(a=>!L.boss||a!==L.boss);
   deskSpots.clear();
+  if(vip)station(L.boss,state.agents.indexOf(L.boss),vip.cx,vip.y0,time,L);
   items.forEach((a,i)=>{
     const r=Math.floor(i/L.cols),inRow=Math.min(L.cols,items.length-r*L.cols),c=i%L.cols;
-    station(a,i,Math.round(L.W/2+(c-(inRow-1)/2)*L.cw),L.top+r*L.rowH,time,L);
+    station(a,a?state.agents.indexOf(a):i,Math.round(L.W/2+(c-(inRow-1)/2)*L.cw),L.top+r*L.rowH,time,L);
   });
-  syncActors(L,now);
+  syncActors(L,now);syncOffice(L,now);
   drawActors(L,G,time,now,'back');tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');
+  drawOffice(L,vip,time,now);
   ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(off,0,0,canvas.width,canvas.height);
   const summary=!state.connected?'Bureau hors ligne : Herdr est déconnecté.':!state.agents.length?'Bureau vide : aucun agent détecté dans Herdr.':'Bureau des agents. '+state.agents.map(a=>a.name+' : '+label(a).toLowerCase()).join(', ')+'. Utilise la liste sous le bureau pour sélectionner un agent.';
   if(summary!==ariaText){ariaText=summary;canvas.setAttribute('aria-label',summary);}

@@ -1,7 +1,7 @@
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createHash} from 'node:crypto';
-import {existsSync} from 'node:fs';
+import {readdirSync,statSync} from 'node:fs';
 import {join} from 'node:path';
 import {homedir} from 'node:os';
 
@@ -12,16 +12,29 @@ export class HerdrError extends Error {
 export class AgentInputError extends Error {
   constructor(message) {super(message);this.name='AgentInputError';this.statusCode=400;}
 }
-export function findHerdr() {
-  if(process.env.BUREAU_HERDR_PATH) return process.env.BUREAU_HERDR_PATH;
-  const installed=join(homedir(),'.herdr','packages','standalone','releases','0.9.5-x86_64-pc-windows-msvc','herdr.exe');
-  return existsSync(installed)?installed:'herdr';
+export function findHerdr({home=homedir(),env=process.env,platform=process.platform}={}) {
+  if(env.BUREAU_HERDR_PATH) return env.BUREAU_HERDR_PATH;
+  const releases=join(home,'.herdr','packages','standalone','releases');
+  const candidates=[];
+  try {
+    for(const entry of readdirSync(releases,{withFileTypes:true})) {
+      if(!entry.isDirectory()) continue;
+      const directory=join(releases,entry.name),binary=join(directory,platform==='win32'?'herdr.exe':'herdr');
+      try {
+        if(statSync(binary).isFile()) candidates.push({binary,modified:statSync(directory).mtimeMs,name:entry.name});
+      } catch { /* Une installation incomplete ne masque pas les autres versions. */ }
+    }
+  } catch {return 'herdr';}
+  candidates.sort((a,b)=>b.modified-a.modified||b.name.localeCompare(a.name,undefined,{numeric:true}));
+  return candidates[0]?.binary||'herdr';
 }
 export function normalizeAgent(a) {
   const status=['idle','working','blocked','done','unknown'].includes(a.agent_status)?a.agent_status:'unknown';
   const fingerprint=createHash('sha256').update(JSON.stringify([a.terminal_id,a.agent,a.agent_session?.value])).digest('hex').slice(0,16);
-  const names={claude:'Claude',codex:'Codex',agy:'Antigravity',gemini:'Gemini',opencode:'OpenCode'};
-  return {id:`${a.pane_id}@${fingerprint}`,paneId:a.pane_id,name:a.name||a.display_agent||names[a.agent]||a.agent||'Agent',kind:names[a.agent]||a.agent||'inconnu',status,
+  const names={claude:'Claude',codex:'Codex',agy:'Antigravity',antigravity:'Antigravity',gemini:'Gemini',opencode:'OpenCode'};
+  const supplied=a.name||a.display_agent||names[a.agent]||a.agent||'Agent';
+  const name=names[a.agent]&&typeof supplied==='string'&&[a.agent,names[a.agent].toLowerCase()].includes(supplied.trim())?names[a.agent]:supplied;
+  return {id:`${a.pane_id}@${fingerprint}`,paneId:a.pane_id,name,kind:names[a.agent]||a.agent||'inconnu',status,
     ready:['idle','done'].includes(status)&&a.interactive_ready!==false&&!a.launch_pending&&!a.screen_detection_skipped,
     cwd:a.foreground_cwd||a.cwd||'',workspaceId:a.workspace_id||'',
     ...(a.agent==='claude'?{sessionId:a.agent_session?.value}:{})};

@@ -1,8 +1,46 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createHerdr, normalizeAgent} from '../src/herdr.mjs';
+import {createHerdr, normalizeAgent, findHerdr} from '../src/herdr.mjs';
+import {mkdtemp,mkdir,writeFile,utimes,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 
 const raw = {pane_id:'w5:p4', terminal_id:'term_1', agent:'codex', agent_status:'idle', cwd:'C:/projet'};
+test('Herdr : le chemin explicite reste prioritaire',()=>{
+  assert.equal(findHerdr({env:{BUREAU_HERDR_PATH:'C:/outil-personnel/herdr.exe'},home:'absent'}),'C:/outil-personnel/herdr.exe');
+});
+test('Herdr : choisit le dossier installe le plus recent et ignore une version incomplete',async t=>{
+  const home=await mkdtemp(join(tmpdir(),'herdr-discovery-'));
+  t.after(()=>rm(home,{recursive:true,force:true}));
+  const root=join(home,'.herdr','packages','standalone','releases');
+  for(const [name,time]of [['0.9.5',1000],['0.10.0',2000],['incomplete',3000]]) {
+    const directory=join(root,name);
+    await mkdir(directory,{recursive:true});
+    if(name!=='incomplete') await writeFile(join(directory,'herdr.exe'),'factice');
+    await utimes(directory,new Date(time),new Date(time));
+  }
+  assert.equal(findHerdr({home,env:{},platform:'win32'}),join(root,'0.10.0','herdr.exe'));
+  await utimes(join(root,'0.9.5'),new Date(4000),new Date(4000));
+  assert.equal(findHerdr({home,env:{},platform:'win32'}),join(root,'0.9.5','herdr.exe'));
+});
+test('Herdr : binaire sans extension hors Windows et repli vers le PATH',async t=>{
+  const home=await mkdtemp(join(tmpdir(),'herdr-portable-'));
+  t.after(()=>rm(home,{recursive:true,force:true}));
+  assert.equal(findHerdr({home,env:{},platform:'linux'}),'herdr');
+  const directory=join(home,'.herdr','packages','standalone','releases','version-native');
+  await mkdir(directory,{recursive:true});
+  await writeFile(join(directory,'herdr'),'factice');
+  assert.equal(findHerdr({home,env:{},platform:'linux'}),join(directory,'herdr'));
+  assert.equal(findHerdr({home,env:{},platform:'win32'}),'herdr');
+});
+test('les noms de types en minuscules deviennent des noms propres, les noms personnels restent',()=>{
+  for(const [agent,name,expected]of [['claude','claude','Claude'],['codex','codex','Codex'],['agy','antigravity','Antigravity'],['agy','agy','Antigravity'],['antigravity','antigravity','Antigravity'],['opencode','opencode','OpenCode'],['gemini','gemini','Gemini']]) {
+    assert.equal(normalizeAgent({...raw,agent,name}).name,expected);
+  }
+  assert.equal(normalizeAgent({...raw,name:'Mon assistant'}).name,'Mon assistant');
+  assert.equal(normalizeAgent({...raw,name:'CODEX'}).name,'CODEX');
+  assert.equal(normalizeAgent({...raw,agent:'agy',display_agent:'antigravity'}).name,'Antigravity');
+});
 test('seul Claude conserve un identifiant de session interne', () => {
   const agent_session={value:'12345678-1234-1234-1234-123456789abc'};
   assert.equal(normalizeAgent({...raw,agent:'claude',agent_session}).sessionId,agent_session.value);
