@@ -15,7 +15,6 @@ const MAX_BYTES = 50 * 1024 * 1024;      // octets lus au plus par appel
 const MAX_LINE = 4 * 1024 * 1024;        // une ligne plus longue est ignorée
 const MAX_DELEGATIONS = 200;             // délégations conservées (les plus récentes)
 const MAX_TITLE = 80;
-const MAX_TYPE = 40;
 
 const cache = new Map();
 const paths = new Map();
@@ -66,7 +65,25 @@ function textOf(content) {
 
 function readable(text) {
   const sansAnsi = text.replace(/\u001b\[[0-9;]*[A-Za-z]/g, ' ').replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ');
-  return Array.from(sansAnsi.replace(/\s+/g, ' ').trim()).slice(0, MAX_TITLE).join('');
+  return sansAnsi.replace(/\s+/g, ' ').trim();
+}
+
+// Les plafonds de longueur ne sont pas une protection : un chemin court reste
+// lisible. On masque donc les chemins dans tout intitulé.
+function masquerChemins(texte) {
+  return texte
+    .replace(/[A-Za-z]:[\\/][^\s"']*/g, '…')
+    .replace(/\\\\[^\s"']*/g, '…')
+    .replace(/(?:^|[\s(])~?\/(?:home|Users|root|var|etc|tmp|mnt|opt|proc)\/[^\s"']*/g, suite => (suite.startsWith(' ') ? ' …' : '…'))
+    .replace(/~\/[^\s"']*/g, '…');
+}
+
+// Un titre n'est JAMAIS la consigne complète : même courte, elle est coupée d'au
+// moins un caractère. 80 caractères au plus, chemins masqués.
+function titreDe(message) {
+  const caracteres = Array.from(masquerChemins(readable(message)));
+  if (caracteres.length < 2) return null;
+  return caracteres.slice(0, Math.min(MAX_TITLE, caracteres.length - 1)).join('');
 }
 
 // Découpe une commande en mots en respectant les guillemets des shells.
@@ -120,45 +137,64 @@ function isHerdrToken(text) {
   return /^(?:.*[\\/])?herdr(\.exe)?$/i.test(text);
 }
 
-// Cherche `herdr ... agent prompt <cible> [message]` dans la commande.
-// Retourne null si la cible est illisible ; une commande n'est comptée qu'une fois.
+// Une cible valide ressemble à un panneau (w5:p4) ou à un nom d'agent, jamais à
+// une option ni à un chemin. Le module ne connaît pas la liste des agents : la
+// validation reste celle de la forme, le serveur peut revalider.
+const CIBLE = /^[A-Za-z0-9_.:-]{1,120}$/;
+// Séparateurs du shell : après eux commence une nouvelle commande.
+const SEPARATEURS = [';', '&&', '||', '|', '&', '('];
+
+// Reconnaît `herdr ... agent prompt <cible> <message>` UNIQUEMENT en début de
+// commande du shell ou juste après un séparateur : un exemple imprimé par echo,
+// une commande d'aide (--help) ou un appel sans consigne ne prouve aucun envoi.
 function parseDelegation(command) {
   const words = tokenize(command);
+  let debut = 0;
   for (let h = 0; h < words.length; h++) {
-    if (!isHerdrToken(words[h].text)) continue;
-    for (let i = h + 1; i + 2 < words.length; i++) {
-      if (words[i].text.toLowerCase() !== 'agent' || words[i + 1].text.toLowerCase() !== 'prompt') continue;
-      const target = words[i + 2];
-      if (!target.literal || !target.text.trim()) return null;
-      const rest = [];
-      for (let j = i + 3; j < words.length; j++) {
-        const word = words[j];
-        if ([';', '&&', '||', '|'].includes(word.text)) break;
-        rest.push(word);
-      }
-      const title = rest.length > 0 && rest.every(word => word.literal) ? readable(rest.map(word => word.text).join(' ')) : null;
-      return { target: target.text, title };
+    if (SEPARATEURS.includes(words[h].text)) { debut = h + 1; continue; }
+    if (h !== debut || !isHerdrToken(words[h].text)) continue;
+    const segment = words.slice(h);
+    if (segment.some(mot => ['--help', '-h', 'help', '/?'].includes(mot.text))) return null;
+    let i = 1;
+    // Options éventuelles avant la sous-commande, par exemple --session nom.
+    while (i < segment.length && segment[i].text.startsWith('-')) {
+      i++;
+      if (i < segment.length && !segment[i].text.startsWith('-') && segment[i].text.toLowerCase() !== 'agent') i++;
     }
+    if (segment[i]?.text.toLowerCase() !== 'agent' || segment[i + 1]?.text.toLowerCase() !== 'prompt') return null;
+    const cible = segment[i + 2];
+    if (!cible || !cible.literal || !CIBLE.test(cible.text) || cible.text.startsWith('-')) return null;
+    const message = [];
+    for (let j = i + 3; j < segment.length; j++) {
+      const mot = segment[j];
+      if (SEPARATEURS.includes(mot.text)) break;
+      message.push(mot);
+    }
+    if (message.length === 0) return null;
+    const titre = message.every(mot => mot.literal) ? titreDe(message.map(mot => mot.text).join(' ')) : null;
+    return { target: cible.text, title: titre };
   }
   return null;
 }
 
-// Issue observée : marqueur court extrait du tool_result, jamais son texte complet.
+// Liste fermée des issues observées : un succès exige la confirmation positive
+// agent_prompted. Un texte ambigu ou agent_prompt_stalled reste INCONNU (ok:null).
+const ISSUES = ['agent_prompted', 'agent_prompt_stalled'];
+
 function outcomeOf(block) {
   const text = textOf(block.content);
-  const ok = block.is_error !== true && !/^\s*\{\s*"error"/.test(text);
-  let type = null;
-  const marker = text.match(/agent_prompt_[a-z_]+/);
-  if (marker) type = marker[0];
-  else {
-    try {
-      const parsed = JSON.parse(text);
-      const candidate = parsed?.result?.type ?? parsed?.type;
-      if (typeof candidate === 'string') type = candidate;
-    } catch { /* Le résultat n'est pas du JSON : on garde un marqueur simple. */ }
-  }
-  if (!type && !ok) type = 'error';
-  return { ok, type: type ? Array.from(type).slice(0, MAX_TYPE).join('') : null };
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* Le résultat n'est pas du JSON. */ }
+  const erreur = block.is_error === true
+    || (json !== null && typeof json === 'object' && !Array.isArray(json) && Object.hasOwn(json, 'error'));
+  const marqueur = text.match(/agent_prompt_[a-z_]+/)?.[0] ?? null;
+  const connu = ISSUES.includes(marqueur) ? marqueur
+    : ISSUES.includes(json?.result?.type) ? json.result.type
+      : ISSUES.includes(json?.type) ? json.type : null;
+  if (connu === 'agent_prompt_stalled') return { ok: null, type: 'agent_prompt_stalled' };
+  if (erreur) return { ok: false, type: 'error' };
+  if (connu === 'agent_prompted') return { ok: true, type: 'agent_prompted' };
+  return { ok: null, type: null };
 }
 
 function consumeLine(state, line) {
@@ -171,17 +207,14 @@ function consumeLine(state, line) {
       if (block?.type !== 'tool_use') continue;
       const name = typeof block.name === 'string' ? block.name.toLowerCase() : '';
       if (name !== 'bash' && name !== 'powershell') continue;
-      if (typeof block.id !== 'string' || typeof block.input?.command !== 'string') continue;
+      if (typeof block.input?.command !== 'string') continue;
       if (state.byToolId.has(block.id)) continue;
+      // Identifiant validé et borné, horodatage validé : rien d'autre ne sort.
+      if (typeof block.id !== 'string' || !/^[a-zA-Z0-9_.:-]{1,128}$/.test(block.id)) continue;
       const found = parseDelegation(block.input.command);
       if (!found) continue;
-      const delegation = {
-        id: block.id,
-        at: typeof entry.timestamp === 'string' ? entry.timestamp : null,
-        target: found.target,
-        title: found.title,
-        result: null,
-      };
+      const at = typeof entry.timestamp === 'string' && !Number.isNaN(Date.parse(entry.timestamp)) ? entry.timestamp : null;
+      const delegation = { id: block.id, at, target: found.target, title: found.title, result: null };
       state.delegations.push(delegation);
       state.byToolId.set(delegation.id, delegation);
       if (state.delegations.length > MAX_DELEGATIONS) {
@@ -199,11 +232,14 @@ function consumeLine(state, line) {
 }
 
 // Ligne trop longue : on l'ignore en avançant, l'état reste utilisable
-// (pas de relecture intégrale du journal à chaque appel).
+// (pas de relecture intégrale du journal à chaque appel). L'état de saut
+// (`skipping`) est conservé entre deux lectures : une ligne géante répartie sur
+// plusieurs sondages ne doit jamais être coupée en fausses entrées.
 async function* completeLines(stream, state) {
   let partial = state.partial;
-  let skipping = false;
+  let skipping = state.skipping;
   for await (const chunk of stream) {
+    if (state.offset === 0 && state.head.length === 0) state.head = Buffer.from(chunk.subarray(0, 64));
     state.offset += chunk.length;
     state.tail = Buffer.concat([state.tail, chunk]).subarray(-64);
     let start = 0;
@@ -217,16 +253,17 @@ async function* completeLines(stream, state) {
       }
       start = end + 1;
     }
-    if (start < chunk.length && !skipping) {
-      if (partial.length + chunk.length - start > MAX_LINE) { partial = Buffer.alloc(0); skipping = true; }
-      else partial = Buffer.concat([partial, chunk.subarray(start)]);
+    if (start < chunk.length) {
+      if (!skipping && partial.length + chunk.length - start > MAX_LINE) { partial = Buffer.alloc(0); skipping = true; }
+      else if (!skipping) partial = Buffer.concat([partial, chunk.subarray(start)]);
     }
   }
   state.partial = partial;
+  state.skipping = skipping;
 }
 
 function freshState() {
-  return { offset: 0, partial: Buffer.alloc(0), tail: Buffer.alloc(0), delegations: [], byToolId: new Map(), size: 0, mtimeMs: 0, ino: 0, birthtimeMs: 0 };
+  return { offset: 0, partial: Buffer.alloc(0), skipping: false, head: Buffer.alloc(0), tail: Buffer.alloc(0), delegations: [], byToolId: new Map(), size: 0, mtimeMs: 0, ino: 0, birthtimeMs: 0 };
 }
 
 function copie(delegations) {
@@ -260,6 +297,16 @@ async function readSession(sessionId, root, key) {
       const morceaux = [];
       for await (const morceau of flux) morceaux.push(morceau);
       if (!Buffer.concat(morceaux).equals(state.tail)) state = freshState();
+    }
+    // Le début déjà lu doit lui aussi rester identique : une réécriture qui
+    // conserve la queue mais remplace le début ne doit rien laisser de l'ancien.
+    // Attention : tête et queue ne prouvent pas l'immuabilité de tout le préfixe ;
+    // elles détectent les réécritures courantes sans relire le fichier entier.
+    if (state.offset > 0 && state.head.length > 0 && info.size >= state.head.length) {
+      const flux = createReadStream(path, { start: 0, end: state.head.length - 1 });
+      const morceaux = [];
+      for await (const morceau of flux) morceaux.push(morceau);
+      if (!Buffer.concat(morceaux).equals(state.head)) state = freshState();
     }
     if (state.offset < info.size) {
       const stream = createReadStream(path, { start: state.offset, end: Math.min(info.size, state.offset + MAX_BYTES) - 1 });

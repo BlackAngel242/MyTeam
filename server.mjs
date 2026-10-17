@@ -10,13 +10,27 @@ import {readClaudeActivity} from './src/claude-activity.mjs';
 import {readAgentActivity,normalizeActivity} from './src/agent-activity.mjs';
 import {standardPlaces,recentFiles,listDir,transfer,resolveInside,FileError} from './src/files.mjs';
 import {readTodos,normalizeTodos} from './src/todos.mjs';
+import {bossOf,readDelegations} from './src/delegations.mjs';
+import {createQueue,QueueError} from './src/queue.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
+  // Pause de quota : la limite la plus consommée donne sa date de remise à zéro.
+  const limiteQuota=async(id,agents)=>{
+    const agent=agents.find(cible=>cible.id===id);
+    if(!agent||agent.kind==='Claude') return {limitReached:false,resetsAt:null};
+    try {
+      const activite=await readOtherActivity(agent,agents);
+      const limites=Array.isArray(activite?.limits)?activite.limits:[];
+      const plusConsommee=[...limites].sort((a,b)=>(b.usedPercent??-1)-(a.usedPercent??-1))[0];
+      return {limitReached:activite?.limitReached===true,resetsAt:plusConsommee?.resetsAt??null};
+    } catch {return {limitReached:false,resetsAt:null};}
+  };
+  const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,file:queueFile,now});
   async function allowedRoots() {
     const roots=new Map();
     const add=async(key,label,kind,path)=>{
@@ -143,6 +157,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(req.method==='GET'&&url.pathname==='/api/state') {
         try {
           const listed=await bridge.list();
+          const chef=bossOf(listed);
           const agents=await Promise.all(listed.map(async agent=>{
             const {sessionId,creator_user_id,creator_account_id,activity:previousActivity,...publicAgent}=agent;
             if(agent.kind==='Claude'&&sessionId) {
@@ -155,6 +170,24 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
                 const activity=await readOtherActivity(agent,listed);
                 if(activity) publicAgent.activity=normalizeActivity(activity);
               } catch { /* Un journal facultatif ne coupe pas la liste des agents. */ }
+            }
+            if(agent===chef&&agent.kind==='Claude'&&sessionId) {
+              // Délégations observées du chef, douze dernières heures : seuls id,
+              // at, target, title et result sortent, jamais la session ni un chemin.
+              try {
+                const observation=await delegations(sessionId);
+                const depuis=now()-12*60*60*1000;
+                const vues=observation?.found===true&&Array.isArray(observation.delegations)?observation.delegations:[];
+                publicAgent.delegations=vues
+                  .filter(d=>d&&typeof d.at==='string'&&Date.parse(d.at)>=depuis)
+                  .map(d=>({
+                    id:typeof d.id==='string'?d.id.slice(0,128):'',
+                    at:d.at,
+                    target:typeof d.target==='string'?Array.from(d.target).slice(0,120).join(''):'',
+                    title:typeof d.title==='string'?Array.from(d.title).slice(0,80).join(''):null,
+                    result:d.result?{ok:typeof d.result.ok==='boolean'?d.result.ok:null,type:typeof d.result.type==='string'?Array.from(d.result.type).slice(0,40).join(''):null}:null,
+                  }));
+              } catch { publicAgent.delegations=[]; }
             }
             return publicAgent;
           }));
@@ -175,6 +208,21 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         if(!Array.isArray(ids)||ids.length<1||ids.length>12||ids.some(id=>typeof id!=='string'||!id)||new Set(ids).size!==ids.length) return json(400,{error:'Choisissez de 1 à 12 agents différents.'});
         return json(200,await bridge.broadcast(ids,parsed.message));
       }
+      if(req.method==='GET'&&url.pathname==='/api/queue') {
+        if(!guard(req,{body:false})) return;
+        return json(200,fileAttente.list());
+      }
+      if(req.method==='POST'&&(url.pathname==='/api/queue'||url.pathname==='/api/queue/cancel')) {
+        if(!guard(req)) return;
+        const parsed=await readJson(req);
+        if(parsed===null) return;
+        try {
+          if(url.pathname==='/api/queue') return json(200,await fileAttente.enqueue({id:parsed.id,message:parsed.message,notBefore:parsed.notBefore}));
+          return json(200,await fileAttente.cancel(parsed.itemId));
+        } catch(error) {
+          return json(error instanceof QueueError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
+        }
+      }
       const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
@@ -185,6 +233,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     } catch(error) {json(errorStatus(error),{error:error.message||'La demande n’a pas abouti.'});}
   });
   server.requestTimeout=20000;
+  server.queue=fileAttente;
   return server;
 }
 
@@ -192,5 +241,9 @@ if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
   const port=Number(process.env.BUREAU_PORT||4317);
   const server=createBureauServer();
   server.on('error',error=>{console.error(error.code==='EADDRINUSE'?'Le port du bureau est déjà utilisé. Essayez un autre BUREAU_PORT.':'Le bureau n’a pas pu démarrer.');process.exitCode=1;});
-  server.listen(port,'127.0.0.1',()=>console.log(`Bureau des agents ouvert sur http://127.0.0.1:${port}`));
+  server.listen(port,'127.0.0.1',()=>{
+    // Planificateur de la file d'attente : un tour toutes les 15 secondes.
+    server.queue.start(15000);
+    console.log(`Bureau des agents ouvert sur http://127.0.0.1:${port}`);
+  });
 }

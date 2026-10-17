@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bossOf, readDelegations } from '../src/delegations.mjs';
@@ -38,9 +38,9 @@ test('repère les délégations avec guillemets imbriqués, échappés et apostr
   assert.equal(found, true);
   assert.equal(delegations.length, 3);
   assert.deepEqual(delegations.map(d => d.target), ['w5:p2', 'w5:p1', 'w5:p1']);
-  assert.equal(delegations[0].title, "L'écran d'accueil est cassé");
-  assert.equal(delegations[1].title, 'Dire "bonjour" à tous');
-  assert.equal(delegations[2].title, 'Il faut "revoir" la page d\'accueil');
+  assert.equal(delegations[0].title, "L'écran d'accueil est cassé".slice(0, -1), 'jamais la consigne complète');
+  assert.equal(delegations[1].title, 'Dire "bonjour" à tous'.slice(0, -1));
+  assert.equal(delegations[2].title, 'Il faut "revoir" la page d\'accueil'.slice(0, -1));
   for (const d of delegations) {
     assert.equal(d.at, '2026-10-17T09:00:00.000Z');
     assert.equal(d.result, null);
@@ -60,30 +60,38 @@ test('un message en variable ou en substitution ne donne pas de titre', async t 
     ['w5:p3', null],
     ['w5:p3', null],
     ['w5:p3', null],
-    ['w5:p3', '$(cat f)'],
+    ['w5:p3', '$(cat f)'.slice(0, -1)],
   ]);
 });
 
 test('cible par nom et herdr qualifié par chemin entre guillemets', async t => {
   const root = await journal(t, [
     appel('n1', 'herdr agent prompt mon-agent "Travaille sur la facturation"'),
-    appel('n2', 'C:\\Program Files\\herdr\\herdr.exe agent prompt w5:p3 "Bonjour"'),
+    appel('n2', '& "C:\\Program Files\\herdr\\herdr.exe" agent prompt w5:p3 "Bonjour"'),
     appel('n3', '"/usr/local/bin/herdr" agent prompt w5:p4 "Aussi avec chemin Unix"'),
+    appel('n4', 'C:\\Program Files\\herdr\\herdr.exe agent prompt w5:p5 "Sans guillemets"'),
   ]);
   const { delegations } = await readDelegations(SESSION, { root });
   assert.deepEqual(delegations.map(d => [d.target, d.title]), [
-    ['mon-agent', 'Travaille sur la facturation'],
-    ['w5:p3', 'Bonjour'],
-    ['w5:p4', 'Aussi avec chemin Unix'],
+    ['mon-agent', 'Travaille sur la facturation'.slice(0, -1)],
+    ['w5:p3', 'Bonjou'],
+    ['w5:p4', 'Aussi avec chemin Unix'.slice(0, -1)],
   ]);
 });
 
-test('ignore les cibles impossibles à lire et les commandes sans herdr', async t => {
+test('ignore les cibles impossibles à lire, les exemples imprimés et l\'aide', async t => {
   const root = await journal(t, [
     appel('i1', 'herdr agent prompt "$PANE_CIBLE" "Bonjour"'),
     appel('i2', 'herdr agent prompt'),
     appel('i3', 'echo agent prompt w5:p1 "Ce n\'est pas herdr"'),
     appel('i4', 'herdr agent list'),
+    appel('i5', 'echo herdr agent prompt w5:p2 "Simulation"'),
+    appel('i6', 'herdr agent list; echo agent prompt w5:p2 "Simulation"'),
+    appel('i7', 'herdr agent prompt --help'),
+    appel('i8', 'herdr agent prompt w5:p1 --help'),
+    appel('i9', 'herdr agent prompt w5:p2'),
+    appel('i10', 'herdr agent prompt ../chemin "x"'),
+    appel('i11', 'herdr agent prompt "C:/Users/x" "y"'),
   ]);
   const { delegations } = await readDelegations(SESSION, { root });
   assert.deepEqual(delegations, []);
@@ -117,7 +125,7 @@ test('plafond : une ligne géante est ignorée sans casser la lecture', async t 
   assert.equal(delegations[2].title.length, 80);
 });
 
-test('issue observée : succès, échec, marqueur tronqué et absence de résultat', async t => {
+test('issue observée : seul agent_prompted est un succès, l\'ambigu reste inconnu', async t => {
   const root = await journal(t, [
     appel('r1', 'herdr agent prompt w5:p1 "Première"'),
     resultat('r1', '{"result":{"type":"agent_prompted"}}'),
@@ -127,27 +135,30 @@ test('issue observée : succès, échec, marqueur tronqué et absence de résult
     resultat('r3', '{"error":"Herdr a refusé"}'),
     appel('r4', 'herdr agent prompt w5:p4 "Quatrième"'),
     resultat('r4', 'agent_prompt_' + 'a'.repeat(80)),
+    appel('r5', 'herdr agent prompt w5:p1 "Cinquième"'),
+    resultat('r5', '{"ok":true,"error":"échec discret"}'),
   ]);
   const { delegations } = await readDelegations(SESSION, { root });
   assert.deepEqual(delegations.map(d => d.result), [
     { ok: true, type: 'agent_prompted' },
-    { ok: false, type: 'agent_prompt_stalled' },
+    { ok: null, type: 'agent_prompt_stalled' },
     { ok: false, type: 'error' },
-    { ok: true, type: 'agent_prompt_' + 'a'.repeat(27) },
+    { ok: null, type: null },
+    { ok: false, type: 'error' },
   ]);
   const texte = JSON.stringify(delegations);
   assert.ok(!texte.includes('détail'), 'le texte complet du tool_result ne doit pas sortir');
   assert.ok(!texte.includes('Herdr a refusé'), 'le texte complet de l\'erreur ne doit pas sortir');
-  for (const d of delegations) assert.ok(d.result.type.length <= 40);
+  for (const d of delegations) assert.ok(d.result.type === null || ['agent_prompted', 'agent_prompt_stalled', 'error'].includes(d.result.type), 'liste fermée de types');
 });
 
-test('un tool_result sans texte exploitable reste une issue minimale', async t => {
+test('un tool_result sans texte exploitable reste une issue inconnue', async t => {
   const root = await journal(t, [
     appel('s1', 'herdr agent prompt w5:p1 "Sans résultat textuel"'),
     resultat('s1', [{ type: 'text', text: 'ok' }]),
   ]);
   const { delegations } = await readDelegations(SESSION, { root });
-  assert.deepEqual(delegations[0].result, { ok: true, type: null });
+  assert.deepEqual(delegations[0].result, { ok: null, type: null });
 });
 
 test('sessionId invalide ou fichier absent renvoient found:false', async t => {
@@ -187,6 +198,56 @@ test('un journal réécrit est relu depuis le début, sans garder l\'ancien cont
   await writeFile(join(dossier, `${SESSION}.jsonl`), appel('nouveau', 'herdr agent prompt w5:p2 "Nouvelle consigne"') + '\n', 'utf8');
   const apres = await readDelegations(SESSION, { root });
   assert.deepEqual(apres.delegations.map(d => d.id), ['nouveau']);
+});
+
+test('une réécriture du début détectée remet à zéro même si la fin est conservée', async t => {
+  const root = await journal(t, [
+    appel('vieux', 'herdr agent prompt w5:p1 "Consigne périmée"'),
+    'x'.repeat(200),
+  ]);
+  const avant = await readDelegations(SESSION, { root });
+  assert.equal(avant.delegations.length, 1);
+  const dossier = join(root, 'projet-test');
+  const fichier = join(dossier, `${SESSION}.jsonl`);
+  // Le début change, la queue (les 200 x) reste identique et le fichier grandit.
+  const contenu = await readFile(fichier, 'utf8');
+  const queue = contenu.slice(-201);
+  await writeFile(fichier, appel('frais', 'herdr agent prompt w5:p2 "Consigne fraîche"') + '\n' + queue + '\n', 'utf8');
+  const apres = await readDelegations(SESSION, { root });
+  assert.deepEqual(apres.delegations.map(d => d.id), ['frais']);
+});
+
+test('l\'état de saut d\'une ligne géante survit entre deux lectures', async t => {
+  const root = await journal(t, []);
+  const dossier = join(root, 'projet-test');
+  const fichier = join(dossier, `${SESSION}.jsonl`);
+  await writeFile(fichier, 'x'.repeat(5 * 1024 * 1024), 'utf8');
+  const premiere = await readDelegations(SESSION, { root });
+  assert.deepEqual(premiere.delegations, []);
+  // Ce JSON est le SUFIXE de la ligne géante : il ne doit jamais devenir une entrée.
+  await appendFile(fichier, appel('piege', 'herdr agent prompt w5:p1 "Dans la ligne géante"') + '\n');
+  const apres = await readDelegations(SESSION, { root });
+  assert.deepEqual(apres.delegations, []);
+  await appendFile(fichier, appel('vrai', 'herdr agent prompt w5:p1 "Après la ligne"') + '\n');
+  const fin = await readDelegations(SESSION, { root });
+  assert.deepEqual(fin.delegations.map(d => d.id), ['vrai']);
+});
+
+test('le titre n\'est jamais la consigne complète et masque les chemins', async t => {
+  const root = await journal(t, [
+    appel('t1', 'herdr agent prompt w5:p1 "Court"'),
+    appel('t2', 'herdr agent prompt w5:p2 "Relis C:\\Users\\DrSmoke\\secret.txt et dis-moi"'),
+    appel('t3', 'herdr agent prompt w5:p3 "Voir ~/prive/notes.md stp"'),
+    appel('t4', 'herdr agent prompt w5:p4 "' + 'Phrase longue '.repeat(20) + '"'),
+  ]);
+  const { delegations } = await readDelegations(SESSION, { root });
+  for (const d of delegations) assert.ok(d.title === null || d.title.length <= 80);
+  assert.equal(delegations[0].title, 'Cour', 'même courte, la consigne est coupée');
+  assert.notEqual(delegations[0].title, 'Court');
+  assert.ok(!delegations[1].title.includes('secret'), 'le chemin est masqué');
+  assert.ok(delegations[1].title.includes('…'));
+  assert.ok(!delegations[2].title.includes('notes.md'), 'le chemin personnel est masqué');
+  assert.equal(delegations[3].title.length, 80);
 });
 
 test('bossOf choisit le plus petit numéro de panneau de son espace', () => {

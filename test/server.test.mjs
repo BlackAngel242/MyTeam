@@ -2,6 +2,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {request} from 'node:http';
 import {existsSync} from 'node:fs';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {createBureauServer} from '../server.mjs';
 import {createHerdr, HerdrError} from '../src/herdr.mjs';
 
@@ -166,8 +169,8 @@ test('/api/state lit les activites Claude en parallele sans divulguer les sessio
   assert.equal(response.data.connected,true);
   assert.equal(started,2);
   assert.deepEqual(response.data.agents,[
-    {id:'c1',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,source:'journal local',match:'session exacte',subagents}},
-    {id:'c2',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,source:'journal local',match:'session exacte',subagents}},
+    {id:'c1',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
+    {id:'c2',kind:'Claude',activity:{tokens,limits:[],model:null,effort:null,limitReached:false,source:'journal local',match:'session exacte',subagents}},
     {id:'x',kind:'Codex'},
   ]);
   assert.ok(!JSON.stringify(response.data).includes('session-privee'));
@@ -195,7 +198,7 @@ test('/api/state expose seulement les champs publics des activites locales',asyn
     return {
       tokens:{input:3,output:4,cacheRead:5,cacheCreation:6,creator_user_id:'SECRET_USER'},
       limits:[{label:'Principale',usedPercent:12,window:300,creator_account_id:'SECRET_ACCOUNT'}],
-      model:'modele-factice',effort:'high',subagents:[{id:'SECRET_SESSION',description:'SECRET_MESSAGE'}],
+      model:'modele-factice',effort:'high',subagents:[{id:'call_123',description:'formats locaux',path:'SECRET_PATH'}],
       source:'SECRET_PATH',match:'SECRET_SESSION',path:'SECRET_PATH',creator_user_id:'SECRET_USER',
     };
   }});
@@ -203,7 +206,7 @@ test('/api/state expose seulement les champs publics des activites locales',asyn
   assert.equal(response.data.connected,true);
   assert.deepEqual(response.data.agents,[{
     id:'x',kind:'Codex',cwd:'C:/projet-factice',
-    activity:{tokens:{input:3,output:4,cacheRead:5,cacheCreation:6},limits:[{label:'Principale',usedPercent:12,window:300}],model:'modele-factice',effort:'high',source:'journal local',match:'dossier et activité récente'},
+    activity:{tokens:{input:3,output:4,cacheRead:5,cacheCreation:6},limits:[{label:'Principale',usedPercent:12,window:300,resetsAt:null}],model:'modele-factice',effort:'high',limitReached:false,source:'journal local',match:'dossier et activité récente',subagents:[{id:'call_123',description:'formats locaux'}]},
   }]);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET_|creator_|sessionId/);
 });
@@ -238,4 +241,82 @@ test('/api/todos masque les chemins et identifiants inseres dans un texte de tac
   const response=await send('/api/todos',{headers:{Origin:origin,'X-Bureau-Token':token}});
   assert.equal(response.status,200);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET|PRIVE|creator_|C:|\/home/);
+});
+
+test('la file d\'attente exige origine et jeton puis gère ajout, liste et annulation',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const {send,origin,calls}=await bureau(t,{},{queueFile:join(dossier,'file-attente.json')});
+  assert.equal((await send('/api/queue')).status,403);
+  assert.equal((await send('/api/queue',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'})).status,403);
+  assert.equal((await send('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'})).status,403);
+  const {data:{token}}=await send('/api/state');
+  const headers={'Content-Type':'application/json',Origin:origin,'X-Bureau-Token':token};
+  const ajout=await send('/api/queue',{method:'POST',headers,body:JSON.stringify({id:'agent-1',message:'Préparer la note'})});
+  assert.equal(ajout.status,200);
+  assert.equal(ajout.data.state,'attente');
+  assert.equal(ajout.data.id,'agent-1');
+  const liste=await send('/api/queue',{headers:{Origin:origin,'X-Bureau-Token':token}});
+  assert.equal(liste.status,200);
+  assert.equal(liste.data.items.length,1);
+  assert.equal(liste.data.items[0].message,'Préparer la note');
+  const refus=await send('/api/queue',{method:'POST',headers,body:JSON.stringify({id:'',message:''})});
+  assert.equal(refus.status,400);
+  const annule=await send('/api/queue/cancel',{method:'POST',headers,body:JSON.stringify({itemId:ajout.data.itemId})});
+  assert.equal(annule.status,200);
+  assert.equal(annule.data.state,'annulee');
+  assert.deepEqual(calls,[],'la file n\'envoie rien toute seule');
+});
+
+test('/api/state montre les délégations du chef sur douze heures sans donnée privée',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const vues=[
+    {id:'toolu_1',at:'2026-10-17T11:30:00.000Z',target:'w5:p4',title:'Corriger la page d’accueil',result:{ok:true,type:'agent_prompted'}},
+    {id:'toolu_2',at:'2026-10-16T20:00:00.000Z',target:'w5:p2',title:'Trop ancienne',result:null},
+    {id:'toolu_3',at:'2026-10-17T11:45:00.000Z',target:'w5:p3',title:'x'.repeat(200),result:{ok:false,type:'agent_prompt_stalled'}},
+    {id:'toolu_4',at:'2026-10-17T11:50:00.000Z',target:'w5:p5',title:null,result:null,path:'CHEMIN PRIVE',sessionId:'SESSION PRIVEE'},
+  ];
+  const agents=[
+    {id:'w5:p1@aaaa',paneId:'w5:p1',kind:'Claude',name:'Claude',sessionId:'12345678-1234-1234-1234-123456789abc',status:'working',ready:false},
+    {id:'w5:p4@bbbb',paneId:'w5:p4',kind:'Codex',name:'Codex',status:'idle',ready:true},
+  ];
+  const {send}=await bureau(t,{list:async()=>agents},{
+    readActivity:async()=>({found:false}),
+    delegations:async()=>({found:true,delegations:vues}),
+    now:()=>Date.parse('2026-10-17T12:00:00.000Z'),
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  const response=await send('/api/state');
+  assert.equal(response.status,200);
+  const chef=response.data.agents[0];
+  assert.deepEqual(chef.delegations.map(d=>({id:d.id,at:d.at,target:d.target})),[
+    {id:'toolu_1',at:'2026-10-17T11:30:00.000Z',target:'w5:p4'},
+    {id:'toolu_3',at:'2026-10-17T11:45:00.000Z',target:'w5:p3'},
+    {id:'toolu_4',at:'2026-10-17T11:50:00.000Z',target:'w5:p5'},
+  ]);
+  assert.equal(chef.delegations[0].title,'Corriger la page d’accueil');
+  assert.equal(chef.delegations[1].title.length,80);
+  assert.deepEqual(chef.delegations[0].result,{ok:true,type:'agent_prompted'});
+  assert.deepEqual(chef.delegations[2].result,null);
+  assert.equal('delegations' in response.data.agents[1],false,'seul le chef porte les délégations');
+  const texte=JSON.stringify(response.data);
+  assert.ok(!texte.includes('SESSION PRIVEE'));
+  assert.ok(!texte.includes('CHEMIN PRIVE'));
+  assert.ok(!texte.includes('12345678-1234-1234-1234-123456789abc'),'jamais la session du chef');
+});
+
+test('une lecture de délégations en panne donne une liste vide sans casser l\'état',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'w5:p1@aaaa',paneId:'w5:p1',kind:'Claude',sessionId:'12345678-1234-1234-1234-123456789abc',status:'idle',ready:true}];
+  const {send}=await bureau(t,{list:async()=>agents},{
+    readActivity:async()=>({found:false}),
+    delegations:async()=>{throw new Error('SECRET_PANNE');},
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  const response=await send('/api/state');
+  assert.equal(response.status,200);
+  assert.deepEqual(response.data.agents[0].delegations,[]);
+  assert.doesNotMatch(JSON.stringify(response.data),/SECRET_/);
 });

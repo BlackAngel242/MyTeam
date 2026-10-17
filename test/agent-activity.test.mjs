@@ -30,7 +30,7 @@ async function fixture(t) {
 test('Codex : dernier cumul, limites, modèle et effort sans données privées', async t => {
   const f = await fixture(t);
   const event = usage(150, 30, 50);
-  event.payload.rate_limits = { primary: { used_percent: 12, window_minutes: 300 }, secondary: { used_percent: 25, window_minutes: 10080 } };
+  event.payload.rate_limits = { primary: { used_percent: 12, window_minutes: 300, resets_at: 1792208254 }, secondary: { used_percent: 25, window_minutes: 10080, resets_at: 1792672627 }, rate_limit_reached_type: null };
   await writeFile(f.file, lines({ type:'session_meta',payload:{cwd,creator_user_id:'SECRET_UTILISATEUR',creator_account_id:'SECRET_COMPTE',id:'SECRET_SESSION'} },
     usage(100, 20, 40), event,
     { type: 'turn_context', payload: { model: 'modele-factice', effort: 'high', private: 'SECRET_CONTENU' } },
@@ -42,7 +42,11 @@ test('Codex : dernier cumul, limites, modèle et effort sans données privées',
   assert.equal(result.tokens.cacheRead, 50);
   assert.equal(result.model, 'modele-factice');
   assert.equal(result.effort, 'high');
-  assert.deepEqual(result.limits, [{ label: 'Principale', usedPercent: 12, window: 300 }, { label: 'Secondaire', usedPercent: 25, window: 10080 }]);
+  assert.deepEqual(result.limits, [
+    { label: 'Principale', usedPercent: 12, window: 300, resetsAt: new Date(1792208254 * 1000).toISOString() },
+    { label: 'Secondaire', usedPercent: 25, window: 10080, resetsAt: new Date(1792672627 * 1000).toISOString() },
+  ]);
+  assert.equal(result.limitReached, false);
   assert.equal(result.source, 'journal local');
   assert.equal(result.match, 'dossier et activité récente');
   assert.equal('subagents' in result, false);
@@ -172,4 +176,67 @@ test('Codex : deux journaux du meme dossier aussi recents restent ambigus', asyn
   await utimes(f.file,new Date(1000),new Date(1000));
   await utimes(other,new Date(1000),new Date(1000));
   assert.equal(await f.reader(codex),null);
+});
+
+const spawn = (callId, taskName, message) => ({ type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', call_id: callId, arguments: JSON.stringify({ task_name: taskName, fork_turns: 0, message }) } });
+const subEvent = (kind, callId, thread, path) => ({ type: 'event_msg', payload: { type: 'item_completed', item: { type: 'SubAgentActivity', id: callId, kind, agent_thread_id: thread, agent_path: path } } });
+
+test('Codex : pause de quota, resetsAt en secondes et limitReached', async t => {
+  const f = await fixture(t);
+  const plein = usage(10, 2);
+  plein.payload.rate_limits = {
+    primary: { used_percent: 100, window_minutes: 300, resets_at: 1792208254 },
+    secondary: { used_percent: 5, window_minutes: 10080, resets_at: 1792672627 },
+    rate_limit_reached_type: null,
+  };
+  await writeFile(f.file, lines(meta(), plein));
+  const result = await f.reader(codex);
+  assert.equal(result.limitReached, true, 'une limite à 100 % compte comme atteinte');
+  assert.equal(result.limits[0].resetsAt, new Date(1792208254 * 1000).toISOString());
+  const atteint = usage(11, 3);
+  atteint.payload.rate_limits = {
+    primary: { used_percent: 12, window_minutes: 300, resets_at: 1792208254 },
+    secondary: { used_percent: 25, window_minutes: 10080, resets_at: 1792672627 },
+    rate_limit_reached_type: 'primary',
+  };
+  await appendFile(f.file, lines(atteint));
+  const suite = await f.reader(codex);
+  assert.equal(suite.limitReached, true, 'rate_limit_reached_type non nul compte comme atteint');
+  const sans = usage(12, 4);
+  sans.payload.rate_limits = { primary: { used_percent: 12, window_minutes: 300 }, secondary: { used_percent: 25, window_minutes: 10080 }, rate_limit_reached_type: null };
+  await appendFile(f.file, lines(sans));
+  const fin = await f.reader(codex);
+  assert.equal(fin.limitReached, false);
+  assert.equal(fin.limits[0].resetsAt, null, 'resets_at absent donne null');
+});
+
+test('Codex : sous-agents démarrés et pas encore terminés, message chiffré jamais lu', async t => {
+  const f = await fixture(t);
+  await writeFile(f.file, lines(meta(),
+    spawn('call_1', 'formats_locaux', 'CONTENU_CHIFFRE'),
+    subEvent('started', 'call_1', 'thread-1', '/root/formats_locaux'),
+    spawn('call_2', 'deuxieme_tache', 'AUTRE_CHIFFRE'),
+    subEvent('started', 'call_2', 'thread-2', '/root/deuxieme_tache'),
+    subEvent('interacted', 'call_1', 'thread-1', '/root'),
+    subEvent('started', 'call_sans_nom', 'thread-3', '/root/outil_de_fond'),
+    subEvent('completed', 'call_x', 'thread-4', '/root/jamais_vu'),
+    subEvent('completed', 'call_2', 'thread-2', '/root/deuxieme_tache')));
+  const result = await f.reader(codex);
+  assert.deepEqual(result.subagents, [
+    { id: 'thread-1', description: 'formats locaux' },
+    { id: 'thread-3', description: 'outil de fond' },
+  ]);
+  const texte = JSON.stringify(result);
+  assert.ok(!texte.includes('CONTENU_CHIFFRE'), 'le message chiffré ne doit jamais sortir');
+  assert.ok(!texte.includes('AUTRE_CHIFFRE'), 'le message chiffré ne doit jamais sortir');
+  await appendFile(f.file, lines(subEvent('completed', 'call_1', 'thread-1', '/root/formats_locaux')));
+  assert.deepEqual((await f.reader(codex)).subagents, [{ id: 'thread-3', description: 'outil de fond' }]);
+});
+
+test('Codex : un appel spawn_agent illisible n\'est pas une observation', async t => {
+  const f = await fixture(t);
+  await writeFile(f.file, lines(meta(), usage(10, 2),
+    { type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', call_id: 'call_casse', arguments: '{casse' } }));
+  const result = await f.reader(codex);
+  assert.equal('subagents' in result, false);
 });

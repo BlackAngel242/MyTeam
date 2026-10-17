@@ -11,6 +11,11 @@ const CACHE_LIMIT = 32;
 const number = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 const modelName = value => typeof value === 'string' && /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,127}$/u.test(value) ? value : null;
 const effortName = value => ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'].includes(value) ? value : null;
+// resets_at est un horodatage Unix en secondes dans le journal Codex.
+const resetsAt = value => typeof value === 'number' && Number.isFinite(value) && value > 0 ? new Date(value * 1000).toISOString() : null;
+const isoDate = value => typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? new Date(value).toISOString() : null;
+// Nom de tâche lisible : formats_locaux devient « formats locaux ».
+const taskLabel = value => typeof value === 'string' ? Array.from(value.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, 80).join('') : '';
 
 function keep(map, key, value, limit = CACHE_LIMIT) {
   map.delete(key);
@@ -34,15 +39,16 @@ export function normalizeActivity(value, { claude = false } = {}) {
     tokens: Object.values(tokens).some(value => value !== null) ? tokens : null,
     limits: Array.isArray(value.limits) ? value.limits.filter(limit =>
       limit && ['Principale', 'Secondaire'].includes(limit.label) && number(limit.usedPercent) !== null
-    ).map(limit => ({ label: limit.label, usedPercent: limit.usedPercent, window: number(limit.window) })) : [],
+    ).map(limit => ({ label: limit.label, usedPercent: limit.usedPercent, window: number(limit.window), resetsAt: isoDate(limit.resetsAt) })) : [],
     model: modelName(value.model),
     effort: effortName(value.effort),
+    limitReached: value.limitReached === true,
     source: 'journal local',
     match: claude ? 'session exacte' : 'dossier et activité récente',
   };
-  if (claude) result.subagents = Array.isArray(value.subagents) ? value.subagents.filter(agent =>
+  if (claude || Array.isArray(value.subagents)) result.subagents = (Array.isArray(value.subagents) ? value.subagents : []).filter(agent =>
     agent && typeof agent.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(agent.id)
-  ).map(agent => ({ id: agent.id, description: typeof agent.description === 'string' ? Array.from(agent.description.slice(0, 160)).slice(0, 80).join('') : '' })) : [];
+  ).map(agent => ({ id: agent.id, description: typeof agent.description === 'string' ? Array.from(agent.description.slice(0, 160)).slice(0, 80).join('') : '' }));
   return result;
 }
 
@@ -105,6 +111,48 @@ function consumeCodex(state, entry) {
     state.model = modelName(payload.model);
     state.effort = effortName(payload.effort ?? payload.reasoning_effort);
   }
+  if (entry.type === 'response_item' && payload.type === 'function_call' && payload.name === 'spawn_agent') {
+    // Seul task_name est lisible : les arguments de message sont chiffrés et ne
+    // sont ni lus, ni stockés, ni renvoyés.
+    try {
+      const args = typeof payload.arguments === 'string' ? JSON.parse(payload.arguments) : payload.arguments;
+      const taskName = typeof args?.task_name === 'string' ? args.task_name : '';
+      if (typeof payload.call_id === 'string' && taskName) {
+        state.spawnNames.delete(payload.call_id);
+        state.spawnNames.set(payload.call_id, taskName);
+        if (state.spawnNames.size > 64) state.spawnNames.delete(state.spawnNames.keys().next().value);
+        state.subagents = [];
+      }
+    } catch { /* Un appel illisible n'est pas une observation. */ }
+  }
+  if (entry.type === 'event_msg' && payload.type === 'item_completed' && payload.item?.type === 'SubAgentActivity') {
+    const item = payload.item;
+    const thread = typeof item.agent_thread_id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(item.agent_thread_id) ? item.agent_thread_id : null;
+    const kind = typeof item.kind === 'string' ? item.kind : '';
+    if (thread && ['started', 'interacted', 'completed'].includes(kind)) {
+      // started et interacted prouvent que le sous-agent existe ; completed le
+      // retire. Valeurs réellement observées dans les journaux du 17/10/2026.
+      // world_state.state.environments.subagents n'apparaît dans aucun journal
+      // local observé : non implémenté pour ne rien inventer.
+      if (!state.subagents) state.subagents = [];
+      let agent = state.agents.get(thread);
+      if (!agent) {
+        agent = { active: false, description: '' };
+        state.agents.set(thread, agent);
+        if (state.agents.size > 64) state.agents.delete(state.agents.keys().next().value);
+      }
+      if (kind === 'completed') agent.active = false;
+      else {
+        agent.active = true;
+        if (!agent.description) {
+          const fromCall = state.spawnNames.get(typeof item.id === 'string' ? item.id : '');
+          const path = typeof item.agent_path === 'string' ? item.agent_path.split('/').filter(Boolean).pop() ?? '' : '';
+          agent.description = taskLabel(fromCall) || taskLabel(path);
+        }
+      }
+      state.subagents = [...state.agents.entries()].filter(([, sous]) => sous.active).map(([id, sous]) => ({ id, description: sous.description }));
+    }
+  }
   if (entry.type !== 'event_msg' || payload.type !== 'token_count') return;
   const usage = payload.info?.total_token_usage;
   if (usage && typeof usage === 'object') {
@@ -113,11 +161,14 @@ function consumeCodex(state, entry) {
     state.tokens = { input: number(uncached), output: number(usage.output_tokens), cacheRead: read, cacheCreation: write };
   }
   if (payload.rate_limits && typeof payload.rate_limits === 'object') {
+    const limits = payload.rate_limits;
     state.limits = ['primary', 'secondary'].flatMap((key, i) => {
-      const limit = payload.rate_limits[key];
+      const limit = limits[key];
       const used = number(limit?.used_percent);
-      return used !== null ? [{ label: i ? 'Secondaire' : 'Principale', usedPercent: used, window: number(limit.window_minutes) }] : [];
+      return used !== null ? [{ label: i ? 'Secondaire' : 'Principale', usedPercent: used, window: number(limit.window_minutes), resetsAt: resetsAt(limit.resets_at) }] : [];
     });
+    const reached = typeof limits.rate_limit_reached_type === 'string' && limits.rate_limit_reached_type !== '';
+    state.limitReached = reached || state.limits.some(limit => limit.usedPercent >= 100);
   }
 }
 
@@ -128,7 +179,7 @@ function changed(state, stat) {
 
 async function scanCodex(file, previous, headerOnly = false) {
   const { path, stat } = file;
-  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, tokens: null, limits: [], model: null, effort: null, plan: null } : previous;
+  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, tokens: null, limits: [], limitReached: false, model: null, effort: null, plan: null, subagents: null, spawnNames: new Map(), agents: new Map() } : previous;
   if (!state.exhausted && state.offset < stat.size && !(headerOnly && state.cwd)) {
     const stream = createReadStream(path, { start: state.offset, end: Math.min(stat.size, state.offset + MAX_BYTES) - 1 });
     const input = Readable.from(completeLines(stream, state));
@@ -248,7 +299,7 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     try {
       const result=await promise;
       if(planOnly) return result&&result.offset>=result.size?structuredClone(result.plan):null;
-      if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length)?normalizeActivity(result):null;
+      if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length||result.subagents)?normalizeActivity(result):null;
       return structuredClone(result);
     } finally {if(pending.get(key)===promise) pending.delete(key);}
   };

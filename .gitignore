@@ -1,6 +1,7 @@
 node_modules/
 *.log
 .env*
+.bureau/
 .impeccable/mocks/
 .impeccable/tmp/
 .impeccable/*.local.json
