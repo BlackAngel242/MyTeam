@@ -58,15 +58,13 @@ Pour déployer le Bureau des agents sur une autre machine sous Windows, Linux ou
 - Sorties du terminal : Affiche les dernières lignes réelles du terminal Herdr de l'agent sélectionné.
 - Outils de confort : Champ de recherche avec surlignage des occurrences, bouton « Figer » pour suspendre le défilement, bouton « Copier » pour récupérer le texte, et bouton « Agrandir » pour lire le terminal en pleine hauteur.
 - Pause automatique sur sélection : Dès qu'une sélection de texte est active à la souris dans les sorties, le rafraîchissement se met en pause pour ne jamais faire sauter ta sélection.
-- Consigne, file d'attente et priorité : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée). S'il est occupé ou en pause de quota, le bouton devient « Mettre en file » pour différer l'envoi en toute sécurité, avec une case « Prioritaire » pour placer une consigne urgente en tête de file (d'après le contrat d'architecture).
+- Consigne, file d'attente et priorité : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée). S'il est occupé ou en pause de quota, le bouton devient « Mettre en file » pour différer l'envoi en toute sécurité, avec une case « Prioritaire » pour placer une consigne urgente en tête de file .
 
 ## Onglet Équipe, délégations et file d'attente
 
-> *Note : Les fonctionnalités de priorité dans la file et de transfert de direction sont décrites d'après le contrat d'architecture (`docs/contrat-priorite-direction.md`) en cours d'intégration dans l'interface.*
-
-- Direction de l'équipe et passation (contrat) : Affiche le chef effectif et permet à DrSmoke de transférer la direction vers un autre agent connecté ou de rétablir la règle par défaut. Si le chef entre en pause de limite, un bandeau propose proactivement une passation vers un suppléant disponible ; le message de passation est relu et validé par DrSmoke avant envoi. Les délégations sont alors surveillées dans le journal du chef effectif.
+- Direction de l'équipe et passation : Affiche le chef effectif et permet à DrSmoke de transférer la direction vers un autre agent connecté ou de rétablir la règle par défaut. Si le chef entre en pause de limite, un bandeau propose proactivement une passation vers un suppléant disponible ; le message de passation est relu et validé par DrSmoke avant envoi. Les délégations sont alors surveillées dans le journal du chef effectif.
 - Courrier du chef : Enregistre les fins de travail observées avec compteur dans le titre ; la liste se remet à zéro dès que tu la consultes.
-- File d'attente collective et priorité (contrat) : Liste toutes les consignes différées avec leur cible, statut et niveau de priorité (« haute » ou « normale »). Un bouton « Passer en tête » permet de promouvoir une consigne en attente. Les consignes hautes partent en premier dès que l'agent est libre (garde-fou : promotion automatique après 30 minutes d'attente). Chaque consigne peut être retirée d'un clic, sans jamais forcer d'envoi vers un agent occupé.
+- File d'attente collective et priorité : Liste toutes les consignes différées avec leur cible, statut et niveau de priorité (« haute » ou « normale »). Un bouton « Passer en tête » permet de promouvoir une consigne en attente. Les consignes hautes partent en premier dès que l'agent est libre (garde-fou : promotion automatique après 30 minutes d'attente). Chaque consigne peut être retirée d'un clic, sans jamais forcer d'envoi vers un agent occupé.
 - Envoi groupé en deux clics : Coche les agents disponibles ou clique sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en listant les destinataires, le second confirme l'expédition individuelle.
 - Journal des envois : Consigne l'historique complet des transmissions de la session.
 
@@ -106,8 +104,8 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
 - Organisation du code : `public/` contient l'interface (HTML, CSS, canvas, logos et gestion du terminal) ; `src/herdr.mjs` gère la passerelle locale Herdr ; `src/claude-activity.mjs` et `src/agent-activity.mjs` extraient les activités réelles ; `src/files.mjs` gère l'explorateur ; `server.mjs` héberge l'application et sécurise les requêtes.
 - Réglages : Le port peut être changé avec la variable `BUREAU_PORT`. Le chemin vers l'outil Herdr peut être précisé avec `BUREAU_HERDR_PATH`.
 - Tests et vérifications :
-  - `npm test` : exécute la suite complète des tests automatisés.
-  - `npm run check` : vérifie la validité syntaxique de tous les fichiers du projet.
+ - `npm test` : exécute la suite complète des tests automatisés.
+ - `npm run check` : vérifie la validité syntaxique de tous les fichiers du projet.
 - Sauvegarde de référence : Version majeure stabilisée au commit `7817574`.
 - Arrêt du bureau : Utiliser Ctrl+C dans le terminal ayant lancé `node server.mjs`. Ne jamais forcer la fermeture de Herdr pour arrêter le bureau.
 
