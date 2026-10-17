@@ -216,3 +216,26 @@ test('/api/state reste utilisable si le lecteur des autres journaux echoue',asyn
   assert.deepEqual(response.data.agents,[{id:'x',kind:'OpenCode'}]);
   assert.doesNotMatch(JSON.stringify(response.data),/SECRET_/);
 });
+
+test('/api/todos exige origine et jeton puis ne retourne que le contrat public',async t=>{
+  let reads=0;
+  const {send,origin}=await bureau(t,{}, {getTodos:async agents=>{
+    reads++;assert.equal(agents[0].id,'agent-1');
+    return {project:[{text:'Vérifier',done:false,source:'TODO.md',path:'C:/SECRET'}],agents:{'agent-1':[{text:'Tester',status:'in_progress',creator_user_id:'SECRET_USER'}]},sessionId:'SECRET_SESSION'};
+  }});
+  const {data:{token}}=await send('/api/state');
+  for(const headers of [{},{Origin:origin},{'X-Bureau-Token':token},{Origin:'http://localhost:4317','X-Bureau-Token':token}]) assert.equal((await send('/api/todos',{headers})).status,403);
+  assert.equal(reads,0);
+  const response=await send('/api/todos',{headers:{Origin:origin,'X-Bureau-Token':token}});
+  assert.equal(response.status,200);
+  assert.deepEqual(response.data,{project:[{text:'Vérifier',done:false,source:'TODO.md'}],agents:{'agent-1':[{text:'Tester',status:'in_progress'}]}});
+  assert.doesNotMatch(JSON.stringify(response.data),/SECRET|sessionId|creator_|C:/);
+});
+
+test('/api/todos masque les chemins et identifiants inseres dans un texte de tache',async t=>{
+  const {send,origin}=await bureau(t,{}, {getTodos:async()=>({project:[{text:'Lire C:/SECRET/fichier.txt creator_user_id=PRIVE',done:true,source:'plan.md'}],agents:{'agent-1':[{text:'Vérifier /home/SECRET/fichier',status:'completed'}]}})});
+  const {data:{token}}=await send('/api/state');
+  const response=await send('/api/todos',{headers:{Origin:origin,'X-Bureau-Token':token}});
+  assert.equal(response.status,200);
+  assert.doesNotMatch(JSON.stringify(response.data),/SECRET|PRIVE|creator_|C:|\/home/);
+});

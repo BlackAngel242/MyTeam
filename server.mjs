@@ -9,11 +9,12 @@ import {createHerdr} from './src/herdr.mjs';
 import {readClaudeActivity} from './src/claude-activity.mjs';
 import {readAgentActivity,normalizeActivity} from './src/agent-activity.mjs';
 import {standardPlaces,recentFiles,listDir,transfer,resolveInside,FileError} from './src/files.mjs';
+import {readTodos,normalizeTodos} from './src/todos.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getPlaces=standardPlaces,executeFile=execute,platform=process.platform}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getPlaces=standardPlaces,executeFile=execute,platform=process.platform}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   async function allowedRoots() {
@@ -91,6 +92,11 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     let url;
     try {url=new URL(req.url,origin);} catch {return json(400,{error:'Adresse invalide.'});}
     try {
+      if(req.method==='GET'&&url.pathname==='/api/todos') {
+        if(!guard(req,{body:false})) return;
+        try {return json(200,normalizeTodos(await getTodos(await bridge.list())));}
+        catch(error) {return json(errorStatus(error),{error:'Impossible de lire les listes de tâches pour le moment.'});}
+      }
       if(['/api/places','/api/files/recent','/api/files/list','/api/files/transfer','/api/files/reveal'].includes(url.pathname)) {
         if(!guard(req,{body:req.method!=='GET'})) return;
         try {

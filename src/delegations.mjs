@@ -205,11 +205,12 @@ async function* completeLines(stream, state) {
   let skipping = false;
   for await (const chunk of stream) {
     state.offset += chunk.length;
+    state.tail = Buffer.concat([state.tail, chunk]).subarray(-64);
     let start = 0;
     for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
       const segment = chunk.subarray(start, end + 1);
       if (skipping) { skipping = false; }
-      else if (partial.length + segment.length > MAX_LINE) { partial = Buffer.alloc(0); skipping = true; }
+      else if (partial.length + segment.length > MAX_LINE) { partial = Buffer.alloc(0); }
       else {
         yield partial.length ? Buffer.concat([partial, segment]) : segment;
         partial = Buffer.alloc(0);
@@ -225,7 +226,7 @@ async function* completeLines(stream, state) {
 }
 
 function freshState() {
-  return { offset: 0, partial: Buffer.alloc(0), delegations: [], byToolId: new Map(), size: 0, mtimeMs: 0, ino: 0, birthtimeMs: 0 };
+  return { offset: 0, partial: Buffer.alloc(0), tail: Buffer.alloc(0), delegations: [], byToolId: new Map(), size: 0, mtimeMs: 0, ino: 0, birthtimeMs: 0 };
 }
 
 function copie(delegations) {
@@ -251,6 +252,14 @@ async function readSession(sessionId, root, key) {
     let state = cache.get(path);
     if (!state || info.size < state.size || (info.size === state.size && info.mtimeMs !== state.mtimeMs) || info.ino !== state.ino || info.birthtimeMs !== state.birthtimeMs) {
       state = freshState();
+    }
+    if (state.offset > 0 && state.offset <= info.size && state.tail.length > 0) {
+      // Le journal doit toujours contenir, juste avant notre position, les octets
+      // déjà lus. Sinon il a été réécrit : on repart de zéro sans garder l'ancien.
+      const flux = createReadStream(path, { start: state.offset - state.tail.length, end: state.offset - 1 });
+      const morceaux = [];
+      for await (const morceau of flux) morceaux.push(morceau);
+      if (!Buffer.concat(morceaux).equals(state.tail)) state = freshState();
     }
     if (state.offset < info.size) {
       const stream = createReadStream(path, { start: state.offset, end: Math.min(info.size, state.offset + MAX_BYTES) - 1 });

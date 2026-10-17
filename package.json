@@ -1,11 +1,13 @@
 {
-  "name":"bureau-des-agents",
-  "private":true,
-  "type":"module",
-  "scripts":{
-    "start":"node server.mjs",
-    "test":"node --test",
-    "check":"node --check server.mjs && node --check src/herdr.mjs && node --check src/claude-activity.mjs && node --check src/agent-activity.mjs && node --check src/files.mjs && node --check public/app.js && node --check public/terminal.js"
+  "name": "bureau-des-agents",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "check": "node --check server.mjs && node --check src/herdr.mjs && node --check src/claude-activity.mjs && node --check src/agent-activity.mjs && node --check src/files.mjs && node --check src/todos.mjs && node --check public/app.js && node --check public/terminal.js && node --check src/delegations.mjs"
   },
-  "engines":{"node":">=22"}
+  "engines": {
+    "node": ">=22"
+  }
 }

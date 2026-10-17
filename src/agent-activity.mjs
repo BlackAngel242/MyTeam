@@ -91,6 +91,15 @@ async function* completeLines(stream, state) {
 function consumeCodex(state, entry) {
   const payload = entry?.payload;
   if (!payload || typeof payload !== 'object') return;
+  if (entry.type === 'response_item' && payload.type === 'function_call' && payload.name === 'update_plan') {
+    state.plan = null;
+    try {
+      const args = typeof payload.arguments === 'string' ? JSON.parse(payload.arguments) : payload.arguments;
+      if (Array.isArray(args?.plan) && args.plan.length <= 200 && args.plan.every(step => typeof step?.step === 'string' && ['pending','in_progress','completed'].includes(step.status))) {
+        state.plan = args.plan.map(step => ({text:Array.from(step.step.slice(0,320)).slice(0,160).join(''),status:step.status}));
+      }
+    } catch { /* Un appel mal forme n'est pas un plan fiable. */ }
+  }
   if (entry.type === 'session_meta') state.cwd = cwdKey(payload.cwd);
   if (entry.type === 'turn_context') {
     state.model = modelName(payload.model);
@@ -119,7 +128,7 @@ function changed(state, stat) {
 
 async function scanCodex(file, previous, headerOnly = false) {
   const { path, stat } = file;
-  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, tokens: null, limits: [], model: null, effort: null } : previous;
+  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, tokens: null, limits: [], model: null, effort: null, plan: null } : previous;
   if (!state.exhausted && state.offset < stat.size && !(headerOnly && state.cwd)) {
     const stream = createReadStream(path, { start: state.offset, end: Math.min(stat.size, state.offset + MAX_BYTES) - 1 });
     const input = Readable.from(completeLines(stream, state));
@@ -206,8 +215,7 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
       const state = await scanCodex(file, states.get(file.path));
       keep(states, file.path, state);
       if (state.exhausted || state.cwd !== cwd) return null;
-      if (!state.tokens && !state.model && !state.effort && !state.limits.length) return null;
-      return normalizeActivity(state);
+      return state;
     }
     return null;
   }
@@ -229,16 +237,23 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     const activity = normalizeActivity(result);
     return activity.tokens || activity.model || activity.effort ? activity : null;
   }
-  return async function readAgentActivity(agent, agents = [agent]) {
+  const reader=async function readAgentActivity(agent, agents = [agent], {planOnly=false}={}) {
     if (!agent || !['Codex', 'OpenCode'].includes(agent.kind)) return null;
+    if(planOnly&&agent.kind!=='Codex') return null;
     const cwd = cwdKey(agent.cwd);
     if (!cwd || agents.filter(peer => peer.kind === agent.kind && cwdKey(peer.cwd) === cwd).length !== 1) return null;
     const key = `${agent.kind}\0${cwd}`;
-    if (pending.has(key)) return structuredClone(await pending.get(key));
-    const promise = (agent.kind === 'Codex' ? readCodex(cwd) : readOpenCode(cwd)).catch(() => null);
+    const promise = pending.get(key)||(agent.kind === 'Codex' ? readCodex(cwd) : readOpenCode(cwd)).catch(() => null);
     pending.set(key, promise);
-    try { return await promise; } finally { pending.delete(key); }
+    try {
+      const result=await promise;
+      if(planOnly) return result&&result.offset>=result.size?structuredClone(result.plan):null;
+      if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length)?normalizeActivity(result):null;
+      return structuredClone(result);
+    } finally {if(pending.get(key)===promise) pending.delete(key);}
   };
+  reader.readPlan=(agent,agents=[agent])=>reader(agent,agents,{planOnly:true});
+  return reader;
 }
 
 export const readAgentActivity = createAgentActivityReader();

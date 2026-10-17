@@ -22,3 +22,6 @@
 - Écrire les consignes aux agents en français accentué : une consigne sans accents a produit un README entièrement sans accents. Les agents imitent la forme de la consigne.
 - Une mesure prise juste après une capture pleine page peut être faussée : vérifier le défilement par une mesure dédiée avant de déclarer un défaut.
 - Captures : Chrome sans fenêtre bloque sur cette page animée avec `--virtual-time-budget`. Utiliser Playwright avec `channel: 'msedge'` installé hors du projet, et simuler les états par interception de /api/state sans jamais envoyer de consigne.
+- Lecture incrémentale d'un journal : vérifier la continuité des octets (taille et début inchangés) avant de reprendre à l'ancien décalage ; un journal réécrit doit être relu depuis le début (OpenCode, délégations).
+- Un hook de commit doit tester le contenu indexé (extrait dans un dossier temporaire), jamais le dossier de travail où d'autres agents écrivent en parallèle.
+- Les sous-agents d'un outil peuvent tomber en panne (« Model unavailable ») : l'agent doit alors faire le travail lui-même et le signaler, pas abandonner.

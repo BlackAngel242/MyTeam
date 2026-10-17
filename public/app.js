@@ -440,21 +440,41 @@ function bossOf(agents){
   const num=a=>{const m=/:p(\d+)$/.exec(a.paneId||'');return m?Number(m[1]):Infinity;};
   return agents.length>1?agents.reduce((b,a)=>num(a)<num(b)?a:b):null;
 }
+const fitMode=matchMedia('(min-width:1100px) and (min-height:620px)');
 function layout(){
-  const cssW=canvas.parentElement.clientWidth||960, narrow=cssW<560, boss=state.connected?bossOf(state.agents):null;
-  const n=Math.max(1,(state.agents.length||2)-(boss?1:0));
-  const W=narrow?144:256, cols=Math.min(narrow?2:4,n), rows=Math.ceil(n/cols), wallH=narrow?70:84, rowH=80, bossH=boss?88:0, bossTop=wallH+10, top=wallH+12+bossH;
-  const roomY=top+rows*rowH+4, H=roomY+60, S=Math.max(2,Math.round(cssW*(window.devicePixelRatio||1)/W));
-  return {W,H,S,cols,rows,wallH,rowH,top,bossTop,bossH,boss,roomY,narrow,cw:Math.min(78,Math.floor((W-8)/cols))};
+  const wrap=canvas.parentElement,cssW=wrap.clientWidth||960,cssH=wrap.clientHeight||600,narrow=cssW<560,boss=state.connected?bossOf(state.agents):null;
+  const n=Math.max(1,(state.agents.length||2)-(boss?1:0)),wallH=narrow?70:84,rowH=80,bossTop=wallH+10;
+  // Deux dispositions : le bureau du chef au-dessus des agents, ou à leur droite (écran large).
+  const shape=(W,side)=>{
+    const bossH=boss&&!side?88:0,top=wallH+12+bossH,areaW=side?W-160:W;
+    const cols=Math.min(narrow?2:Math.max(1,Math.floor((areaW-8)/62)),n),rows=Math.ceil(n/cols),roomY=top+Math.max(rows*rowH,side?92:0)+4;
+    return {W,cols,rows,roomY,H:roomY+60,top,bossH,areaW,side};
+  };
+  // En vue globale, la largeur logique suit la forme de la fenêtre : la scène la remplit au lieu de flotter entre deux bandes vides.
+  let best=shape(narrow?144:256,false);
+  if(fitMode.matches&&!narrow){const target=cssW/cssH;for(const W of [256,288,320,352,384,416,448,480])for(const side of boss&&W>=352?[false,true]:[false]){const s=shape(W,side);if(Math.abs(s.W/s.H-target)<Math.abs(best.W/best.H-target))best=s;}}
+  const {W,cols,rows,roomY,H,top,bossH,areaW,side}=best,S=Math.max(2,Math.round(Math.min(cssW,fitMode.matches?cssH*W/H:cssW)*(window.devicePixelRatio||1)/W));
+  return {W,H,S,cols,rows,wallH,rowH,top,bossTop,bossH,boss,roomY,narrow,areaW,sideBoss:side,cw:Math.min(78,Math.floor((areaW-8)/cols))};
 }
 // Bureau VIP du chef : moquette, cloison vitrée avec porte au centre, enseigne et pile de courrier reçu.
+// Disposition libre : DrSmoke peut glisser les postes et déplacer ou redimensionner le bureau du chef.
+// Positions mémorisées dans ce navigateur, en proportion du sol pour suivre toutes les tailles de fenêtre.
+const readLayout=()=>{try{return JSON.parse(localStorage.getItem('bureau.disposition')||'null')||{stations:{},vip:null};}catch{return {stations:{},vip:null};}};
+let custom=readLayout(),editLayout=false,dragging=null;
+const saveLayout=()=>{try{localStorage.setItem('bureau.disposition',JSON.stringify(custom));}catch{}};
+const layoutKeyOf=a=>a.kind+'|'+a.name;
+const floorBox=L=>({top:L.wallH+6,h:L.roomY-(L.wallH+6)});
 function vipOffice(L,time){
-  const y=L.bossTop,cx=Math.round(L.W/2),w=L.narrow?120:150,x=cx-w/2;
-  px(x,y,w,L.bossH-6,'#241f38');px(x,y,w,1,'#c9a46a',.6);px(x,y,1,L.bossH-6,'#c9a46a',.6);px(x+w-1,y,1,L.bossH-6,'#c9a46a',.6);
-  for(let gx=x+4;gx<x+w-4;gx+=8)for(let gy=y+6;gy<y+L.bossH-10;gy+=8)px(gx,gy,1,1,'#30294a');
-  const by=y+L.bossH-6;px(x,by,w/2-10,3,'#2c4468');px(cx+10,by,w/2-10,3,'#2c4468');px(x,by,w/2-10,1,'#4a6a94');px(cx+10,by,w/2-10,1,'#4a6a94');
+  const side=L.sideBoss;let w=L.narrow?120:side?148:150,cx=side?L.W-8-w/2:Math.round(L.W/2),y=side?L.top-6:L.bossTop,vh=side?L.roomY-L.top+2:L.bossH;
+  if(custom.vip){const f=floorBox(L);w=Math.max(70,Math.min(L.W-4,custom.vip.fw*L.W));vh=Math.max(70,Math.min(f.h,custom.vip.fh*f.h));cx=Math.max(w/2+2,Math.min(L.W-w/2-2,custom.vip.fx*L.W));y=Math.max(f.top,Math.min(L.roomY-vh,f.top+custom.vip.fy*f.h));}
+  cx=Math.round(cx);y=Math.round(y);w=Math.round(w);vh=Math.round(vh);
+  const x=cx-w/2;vipRect={x,y,w,h:vh};
+  px(x,y,w,vh-6,'#241f38');px(x,y,w,1,'#c9a46a',.6);px(x,y,1,vh-6,'#c9a46a',.6);px(x+w-1,y,1,vh-6,'#c9a46a',.6);
+  for(let gx=x+4;gx<x+w-4;gx+=8)for(let gy=y+6;gy<y+vh-10;gy+=8)px(gx,gy,1,1,'#30294a');
+  const by=y+vh-6;px(x,by,w/2-10,3,'#2c4468');px(cx+10,by,w/2-10,3,'#2c4468');px(x,by,w/2-10,1,'#4a6a94');px(cx+10,by,w/2-10,1,'#4a6a94');
   text('DIRECTION',x+5,y+4,'#c9a46a');
   if(mailCount){const mx=x+w-22;for(let k=0;k<Math.min(mailCount,5);k++){px(mx,y+8-k*2+20,9,6,'#dfe6ee');px(mx+1,y+9-k*2+20,7,1,'#9aabc1');}text(String(mailCount),mx+11,y+26,'#dfe6ee');}
+  if(editLayout){px(x+w-7,by-7,6,6,'#c9a46a');px(x+w-5,by-5,2,2,'#241f38');}
   return {cx,y0:y-6,doorY:by+1};
 }
 // Le ciel suit l'heure réelle de l'ordinateur : nuit, aube, jour, crépuscule.
@@ -528,7 +548,7 @@ function room(L,time){
   else{
     cityWindow(8,10,112,50);glow(64,wallH+9,26,light[0],light[1]);
     board(128,12,64);clock(198,12);neon('BUREAU DE DRSMOKE',128,Math.max(50,boardBottom+5),'#a0dfc4');
-    plant(204,wallH+4);rack(230,16,wallH+6,time);plant(1,wallH+6);
+    plant(W-52,wallH+4);rack(W-26,16,wallH+6,time);plant(1,wallH+6);
   }
   for(let i=0;i<3;i++){px(0,0,2+i*2,H,'#050a14',.12);px(W-2-i*2,0,2+i*2,H,'#050a14',.12);px(0,0,W,1+i,'#050a14',.12);}
 }
@@ -788,9 +808,14 @@ function draw(time){
   const all=state.agents.length?state.agents:[null,null],items=all.filter(a=>!L.boss||a!==L.boss);
   deskSpots.clear();
   if(vip)station(L.boss,state.agents.indexOf(L.boss),vip.cx,vip.y0,time,L);
+  const f=floorBox(L);lastLayout=L;
   items.forEach((a,i)=>{
     const r=Math.floor(i/L.cols),inRow=Math.min(L.cols,items.length-r*L.cols),c=i%L.cols;
-    station(a,a?state.agents.indexOf(a):i,Math.round(L.W/2+(c-(inRow-1)/2)*L.cw),L.top+r*L.rowH,time,L);
+    let cx=Math.round(L.areaW/2+(c-(inRow-1)/2)*L.cw),y0=L.top+r*L.rowH;
+    const saved=a&&custom.stations[layoutKeyOf(a)];
+    if(saved){cx=Math.round(Math.max(26,Math.min(L.W-26,saved.fx*L.W)));y0=Math.round(Math.max(f.top,Math.min(L.roomY-L.rowH,f.top+saved.fy*f.h)));}
+    station(a,a?state.agents.indexOf(a):i,cx,y0,time,L);
+    if(editLayout&&a){px(cx-26,y0+6,52,1,'#a0dfc4',.6);px(cx-26,y0+76,52,1,'#a0dfc4',.6);px(cx-26,y0+6,1,70,'#a0dfc4',.6);px(cx+25,y0+6,1,70,'#a0dfc4',.6);}
   });
   syncActors(L,now);syncOffice(L,now);
   drawActors(L,G,time,now,'back');tableTop(G);drawActors(L,G,time,now,'side');drawActors(L,G,time,now,'front');
@@ -800,8 +825,47 @@ function draw(time){
   if(summary!==ariaText){ariaText=summary;canvas.setAttribute('aria-label',summary);}
   attentionTitle();
 }
-const spotAt=event=>{const r=canvas.getBoundingClientRect(),x=(event.clientX-r.left)*canvas.width/r.width,y=(event.clientY-r.top)*canvas.height/r.height;return spots.find(s=>x>=s.x&&x<=s.x+s.w&&y>=s.y&&y<=s.y+s.h);};
-canvas.addEventListener('click',event=>{const spot=spotAt(event);if(spot)selectAgent(spot.id);});
+// En vue globale l'image est centrée dans son cadre (object-fit: contain) : on retire les bandes vides avant de convertir le clic.
+const spotAt=event=>{
+  const r=canvas.getBoundingClientRect(),k=Math.min(r.width/canvas.width,r.height/canvas.height);
+  const ox=(r.width-canvas.width*k)/2,oy=(r.height-canvas.height*k)/2;
+  const x=(event.clientX-r.left-ox)/k,y=(event.clientY-r.top-oy)/k;
+  return spots.find(s=>x>=s.x&&x<=s.x+s.w&&y>=s.y&&y<=s.y+s.h);
+};
+canvas.addEventListener('click',event=>{if(editLayout)return;const spot=spotAt(event);if(spot)selectAgent(spot.id);});
+let vipRect=null,lastLayout=null;
+function toLogical(event){
+  const r=canvas.getBoundingClientRect(),k=Math.min(r.width/canvas.width,r.height/canvas.height);
+  const ox=(r.width-canvas.width*k)/2,oy=(r.height-canvas.height*k)/2,S=lastLayout?.S||1;
+  return {x:(event.clientX-r.left-ox)/k/S,y:(event.clientY-r.top-oy)/k/S};
+}
+canvas.addEventListener('pointerdown',event=>{
+  if(!editLayout||!lastLayout)return;
+  const p=toLogical(event),L=lastLayout,v=vipRect;
+  if(v&&p.x>=v.x+v.w-10&&p.x<=v.x+v.w&&p.y>=v.y+v.h-14&&p.y<=v.y+v.h)dragging={type:'resize'};
+  else if(v&&p.x>=v.x&&p.x<=v.x+v.w&&p.y>=v.y&&p.y<=v.y+v.h)dragging={type:'vip',dx:p.x-(v.x+v.w/2),dy:p.y-v.y};
+  else{
+    const spot=spotAt(event),a=spot&&state.agents.find(x=>x.id===spot.id),d=a&&deskSpots.get(a.id);
+    if(a&&d&&a!==L.boss)dragging={type:'station',key:layoutKeyOf(a),dx:p.x-d.cx,dy:p.y-d.y0};
+  }
+  if(dragging){canvas.setPointerCapture(event.pointerId);event.preventDefault();}
+});
+canvas.addEventListener('pointermove',event=>{
+  if(!dragging||!lastLayout)return;
+  const p=toLogical(event),L=lastLayout,f=floorBox(L),v=vipRect;
+  if(dragging.type==='station')custom.stations[dragging.key]={fx:(p.x-dragging.dx)/L.W,fy:(p.y-dragging.dy-f.top)/f.h};
+  else if(dragging.type==='vip')custom.vip={fx:(p.x-dragging.dx)/L.W,fy:(p.y-dragging.dy-f.top)/f.h,fw:v.w/L.W,fh:v.h/f.h};
+  else if(dragging.type==='resize'){const w=Math.max(70,p.x-v.x),h=Math.max(70,p.y-v.y+4);custom.vip={fx:(v.x+w/2)/L.W,fy:(v.y-f.top)/f.h,fw:w/L.W,fh:h/f.h};}
+  draw(lastFrame);
+});
+canvas.addEventListener('pointerup',()=>{if(dragging){dragging=null;saveLayout();}});
+function syncLayoutEdit(){
+  $('layout-edit').setAttribute('aria-pressed',String(editLayout));$('layout-edit').querySelector('span').textContent=editLayout?'Terminer':'Disposer';
+  $('layout-reset').hidden=!editLayout;$('layout-hint').hidden=!editLayout;canvas.classList.toggle('editing',editLayout);draw(lastFrame);
+}
+$('layout-edit').addEventListener('click',()=>{editLayout=!editLayout;syncLayoutEdit();});
+$('layout-reset').addEventListener('click',()=>{custom={stations:{},vip:null};saveLayout();draw(lastFrame);});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();}});
 canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null;canvas.style.cursor=id?'pointer':'default';if(id!==hovered){hovered=id;draw(lastFrame);}});
 canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFrame);}});
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
