@@ -219,6 +219,8 @@ test('file : la priorité est validée et ne change que sur une attente', async 
   const change = await queue.prioritize(item.itemId, 'haute');
   assert.equal(change.priority, 'haute');
   await assert.rejects(() => queue.prioritize(item.itemId, 'urgente'), /priorité/);
+  await assert.rejects(() => queue.prioritize(undefined, 'haute'), erreur => erreur.status === 400, 'une requête mal formée est une erreur de saisie');
+  await assert.rejects(() => queue.prioritize(123, 'haute'), erreur => erreur.status === 400);
   await queue.tick();
   await assert.rejects(() => queue.prioritize(item.itemId, 'haute'), erreur => erreur.status === 409);
   await assert.rejects(() => queue.prioritize('inconnu', 'haute'), erreur => erreur.status === 409);

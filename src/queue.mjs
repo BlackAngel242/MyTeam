@@ -271,6 +271,9 @@ export function createQueue({
 
   async function prioritize(itemId, priority) {
     if (!PRIORITES.includes(priority)) throw new QueueError('La priorité doit être « haute » ou « normale ».');
+    // Une requête mal formée est une erreur de saisie : le 409 est réservé aux
+    // consignes qui existent mais ne sont plus en attente.
+    if (typeof itemId !== 'string' || !itemId.trim()) throw new QueueError('Sélectionnez une consigne.');
     const element = items.find(candidate => candidate.itemId === itemId);
     // Seule une consigne encore en attente change de priorité : le reste est déjà joué.
     if (!element || element.state !== 'attente') throw new QueueError('Seule une consigne encore en attente change de priorité.', 409);
