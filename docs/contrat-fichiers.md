@@ -26,3 +26,24 @@ Les `FileError` deviennent des 400 avec leur message ; les autres erreurs resten
 ## Interdits
 
 Aucune suppression, aucun écrasement, aucun dossier copié pour le moment, aucun lien symbolique suivi, aucun chemin absolu accepté ni renvoyé. Un fichier n'est « produit par » un agent que si un journal le prouve ; sinon il est « modifié récemment dans son dossier ».
+
+## E2 : fichiers joints à une consigne en file
+
+**Réponse exacte de `POST /api/queue` (HTTP 200)** :
+
+```js
+{
+  itemId, id, message, notBefore, priority, state,
+  createdAt, updatedAt, sentAt, reason, holdUntil, requestKey,
+  files: [{ root, path }],
+  copiedFiles: [{ name }]
+}
+```
+
+`GET /api/queue` renvoie `{items:[…]}` avec les mêmes objets. Les champs de dates sont des dates ISO ou `null` pour les dates facultatives. `message` garde la consigne originale. `files` et `copiedFiles` sont toujours des tableaux, vides sans pièce jointe ; les anciens éléments enregistrés sont adaptés à cette forme. Une clé de demande encore connue mais dont l'élément a quitté l'historique renvoie un résultat de déduplication avec `copiedFiles:[]` : aucun nouvel envoi.
+
+**Entrée** : `{id, message, notBefore?, priority?, requestKey?, files?:[{root,path}]}`. Même jeton et même origine exacte que les autres écritures. Maximum deux fichiers, chacun de 20 × 1024 × 1024 octets. Une racine inconnue, un chemin absolu, une sortie `..`, un caractère de contrôle ou une liste mal formée donne HTTP 400. Aucun octet de fichier ni chemin absolu ne vient du navigateur.
+
+La copie a lieu au départ effectif, après les contrôles de disponibilité et de quota, vers la racine actuelle de l'agent. Les racines autorisées sont relues à cet instant. `transfer` copie sans écrasement et ajoute un suffixe si nécessaire, par exemple `rapport (2).txt`. `copiedFiles` contient uniquement les noms effectivement copiés. Ils sont ajoutés à la consigne transmise, sous la mention « Fichiers copiés dans ton dossier de travail », comme des noms entre guillemets. Cela ne prouve aucune lecture du fichier par l'agent.
+
+Avant toute copie, l'état `envoi_en_cours` est enregistré sur disque. Avant l'envoi, les noms copiés sont enregistrés, puis le quota, la disponibilité et l'identité de la cible sont revérifiés. Une copie impossible, un fichier trop grand, une cible modifiée ou un envoi non confirmé donne `state:'a_revoir'`, avec `reason` lisible. Aucun envoi ne suit une copie en échec et aucun nouvel essai automatique n'est fait. Les copies déjà réalisées restent sur disque et dans `copiedFiles` ; aucun fichier n'est supprimé pour annuler une copie partielle. Un redémarrage pendant la copie ou l'envoi restaure également « à revoir ».

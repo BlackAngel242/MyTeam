@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { lstat, opendir } from 'node:fs/promises';
+import { lstat, opendir, open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, posix, win32 } from 'node:path';
 import { Readable } from 'node:stream';
@@ -107,7 +107,7 @@ function consumeCodex(state, entry) {
     } catch { /* Un appel mal forme n'est pas un plan fiable. */ }
   }
   if (entry.type === 'session_meta') {
-    state.cwd = cwdKey(payload.cwd);
+    state.cwd = payload.source === 'subagent' || payload.source?.subagent ? null : cwdKey(payload.cwd);
     if (typeof payload.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(payload.id)) state.thread = payload.id;
   }
   if (entry.type === 'turn_context') {
@@ -183,9 +183,13 @@ function changed(state, stat) {
     (!state.exhausted && stat.size === state.size && stat.mtimeMs !== state.mtimeMs);
 }
 
-async function scanCodex(file, previous, headerOnly = false) {
+async function scanCodex(file, previous, headerOnly = false, consumeEntry) {
   const { path, stat } = file;
-  const state = changed(previous, stat) ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, thread: null, tokens: null, limits: [], limitReached: false, model: null, effort: null, plan: null, subagents: null, spawnNames: new Map(), agents: new Map() } : previous;
+  const handle = await open(path,'r');
+  const prefix = Buffer.alloc(Math.min(stat.size,512));
+  try { await handle.read(prefix,0,prefix.length,0); } finally { await handle.close(); }
+  const rewritten = previous?.prefix && !prefix.subarray(0,previous.prefix.length).equals(previous.prefix);
+  const state = changed(previous, stat) || rewritten ? { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, cwd: null, thread: null, tokens: null, limits: [], limitReached: false, model: null, effort: null, plan: null, subagents: null, spawnNames: new Map(), agents: new Map() } : previous;
   if (!state.exhausted && state.offset < stat.size && !(headerOnly && state.cwd)) {
     const stream = createReadStream(path, { start: state.offset, end: Math.min(stat.size, state.offset + MAX_BYTES) - 1 });
     const input = Readable.from(completeLines(stream, state));
@@ -195,12 +199,13 @@ async function scanCodex(file, previous, headerOnly = false) {
         let entry;
         try { entry = JSON.parse(line); } catch { continue; }
         consumeCodex(state, entry);
+        if (!headerOnly && consumeEntry) consumeEntry(state, entry, path);
         if (headerOnly && state.cwd) break;
       }
     } catch { state.exhausted = true; state.partial = Buffer.alloc(0); }
     finally { lines.close(); input.destroy(); stream.destroy(); }
   }
-  Object.assign(state, { size: stat.size, mtimeMs: stat.mtimeMs, ino: stat.ino, birthtimeMs: stat.birthtimeMs });
+  Object.assign(state, { prefix, size: stat.size, mtimeMs: stat.mtimeMs, ino: stat.ino, birthtimeMs: stat.birthtimeMs });
   return state;
 }
 
@@ -239,6 +244,7 @@ async function openCodeSessions(path) {
       }
       const output = number(row.tokens_output), reasoning = number(row.tokens_reasoning);
       return {
+        sessionId: row.id,
         cwd: cwdKey(row.directory), updated: number(row.time_updated),
         tokens: { input: number(row.tokens_input), output: output === null ? null : output + (reasoning ?? 0), cacheRead: number(row.tokens_cache_read), cacheCreation: number(row.tokens_cache_write) },
         model: modelName(row.model) ?? modelName(detail?.model), effort: effortName(detail?.effort), limits: [],
@@ -247,7 +253,7 @@ async function openCodeSessions(path) {
   } finally { db.close(); }
 }
 
-export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex', 'sessions'), openCodeRoot = join(homedir(), '.local', 'share', 'opencode') } = {}) {
+export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex', 'sessions'), openCodeRoot = join(homedir(), '.local', 'share', 'opencode'), consumeCodexEntry } = {}) {
   const headers = new Map(), states = new Map(), databases = new Map(), pending = new Map();
   async function readCodex(cwd) {
     const candidates = [];
@@ -269,7 +275,7 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
         const other = await scanCodex(candidates[j], null, true);
         if (other.cwd === cwd) return null;
       }
-      const state = await scanCodex(file, states.get(file.path));
+      const state = await scanCodex(file, states.get(file.path), false, consumeCodexEntry);
       keep(states, file.path, state);
       if (state.exhausted || state.cwd !== cwd) return null;
       return state;
@@ -285,16 +291,15 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
         if (!stamp) continue;
         let cached = databases.get(path);
         if (cached?.stamp !== stamp) { cached = { stamp, rows: await openCodeSessions(path) }; keep(databases, path, cached); }
-        candidates.push(...cached.rows.filter(row => row.cwd === cwd && row.updated !== null));
+        candidates.push(...cached.rows.filter(row => row.cwd === cwd && row.updated !== null).map(row => ({ ...row, path, root: openCodeRoot })));
       } catch { /* Base absente, verrouillee ou SQLite natif indisponible : rien d'invente. */ }
     }
     candidates.sort((a, b) => b.updated - a.updated);
     const result = candidates[0];
-    if (!result) return null;
-    const activity = normalizeActivity(result);
-    return activity.tokens || activity.model || activity.effort ? activity : null;
+    if (!result || candidates[1]?.updated === result.updated) return null;
+    return result;
   }
-  const reader=async function readAgentActivity(agent, agents = [agent], {planOnly=false}={}) {
+  const reader=async function readAgentActivity(agent, agents = [agent], {planOnly=false,sourceOnly=false}={}) {
     if (!agent || !['Codex', 'OpenCode'].includes(agent.kind)) return null;
     if(planOnly&&agent.kind!=='Codex') return null;
     const cwd = cwdKey(agent.cwd);
@@ -304,13 +309,42 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     pending.set(key, promise);
     try {
       const result=await promise;
+      if(sourceOnly) return result && (agent.kind !== 'Codex' || result.offset >= result.size) ? result : null;
       if(planOnly) return result&&result.offset>=result.size?structuredClone(result.plan):null;
       if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length||result.subagents)?normalizeActivity(result):null;
-      return structuredClone(result);
+      const activity=normalizeActivity(result);
+      return activity&&(activity.tokens||activity.model||activity.effort)?activity:null;
     } finally {if(pending.get(key)===promise) pending.delete(key);}
   };
   reader.readPlan=(agent,agents=[agent])=>reader(agent,agents,{planOnly:true});
+  // Réservé aux lecteurs serveur : cette source contient des coordonnées privées.
+  reader.readSource=(agent,agents=[agent])=>reader(agent,agents,{sourceOnly:true});
   return reader;
+}
+
+// Projection étroite des messages : jamais SELECT *, ni table credential.
+export async function readOpenCodeTexts(source) {
+  if (!source || !(await databaseStamp(source.path, source.root))) return null;
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(source.path, { readOnly: true });
+  try {
+    const messages = db.prepare(`SELECT id,time_created,
+      json_extract(data,'$.time.completed') AS completed,
+      json_extract(data,'$.finish') AS finish,
+      json_extract(data,'$.error.name') AS error
+      FROM message WHERE session_id=? AND json_valid(data)
+      AND json_extract(data,'$.role')='assistant'
+      ORDER BY time_created DESC,id DESC LIMIT 31`).all(source.sessionId);
+    const parts = db.prepare(`SELECT substr(json_extract(data,'$.text'),1,20001) AS text
+      FROM part WHERE session_id=? AND message_id=? AND json_valid(data)
+      AND json_extract(data,'$.type')='text'
+      AND COALESCE(json_extract(data,'$.synthetic'),0)=0
+      AND COALESCE(json_extract(data,'$.ignored'),0)=0
+      ORDER BY time_created,id LIMIT 33`);
+    return { complete: messages.length <= 30, messages: messages.slice(0,30).reverse().map(message => ({
+      ...message, parts: parts.all(source.sessionId,message.id),
+    })) };
+  } finally { db.close(); }
 }
 
 export const readAgentActivity = createAgentActivityReader();

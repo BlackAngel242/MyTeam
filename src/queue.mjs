@@ -11,7 +11,7 @@
 import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
-import { dirname } from 'node:path';
+import { dirname, posix, win32 } from 'node:path';
 
 export class QueueError extends Error {
   constructor(message, status = 400) {
@@ -31,7 +31,23 @@ const iso = ms => new Date(ms).toISOString();
 const tronquer = (texte, max) => Array.from(String(texte ?? '')).slice(0, max).join('');
 const dateLisible = valeur => (typeof valeur === 'string' && !Number.isNaN(Date.parse(valeur))) ? iso(Date.parse(valeur)) : null;
 
-function valider({ id, message, notBefore, requestKey, priority }) {
+function validerFichiers(files = []) {
+  if (!Array.isArray(files) || files.length > 2) throw new QueueError('Choisissez au maximum deux fichiers de 20 Mo chacun.');
+  return files.map(file => {
+    const root = file?.root, path = file?.path;
+    if (typeof root !== 'string' || root.length > 240 || !/^(?:bureau|documents|telechargements|agent:[^\\/\u0000-\u001f]+)$/.test(root) ||
+      typeof path !== 'string' || !path || path.length > 1024 || /[\u0000-\u001f]/.test(path) ||
+      posix.isAbsolute(path) || win32.isAbsolute(path) || /^[a-z]:/i.test(path) || path.split(/[\\/]/).includes('..')) {
+      throw new QueueError('Choisissez un fichier dans un lieu autorisé avec un chemin relatif.');
+    }
+    return { root, path };
+  });
+}
+
+const nomCopie = name => typeof name === 'string' && name.length > 0 && name.length <= 255 &&
+  name !== '.' && name !== '..' && !/[\u0000-\u001f]/.test(name) && posix.basename(name) === name && win32.basename(name) === name && !/^[a-z]:/i.test(name);
+
+function valider({ id, message, notBefore, requestKey, priority, files }) {
   if (typeof id !== 'string' || !id.trim() || id.length > 200) throw new QueueError('Sélectionnez un agent.');
   if (typeof message !== 'string' || !message.trim() || message.length > 12000 || message.includes('\0')) {
     throw new QueueError('Écrivez une consigne de 1 à 12 000 caractères, sans caractère nul.');
@@ -52,7 +68,7 @@ function valider({ id, message, notBefore, requestKey, priority }) {
   if (priority !== undefined && priority !== null && priority !== '' && !PRIORITES.includes(priority)) {
     throw new QueueError('La priorité doit être « haute » ou « normale ».');
   }
-  return { id, message, notBefore: depart, requestKey: cle, priority: priority || 'normale' };
+  return { id, message, notBefore: depart, requestKey: cle, priority: priority || 'normale', files: validerFichiers(files) };
 }
 
 // Restauration : seule une liste blanche de champs est gardée, avec les mêmes
@@ -79,8 +95,21 @@ function restaurer(brut) {
     reason: typeof brut.reason === 'string' ? tronquer(brut.reason, 200) : null,
     holdUntil: null,
     requestKey: typeof brut.requestKey === 'string' && brut.requestKey.length <= 64 ? brut.requestKey : null,
+    files: [], copiedFiles: [],
   };
   let probleme = null;
+  try {
+    element.files = validerFichiers(brut.files);
+    if (brut.copiedFiles !== undefined) {
+      if (!Array.isArray(brut.copiedFiles) || brut.copiedFiles.length > 2 || brut.copiedFiles.some(file => !nomCopie(file?.name))) throw new Error();
+      element.copiedFiles = brut.copiedFiles.map(file => ({name:file.name}));
+    }
+    if (state === 'attente' && element.copiedFiles.length) throw new Error();
+  } catch {
+    element.files = []; element.copiedFiles = [];
+    element.state = 'a_revoir';
+    element.reason = 'Les fichiers joints ne sont plus fiables : revoyez cette consigne.';
+  }
   if (brut.notBefore !== undefined && brut.notBefore !== null && brut.notBefore !== '') {
     const date = dateLisible(brut.notBefore);
     if (date) element.notBefore = date;
@@ -111,6 +140,7 @@ export function createQueue({
   now = () => Date.now(),
   maxItems = 20,
   maxPerAgent = 5,
+  prepareFiles = async () => { throw new QueueError('La copie des fichiers est indisponible.'); },
 } = {}) {
   if (typeof listAgents !== 'function' || typeof prompt !== 'function' || typeof file !== 'string') {
     throw new QueueError('La file d\'attente est mal configurée.');
@@ -123,9 +153,9 @@ export function createQueue({
   let tour = null;
   let minuterie = null;
 
-  function nouveau({ id, message, notBefore, requestKey, priority }, etat = 'attente', raison = null) {
+  function nouveau({ id, message, notBefore, requestKey, priority, files }, etat = 'attente', raison = null) {
     const date = iso(now());
-    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, priority: priority || 'normale', state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison, holdUntil: null, requestKey };
+    return { itemId: `q-${now().toString(36)}-${compteur++}-${randomBytes(3).toString('hex')}`, id, message, notBefore, priority: priority || 'normale', state: etat, createdAt: date, updatedAt: date, sentAt: null, reason: raison, holdUntil: null, requestKey, files, copiedFiles: [] };
   }
 
   function publique(element) {
@@ -219,12 +249,13 @@ export function createQueue({
         itemId: connu.itemId, id: valide.id, message: valide.message, notBefore: valide.notBefore,
         state: connu.state, createdAt: connu.at, updatedAt: connu.at, sentAt: null,
         reason: 'Consigne déjà traitée (clé de demande déjà utilisée).', holdUntil: null, requestKey: valide.requestKey,
+        priority: valide.priority, files: valide.files, copiedFiles: [],
       });
     }
     // Sans clé de demande, une même consigne déjà en file ou déjà envoyée est un
     // renvoi (réponse perdue) : refusé plutôt que risquer un double envoi.
     if (items.some(element => ['attente', 'envoi_en_cours', 'envoyee'].includes(element.state)
-      && element.id === valide.id && element.message === valide.message)) {
+      && element.id === valide.id && element.message === valide.message && JSON.stringify(element.files) === JSON.stringify(valide.files))) {
       throw new QueueError('Cette consigne est déjà en file.');
     }
     if (items.filter(element => element.state === 'attente' && element.id === valide.id).length >= maxPerAgent) {
@@ -346,6 +377,7 @@ export function createQueue({
           if (now() < fin) continue;  // pause encore en cours : rien ne part ce tour
         }
         for (const element of attente) {
+          const target = { ...agent };
           const depart = element.notBefore ? Date.parse(element.notBefore) : 0;
           const relance = element.holdUntil ? Date.parse(element.holdUntil) : 0;
           if (now() < Math.max(depart, relance)) continue;
@@ -364,7 +396,25 @@ export function createQueue({
             continue;
           }
           try {
-            await prompt(element.id, element.message);
+            let message = element.message;
+            if (element.files.length) {
+              const copies = await prepareFiles(element,target);
+              if (!Array.isArray(copies) || copies.length !== element.files.length || copies.some(file => !nomCopie(file?.name))) {
+                throw new QueueError('La copie des fichiers n’a pas été confirmée.');
+              }
+              element.copiedFiles = copies.map(file => ({name:file.name}));
+              message += '\n\nFichiers copiés dans ton dossier de travail :\n' + element.copiedFiles.map(file => '- '+JSON.stringify(file.name)).join('\n');
+              if (message.length > 12000) throw new QueueError('La consigne avec les noms de fichiers dépasse 12 000 caractères.');
+              await persister();
+              // La copie peut prendre du temps : revérifier la cible avant l'envoi.
+              const limit = await limitsOf(element.id,await listAgents());
+              if (limit?.limitReached === true) throw new QueueError('Une limite est apparue après la copie : revoyez cette consigne.');
+              const current = (await listAgents()).find(candidate => candidate.id === element.id);
+              if (!current || !['idle','done'].includes(current.status) || current.ready !== true || current.cwd !== target.cwd || current.kind !== target.kind || current.sessionId !== target.sessionId) {
+                throw new QueueError('La cible a changé ou n’est plus disponible après la copie.');
+              }
+            }
+            await prompt(element.id, message);
             element.state = 'envoyee';
             element.sentAt = iso(now());
             element.updatedAt = element.sentAt;

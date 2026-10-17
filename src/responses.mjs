@@ -10,11 +10,15 @@
 // - Les réponses sont les 30 dernières, de la plus ancienne à la plus récente.
 // - Seuls les blocs de texte de l'agent sortent : ni outils, ni raisonnement, ni
 //   messages inter-agents. Secrets et chemins personnels sont masqués.
-// Codex et OpenCode : non pris en charge ici (aucune session exacte n'est observable).
+// readAgentResponses(agent, agents) : même contrat pour Codex et OpenCode, avec
+// rattachement par dossier et activité récente, jamais si ce choix est ambigu.
+// Codex : textes output_text publics uniquement ; agent_message est toujours ignoré.
+// OpenCode : parts text non synthétiques, colonnes précises, base en lecture seule.
 import { open, lstat, opendir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { createAgentActivityReader, readOpenCodeTexts } from './agent-activity.mjs';
 
 const TAIL_BYTES = 8 * 1024 * 1024;
 const MAX_LINE = 4 * 1024 * 1024;
@@ -128,3 +132,89 @@ export async function readClaudeResponses(sessionId, { root = join(homedir(), '.
     return { found: true, complete, responses: parseClaudeResponses(lines, sessionId) };
   } catch { return { found: false, complete: false, responses: [] }; }
 }
+
+const absent = () => ({ found: false, complete: false, responses: [] });
+const opaque = value => createHash('sha256').update(value).digest('hex').slice(0,16);
+const date = value => {
+  const ms = typeof value === 'number' ? value : typeof value === 'string' ? Date.parse(value) : NaN;
+  return Number.isFinite(ms) && Math.abs(ms) <= 8640000000000000 ? new Date(ms).toISOString() : null;
+};
+
+function consumeCodexResponse(state, entry, path) {
+  state.responseData ??= { turns: [], current: null, sequence: 0, complete: true };
+  const data = state.responseData, payload = entry?.payload;
+  if (!payload) return;
+  const at = date(entry.timestamp);
+  const start = () => {
+    const turn = { key: opaque(`${path}\0${at}\0${data.sequence++}`), startedAt: at, endedAt: at, state: 'fin non déterminée', blocks: [] };
+    data.turns.push(turn); data.current = turn;
+    while (data.turns.length > MAX_RESPONSES) { data.turns.shift(); data.complete = false; }
+    return turn;
+  };
+  if (entry.type === 'event_msg') {
+    if (payload.type === 'task_started') start();
+    else if (data.current && ['task_complete','turn_aborted'].includes(payload.type)) {
+      data.current.state = payload.type === 'task_complete' ? 'terminée' : 'interrompue';
+      if (at) data.current.endedAt = at;
+      data.current = null;
+    }
+    return;
+  }
+  if (entry.type === 'response_item' && payload.type === 'message' && payload.role === 'user' &&
+    Array.isArray(payload.content) && payload.content.some(block => block?.type === 'input_text' && typeof block.text === 'string' && block.text.trim())) {
+    if (!data.current || data.current.blocks.length) start();
+    return;
+  }
+  if (entry.type !== 'response_item' || payload.type !== 'message' || payload.role !== 'assistant' ||
+    payload.channel === 'analysis' || !Array.isArray(payload.content)) return;
+  const texts = payload.content.filter(block => block?.type === 'output_text' && typeof block.text === 'string' && block.text.trim());
+  if (!texts.length) return;
+  const turn = data.current ?? start();
+  for (const block of texts) {
+    if (turn.blocks.length >= 10) { data.complete = false; break; }
+    if (block.text.length > MAX_BLOCK) data.complete = false;
+    turn.blocks.push({ text: mask(block.text.slice(0,MAX_BLOCK)) });
+  }
+  if (at) turn.endedAt = at;
+  while (data.turns.reduce((sum,t) => sum+t.blocks.reduce((n,b) => n+b.text.length,0),0) > 240000 && data.turns.length > 1) {
+    data.turns.shift(); data.complete = false;
+  }
+}
+
+export function createAgentResponsesReader(options = {}) {
+  const journals = createAgentActivityReader({ ...options, consumeCodexEntry: consumeCodexResponse });
+  return async function read(agent, agents = [agent]) {
+    try {
+      const source = await journals.readSource(agent,agents);
+      if (!source) return absent();
+      if (agent.kind === 'Codex') return {
+        found: true, complete: source.responseData?.complete !== false,
+        responses: structuredClone(source.responseData?.turns.filter(turn => turn.blocks.length) ?? []),
+      };
+      const result = await readOpenCodeTexts(source);
+      if (!result) return absent();
+      let complete = result.complete, remaining = 240000;
+      const turns = [];
+      // Budget partagé : priorité aux réponses les plus récentes.
+      for (const message of result.messages.toReversed()) {
+        const blocks = [];
+        if (message.parts.length > 10) complete = false;
+        for (const part of message.parts.slice(0,10)) {
+          if (typeof part.text !== 'string' || !part.text.trim()) continue;
+          const length = Math.min(MAX_BLOCK,remaining);
+          if (part.text.length > length) complete = false;
+          if (length > 0) blocks.push({ text: mask(part.text.slice(0,length)) });
+          remaining -= Math.min(part.text.length,length);
+        }
+        if (blocks.length) turns.push({
+          key: opaque(`${source.path}\0${source.sessionId}\0${message.id}`),
+          startedAt: date(message.time_created), endedAt: date(message.completed),
+          state: message.error === 'MessageAbortedError' ? 'interrompue' : message.finish === 'stop' ? 'terminée' : 'fin non déterminée', blocks,
+        });
+      }
+      return { found: true, complete, responses: turns.reverse() };
+    } catch { return absent(); }
+  };
+}
+
+export const readAgentResponses = createAgentResponsesReader();

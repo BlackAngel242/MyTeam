@@ -15,12 +15,12 @@ import {createQueue,QueueError} from './src/queue.mjs';
 import {createTerminalStatusReader} from './src/terminal-status.mjs';
 import {createDirection,DirectionError} from './src/direction.mjs';
 import {readBlackboard} from './src/blackboard.mjs';
-import {readClaudeResponses} from './src/responses.mjs';
+import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -71,7 +71,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const base=activite??{tokens:null,limits:[],model:null,effort:null};
     return {...base,limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null,usedPercent:typeof etat.usedPercent==='number'?etat.usedPercent:null,source:'terminal'};
   }
-  const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,file:queueFile,now});
+  const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,prepareFiles:prepareQueuedFiles,file:queueFile,now});
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
   const equipe=direction??createDirection({file:directionFile,now});
@@ -113,6 +113,32 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(info.isSymbolicLink()) throw new FileError('Les liens symboliques ne sont pas autorisés.');
     }
     return parts.join('/');
+  }
+  async function prepareQueuedFiles(element,agent) {
+    const operation=async()=>{
+      try {
+        const roots=await allowedRoots(),toRoot=rootOf(roots,'agent:'+element.id);
+        if(toRoot!==agent.cwd) throw new FileError('Le dossier de la cible a changé.');
+        element.copiedFiles=[];
+        for(const file of element.files) {
+          const fromRoot=rootOf(roots,file.root),fromPath=await relativeFile(fromRoot,file.path);
+          const {real}=await resolveInside(fromRoot,fromPath),info=await lstat(real);
+          if(!info.isFile()) throw new FileError('Seuls les fichiers peuvent être joints.');
+          if(info.size>20*1024*1024) throw new FileError('Chaque fichier joint est limité à 20 Mo.');
+          const copied=await transfer({fromRoot,fromPath,toRoot,toPath:'',mode:'copy'});
+          element.copiedFiles.push({name:copied.name});
+          const destination=await resolveInside(toRoot,copied.path);
+          if((await lstat(destination.real)).size>20*1024*1024) throw new FileError('Un fichier a grandi pendant la copie et dépasse 20 Mo.');
+        }
+        return element.copiedFiles;
+      } catch(error) {
+        // Les erreurs natives peuvent contenir des chemins absolus : message fermé.
+        throw new QueueError(error instanceof FileError?error.message:'Impossible de copier les fichiers joints. Aucun envoi effectué.');
+      }
+    };
+    const pending=transferPending.then(operation);
+    transferPending=pending.catch(()=>{});
+    return pending;
   }
   const server=createServer(async(req,res)=> {
     const port=server.address()?.port;
@@ -263,10 +289,10 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(req.method==='GET'&&url.pathname==='/api/reponses') {
         if(!guard(req,{body:false})) return;
         try {
-          const agent=(await bridge.list()).find(a=>a.id===url.searchParams.get('id'));
+          const agents=await bridge.list(),agent=agents.find(a=>a.id===url.searchParams.get('id'));
           if(!agent) return json(400,{error:'Agent introuvable.'});
-          if(agent.kind!=='Claude'||!agent.sessionId) return json(200,{supported:false,reason:'Les réponses de cet outil ne sont pas exposées pour le moment.',responses:[]});
-          const lu=await getResponses(agent.sessionId);
+          if(!['Claude','Codex','OpenCode'].includes(agent.kind)) return json(200,{supported:false,reason:'Les réponses de cet outil ne sont pas exposées pour le moment.',responses:[]});
+          const lu=agent.kind==='Claude'?(agent.sessionId?await getResponses(agent.sessionId):{found:false,complete:false,responses:[]}):await getOtherResponses(agent,agents);
           return json(200,{supported:true,found:lu.found===true,complete:lu.complete===true,responses:Array.isArray(lu.responses)?lu.responses:[]});
         } catch(error) {return json(errorStatus(error),{error:'Impossible de lire les réponses pour le moment.'});}
       }
@@ -292,10 +318,16 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         const parsed=await readJson(req);
         if(parsed===null) return;
         try {
-          if(url.pathname==='/api/queue') return json(200,await fileAttente.enqueue({id:parsed.id,message:parsed.message,notBefore:parsed.notBefore,priority:parsed.priority,requestKey:parsed.requestKey}));
+          if(url.pathname==='/api/queue') {
+            if(Array.isArray(parsed.files)&&parsed.files.length) {
+              const roots=await allowedRoots();
+              for(const file of parsed.files) rootOf(roots,file?.root);
+            }
+            return json(200,await fileAttente.enqueue({id:parsed.id,message:parsed.message,notBefore:parsed.notBefore,priority:parsed.priority,requestKey:parsed.requestKey,files:parsed.files}));
+          }
           return json(200,await fileAttente.cancel(parsed.itemId));
         } catch(error) {
-          return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
+          return json(error instanceof QueueError?(error.status??400):error instanceof FileError?400:errorStatus(error),{error:error.message||'La file d’attente n’a pas abouti.'});
         }
       }
       if(req.method==='POST'&&url.pathname==='/api/queue/priority') {
@@ -329,7 +361,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           }
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;

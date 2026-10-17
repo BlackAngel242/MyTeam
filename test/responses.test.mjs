@@ -47,7 +47,7 @@ test('une ligne illisible ou géante est sautée, une session inconnue ne renvoi
   assert.equal(lu.found,true);assert.equal(lu.complete,true);assert.equal(lu.responses.length,1);
 });
 
-test('/api/reponses exige origine et jeton, ne lit que Claude et ne renvoie aucun identifiant',async t=>{
+test('/api/reponses exige origine et jeton et ne renvoie aucun identifiant',async t=>{
   let reads=0;
   const bridge={list:async()=>[{id:'c',kind:'Claude',status:'idle',sessionId:SESSION},{id:'x',kind:'Codex',status:'idle'}],read:async()=>({text:''})};
   const server=createBureauServer({bridge,getResponses:async id=>{reads++;assert.equal(id,SESSION);return {found:true,complete:true,responses:[{key:'abc',state:'terminée',blocks:[{text:'ok'}]}]};}});
@@ -62,6 +62,6 @@ test('/api/reponses exige origine et jeton, ne lit que Claude et ne renvoie aucu
   assert.equal(claude.status,200);assert.equal(claude.data.supported,true);assert.equal(claude.data.responses[0].blocks[0].text,'ok');
   assert.doesNotMatch(JSON.stringify(claude.data),/12345678|sessionId/);
   const codex=await send('/api/reponses?id=x',auth);
-  assert.equal(codex.data.supported,false);assert.deepEqual(codex.data.responses,[]);
+  assert.equal(codex.data.supported,true);assert.equal(codex.data.found,false);assert.deepEqual(codex.data.responses,[]);
   assert.equal((await send('/api/reponses?id=inconnu',auth)).status,400);
 });
