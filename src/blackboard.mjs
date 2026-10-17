@@ -1,4 +1,4 @@
-import {readFile,stat} from 'node:fs/promises';
+import {readFile,lstat} from 'node:fs/promises';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -11,8 +11,11 @@ const MAX_BYTES=512*1024;
 function clean(value) {
   return Array.from(String(value)
     .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi,'[identifiant masqué]')
+    .replace(/@[0-9a-f]{8,}\b/gi,'@[identifiant masqué]')
+    .replace(/\b[0-9a-f]{32,}\b/gi,'[identifiant masqué]')
     .replace(/(?:[a-z]:[\\/]|\\\\)[^\s`"'<>)]+/gi,'[chemin masqué]')
-    .replace(/(^|\s|`)(\/(?:Users|home|tmp|var|opt|mnt)\/[^\s`"'<>)]+)/g,'$1[chemin masqué]')
+    // Chemins relatifs au dossier personnel et racines système Unix. Les routes du bureau (`/api/...`) restent lisibles.
+    .replace(/(^|[\s`("'=])(~\/[^\s`"'<>)]*|\/(?:Users|home|root|etc|tmp|var|opt|mnt|srv|data|workspace|usr|private|Volumes)\/[^\s`"'<>)]*)/g,'$1[chemin masqué]')
     .replace(/\*\*|__|`/g,'')
     .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
     .replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()).slice(0,240).join('');
@@ -57,8 +60,9 @@ export async function readBlackboard({root=projectDirectory}={}) {
   const texts={},files=[];
   for(const name of FILES) {
     try {
-      const info=await stat(join(root,name));
-      if(!info.isFile()||info.size>MAX_BYTES) continue;
+      // lstat : un lien symbolique nommé comme un pilier ne doit pas faire lire un autre fichier.
+      const info=await lstat(join(root,name));
+      if(info.isSymbolicLink()||!info.isFile()||info.size>MAX_BYTES) continue;
       texts[name]=await readFile(join(root,name),'utf8');
       files.push({name,modified:info.mtime.toISOString()});
     } catch {}

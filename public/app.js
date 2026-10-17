@@ -108,7 +108,7 @@ const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='t
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
 const queueLabels={attente:'en attente',envoyee:'envoyée',annulee:'annulée',a_revoir:'à revoir'};
 let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='';
-function errorBlock(container,message,icon='erreur'){
+function errorBlock(container,message,icon='erreur',retry=null){
   // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
   // Le message est affiché tel quel : aucune liste vide ne remplace jamais une erreur.
   const old=container.querySelector(':scope>.error-block');if(old&&old.dataset.message===message)return;
@@ -116,7 +116,7 @@ function errorBlock(container,message,icon='erreur'){
   const pic=iconCanvas(icon);if(pic)box.append(pic);
   const p=document.createElement('p');p.textContent=message;
   const btn=document.createElement('button');btn.type='button';btn.className='tool-button';btn.textContent='Actualiser le bureau';
-  btn.addEventListener('click',async()=>{await refreshState();const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
+  btn.addEventListener('click',async()=>{await refreshState();if(retry)return retry();const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
   box.append(p,btn);container.replaceChildren(box);
 }
 function iconCanvas(name){
@@ -1068,9 +1068,12 @@ function agentByTarget(target){
 function syncOffice(L,now){
   if(!state.connected||!L.boss)return;
   for(const d of L.boss.delegations||[]){
-    const dk=d.id+'|'+d.target;if(seenDelegations.has(dk))continue;remember(dk);
+    const dk=d.id+'|'+d.target;if(seenDelegations.has(dk))continue;
+    // En pause, la délégation n'est pas marquée vue : la tournée partira à la reprise de l'animation.
+    if(officeBooted&&paused)continue;
+    remember(dk);
     const t=agentByTarget(d.target);
-    if(!officeBooted||paused||!t||t===L.boss)continue;
+    if(!officeBooted||!t||t===L.boss)continue;
     officeActors.set('deleg|'+dk,{type:'deleg',agent:t.id,t0:now,h:hash(t.id),title:d.title});
     signal('delegation',null);
   }
@@ -1110,10 +1113,14 @@ function drawOffice(L,vip,time,now){
     // le pose sur son bureau, puis revient s'asseoir. Une seule tournée à la fois : les suivantes attendent.
     if(bossBusy){act.t0=now;continue;}
     bossBusy=true;
+    // Scène en pause : la tournée se fige ; à la reprise, l'horloge de marche est décalée de la durée de pause.
+    if(paused)act.pausedAt??=now;
+    else if(act.pausedAt!=null){act.t0+=now-act.pausedAt;act.pausedAt=null;}
+    const clock=act.pausedAt??now;
     const bossSpot=[boss.cx-30,boss.y0+55],door=[boss.cx,vip.doorY+4],stand=[d.cx+29,d.y0+55];
     const there=[bossSpot,[door[0],bossSpot[1]],door,[stand[0],door[1]],[stand[0],stand[1],1800]];
     const back=[stand,[stand[0],door[1]],door,[door[0],bossSpot[1]],bossSpot];
-    const speed=34+(act.h%8),goT=now-act.t0;
+    const speed=34+(act.h%8),goT=clock-act.t0;
     let p=walk(there,goT,speed),returning=false;
     if(p.done){p=walk(back,goT-act.goDur,speed);returning=true;}
     else act.goDur=goT+1;
@@ -1317,14 +1324,18 @@ function renderBoard(){
   if(b?.roles)cards.push(boardCard('Rôles de l’équipe','AGENTS.md',b.roles.items));
   if(b?.lessons)cards.push(boardCard('Dernières leçons · '+b.lessons.total+' au total','LESSONS.md',b.lessons.latest,true));
   if(cards.length)$('board-body').replaceChildren(...cards);
-  else{const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,'Aucun fichier pilier lisible dans le projet.','taches');}
+  else{const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,'Aucun fichier pilier lisible dans le projet.','taches',reloadBoard);}
 }
 async function openBoard(){
   boardTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
   for(const el of backdrop($('board')))el.inert=true;
   $('board').hidden=false;$('board-close').focus();
   if(!boardData)$('board-body').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Lecture du tableau…'}));
-  try{await loadBoard();renderBoard();}catch(error){const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,errorText(error),'taches');}
+  await reloadBoard();
+}
+async function reloadBoard(){
+  try{await loadBoard();renderBoard();}catch(error){const box=document.createElement('div');$('board-body').replaceChildren(box);errorBlock(box,errorText(error),'taches',reloadBoard);}
+  if(!$('board').hidden&&!$('board').contains(document.activeElement))$('board-close').focus({preventScroll:true});
 }
 function closeBoard(){
   $('board').hidden=true;for(const el of backdrop($('board')))el.inert=false;
@@ -1333,7 +1344,7 @@ function closeBoard(){
 $('board-open').addEventListener('click',openBoard);
 $('board-close').addEventListener('click',closeBoard);
 $('board').addEventListener('mousedown',e=>{if(e.target===$('board'))closeBoard();});
-$('board').addEventListener('keydown',e=>{if(e.key==='Tab'){const f=[...$('board').querySelectorAll('button,[tabindex]')].filter(x=>!x.disabled);const i=f.indexOf(document.activeElement);if(e.shiftKey?i<=0:i===f.length-1){e.preventDefault();f[e.shiftKey?f.length-1:0]?.focus();}}});
+document.addEventListener('keydown',e=>{if($('board').hidden)return;if(e.key==='Tab'){const f=[...$('board').querySelectorAll('button,[tabindex]')].filter(x=>!x.disabled);const i=f.indexOf(document.activeElement);if(i<0||(e.shiftKey?i===0:i===f.length-1)){e.preventDefault();f[e.shiftKey?f.length-1:0]?.focus();}}});
 function runCommand(i){
   const c=paletteItems[i];closePalette(!c);if(!c)return;c.run();
   // Une commande qui ne place pas le focus elle-même le laisse sur l'onglet ouvert.
