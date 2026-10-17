@@ -1,116 +1,186 @@
-# Bureau des agents
+# MyTeam · Le Bureau des agents
 
 Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et piloter vos équipes d'agents d'intelligence artificielle autonomes exécutés dans Herdr.
 
-![Aperçu du Bureau des agents](docs/captures/apercu-bureau.png)
-> *Aperçu de la scène animée et du panneau de pilotage du Bureau des agents (capture en cours d'intégration).*
+[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
+[![Tests natifs](https://img.shields.io/badge/tests-200%20passants-success.svg)](test/)
+[![Dépendances](https://img.shields.io/badge/d%C3%A9pendances-0%20npm-informational.svg)](package.json)
+
+![Scène et atelier de MyTeam](docs/captures/01-ordinateur-scene.png)
+> *Vue d'ensemble de la scène en journée : chef au bureau Direction, tableau mural d'indicateurs, collaborateurs à leurs postes et salle de réflexion vitrée.*
+
+---
+
+## Sommaire
+
+- [Pour qui et pourquoi ?](#pour-qui-et-pourquoi-)
+- [Installation rapide](#installation-rapide)
+  - [1. Préparation automatique](#1-préparation-automatique)
+  - [2. Démarrage du bureau](#2-démarrage-du-bureau)
+- [Fonctionnalités](#fonctionnalités)
+  - [Scène animée et bureau Direction](#scène-animée-et-bureau-direction)
+  - [Onglet Poste et terminal en direct](#onglet-poste-et-terminal-en-direct)
+  - [Onglet Équipe, direction et file d'attente](#onglet-équipe-direction-et-file-dattente)
+  - [Onglets Fichiers et Tâches](#onglets-fichiers-et-tâches)
+  - [Palette de commandes, aide et signaux](#palette-de-commandes-aide-et-signaux)
+  - [Mode plein écran](#mode-plein-écran)
+- [Principes et vérité des faits](#principes-et-vérité-des-faits)
+- [Contribuer](#contribuer)
+- [Entretien sans IA](#entretien-sans-ia)
+- [Licence et marques](#licence-et-marques)
+
+---
 
 ## Pour qui et pourquoi ?
 
-Le Bureau des agents a été conçu pour les développeurs, créateurs et orchestrateurs qui font collaborer plusieurs agents d'IA (Claude, Codex, Antigravity, OpenCode) en parallèle et souhaitent garder une vision claire de leur atelier sans jongler entre plusieurs fenêtres de terminal.
+MyTeam (le Bureau des agents) s'adresse aux développeurs, chercheurs et orchestrateurs qui font collaborer plusieurs agents d'IA en parallèle (Claude Code, Codex, Antigravity, OpenCode) sous le gestionnaire de sessions [Herdr](https://github.com/atoll92/herdr). Il transforme une mosaïque aride de terminaux en un atelier graphique vivant où chaque geste compte.
 
-- Organisation Chef et Agents : Le premier agent démarré dans Herdr est désigné comme le chef d'équipe (bureau Direction). Les autres agents sont ses collaborateurs directs.
-- Cycle de délégation, tournée du chef et courriers : Lorsque le chef délègue une mission (détection de commandes `herdr agent prompt` dans son journal), le chef se lève et réalise sa tournée : il traverse la pièce pour poser le dossier titré sur le poste de l'agent visé, puis regagne sa place. L'agent travaille à son poste, puis lui envoie son « courrier » de fin de mission.
-- Évaluation et humeur : Le chef reçoit le travail et l'apprécie ; l'humeur affichée reflète strictement les résultats observés, et les erreurs constatées alimentent directement `LESSONS.md`.
-- Salle de réflexion repliable : Les sous-agents actifs se réunissent dans une salle de réflexion vitrée au libellé fixe « SALLE DE REFLEXION », avec commande de repli pour adapter la scène aux écrans compacts.
-- File d'attente sécurisée : Possibilité de mettre en file une consigne pour un agent occupé ou en pause de quota, avec relance automatique planifiée à la remise à zéro + 5 min et protection absolue contre les doubles envois.
-- Suivi des tâches réelles : Onglet dédié observant les cases cochées dans les fichiers du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux.
-- Palette de commandes et aide contextuelle : Accès rapide par `Ctrl+K` et touche `?` pour naviguer, inspecter et piloter entièrement au clavier.
-- Notifications et sons 8 bits : Alertes visuelles de bureau Windows et signaux sonores Web Audio discrets pour les blocages, courriers et pauses de limite.
-- Outils intégrés : Explorateur de fichiers sécurisé, barre d'état détaillée sous chaque poste, et lecture de l'activité locale réelle pour Claude, Codex et OpenCode.
-- Règle de vérité des faits : Tout est piloté par des faits physiques observés (états Herdr, journaux locaux, fichiers du disque). Aucun statut, tâche, pourcentage ou humeur n'est inventé.
-- 100% local et sans dépendance : Écoute locale exclusive sur 127.0.0.1, aucune télémétrie, et zéro bibliothèque npm.
+- **Organisation d'équipe claire** : Le bureau Direction accueille le chef d'équipe, entouré de ses collaborateurs sur leurs postes dédiés.
+- **Délégations incarnées** : Quand le chef délègue une mission (`herdr agent prompt`), il effectue sa tournée physique dans la pièce pour déposer le dossier doré sur le bureau du collaborateur.
+- **File d'attente avec priorités** : Différez vos consignes en toute sérénité pour les agents occupés ou en pause de limite, avec option prioritaire, bouton « Passer en tête » et relance automatique.
+- **Salle de réflexion vitrée** : Les sous-agents quittent leur poste pour plancher ensemble dans un espace dédié avant de rapporter leurs résultats.
+- **Suivi factuel des tâches** : Centralisation des cases cochées dans les fichiers du projet (`TODO.md`) et des plans publiés par les agents eux-mêmes, sans aucun pourcentage inventé.
+- **100% local et zéro dépendance** : Serveur local autonome sur `127.0.0.1`, aucune dépendance npm, aucun appel réseau sortant et aucune clé d'API stockée.
 
-## Ouvrir le bureau (sur cet ordinateur)
+---
 
-Double-cliquer sur « Ouvrir le bureau.cmd », ou ouvrir un terminal dans ce dossier et lancer :
+## Installation rapide
+
+MyTeam fonctionne sur Windows, macOS et Linux. Il nécessite uniquement [Node.js](https://nodejs.org) (version 22 ou supérieure) et [Herdr](https://github.com/atoll92/herdr). Aucun téléchargement de paquet externe (`npm install`) n'est requis.
+
+### 1. Préparation automatique
+
+Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `scripts/` pour vérifier vos prérequis, tester les outils d'IA et configurer l'accès à Herdr sans modifier votre système à l'aveugle :
+
+- **Sous Windows (PowerShell) :**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
+  ```
+
+- **Sous macOS ou Linux (bash) :**
+  ```bash
+  bash scripts/installer.sh
+  ```
+
+> [!TIP]
+> Pour simuler l'installation sans rien exécuter, utilisez le paramètre `-DryRun` (PowerShell) ou `--dry-run` (bash). Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour les détails avancés.
+
+### 2. Démarrage du bureau
+
+Une fois les prérequis validés, démarrez le serveur local :
 
 ```powershell
 node server.mjs
 ```
 
-Puis ouvrir `http://127.0.0.1:4317` dans le navigateur. Herdr doit être ouvert. Rien à installer : Node.js est déjà présent sur cet ordinateur, sans bibliothèque ni abonnement supplémentaire.
+*(Sous Windows, vous pouvez également double-cliquer directement sur le raccourci `Ouvrir le bureau.cmd`)*
 
-## Installer sur un autre ordinateur
+Ouvrez ensuite l'application dans votre navigateur :
+```text
+http://127.0.0.1:4317
+```
 
-Pour déployer le Bureau des agents sur une autre machine sous Windows, Linux ou macOS :
+---
 
-- Consultez le guide pas à pas dans [docs/INSTALLATION.md](docs/INSTALLATION.md).
-- Utilisez les scripts d'installation automatique mis à disposition dans le dossier [scripts/](scripts/).
-- Rappel : Aucun paquet externe n'est nécessaire (`npm install` est inutile). Il suffit de disposer de Node.js (version 22 ou supérieure) et de Herdr.
+## Fonctionnalités
 
-## Lire la scène et le bureau Direction
+### Scène animée et bureau Direction
 
-- Ambiance, cycle jour-nuit et éclairage du soir : Le ciel de la baie vitrée évolue en continu selon l'horloge de ton ordinateur (nuit, aube, jour, crépuscule), avec lever fixe à 6 h 30 et coucher fixe à 19 h 30 (approximation sans saisons). En soirée (dès 17 h 30 et à pleine puissance à 19 h jusqu'au matin), les suspensions au plafond et les lampes de bureau s'allument automatiquement pour éclairer l'atelier. La lampe d'un poste s'éteint si l'agent part en pause de limite.
-- Tableau d'affichage de la scène : Un tableau mural synthétise les faits utiles absents du reste de la scène. Il affiche l'heure de reprise d'une pause de quota (`RETOUR`), le nombre de consignes en attente (`EN FILE`), les courriers non lus (`COURRIER`) et les sous-agents en activité (`SOUS-AGENTS`). Chaque ligne s'allume dès que son fait est observé.
-- Tableau de l'équipe et panneau de liège : Un panneau de liège mural (dont les punaises colorées suivent les tâches ouvertes) et le bouton « Tableau » ouvrent une fenêtre modale en lecture seule sur les fichiers piliers (`HANDOFF.md`, `TODO.md`, `AGENTS.md`, `LESSONS.md`), avec la source et la date de chaque document, sans aucun risque d'altération et avec chemins sensibles masqués.
-- Le chef au bureau Direction, transfert et tournée : Le chef d'équipe occupe le bureau Direction mis en valeur (par défaut le premier agent démarré, ou choix explicite de DrSmoke). Une pile de courriers s'y empile dès qu'un agent termine une tâche ; cliquer dessus ouvre directement l'onglet Équipe. À chaque délégation observée dans son journal, le chef réalise sa tournée : il sort de son bureau, traverse la pièce pour poser le dossier titré sur le poste de son collaborateur, puis regagne sa place (une seule tournée à la fois). DrSmoke peut transférer la direction à tout moment, et le bureau propose une passation si le chef entre en pause de limite.
-- Chaque poste en un coup d'œil : Chaque bureau arbore en façade le logo en pixels de son outil (Claude, Codex, Antigravity, OpenCode). Sous chaque bureau, le nom seul de l'agent est affiché, souligné d'un trait fin de la couleur de son état (bleu travail, menthe disponible, ambre attente, violet pause), sans texte d'état redondant avec sa posture et son écran.
-- Postures visibles : Frappe au clavier quand l'agent est au travail (bleu ciel), mug en main quand il est disponible (menthe), main levée quand il attend ta réponse (ambre).
-- Pause de quota et chevalet « RETOUR » : Si un agent atteint son plafond d'utilisation, son fauteuil se vide, sa lampe de bureau s'éteint, une veilleuse violette clignote et un chevalet blanc affiche l'heure exacte de reprise annoncée par l'outil.
-- Bulles d'état : Bulle jaune « ? » quand l'agent attend une consigne ou une autorisation, coche verte quand il vient de terminer, points de suspension « ... » pour un état inconnu.
-- Salle de réflexion repliable : Pièce dédiée portant le libellé fixe « SALLE DE REFLEXION », où les sous-agents se réunissent avant de déposer leur dossier complété sur le bureau de leur agent. Le nombre de sous-agents actifs est visible au tableau mural.
-- Mode « Disposer » : Le bouton « Disposer » permet de réorganiser librement les bureaux sur le sol et de redimensionner le bureau Direction par son coin doré. Une barre d'aide dédiée rappelle les commandes et la touche Échap enregistre la disposition.
+- **Le chef au bureau Direction, transfert et tournée** : Le bureau Direction accueille le chef d'équipe (par défaut le premier panneau démarré dans Herdr, ou choix explicite de DrSmoke). Une pile de courriers s'y empile dès qu'un agent termine une tâche ; cliquer dessus ouvre directement l'onglet Équipe. À chaque délégation observée dans son journal, le chef réalise sa tournée : il sort de son bureau, traverse la pièce pour poser le dossier titré sur le poste de son collaborateur, puis regagne sa place (une seule tournée à la fois). DrSmoke peut transférer la direction à tout moment, et le bureau propose proactivement une passation si le chef entre en pause de limite.
+- **Cycle jour-nuit continu et ambiance du soir** : Le ciel de la baie vitrée évolue en temps réel selon l'horloge de votre machine (lever fixe à 6 h 30 et coucher fixe à 19 h 30, approximation sans saisons). Dès 17 h 30 (et à pleine puissance à 19 h jusqu'au matin), les suspensions au plafond et les lampes de bureau s'allument automatiquement pour éclairer l'atelier. La lampe d'un poste s'éteint si l'agent part en pause de limite.
+- **Tableau d'affichage mural** : Un panneau de contrôle synthétise en direct les faits utiles absents du reste de la scène : heure de reprise d'une pause de quota (`RETOUR`), nombre de consignes en attente (`EN FILE`), courriers non lus (`COURRIER`) et sous-agents en activité (`SOUS-AGENTS`). Chaque indicateur s'allume dès que son fait est observé.
+- **Tableau de l'équipe (panneau de liège)** : Un panneau de liège mural (dont les punaises colorées suivent les tâches ouvertes) et le bouton « Tableau » ouvrent une fenêtre modale en lecture seule sur les fichiers piliers (`HANDOFF.md`, `TODO.md`, `AGENTS.md`, `LESSONS.md`), avec la source et la date de chaque document, sans aucun risque d'altération et avec chemins sensibles masqués.
+- **Chaque poste en un coup d'œil** : Chaque bureau arbore en façade le logo en pixel art 16x16 de son outil (Claude, Codex, Antigravity, OpenCode). Sous chaque bureau, le nom seul de l'agent est affiché, souligné d'un trait fin de la couleur de son état (bleu ciel pour travail, menthe pour disponible, ambre pour attente Herdr, violet pour pause de limite), sans texte redondant. Si la liaison avec Herdr est perdue, la mention `HORS LIGNE` s'affiche sous le bureau.
+- **Postures visibles et bulles d'état** : Frappe au clavier quand l'agent est au travail, mug en main quand il est disponible, main levée avec bulle « ? » quand il attend une validation dans Herdr, coche verte quand son travail s'arrête, points de suspension « ... » pour un statut transitoire.
+- **Pause de limite et chevalet « RETOUR »** : Si un outil atteint son plafond de requêtes ou de jetons, le fauteuil de l'agent se vide, sa lampe de bureau s'éteint, une veilleuse violette clignote et un chevalet blanc affiche l'heure exacte de reprise annoncée par l'outil.
+- **Salle de réflexion vitrée des sous-agents** : Pièce dédiée portant le libellé fixe « SALLE DE REFLEXION », où les sous-agents se réunissent avant de déposer leur dossier complété sur le bureau de leur agent. Le nombre exact de sous-agents actifs est visible au tableau mural, et la salle peut être repliée sur écran compact.
+- **Mode « Disposer »** : Le bouton « Disposer » permet de réorganiser librement les bureaux sur le sol à la souris ou aux flèches du clavier, et d'étirer le coin doré du bureau Direction pour l'agrandir. La touche Échap enregistre les positions.
+- **Pause des animations et accessibilité** : Un bouton « Mettre en pause » permet de figer le canvas à tout moment. Si votre système active la réduction des mouvements (`prefers-reduced-motion`), la scène est automatiquement figée par défaut, tout en continuant d'être rafraîchie chaque minute pour suivre l'heure et la luminosité.
 
-## Onglet Poste, terminal et file d'attente
+### Onglet Poste et terminal en direct
 
-- Sélection directe : Dès l'ouverture, une vue d'accueil claire invite à choisir un agent parmi des boutons rapides. Sur mobile, choisir un agent fait défiler la vue automatiquement.
-- Sorties du terminal : Affiche les dernières lignes réelles du terminal Herdr de l'agent sélectionné.
-- Outils de confort : Champ de recherche avec surlignage des occurrences, bouton « Figer » pour suspendre le défilement, bouton « Copier » pour récupérer le texte, et bouton « Agrandir » pour lire le terminal en pleine hauteur.
-- Pause automatique sur sélection : Dès qu'une sélection de texte est active à la souris dans les sorties, le rafraîchissement se met en pause pour ne jamais faire sauter ta sélection.
-- Consigne, file d'attente et priorité : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée). S'il est occupé ou en pause de quota, le bouton devient « Mettre en file » pour différer l'envoi en toute sécurité, avec une case « Prioritaire » pour placer une consigne urgente en tête de file .
+- **Sélection directe** : Dès l'ouverture, une vue d'accueil claire invite à choisir un agent parmi des boutons rapides. Sur mobile, choisir un agent fait défiler la vue automatiquement vers son poste.
+- **Barre d'état de l'outil** : Affiche la tâche en cours ou la pensée extraite en direct de l'outil, le modèle utilisé (par exemple GPT-6.1-Sol ou MiMo V2.6 Pro), le mode, l'effort, la jauge visuelle de limite restante avec heure de remise à zéro, et le temps d'exécution écoulé.
+- **Sorties du terminal réelles** : Affiche les dernières lignes brutes provenant du terminal Herdr de l'agent sélectionné.
+- **Outils de confort** : Champ de recherche avec surlignage instantané des occurrences et compteur, bouton « Figer » pour suspendre le défilement automatique, bouton « Copier » pour récupérer le texte, et bouton « Agrandir » pour lire le terminal en pleine hauteur (avec hauteur dédiée confortable sur smartphone).
+- **Pause automatique sur sélection** : Dès qu'une sélection de texte est active à la souris dans les sorties, le rafraîchissement se met en pause pour ne jamais faire sauter votre sélection.
+- **Formulaire de consigne, mise en file et priorité** : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée ou Cmd+Entrée). S'il est occupé ou en pause de quota, le bouton affiche « Mettre en file » pour différer l'envoi en toute sécurité. Une case à cocher « Prioritaire » permet de marquer une consigne urgente (`priority: "haute"`) pour qu'elle passe devant les consignes normales du même agent.
+- **Conservation des brouillons** : Changer d'agent pendant la rédaction ou l'envoi d'une consigne ne détruit aucun texte ; chaque brouillon est mémorisé indépendamment.
 
-## Onglet Équipe, délégations et file d'attente
+### Onglet Équipe, direction et file d'attente
 
-- Direction de l'équipe et passation : Affiche le chef effectif et permet à DrSmoke de transférer la direction vers un autre agent connecté ou de rétablir la règle par défaut. Si le chef entre en pause de limite, un bandeau propose proactivement une passation vers un suppléant disponible ; le message de passation est relu et validé par DrSmoke avant envoi. Les délégations sont alors surveillées dans le journal du chef effectif.
-- Courrier du chef : Enregistre les fins de travail observées avec compteur dans le titre ; la liste se remet à zéro dès que tu la consultes.
-- File d'attente collective et priorité : Liste toutes les consignes différées avec leur cible, statut et niveau de priorité (« haute » ou « normale »). Un bouton « Passer en tête » permet de promouvoir une consigne en attente. Les consignes hautes partent en premier dès que l'agent est libre (garde-fou : promotion automatique après 30 minutes d'attente). Chaque consigne peut être retirée d'un clic, sans jamais forcer d'envoi vers un agent occupé.
-- Envoi groupé en deux clics : Coche les agents disponibles ou clique sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en listant les destinataires, le second confirme l'expédition individuelle.
-- Journal des envois : Consigne l'historique complet des transmissions de la session.
+- **Direction de l'équipe et passation** : Affiche le chef effectif et permet à DrSmoke de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut (premier panneau). Le choix est persisté hors Git dans `.bureau/direction.json`. Si le chef entre en pause de limite, un bandeau propose proactivement de passer la direction à un suppléant disponible. DrSmoke valide le changement, et le message de passation préparé est relu et validé avant d'être expédié (par envoi direct ou en tête de file). Les délégations de missions sont ensuite suivies dans le journal du chef effectif.
+- **Courrier du chef** : Enregistre les fins de travail observées avec compteur dans le titre de section ; la liste se remet à zéro dès que vous consultez l'onglet Équipe. Cliquer sur un courrier ouvre directement le terminal de l'agent pour vérifier son travail.
+- **File d'attente collective et gestion des priorités** : Liste toutes les consignes différées avec leur cible, statut et niveau de priorité (« haute » ou « normale »), ordonnées selon l'ordre réel d'envoi. Un bouton « Passer en tête » permet de promouvoir une consigne normale en attente. Les consignes hautes partent en premier dès que l'agent est libre. Un garde-fou automatique promeut toute consigne normale en attente depuis plus de 30 minutes au rang des hautes pour prévenir la famine. Chaque consigne peut être retirée d'un clic, sans jamais forcer d'envoi vers un agent occupé.
+- **Message à plusieurs agents (envoi groupé armé)** : Cochez les agents disponibles ou cliquez sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en affichant la liste des destinataires, et le second confirme l'expédition individuelle via Herdr.
+- **Journal des envois** : Consigne l'historique complet des transmissions de la session avec l'horodatage, les destinataires, le texte et le statut retourné par Herdr.
 
-## Onglet Fichiers et Onglet Tâches
+### Onglets Fichiers et Tâches
 
-- Onglet Fichiers : Consultation sécurisée des fichiers récents ou navigation dans les dossiers de travail. Copie par glisser-déposer standard, ou déplacement avec la touche Maj (requiert une confirmation). Aucun écrasement et aucune suppression ne sont autorisés.
-- Onglet Tâches : Tableau de bord des cases réelles cochées dans les fichiers Markdown (`TODO.md`) et des plans publiés par les agents dans leurs journaux. La progression affichée est strictement factuelle, sans projection artificielle.
+- **Onglet Fichiers (Explorateur sécurisé)** : Consultation rapide des fichiers récemment créés ou modifiés (dernières 48 h) dans le dossier de travail de l'agent sélectionné, ou navigation dossier par dossier avec fil d'Ariane. Les emplacements sont strictement limités au dossier de travail de chaque agent, au Bureau, aux Documents et aux Téléchargements. Bouton « Afficher » pour révéler le fichier dans l'Explorateur Windows. Glisser-déposer standard pour copier un fichier, ou Maj + glisser-déposer pour le déplacer (avec double validation). Aucune suppression et aucun écrasement de fichier ne sont autorisés (renommage automatique avec indice numérique).
+- **Onglet Tâches (Suivi factuel)** : Tableau de bord observant les cases cochées dans les fichiers Markdown du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux d'activité. La barre de progression est strictement calculée sur le ratio de tâches cochées. Si aucun plan n'est publié, la mention « Aucun plan publié par un agent pour le moment » est fidèlement affichée.
 
-## Palette de commandes, aide et signaux
+### Palette de commandes, aide et signaux
 
-- Palette de commandes (Ctrl+K) : Ouvre une boîte modale au clavier pour chercher un agent, ouvrir son poste, rédiger une consigne, ouvrir le tableau de l'équipe, changer d'onglet ou basculer les affichages.
-- Aide escamotable (touche ?) : Volet latéral présentant la visite guidée en 5 étapes, la légende de la scène, la table des raccourcis et les réglages des signaux.
-- Notifications et sons : Le bureau propose des notifications système Windows en arrière-plan et des sons 8 bits synthétisés avec Web Audio (`public/sounds.js`), activables d'un clic dans l'aide.
+- **Palette de commandes (Ctrl+K)** : Ouvre une boîte modale au clavier pour chercher un agent, ouvrir son poste, rédiger une consigne, ouvrir le tableau de l'équipe, changer d'onglet ou lancer une action sans toucher à la souris.
+- **Aide contextuelle escamotable (touche ?)** : Volet latéral accessible par le bouton « Aide » ou la touche « ? », présentant la visite guidée en 5 étapes, la légende visuelle de la scène, la table complète des raccourcis clavier et le réglage des signaux.
+- **Signaux : Sons 8 bits et notifications Windows** : Notifications système Windows quand la page est en arrière-plan (relève toutes les 15 secondes quand l'onglet est masqué), et signaux sonores discrets synthétisés en Web Audio (`public/sounds.js`) pour les blocages, fins de travail, pauses de limite et délégations. Les préférences sont mémorisées dans le navigateur.
 
-## Mode plein écran
+### Mode plein écran
 
-Le bouton « Plein écran » en haut à droite du cadre du bureau permet d'agrandir l'application sur tout l'écran. Ce mode conserve la scène ET le panneau de pilotage (lecture du terminal, saisie de consignes et onglets) réunis sur un même écran de surveillance. La touche Échap permet de quitter ce mode à tout moment.
+Le bouton « Plein écran » en haut à droite du cadre du bureau permet d'étendre l'application sur tout votre écran. Ce mode conserve la scène graphique ET le panneau de pilotage (lecture du terminal, saisie de consignes et onglets) réunis au sein d'un même écran de surveillance panoramique. La touche Échap permet de revenir à la vue normale.
 
-## Limites honnêtes
+---
 
-- Seuls les agents réellement ouverts et détectés dans Herdr apparaissent dans le bureau.
-- Vérité des faits : Le bureau n'invente aucun pourcentage d'avancement, aucun faux agent, aucune tâche fictive et aucune humeur imaginaire.
-- Le bureau ne prend aucune décision autonome : il ne valide jamais une demande d'autorisation et ne ferme aucune session.
-- La mention « Consigne transmise » confirme la réception par Herdr, mais ne garantit pas que la mission est réussie ou terminée.
-- L'application est strictement locale (127.0.0.1) : l'interface s'adapte sur petit écran, mais le serveur n'est pas accessible sur le réseau public.
+## Principes et vérité des faits
+
+MyTeam applique des règles d'ingénierie et d'intégrité strictes :
+
+1. **Vérité des faits observés** : Le bureau ne simule aucun agent, n'invente aucun pourcentage d'avancement, aucune tâche fictive et aucun état imaginaire. Tout provient exclusivement de faits mesurés (processus Herdr, journaux locaux, fichiers sur le disque, horloge du système).
+2. **Respect de l'autorité humaine** : Le bureau ne prend aucune décision autonome à votre place. Il ne valide aucune boîte de dialogue d'autorisation, ne répond à aucun choix de dossier et ne force aucun envoi.
+3. **Sécurité locale absolue** : Écoute strictement limitée à `127.0.0.1`, vérification d'origine exacte et jeton aléatoire de session (`X-Bureau-Token`). Aucun chemin arbitraire venant du navigateur n'est accepté.
+4. **Zéro dépendance npm** : Le serveur et les scripts reposent à 100% sur les modules natifs de Node.js (`node:http`, `node:fs`, `node:crypto`, `node:child_process`, `node:test`).
+5. **Sauvegarde des leçons** : Chaque erreur rencontrée fait l'objet d'un retour d'expérience documenté dans `LESSONS.md` pour prémunir l'équipe contre toute régression.
+
+---
 
 ## Contribuer
 
-Les contributions respectant la philosophie du projet (indépendance technique, vérité des faits, pixel art et accessibilité) sont les bienvenues.
+Les contributions respectant la philosophie du projet (indépendance technique, vérité des faits, esthétique pixel art et accessibilité) sont les bienvenues.
 
-- Consultez le guide [CONTRIBUTING.md](CONTRIBUTING.md) pour les consignes d'architecture et de proposition de code.
-- Consultez l'historique des versions dans [CHANGELOG.md](CHANGELOG.md).
-- Avant toute soumission, vérifiez que l'ensemble des tests automatisés passe (`npm test`) et que la syntaxe est irréprochable (`npm run check`).
+- Consultez le guide [CONTRIBUTING.md](CONTRIBUTING.md) pour les consignes d'architecture, l'environnement de développement et les règles de soumission de Pull Request.
+- Consultez l'historique des évolutions dans [CHANGELOG.md](CHANGELOG.md).
+- Avant toute proposition, assurez-vous que la syntaxe est impeccable (`npm run check`) et que tous les tests automatisés réussissent (`npm test`).
+
+---
 
 ## Entretien sans IA
 
-- Organisation du code : `public/` contient l'interface (HTML, CSS, canvas, logos et gestion du terminal) ; `src/herdr.mjs` gère la passerelle locale Herdr ; `src/claude-activity.mjs` et `src/agent-activity.mjs` extraient les activités réelles ; `src/files.mjs` gère l'explorateur ; `server.mjs` héberge l'application et sécurise les requêtes.
-- Réglages : Le port peut être changé avec la variable `BUREAU_PORT`. Le chemin vers l'outil Herdr peut être précisé avec `BUREAU_HERDR_PATH`.
-- Tests et vérifications :
- - `npm test` : exécute la suite complète des tests automatisés.
- - `npm run check` : vérifie la validité syntaxique de tous les fichiers du projet.
-- Sauvegarde de référence : Version majeure stabilisée au commit `7817574`.
-- Arrêt du bureau : Utiliser Ctrl+C dans le terminal ayant lancé `node server.mjs`. Ne jamais forcer la fermeture de Herdr pour arrêter le bureau.
+- **Organisation du code** :
+  - `public/` : Interface web (HTML5 sémantique, styles CSS, rendu canvas pixel art, logos 16x16, moteur de terminal et sons Web Audio).
+  - `src/herdr.mjs` : Passerelle locale avec le gestionnaire de processus Herdr.
+  - `src/claude-activity.mjs` et `src/agent-activity.mjs` : Extraction non destructive des activités réelles (Claude, Codex, OpenCode).
+  - `src/files.mjs` : Gestionnaire sécurisé de l'explorateur de fichiers.
+  - `src/queue.mjs` : File d'attente atomique avec priorités et persistance sur disque.
+  - `src/direction.mjs` : Gestion de la direction d'équipe et persistance du choix de chef.
+  - `src/todos.mjs` : Extraction factuelle des tâches et plans d'action.
+  - `server.mjs` : Serveur HTTP natif sécurisé.
+  - `scripts/` : Scripts d'installation et de vérification automatisés (`installer.ps1`, `installer.sh`).
+- **Variables d'environnement utiles** :
+  - `BUREAU_PORT` : Personnalise le port d'écoute HTTP (par défaut `4317`).
+  - `BUREAU_HERDR_PATH` : Définit le chemin absolu vers l'exécutable Herdr s'il n'est pas dans le PATH.
+- **Commandes de contrôle** :
+  - `npm test` : Exécute la suite complète de 200 tests automatisés avec le moteur natif `node:test`.
+  - `npm run check` : Valide la syntaxe de tous les fichiers JavaScript du projet via `node --check`.
+- **Arrêt propre** : Utilisez Ctrl+C dans le terminal exécutant `node server.mjs`.
+
+---
 
 ## Licence et marques
 
-Code sous licence MIT (`LICENSE`). Les noms et emblèmes des outils d'IA appartiennent à leurs propriétaires et servent seulement à identifier chaque poste : voir `NOTICE.md`.
+Le code de MyTeam est distribué sous **licence MIT** (consultez le fichier [LICENSE](LICENSE)).
+
+Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md).
 
 DrSmoke « Un Mbokatié engagé »
