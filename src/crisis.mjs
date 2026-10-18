@@ -45,12 +45,14 @@ export function createCrise({file, now = () => Date.now()} = {}) {
   }
 
   let ecriture = Promise.resolve();
-  // Écriture atomique comme la file : temporaire puis remplacement.
-  function persister() {
+  // Écriture atomique comme la file : temporaire puis remplacement. L'état à
+  // écrire est passé explicitement : le verrou en mémoire n'est pas la source
+  // de la sauvegarde pendant une transition.
+  function persister(aEcrire) {
     const operation = async () => {
       await mkdir(dirname(file), {recursive: true});
       const temporaire = `${file}.tmp`;
-      await writeFile(temporaire, JSON.stringify({version: 1, active: etat.active, since: etat.since}, null, 2), 'utf8');
+      await writeFile(temporaire, JSON.stringify({version: 1, active: aEcrire.active, since: aEcrire.since}, null, 2), 'utf8');
       await rename(temporaire, file);
     };
     const suite = ecriture.then(operation, operation);
@@ -64,10 +66,22 @@ export function createCrise({file, now = () => Date.now()} = {}) {
     async set(active) {
       if (typeof active !== 'boolean') throw new CriseError('La crise s’active ou se lève avec un booléen.');
       if (active === etat.active) return {active: etat.active, since: etat.since, reason: etat.reason};
-      etat = active
+      const prochain = active
         ? {active: true, since: iso(now()), reason: null}
         : {active: false, since: null, reason: null};
-      await persister();
+      if (active) {
+        // Sens sûr : le verrou passe en actif en mémoire immédiatement, avant
+        // l'écriture. Si l'écriture échoue, l'erreur remonte et le verrou
+        // reste posé : en cas de doute, rien ne part.
+        etat = prochain;
+        await persister(prochain);
+      } else {
+        // La levée n'est effective qu'après écriture réussie. Si l'écriture
+        // échoue, le verrou reste actif, l'erreur remonte et un nouvel appel
+        // peut réessayer.
+        await persister(prochain);
+        etat = prochain;
+      }
       return {active: etat.active, since: etat.since, reason: etat.reason};
     },
   };

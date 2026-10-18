@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {request} from 'node:http';
-import {mkdtemp,rm,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile,mkdir,readFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createCrise,CriseError} from '../src/crisis.mjs';
@@ -51,6 +51,40 @@ test('crise : set n’accepte qu’un booléen',async t=>{
   const crise=createCrise({file:join(dossier,'crise.json')});
   await assert.rejects(()=>crise.set('oui'),CriseError);
   await assert.rejects(()=>crise.set(1),CriseError);
+});
+
+test('crise : une sauvegarde qui échoue garde le verrou posé, la levée reste possible ensuite',async t=>{
+  const dossier=await dossierTemp(t);
+  const file=join(dossier,'crise.json');
+  const crise=createCrise({file});
+  await crise.set(true);
+  // Un répertoire portant exactement le nom du fichier temporaire rend
+  // l'écriture impossible : c'est la panne de disque réelle, sans simulation.
+  await mkdir(`${file}.tmp`,{recursive:true});
+  await assert.rejects(()=>crise.set(false));
+  assert.equal(crise.isActive(),true,'le verrou reste posé tant que rien n’est écrit');
+  assert.equal(JSON.parse(await readFile(file,'utf8')).active,true,'le disque dit toujours crise active');
+  // Le blocage disparaît : un nouvel appel lève réellement la crise.
+  await rm(`${file}.tmp`,{recursive:true,force:true});
+  const etat=await crise.set(false);
+  assert.equal(etat.active,false);
+  assert.equal(crise.isActive(),false);
+  assert.equal(JSON.parse(await readFile(file,'utf8')).active,false);
+  assert.deepEqual(crise.get(),{active:false,since:null,reason:null});
+});
+
+test('crise : un échec d’écriture en levée ne déverrouille pas après redémarrage',async t=>{
+  const dossier=await dossierTemp(t);
+  const file=join(dossier,'crise.json');
+  const crise=createCrise({file});
+  await crise.set(true);
+  await mkdir(`${file}.tmp`,{recursive:true});
+  await assert.rejects(()=>crise.set(false));
+  await rm(`${file}.tmp`,{recursive:true,force:true});
+  // L'état en mémoire reste celui du disque : le redémarrage ne découvre rien d’autre.
+  assert.equal(createCrise({file}).isActive(),true);
+  await crise.set(false);
+  assert.equal(createCrise({file}).isActive(),false);
 });
 
 test('crise : tick n’envoie rien puis reprend à la levée',async t=>{

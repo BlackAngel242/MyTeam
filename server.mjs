@@ -422,17 +422,36 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         return json(200,await bridge.read(url.searchParams.get('id')));
       }
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {
+        const verrouille=()=>json(423,{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
         if(!guard(req)) return;
-        if(salleDeCrise.isActive()) return json(423,{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
+        if(salleDeCrise.isActive()) return verrouille();
         const parsed=await readJson(req);
         if(parsed===null) return;
+        // La crise peut être déclenchée pendant la lecture du corps : revérification.
+        if(salleDeCrise.isActive()) return verrouille();
         if(url.pathname==='/api/prompt') {
           if(typeof parsed.id!=='string'||!parsed.id) return json(400,{error:'Sélectionnez un agent.'});
+          // Dernier contrôle juste avant l'appel à Herdr.
+          if(salleDeCrise.isActive()) return verrouille();
           return json(200,await bridge.prompt(parsed.id,parsed.message));
         }
         const ids=parsed.ids;
         if(!Array.isArray(ids)||ids.length<1||ids.length>12||ids.some(id=>typeof id!=='string'||!id)||new Set(ids).size!==ids.length) return json(400,{error:'Choisissez de 1 à 12 agents différents.'});
-        return json(200,await bridge.broadcast(ids,parsed.message));
+        // Un destinataire après l'autre : le verrou est revérifié juste avant
+        // chaque envoi, une crise déclenchée en route arrête la suite.
+        const results=[];
+        for(const id of ids) {
+          if(salleDeCrise.isActive()) return json(423,results.length?{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.',results}:{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
+          try {
+            const un=await bridge.broadcast([id],parsed.message);
+            if(Array.isArray(un?.results)) results.push(...un.results);
+          } catch(error) {
+            // Avant le premier envoi, l'erreur reste celle d'aujourd'hui (400, 502...).
+            if(!results.length) throw error;
+            results.push({id,name:'',ok:false,error:error.message||'La demande n’a pas abouti.'});
+          }
+        }
+        return json(200,{results});
       }
       if(req.method==='GET'&&url.pathname==='/api/queue') {
         if(!guard(req,{body:false})) return;

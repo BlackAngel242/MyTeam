@@ -246,3 +246,63 @@ test('file : la priorité survit à la restauration', async t => {
   }] }), 'utf8');
   assert.equal(relancer().list().items[0].priority, 'normale');
 });
+
+test('file : crise active = rien ne part, la consigne reste récupérable, et le verrou est revérifié juste avant l’appel', async t => {
+  const dossier = await mkdtemp(join(tmpdir(), 'queue-crise-'));
+  t.after(() => rm(dossier, { recursive: true, force: true }));
+  const file = join(dossier, 'file-attente.json');
+  const envois = [];
+  let controles = 0;
+  let actif = true;      // verrou de crise courant
+  let revirement = null; // numéro de contrôle qui retourne le verrou (course pendant le tour)
+  const creer = () => createQueue({
+    listAgents: async () => [{ id: 'a', name: 'A', status: 'idle', ready: true }],
+    prompt: async (id, message) => { envois.push({ id, message }); return { ok: true }; },
+    file,
+    now: () => Date.parse('2026-10-17T10:00:00.000Z'),
+    locked: () => {
+      controles++;
+      if (revirement !== null && controles === revirement) actif = !actif;
+      return actif;
+    },
+  });
+  const queue = creer();
+  await queue.enqueue({ id: 'a', message: 'Consigne à garder' });
+
+  // Crise déjà active au début du tour : rien ne part.
+  const tourVerrouille = await queue.tick();
+  assert.deepEqual(envois, [], 'aucun envoi pendant la crise');
+  assert.equal(tourVerrouille.sent.length, 0);
+  assert.equal(queue.list().items[0].state, 'attente');
+  assert.ok(controles >= 1, 'l’état de la crise est interrogé pendant le tour');
+
+  // La consigne est bien relisible sur le disque : rien n’est perdu.
+  const relance = createQueue({
+    listAgents: async () => [{ id: 'a', status: 'idle', ready: true }],
+    prompt: async () => { throw new Error('ne doit pas envoyer'); },
+    file,
+    now: () => Date.parse('2026-10-17T10:00:00.000Z'),
+  });
+  assert.equal(relance.list().items.length, 1, 'la consigne est récupérable après redémarrage');
+  assert.equal(relance.list().items[0].state, 'attente');
+  assert.equal(relance.list().items[0].message, 'Consigne à garder');
+
+  // La crise s'active pendant le tour, entre le premier contrôle et l'appel externe.
+  controles = 0;
+  actif = false;
+  revirement = 2;
+  const course = await queue.tick();
+  assert.equal(controles, 2, 'deux contrôles : avant le tour, puis juste avant l’appel');
+  assert.deepEqual(envois, [], 'le second contrôle arrête l’envoi');
+  assert.equal(course.sent.length, 0);
+  assert.equal(queue.list().items[0].state, 'attente', 'la consigne est reportée, pas envoyée');
+
+  // Levée de la crise : la consigne part au tour suivant.
+  controles = 0;
+  actif = false;
+  revirement = null;
+  const reprise = await queue.tick();
+  assert.deepEqual(envois.map(e => e.message), ['Consigne à garder']);
+  assert.equal(reprise.sent.length, 1);
+  assert.equal(queue.list().items[0].state, 'envoyee');
+});
