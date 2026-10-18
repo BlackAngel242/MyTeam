@@ -12,7 +12,7 @@ Constat général : aucun secret ni jeton réel n'a été trouvé, ni dans l'arb
 
 **Fichier :** `test/delegations.test.mjs:285`.
 
-**Scénario :** la chaîne `C:\Users\DrSmoke\secret.txt` sert d'exemple de consigne piégée dans un test. Depuis la publication, tout visiteur du dépôt y lit le nom d'utilisateur Windows et l'arborescence personnelle (`Documents\ChatGPT\IA DESKTOP`). Le commit 2d4c145 (« chemins personnels retirés ») a raté ce cas, seul résidu de ce type dans l'arbre actuel.
+**Scénario :** la chaîne `<chemin personnel>` sert d'exemple de consigne piégée dans un test. Depuis la publication, tout visiteur du dépôt y lit le nom d'utilisateur Windows et l'arborescence personnelle (`Documents\ChatGPT\IA DESKTOP`). Le commit 2d4c145 (« chemins personnels retirés ») a raté ce cas, seul résidu de ce type dans l'arbre actuel.
 
 **Correctif :** remplacer par un chemin factice comme dans les autres tests (`C:/projet-factice/...`), par exemple `C:\projet-factice\secret.txt`. Hors périmètre de cette revue (lecture seule) : à commiter par le chef ou le propriétaire du test.
 
@@ -20,7 +20,7 @@ Constat général : aucun secret ni jeton réel n'a été trouvé, ni dans l'arb
 
 **Fichiers (dans les anciennes révisions) :** `docs/mission-claude.md:7` et `docs/publication-github.md:12` (présents dès 7817574), `docs/missions-18-octobre.md:3` (298c49f).
 
-**Scénario :** un clone suivi de `git log -S` retrouve `C:/Users/DrSmoke/Documents/ChatGPT/IA DESKTOP` dans l'historique, même si l'arbre actuel est propre. `docs/publication-github.md` signalait déjà ce choix à trancher ; il ne l'a pas été.
+**Scénario :** un clone suivi de `git log -S` retrouve `<chemin personnel>` dans l'historique, même si l'arbre actuel est propre. `docs/publication-github.md` signalait déjà ce choix à trancher ; il ne l'a pas été.
 
 **Correctif :** décision de DrSmoke, deux options : réécrire l'historique (filter-repo puis force push, action irréversible, jamais faite sans son accord explicite), ou accepter et le noter dans `docs/publication-github.md`. Un simple commit supplémentaire ne retire rien de l'historique.
 
@@ -66,7 +66,7 @@ Constat général : aucun secret ni jeton réel n'a été trouvé, ni dans l'arb
 
 **Fichiers :** `.gitignore`, `.git/info/exclude:9`.
 
-**Scénario :** `.impeccable/hook.cache.json` contient des chemins absolus personnels (`C:/Users/DrSmoke/...`). Il n'est ignoré que par `.git/info/exclude`, fichier local absent des clones. Sur un autre poste, `git add -A` le publierait avec ses chemins. `.impeccable/config.json`, lui, est suivi et propre.
+**Scénario :** `.impeccable/hook.cache.json` contient des chemins absolus personnels (`<chemin personnel>`). Il n'est ignoré que par `.git/info/exclude`, fichier local absent des clones. Sur un autre poste, `git add -A` le publierait avec ses chemins. `.impeccable/config.json`, lui, est suivi et propre.
 
 **Correctif :** ajouter `.impeccable/hook.cache.json` à `.gitignore` (en gardant `config.json` suivi).
 

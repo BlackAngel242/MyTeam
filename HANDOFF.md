@@ -84,7 +84,7 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - Installeurs : correctifs de sécurité de Codex (injection par nom de dossier, `--oui` ne valide plus aucune installation, chemin Herdr littéral), tests réparés sous Windows par le chef.
 - Après tout changement de `server.mjs` : redémarrer le processus du port 4317.
 - OpenCode est resté bloqué par une boîte « Worktrees / Choose directory » : non traitée à la place de DrSmoke. Ses missions (A1b, E2, E4, E6) ont été reprises par Codex et le chef.
-- Restent à DrSmoke : création du dépôt `MyTeam` et publication, salle de crise, évolution en fenêtres ou tuiles libres.
+- Lot G livré : salle de crise (`src/crisis.mjs`, `/api/crise`, `docs/contrat-crise.md`, verrou 423, file suspendue, arrêt poli par `esc`, bouton sous clapet et `Ctrl+Maj+C`) et mosaïque (`public/tiles.js`, bouton Mosaïque / Vue scène). Dépôt public https://github.com/BlackAngel242/MyTeam créé et configuré avec l'accord de DrSmoke (fenêtre de pleins droits du 18 octobre), CI verte. Plus rien en suspens ; des fenêtres entièrement libres n'ont pas été demandées.
 
 ## Préparation à la publication GitHub et prochaines étapes
 

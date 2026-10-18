@@ -49,7 +49,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] G2 (Antigravity) Mosaïque : `public/tiles.js`, 2 à 4 terminaux côte à côte, consigne rapide, rafraîchissement borné aux tuiles visibles
 - [x] G3 (Claude) Salle de crise dans l'interface : bouton sous clapet, `Ctrl+Maj+C`, lumière ambrée, fenêtre de diagnostic, « Arrêter cet agent » (double confirmation), « Lever la crise »
 - [x] G4 (Claude) Intégration de la mosaïque : bouton « Mosaïque », « Vue scène », entrée dans la palette `Ctrl+K`
-- [ ] G5 (Claude) Évaluation, vérification Playwright (1440, 390, 360 px), documentation et mise à jour de `docs/aide.md` par Antigravity, fusion et push
+- [x] G5 (Claude) Évaluation, vérification Playwright (1440, 390, 360 px), documentation et mise à jour de `docs/aide.md` par Antigravity, fusion et push
 
 ## Lot F. Clôture
 
@@ -58,4 +58,4 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] F3 (Claude) `TODO.md`, `HANDOFF.md`, `JOURNAL.md` à jour
 - [x] F4 (Claude) `npm run check` et `npm test` verts, fusion dans `main`, aucun fichier en attente
 - [x] F6 (Claude) Revue QA finale à la place d'OpenCode (sa session reste bloquée par la boîte « Choose directory », laissée à DrSmoke) : gardes jeton et origine, traversée de chemin refusée, aucune fuite de chemin, identifiant ou secret dans `/api/discussion`, `/api/traitement`, `/api/reponses`
-- [ ] F5 (DrSmoke) Création du dépôt GitHub public et publication : jamais faite sans son feu vert
+- [x] F5 (DrSmoke) Création du dépôt GitHub public et publication : faite le 18 octobre avec son accord explicite (pleins droits de deux heures)
