@@ -206,7 +206,8 @@ function Read-Host($texte){return ${literal(join(project,"dossier $(commande) ' 
 function Confirmer($question,[switch]$Individuel){if(-not $Individuel){throw 'accord manquant'};return $true}
 Proposer-Kit
 $Oui=$false;Proposer-Kit`);
-  if(win)assert.deepEqual(JSON.parse(win.stdout.trim()),[join(project,"dossier $(commande) ' avec espaces"),'--lang','en']);
+  // Les runners Windows exposent des noms courts (RUNNER~1) : on compare le nom du dossier piégé, pas la forme du chemin.
+  if(win){const argv=JSON.parse(win.stdout.trim());assert.ok(argv[0].endsWith("dossier $(commande) ' avec espaces"));assert.deepEqual(argv.slice(1),['--lang','en']);}
 });
 
 test('H3 chef bash : accords individuels, alias agy, compétence sans écrasement et orientation ciblée',async t=>{
