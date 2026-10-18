@@ -245,8 +245,11 @@ export function createQueue({
     }
   }
 
-  async function enqueue(entree) {
+  async function enqueue(entree, { allowRepeatedMessage = false } = {}) {
     const valide = valider(entree ?? {});
+    if (allowRepeatedMessage === true && !valide.requestKey) {
+      throw new QueueError('Un événement interne exige une clé de demande.');
+    }
     // Une répétition de la même clé de demande retrouve le résultat existant,
     // même après envoi ou redémarrage : jamais un second envoi.
     if (valide.requestKey && cles.has(valide.requestKey)) {
@@ -259,9 +262,9 @@ export function createQueue({
         priority: valide.priority, files: valide.files, copiedFiles: [],
       });
     }
-    // Sans clé de demande, une même consigne déjà en file ou déjà envoyée est un
-    // renvoi (réponse perdue) : refusé plutôt que risquer un double envoi.
-    if (items.some(element => ['attente', 'envoi_en_cours', 'envoyee'].includes(element.state)
+    // Une consigne identique reste refusée. Seuls les événements internes munis
+    // de clés distinctes peuvent répéter leur texte ; les clés restent dédupliquées.
+    if (allowRepeatedMessage !== true && items.some(element => ['attente', 'envoi_en_cours', 'envoyee'].includes(element.state)
       && element.id === valide.id && element.message === valide.message && JSON.stringify(element.files) === JSON.stringify(valide.files))) {
       throw new QueueError('Cette consigne est déjà en file.');
     }

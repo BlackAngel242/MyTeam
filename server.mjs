@@ -3,7 +3,7 @@ import {readFile,lstat} from 'node:fs/promises';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
-import {join,posix,win32} from 'node:path';
+import {join,dirname,posix,win32} from 'node:path';
 import {randomBytes,timingSafeEqual,createHash} from 'node:crypto';
 import {createHerdr} from './src/herdr.mjs';
 import {readClaudeActivity} from './src/claude-activity.mjs';
@@ -17,12 +17,13 @@ import {createDirection,DirectionError} from './src/direction.mjs';
 import {readBlackboard} from './src/blackboard.mjs';
 import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
 import {createCrise} from './src/crisis.mjs';
+import {createRelais,RelaisError} from './src/relais.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -50,6 +51,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   // Sondage léger des terminaux : messages de limite observés dans le panneau.
   const sonderEtats=async()=>{
     const liste=await bridge.list();
+    await relaisEcoute.observe(liste,equipe.effective(liste).boss?.id).catch(()=>{});
     for(const agent of liste) {
       try {
         const etat=await lireEtat(agent);
@@ -90,6 +92,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
   const equipe=direction??createDirection({file:directionFile,now});
+  const relaisEcoute=relais??createRelais({file:relaisFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),now,locked:()=>salleDeCrise.isActive()});
   async function allowedRoots() {
     const roots=new Map();
     const add=async(key,label,kind,path)=>{
@@ -313,6 +316,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           const listed=await bridge.list();
           // Chef effectif : choix de DrSmoke s'il vaut encore, sinon la règle.
           const {boss:chef,source:sourceDirection,since:depuisDirection}=equipe.effective(listed);
+          await relaisEcoute.observe(listed,chef?.id).catch(()=>{});
           const agents=await Promise.all(listed.map(async agent=>{
             const {sessionId,creator_user_id,creator_account_id,activity:previousActivity,...publicAgent}=agent;
             publicAgent.boss=agent===chef;
@@ -440,6 +444,21 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La priorité n’a pas changé.'});
         }
       }
+      if(url.pathname==='/api/relais') {
+        if(req.method==='GET') {
+          if(!guard(req,{body:false})) return;
+          return json(200,relaisEcoute.get());
+        }
+        if(req.method==='POST') {
+          if(!guard(req)) return;
+          const parsed=await readJson(req);
+          if(parsed===null) return;
+          if(typeof parsed?.actif!=='boolean') return json(400,{error:'Le relais exige {"actif":true} ou {"actif":false}.'});
+          try {return json(200,await relaisEcoute.set(parsed.actif));}
+          catch(error) {return json(error instanceof RelaisError?error.status:500,{error:'Sauvegarde impossible : le relais n’a pas été changé.'});}
+        }
+        return json(404,{error:'Page introuvable.'});
+      }
       // Salle de crise : état persisté, envois verrouillés, arrêt poli d'un agent.
       if(url.pathname==='/api/crise') {
         if(req.method==='GET') {
@@ -500,6 +519,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   server.queue=fileAttente;
   server.pauses=pauses;
   server.direction=equipe;
+  server.relais=relaisEcoute;
   return server;
 }
 

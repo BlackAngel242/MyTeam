@@ -18,6 +18,8 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Serveur et données
 
+- Une clé de notification doit rester unique quand un agent disparaît puis revient : retirer son état du cache ne doit pas remettre son compteur à zéro. Combiner l'identité de l'agent, un compteur de changements conservé et une empreinte de démarrage ; tester la disparition, le retour et le redémarrage.
+
 - Une fonction passée à `map` reçoit l'index en deuxième argument : une option de confidentialité placée là peut exposer les métadonnées dès le second élément. Garder la projection publique à un seul argument et demander la lecture interne explicitement.
 - Filtrer le schéma local avant de l'afficher : sa sortie complète est volumineuse.
 - Ne pas convertir séparément chaque morceau d'une requête réseau : conserver les octets jusqu'à la fin pour préserver les accents et emojis.
