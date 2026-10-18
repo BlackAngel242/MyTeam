@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -185,4 +185,26 @@ function Read-Host($question){return $null}
 if(Confirmer installation -Individuel){throw 'EOF accepté'}
 'ok'`);
   if(win)assert.equal(win.stdout.trim(),'ok');
+});
+
+test('H3 kit : faux script, dossier piégé conservé et Oui sans initialisation',async t=>{
+  const project=await temporary(t);await mkdir(join(project,'scripts'));
+  await writeFile(join(project,'scripts/init-kit.mjs'),'console.log(JSON.stringify(process.argv.slice(2)));');
+  const target='dossier $(commande) " avec espaces';
+  const sh=await bash(t,['proposer_kit'],`
+RACINE='${project.replaceAll('\\','/')}';LANGUE=en;OUI=1;DRY_RUN=0
+dire(){ :; };noter(){ :; };simuler(){ :; }
+confirmer(){ [ "$2" = individuel ]; }
+proposer_kit </dev/null
+OUI=0
+proposer_kit <<< '${target}'`);
+  assert.match(sh.stdout,new RegExp(JSON.stringify([target,'--lang','en']).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  const win=await ps(t,['Proposer-Kit'],`
+$racine=${literal(project)};$Lang='en';$Oui=$true;$DryRun=$false
+function Dire($texte) {};function Noter($texte) {};function Simuler($texte) {}
+function Read-Host($texte){return ${literal(join(project,"dossier $(commande) ' avec espaces"))}}
+function Confirmer($question,[switch]$Individuel){if(-not $Individuel){throw 'accord manquant'};return $true}
+Proposer-Kit
+$Oui=$false;Proposer-Kit`);
+  if(win)assert.deepEqual(JSON.parse(win.stdout.trim()),[join(project,"dossier $(commande) ' avec espaces"),'--lang','en']);
 });

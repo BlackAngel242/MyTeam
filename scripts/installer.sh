@@ -659,6 +659,23 @@ else
 fi
 dire ''
 
+proposer_kit() {
+  [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne crée aucun kit.' 'The --oui option never creates a kit.')"; return 0; }
+  local script_kit="$RACINE/scripts/init-kit.mjs" dossier node_kit
+  [ -f "$script_kit" ] || { dire "$(texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.')"; return 0; }
+  confirmer "$(texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?')" individuel || return 0
+  if [ "$DRY_RUN" = 1 ]; then simuler "$(texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.')"; return 0; fi
+  printf '%s : ' "$(texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')"
+  read -r dossier || return 0
+  [ -n "$dossier" ] || return 0
+  case "$dossier" in --*) dossier="./$dossier" ;; esac
+  node_kit=$(command -v node || command -v node.exe) || return 1
+  if "$node_kit" "$script_kit" "$dossier" --lang "${LANGUE:-fr}"; then
+    noter "$(texte "Kit d'équipe : initialisé." 'Team kit: initialized.')"
+  else dire "$(texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.')"; fi
+}
+proposer_kit
+
 # --- Resume -------------------------------------------------------------
 dire "$(texte '=== Resume ===' '=== Summary ===')"
 if [ -z "$RAPPORT" ]; then dire "$(texte 'Rien a signaler.' 'Nothing to report.')"; else printf '%s\n' "$RAPPORT" | sed '/^ *$/d'; fi

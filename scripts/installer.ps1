@@ -544,6 +544,22 @@ if (-not $nodeOk) {
 }
 Dire ''
 
+function Proposer-Kit {
+  if ($Oui) { Dire (Texte 'Le mode -Oui ne crée aucun kit.' 'The -Oui option never creates a kit.'); return }
+  $scriptKit = Join-Path $racine 'scripts/init-kit.mjs'
+  if (-not (Test-Path -LiteralPath $scriptKit -PathType Leaf)) { Dire (Texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.'); return }
+  if (-not (Confirmer (Texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?') -Individuel)) { return }
+  if ($DryRun) { Simuler (Texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.'); return }
+  $dossier = Read-Host (Texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')
+  if ([string]::IsNullOrWhiteSpace($dossier)) { return }
+  $dossier = [IO.Path]::GetFullPath($dossier)
+  $nodeKit = Get-Command node -CommandType Application -ErrorAction Stop
+  & $nodeKit.Source $scriptKit $dossier --lang $Lang
+  if ($LASTEXITCODE -ne 0) { Dire (Texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.'); return }
+  Noter (Texte "Kit d'équipe : initialisé." 'Team kit: initialized.')
+}
+Proposer-Kit
+
 # --- Resume -------------------------------------------------------------
 Dire (Texte '=== Resume ===' '=== Summary ===')
 if ($rapport.Count -eq 0) { Dire (Texte 'Rien a signaler.' 'Nothing to report.') }
