@@ -145,6 +145,7 @@ export function createQueue({
   maxItems = 20,
   maxPerAgent = 5,
   prepareFiles = async () => { throw new QueueError('La copie des fichiers est indisponible.'); },
+  locked = () => false,  // salle de crise : vrai bloque tous les envois de tick()
 } = {}) {
   if (typeof listAgents !== 'function' || typeof prompt !== 'function' || typeof file !== 'string') {
     throw new QueueError('La file d\'attente est mal configurée.');
@@ -383,6 +384,8 @@ export function createQueue({
           if (now() < fin) continue;  // pause encore en cours : rien ne part ce tour
         }
         for (const element of attente) {
+          // Salle de crise : rien ne part, la file garde ses consignes en attente.
+          if (locked()) break;
           const target = { ...agent };
           const depart = element.notBefore ? Date.parse(element.notBefore) : 0;
           const relance = element.holdUntil ? Date.parse(element.holdUntil) : 0;
@@ -419,6 +422,14 @@ export function createQueue({
               if (!current || !['idle','done'].includes(current.status) || current.ready !== true || current.cwd !== target.cwd || current.kind !== target.kind || current.sessionId !== target.sessionId) {
                 throw new QueueError('La cible a changé ou n’est plus disponible après la copie.');
               }
+            }
+            // Vérifié juste avant l'envoi : la crise peut être déclenchée pendant la copie.
+            if (locked()) {
+              element.state = 'attente';
+              element.reason = null;
+              element.updatedAt = iso(now());
+              modifie = true;
+              break;
             }
             await prompt(element.id, message);
             element.state = 'envoyee';

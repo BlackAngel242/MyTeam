@@ -101,6 +101,12 @@ export function createHerdr({run,executeFile=execute}={}) {
       return {ok:true,message:'Consigne transmise à Herdr.'};
     } finally {inflight.delete(id);}
   }
+  async function interrupt(id) {
+    // Interruption polie : Échap dans le panneau, jamais de kill.
+    const agent=await resolve(id);
+    await invoke(['pane','send-keys',agent.paneId,'Escape']);
+    return {requested:true,agent:agent.name};
+  }
   async function broadcast(ids,message) {
     checkMessage(message);
     const results=[];
@@ -116,5 +122,5 @@ export function createHerdr({run,executeFile=execute}={}) {
     }
     return {results};
   }
-  return {list,read,prompt,broadcast};
+  return {list,read,prompt,interrupt,broadcast};
 }

@@ -16,12 +16,13 @@ import {createTerminalStatusReader} from './src/terminal-status.mjs';
 import {createDirection,DirectionError} from './src/direction.mjs';
 import {readBlackboard} from './src/blackboard.mjs';
 import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
+import {createCrise} from './src/crisis.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -83,7 +84,9 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     promesse.catch(()=>cacheReponses.delete(agent.id));
     return promesse;
   };
-  const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,prepareFiles:prepareQueuedFiles,file:queueFile,now});
+  // Salle de crise : un état illisible rend la crise active (rien ne part).
+  const salleDeCrise=crise??createCrise({file:criseFile,now});
+  const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,prepareFiles:prepareQueuedFiles,file:queueFile,now,locked:()=>salleDeCrise.isActive()});
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
   const equipe=direction??createDirection({file:directionFile,now});
@@ -396,6 +399,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       }
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {
         if(!guard(req)) return;
+        if(salleDeCrise.isActive()) return json(423,{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
         const parsed=await readJson(req);
         if(parsed===null) return;
         if(url.pathname==='/api/prompt') {
@@ -435,6 +439,31 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         catch(error) {
           return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La priorité n’a pas changé.'});
         }
+      }
+      // Salle de crise : état persisté, envois verrouillés, arrêt poli d'un agent.
+      if(url.pathname==='/api/crise') {
+        if(req.method==='GET') {
+          if(!guard(req,{body:false})) return;
+          return json(200,salleDeCrise.get());
+        }
+        if(req.method==='POST') {
+          if(!guard(req)) return;
+          const parsed=await readJson(req);
+          if(parsed===null) return;
+          if(typeof parsed?.active!=='boolean') return json(400,{error:'La crise s’active ou se lève avec {"active":true} ou {"active":false}.'});
+          try {return json(200,await salleDeCrise.set(parsed.active));}
+          catch(error) {return json(errorStatus(error),{error:error.message||'L’état de la salle de crise n’a pas changé.'});}
+        }
+        return json(404,{error:'Page introuvable.'});
+      }
+      if(req.method==='POST'&&url.pathname==='/api/crise/arret') {
+        if(!guard(req)) return;
+        const parsed=await readJson(req);
+        if(parsed===null) return;
+        if(typeof parsed?.id!=='string'||!parsed.id) return json(400,{error:'Sélectionnez un agent.'});
+        if(!salleDeCrise.isActive()) return json(409,{error:'La salle de crise n’est pas active.'});
+        try {return json(200,await bridge.interrupt(parsed.id));}
+        catch(error) {return json(errorStatus(error),{error:error.message||'L’arrêt n’a pas été demandé.'});}
       }
       if(url.pathname==='/api/direction') {
         if(req.method==='POST') {
