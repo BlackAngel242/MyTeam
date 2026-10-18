@@ -28,6 +28,8 @@ window.DICTIONNAIRE_EN = {
   "auto.minutes": "{n} min",
   "auto.heures": "{n} h",
   "auto.lancer": "Start autonomy",
+  "auto.recap": "Summary",
+  "auto.recap_vide": "No autonomy run yet: nothing to report.",
   "auto.arreter": "Stop now",
   "auto.active": "Autonomy on: {objectif}",
   "auto.reste": "{reste} left · exchange {n}/{max}",

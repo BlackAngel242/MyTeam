@@ -881,14 +881,24 @@ function renderAuto(){
 }
 function fillAutoChoices(){
   const m=$('auto-minutes'),e=$('auto-echanges');
-  if(!m.options.length){for(const v of [15,30,60,120])m.add(new Option(dureeLabel(v),String(v),false,v===30));for(const v of [10,20,40,60])e.add(new Option(String(v),String(v),false,v===20));}
+  if(!m.options.length){for(const v of [5,15,30,60,120])m.add(new Option(dureeLabel(v),String(v),false,v===30));for(const v of [3,10,20,40,60])e.add(new Option(String(v),String(v),false,v===20));}
   else for(const o of m.options)o.textContent=dureeLabel(Number(o.value));
+}
+// Récapitulatif de fin de mode : texte Markdown fabriqué par le serveur à partir du seul journal.
+async function showRecap(){
+  const pre=$('auto-recap');
+  try{
+    const r=await fetch('/api/autonomie/recap',{headers:{'X-Bureau-Token':state.token||''},cache:'no-store'});
+    if(!r.ok)throw new Error(DEMANDE_EC);
+    const texte=(await r.text()).trim();
+    pre.textContent=texte||t('auto.recap_vide');pre.hidden=false;
+  }catch(error){pre.textContent=errorText(error);pre.hidden=false;}
 }
 let autoTrigger=null;
 function openAuto(){
   autoTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
   fillAutoChoices();for(const el of backdrop($('auto')))el.inert=true;
-  $('auto').hidden=false;$('auto-result').textContent='';renderAuto();loadAuto();($('auto-form').hidden?$('auto-main'):$('auto-objectif')).focus();
+  $('auto').hidden=false;$('auto-result').textContent='';$('auto-recap').hidden=true;renderAuto();loadAuto();($('auto-form').hidden?$('auto-main'):$('auto-objectif')).focus();
 }
 function closeAuto(){
   $('auto').hidden=true;for(const el of backdrop($('auto')))el.inert=false;
@@ -904,7 +914,7 @@ async function autoSet(){
   }catch(error){$('auto-result').textContent=errorText(error,'envoi');}
   finally{autoBusy=false;syncAuto();renderAuto();}
 }
-$('auto-open').addEventListener('click',openAuto);$('auto-close').addEventListener('click',closeAuto);$('auto-main').addEventListener('click',autoSet);
+$('auto-recap-btn').addEventListener('click',showRecap);$('auto-open').addEventListener('click',openAuto);$('auto-close').addEventListener('click',closeAuto);$('auto-main').addEventListener('click',autoSet);
 $('crise-open').addEventListener('click',openCrisis);
 $('crise-close').addEventListener('click',closeCrisis);
 $('crise-banner-open').addEventListener('click',openCrisis);

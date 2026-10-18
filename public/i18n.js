@@ -35,6 +35,8 @@
   "auto.minutes": "{n} min",
   "auto.heures": "{n} h",
   "auto.lancer": "Lancer l’autonomie",
+  "auto.recap": "Récapitulatif",
+  "auto.recap_vide": "Aucun mode d’autonomie n’a tourné : rien à raconter.",
   "auto.arreter": "Arrêter maintenant",
   "auto.active": "Autonomie active : {objectif}",
   "auto.reste": "Reste {reste} · échange {n}/{max}",
