@@ -40,7 +40,6 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 - Documentation publique : `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `NOTICE.md`, `docs/INSTALLATION.md`, `docs/aide.md`, `docs/captures/`
 - Tests automatisés natifs : `package.json`, `test/*.mjs` (200 tests automatisés sans dépendance externe avec `node:test`)
 - Configuration et exclusion : `.gitignore`
-- Configuration et exclusion : `.gitignore`
 
 ### Fichiers conservés pour la coordination interne
 
@@ -49,7 +48,7 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 
 ## 3. Choix de la licence logicielle (Validé)
 
-DrSmoke a retenu la **Licence MIT** pour le Bureau des agents, offrant une liberté maximale d'utilisation, de modification et de distribution, tout en protégeant son attribution originale.
+DrSmoke a retenu la **Licence MIT** pour MyTeam (le Bureau des agents), offrant une liberté maximale d'utilisation, de modification et de distribution, tout en protégeant son attribution originale.
 Le fichier `LICENSE` contient le texte standard MIT, et `NOTICE.md` précise que les marques et emblèmes (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) restent la propriété exclusive de leurs éditeurs respectifs.
 
 ## 4. Captures d'écran préparées pour la vitrine GitHub

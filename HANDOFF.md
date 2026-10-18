@@ -4,7 +4,7 @@ Lire attentivement ce document ainsi que `PRODUCT.md`, `DESIGN.md`, `JOURNAL.md`
 
 ## Contexte et architecture du projet
 
-L'application « Bureau des agents » est une tour de contrôle locale dans le navigateur conçue pour DrSmoke et ses agents d'intelligence artificielle opérant dans Herdr.
+L'application MyTeam (« Bureau des agents ») est une tour de contrôle locale dans le navigateur conçue pour DrSmoke et ses agents d'intelligence artificielle opérant dans Herdr.
 
 - Serveur d'application : Développé en Node.js natif (ES Modules, `server.mjs`), sans aucune bibliothèque tierce (`node_modules` n'existe pas). Il écoute exclusivement sur `http://127.0.0.1:4317`.
 - Passerelle Herdr (`src/herdr.mjs`) : Communique avec l'outil Herdr en local via `node:child_process` (arguments isolés, aucune interprétation shell). La liste des agents est rafraîchie toutes les trois secondes. Les envois de consignes sont strictement interdits aux agents occupés ou bloqués.
@@ -88,5 +88,5 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 
 2. Décisions et validation de DrSmoke :
    - Choix des captures finales pour `docs/captures/`.
-   - Création manuelle du dépôt public GitHub (`bureau-des-agents`) et publication initiale sur la branche `main`.
+   - Création manuelle du dépôt public GitHub (`MyTeam`) et publication initiale sur la branche `main`.
    - Arbitrage sur les évolutions d'OS d'agents (bureau en tuiles ou en fenêtres libres).

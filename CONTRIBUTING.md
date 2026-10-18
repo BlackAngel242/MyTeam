@@ -1,6 +1,6 @@
-# Contribuer au Bureau des agents
+# Contribuer à MyTeam (Bureau des agents)
 
-Merci de votre intérêt pour le Bureau des agents ! Ce projet a été conçu pour offrir un tableau de bord local, vivant et esthétique aux développeurs qui pilotent plusieurs agents d'intelligence artificielle dans Herdr.
+Merci de votre intérêt pour MyTeam (le Bureau des agents) ! Ce projet a été conçu pour offrir un tableau de bord local, vivant et esthétique aux développeurs qui pilotent plusieurs agents d'intelligence artificielle dans Herdr.
 
 ## Principes directeurs du projet
 
