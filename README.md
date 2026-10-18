@@ -11,6 +11,8 @@ Voyez vos agents d'IA [Herdr](https://github.com/herdrdev/herdr) travailler dans
 
 [![Scène principale de MyTeam](docs/captures/01-ordinateur-scene.png)](https://blackangel242.github.io/MyTeam/)
 
+![Tournée du chef : délégation animée en direct](docs/captures/tournee-du-chef.gif)
+
 - **Qui fait quoi, en direct** : qui travaille, attend ou finit, jusqu'à 10 agents testés.
 - **Vous gardez la main** : file d'attente, salle de crise, mode Autonomie plafonné et arrêtable.
 - **Local et sobre** : `127.0.0.1` seulement, zéro dépendance npm, rien d'inventé à l'écran.

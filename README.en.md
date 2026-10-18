@@ -11,6 +11,8 @@ Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel 
 
 [![MyTeam main scene](docs/captures/01-ordinateur-scene.png)](https://blackangel242.github.io/MyTeam/)
 
+![Chief tour: live animated delegation](docs/captures/tournee-du-chef.gif)
+
 - **Who does what, live**: who works, waits or finishes, tested with up to 10 agents.
 - **You stay in control**: queue, crisis room, capped Autonomy mode you can stop.
 - **Local and plain**: `127.0.0.1` only, zero npm dependencies, nothing invented on screen.
