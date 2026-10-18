@@ -128,6 +128,19 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Cliquez sur « Réinitialiser » pour rétablir la disposition automatique.
 - Appuyez sur la touche Échap ou cliquez sur « Terminer » pour valider et enregistrer vos réglages.
 
+#### Mode Mosaïque (Surveillance multi-terminaux)
+- Le bouton « Mosaïque » dans le cadre de la scène (ou la commande « Mode mosaïque » de la palette Ctrl+K) remplace le décor en pixel art par une mosaïque modulaire de 2 à 4 terminaux côte à côte.
+- Les collaborateurs au travail apparaissent automatiquement en tête de liste pour suivre leurs progrès sans délai.
+- Si l'équipe compte plus de 4 agents, une barre de sélection propose des cases à cocher pour choisir les agents à afficher (4 tuiles au maximum).
+- Bascule de disposition : boutons « Grille 2×2 » et « Colonnes » (sur smartphone, les tuiles se disposent en colonne unique adaptée à l'écran).
+- Chaque tuile propose :
+  - Un en-tête compact avec nom, outil, badge de statut et bouton « Agrandir » pour ouvrir le poste individuel complet.
+  - Le texte brut du terminal dans un bloc défilant propre, nettoyé des séquences d'échappement ANSI.
+  - Un champ de recherche textuelle avec surlignage des occurrences et compteur de correspondances.
+  - Un formulaire de consigne rapide expédiable avec `Ctrl+Entrée`, automatiquement désactivé avec mention explicite quand l'agent n'est pas disponible.
+- Rafraîchissement économique : les tuiles visibles sont interrogées toutes les 3 secondes, le rafraîchissement se suspend si l'onglet du navigateur est masqué, une seule lecture à la fois par tuile pour éviter toute congestion, et la sélection de texte dans un terminal n'est jamais interrompue.
+- Le bouton « Revenir à la scène » ou la commande de palette rétablit instantanément la scène animée.
+
 ---
 
 ### Zone 2 : Onglet « Poste » (Pilotage individuel)
@@ -285,18 +298,45 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 
 ---
 
+### Zone 7 : Disjoncteur général « Salle de crise »
+
+La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en cas d'emballement d'un agent, de boucle de messages incontrôlée ou de défaillance critique, sans jamais détruire les travaux en cours.
+
+#### Enclenchement et signal visuel
+- Accessible à tout moment via le bouton de sécurité sous clapet « Salle de crise » dans la barre d'en-tête, le raccourci d'urgence `Ctrl+Maj+C` ou la palette de commandes Ctrl+K.
+- Dès l'enclenchement, la scène s'habille d'un halo ambré de sécurité et un bandeau d'alerte apparaît en haut de page.
+- Le bouton principal de la modale demande une confirmation explicite avant d'armer la crise (« Confirmer : enclencher la crise »).
+
+#### Effets immédiats du verrou de crise
+- **Verrouillage absolu des envois directs** : les routes `/api/prompt` et `/api/broadcast` répondent par le code HTTP 423 avec un message explicite (« Salle de crise active : les envois sont verrouillés »).
+- **Gel de la file d'attente** : les consignes continuent d'être reçues et enregistrées en file sans perte, mais aucun départ automatique n'a lieu tant que la crise reste active.
+- **Suspension de la passation** : le message de passation de direction passe par la file et reste également suspendu.
+- **Persistance atomique** : l'état `{active, since, reason}` est conservé dans `.bureau/crise.json` hors Git. Si le fichier est corrompu ou illisible, la crise reste active par défaut par précaution.
+
+#### Diagnostic calme et interruption polie
+- La modale liste chaque collaborateur connecté avec son état observé, son panneau Herdr et les 4 dernières lignes réelles de son terminal.
+- **Interruption polie par agent** : DrSmoke peut cliquer sur « Arrêter cet agent » puis confirmer (« Confirmer : interrompre [Nom] »). Le serveur transmet alors la touche Échap canonique (`esc` dans Herdr via `POST /api/crise/arret`).
+- **Règle absolue** : aucun processus n'est brutalement tué (`kill`). L'agent est invité à s'arrêter proprement au niveau applicatif pour préserver l'intégrité de ses fichiers sur le disque.
+- **Reprise** : une fois la situation assainie, DrSmoke clique sur « Lever la crise » pour déverrouiller instantanément les envois et relancer la file.
+
+---
+
 ## 4. Tableau des raccourcis et commandes rapides
 
 | Zone | Action ou raccourci | Effet |
 | :--- | :--- | :--- |
 | **Général** | `Ctrl + K` | Ouvre la palette de commandes modale. |
 | **Général** | Palette Ctrl+K : « Tableau de l'équipe » | Ouvre la fenêtre modale du tableau de l'équipe (mémoire partagée). |
+| **Général** | Palette Ctrl+K : « Mode mosaïque » | Bascule entre la vue scène pixel art et la mosaïque de terminaux. |
+| **Général** | Palette Ctrl+K : « Salle de crise » | Ouvre la modale de diagnostic et de gestion de la salle de crise. |
+| **Général** | `Ctrl + Maj + C` | Ouvre immédiatement la modale de la salle de crise (disjoncteur d'urgence). |
 | **Général** | Touche `?` | Ouvre ou ferme ce volet d'aide. |
 | **Scène** | Clic sur le panneau de liège ou bouton « Tableau » | Ouvre le tableau de l'équipe en lecture seule (fichiers piliers). |
+| **Scène** | Bouton « Mosaïque » / « Vue scène » | Bascule l'affichage entre la scène animée et la grille de 2 à 4 terminaux. |
 | **Scène** | Clic sur un personnage (ou toucher sur écran tactile) | Ouvre son poste individuel (fait défiler sur mobile). |
 | **Scène** | Clic sur la pile de courrier | Ouvre l'onglet Équipe et la section Courrier du chef. |
 | **Scène** | Bouton « Disposer » | Active la réorganisation manuelle des bureaux. |
-| **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la palette d'abord, puis le tableau de l'équipe, puis le mode « Disposer », puis l'aide. |
+| **Scène** | Touche `Échap` | Ferme une seule couche à la fois : la salle de crise, puis la palette, puis le tableau de l'équipe, puis « Disposer », puis l'aide. |
 | **Scène** | Bouton « Plein écran » | Agrandit la scène et le panneau dans une vue unifiée. |
 | **Scène** | Bouton « Mettre en pause » | Coupe ou réactive les animations du canvas (figée, la scène suit l'heure chaque minute). |
 | **Navigation**| `Flèche droite` / `Flèche gauche` | Passe d'un onglet à l'autre (Poste, Équipe, Fichiers, Tâches). |
@@ -308,6 +348,13 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Poste** | Sélection de texte dans le terminal | Suspend temporairement l'actualisation pour copier. |
 | **Poste** | Bouton « Figer » | Bloque le suivi automatique vers le bas. |
 | **Poste** | Bouton « Copier » | Place le texte complet du terminal dans le presse-papier. |
+| **Mosaïque**| Bouton « Grille 2×2 » / « Colonnes » | Change la disposition des tuiles dans la mosaïque. |
+| **Mosaïque**| `Ctrl + Entrée` dans une tuile | Expédie la consigne rapide vers l'agent affiché dans cette tuile. |
+| **Mosaïque**| Bouton « Agrandir » d'une tuile | Ouvre le poste unitaire complet de l'agent concerné. |
+| **Mosaïque**| Bouton « Revenir à la scène » | Ferme la mosaïque et réaffiche la scène animée du bureau. |
+| **Crise** | Bouton « Salle de crise » | Ouvre le panneau de diagnostic et d'urgence de la salle de crise. |
+| **Crise** | Bouton « Arrêter cet agent » | Demande l'interruption polie (Échap) d'un agent après confirmation. |
+| **Crise** | Bouton « Lever la crise » | Déverrouille les envois directs et relance le traitement de la file. |
 | **Équipe** | Section « Direction de l'équipe » | Choisit le chef d'équipe, rétablit la règle ou valide une passation. |
 | **Équipe** | Bouton « Passer en tête » | Promeut une consigne en attente au rang de priorité haute. |
 | **Équipe** | Bouton « Retirer » | Supprime une consigne en attente dans la file. |
@@ -316,6 +363,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Fichiers** | Glisser-déposer sur un lieu | Copie le fichier vers le dossier choisi. |
 | **Fichiers** | `Maj` + Glisser-déposer sur un lieu | Déplace le fichier (nécessite une confirmation). |
 | **Fichiers** | Bouton « Afficher » | Ouvre le dossier du fichier dans l'Explorateur Windows. |
+
 
 ---
 

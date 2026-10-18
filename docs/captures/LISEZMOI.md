@@ -13,3 +13,8 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `08-telephone-equipe.png` : Onglet Équipe sur téléphone avec le courrier, la file d'attente et l'envoi à plusieurs agents.
 - `09-telephone-palette.png` : Palette de commandes modale adaptée à la largeur d'un écran mobile.
 - `10-telephone-aide.png` : Panneau d'aide intégrée affiché en plein écran sur téléphone pour une lecture confortable.
+- `11-ordinateur-mosaique.png` : Vue mosaïque sur ordinateur (1440x900) affichant les terminaux des agents côte à côte avec recherche réactive et consigne rapide.
+- `12-ordinateur-crise.png` : Salle de crise ouverte sur ordinateur (1440x900) avec bandeau d'alerte ambré, diagnostic des agents et interruption polie.
+- `13-telephone-mosaique.png` : Mode mosaïque adapté sur téléphone (390x844) avec terminaux disposés en colonne fluide.
+- `14-telephone-crise.png` : Salle de crise affichée sur téléphone (390x844) avec avertissement d'urgence et panneau de contrôle.
+
