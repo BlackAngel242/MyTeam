@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, writeFile, readFile, rm, symlink, utimes} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, basename, dirname} from 'node:path';
 import {tmpdir} from 'node:os';
 import {listDir, recentFiles, transfer, resolveInside} from '../src/files.mjs';
 
@@ -81,7 +81,7 @@ test('un déplacement ne remplace jamais un fichier apparu après le contrôle d
   const {syncBuiltinESMExports} = await import('node:module');
   const original = fs.existsSync;
   let injecte = false;
-  fs.existsSync = chemin => { const vu = original(chemin); if (!vu && !injecte && chemin.endsWith('rapport.txt') && chemin.startsWith(b)) { injecte = true; fs.writeFileSync(chemin, 'concurrent'); } return vu; };
+  fs.existsSync = chemin => { const vu = original(chemin); if (!vu && !injecte && chemin.endsWith('rapport.txt') && basename(dirname(chemin)) === 'cible') { injecte = true; fs.writeFileSync(chemin, 'concurrent'); } return vu; };
   syncBuiltinESMExports();
   try {
     const r = await transfer({fromRoot: a, fromPath: 'rapport.txt', toRoot: b, mode: 'move'});
