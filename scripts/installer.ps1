@@ -213,6 +213,50 @@ if ($herdrTrouve) {
 Dire ''
 
 # --- 3. Panneaux Herdr --------------------------------------------------
+function Appeler-Herdr([string[]]$Arguments) {
+  $texte = & $herdrTrouve @Arguments
+  if ($LASTEXITCODE -ne 0) { throw 'Herdr a refuse la commande.' }
+  $resultat = ($texte -join "`n") | ConvertFrom-Json
+  if ($resultat.error) { throw 'Herdr a refuse la commande.' }
+  return $resultat
+}
+
+function Lire-Panneaux([string]$espace) {
+  $resultat = Appeler-Herdr @('pane','list','--workspace',$espace)
+  $ids = @($resultat.result.panes | ForEach-Object { $_.pane_id })
+  if ($ids.Count -eq 0 -or @($ids | Where-Object { $_ -notmatch ('^'+[regex]::Escape($espace)+':p[0-9]+$') }).Count) {
+    throw 'Les panneaux du nouvel espace sont illisibles.'
+  }
+  return $ids
+}
+
+function Creer-GrilleHerdr {
+  $creation = Appeler-Herdr @('workspace','create','--label','Bureau des agents')
+  $espace = $creation.result.workspace_id
+  if (-not $espace) { $espace = $creation.result.workspace.workspace_id }
+  if ($espace -notmatch '^[A-Za-z0-9_-]+$') { throw 'Le nouvel espace est illisible.' }
+  $avant = @(Lire-Panneaux $espace)
+  if ($avant.Count -ne 1) { throw 'Le nouvel espace doit contenir un seul panneau.' }
+  $gauche = $avant[0]
+  Appeler-Herdr @('pane','split','--pane',$gauche,'--direction','right','--no-focus') | Out-Null
+  $apres = @(Lire-Panneaux $espace)
+  $nouveau = @($apres | Where-Object { $_ -notin $avant })
+  if ($nouveau.Count -ne 1 -or $apres.Count -ne 2) { throw 'La colonne droite est illisible.' }
+  $droite = $nouveau[0]
+  $ids = @($gauche,$droite)
+  foreach ($colonne in @($gauche,$droite)) {
+    $avant = @(Lire-Panneaux $espace)
+    Appeler-Herdr @('pane','split','--pane',$colonne,'--direction','down','--no-focus') | Out-Null
+    $apres = @(Lire-Panneaux $espace)
+    $nouveau = @($apres | Where-Object { $_ -notin $avant })
+    if ($nouveau.Count -ne 1 -or $apres.Count -ne $avant.Count+1) { throw 'La decoupe verticale est illisible.' }
+    $ids += $nouveau[0]
+  }
+  $noms = @('Chef','Agent 2','Agent 3','Agent 4')
+  for ($i=0; $i -lt 4; $i++) { Appeler-Herdr @('pane','rename',$ids[$i],$noms[$i]) | Out-Null }
+  return $ids
+}
+
 Dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
 # Commandes verifiees dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
@@ -230,15 +274,8 @@ if ($herdrTrouve) {
     } else {
       try {
         Dire 'Creation de l''espace Herdr « Bureau des agents »...'
-        $sortie = & $herdrTrouve workspace create --label 'Bureau des agents' 2>&1 | Out-String
-        & $herdrTrouve pane split --direction right 2>&1 | Out-Null
-        & $herdrTrouve pane split --direction down 2>&1 | Out-Null
-        & $herdrTrouve pane split --direction down 2>&1 | Out-Null
-        $liste = & $herdrTrouve pane list 2>&1 | Out-String
-        $ids = [regex]::Matches($liste, '[A-Za-z0-9_-]+:p\d+') | ForEach-Object { $_.Value } | Select-Object -Unique
+        $ids = @(Creer-GrilleHerdr)
         $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
-        if ($ids.Count -lt 4) { throw "identifiants de panneaux illisibles ($($ids.Count) trouves)" }
-        for ($i = 0; $i -lt 4; $i++) { & $herdrTrouve pane rename $ids[$i] $noms[$i] 2>&1 | Out-Null }
         Dire "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))."
         Noter 'Panneaux Herdr : 4 panneaux crees et nommes.'
       } catch {
@@ -246,9 +283,9 @@ if ($herdrTrouve) {
         Dire 'Procedure manuelle (commandes verifiees de Herdr) :'
         Dire '  herdr workspace create --label "Bureau des agents"'
         Dire '  herdr pane list                      # reperer les identifiants, ex. w6:p1'
-        Dire '  herdr pane split --direction right   # deuxieme panneau'
-        Dire '  herdr pane split --direction down    # troisieme panneau'
-        Dire '  herdr pane split --direction down    # quatrieme panneau'
+        Dire '  herdr pane split --pane w6:p1 --direction right'
+        Dire '  herdr pane split --pane w6:p1 --direction down'
+        Dire '  herdr pane split --pane w6:p2 --direction down'
         Dire '  herdr pane rename w6:p1 Chef         # puis Agent 2, Agent 3, Agent 4'
         Dire '  # optionnel : lancer un outil d''IA dans un panneau (non fait par ce script)'
         Dire '  # herdr agent start <nom> --kind claude --pane w6:p1'

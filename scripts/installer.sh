@@ -268,6 +268,42 @@ fi
 dire ''
 
 # --- 3. Panneaux Herdr --------------------------------------------------
+lire_panneaux() {
+  local liste ids id
+  liste=$("$HERDR_TROUVE" pane list --workspace "$1") || return 1
+  ids=$(printf '%s' "$liste" | grep -oE '"pane_id"[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]+:p[0-9]+"' | sed 's/.*"\([^"]*\)"$/\1/' | sort -u)
+  [ -n "$ids" ] || return 1
+  while read -r id; do case "$id" in "$1":p*) ;; *) return 1 ;; esac; done <<< "$ids"
+  printf '%s\n' "$ids"
+}
+
+creer_grille_herdr() {
+  local creation espace avant apres nouveau gauche droite colonne id i
+  local ids=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4')
+  creation=$("$HERDR_TROUVE" workspace create --label 'Bureau des agents') || return 1
+  espace=$(printf '%s' "$creation" | grep -oE '"workspace_id"[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]+"' | sed 's/.*"\([^"]*\)"$/\1/' | sort -u)
+  [ -n "$espace" ] && [ "$(printf '%s\n' "$espace" | wc -l)" -eq 1 ] || return 1
+  avant=$(lire_panneaux "$espace") || return 1
+  [ "$(printf '%s\n' "$avant" | wc -l)" -eq 1 ] || return 1
+  gauche="$avant"
+  "$HERDR_TROUVE" pane split --pane "$gauche" --direction right --no-focus >/dev/null || return 1
+  apres=$(lire_panneaux "$espace") || return 1
+  nouveau=$(printf '%s\n' "$apres" | grep -Fxv -f <(printf '%s\n' "$avant"))
+  [ -n "$nouveau" ] && [ "$(printf '%s\n' "$nouveau" | wc -l)" -eq 1 ] && [ "$(printf '%s\n' "$apres" | wc -l)" -eq 2 ] || return 1
+  droite="$nouveau"; ids=("$gauche" "$droite")
+  for colonne in "$gauche" "$droite"; do
+    avant=$(lire_panneaux "$espace") || return 1
+    "$HERDR_TROUVE" pane split --pane "$colonne" --direction down --no-focus >/dev/null || return 1
+    apres=$(lire_panneaux "$espace") || return 1
+    nouveau=$(printf '%s\n' "$apres" | grep -Fxv -f <(printf '%s\n' "$avant"))
+    [ -n "$nouveau" ] && [ "$(printf '%s\n' "$nouveau" | wc -l)" -eq 1 ] || return 1
+    [ "$(printf '%s\n' "$apres" | wc -l)" -eq "$(( $(printf '%s\n' "$avant" | wc -l) + 1 ))" ] || return 1
+    ids+=("$nouveau")
+  done
+  for i in 0 1 2 3; do "$HERDR_TROUVE" pane rename "${ids[$i]}" "${noms[$i]}" >/dev/null || return 1; done
+  printf '%s\n' "${ids[@]}"
+}
+
 dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
 # Commandes verifiées dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
@@ -283,39 +319,20 @@ if [ -n "$HERDR_TROUVE" ]; then
       simuler 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.'
       noter 'Panneaux Herdr : simulation.'
     else
-      panneaux_ok=1
-      "$HERDR_TROUVE" workspace create --label 'Bureau des agents' >/dev/null 2>&1 || panneaux_ok=0
+      panneaux_ok=0
+      ids=$(creer_grille_herdr) && panneaux_ok=1
       if [ "$panneaux_ok" = "1" ]; then
-        "$HERDR_TROUVE" pane split --direction right >/dev/null 2>&1 || panneaux_ok=0
-        "$HERDR_TROUVE" pane split --direction down >/dev/null 2>&1 || panneaux_ok=0
-        "$HERDR_TROUVE" pane split --direction down >/dev/null 2>&1 || panneaux_ok=0
-      fi
-      if [ "$panneaux_ok" = "1" ]; then
-        liste=$("$HERDR_TROUVE" pane list 2>/dev/null || true)
-        ids=$(printf '%s' "$liste" | grep -oE '[A-Za-z0-9_-]+:p[0-9]+' | awk '!vu[$0]++' | head -n 4)
-        compte=$(printf '%s' "$ids" | grep -c . || true)
-        if [ "$compte" -ge 4 ]; then
-          noms=("Chef" "Agent 2" "Agent 3" "Agent 4")
-          i=0
-          for id in $ids; do
-            [ "$i" -ge 4 ] && break
-            "$HERDR_TROUVE" pane rename "$id" "${noms[$i]}" >/dev/null 2>&1 || true
-            i=$((i + 1))
-          done
-          dire "Panneaux créés et nommés : ${noms[*]}."
-          noter 'Panneaux Herdr : 4 panneaux créés et nommés.'
-        else
-          panneaux_ok=0
-        fi
+        dire 'Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4.'
+        noter 'Panneaux Herdr : 4 panneaux créés et nommés.'
       fi
       if [ "$panneaux_ok" = "0" ]; then
         dire "La création automatique n'a pas abouti."
         dire 'Procédure manuelle (commandes vérifiées de Herdr) :'
         dire '  herdr workspace create --label "Bureau des agents"'
         dire '  herdr pane list                      # repérer les identifiants, ex. w6:p1'
-        dire '  herdr pane split --direction right   # deuxième panneau'
-        dire '  herdr pane split --direction down    # troisième panneau'
-        dire '  herdr pane split --direction down    # quatrième panneau'
+        dire '  herdr pane split --pane w6:p1 --direction right'
+        dire '  herdr pane split --pane w6:p1 --direction down'
+        dire '  herdr pane split --pane w6:p2 --direction down'
         dire '  herdr pane rename w6:p1 Chef         # puis Agent 2, Agent 3, Agent 4'
         dire "  # optionnel : lancer un outil d'IA dans un panneau (non fait par ce script)"
         dire '  # herdr agent start <nom> --kind claude --pane w6:p1'
