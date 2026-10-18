@@ -103,7 +103,7 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe'){loadQueue();loadTreatments();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
+  if(name==='equipe'){loadQueue();loadTreatments();loadDiscussion();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
@@ -647,6 +647,12 @@ async function readOutput() {
     $('read-note').textContent=data.truncated?'Extrait des dernières lignes du terminal. Les lignes plus anciennes ne sont pas affichées.':'Les sorties viennent directement du terminal de l’agent.';
   }catch(error){if(id===selected&&sequence===readSequence){$('read-state').textContent='Lecture indisponible';termPlaceholder(errorText(error));}}
   finally{readBusy=false;if(id!==selected&&selected)readOutput();}
+}
+// Fil de la salle de contrôle : extraits des réponses lisibles de tous les agents.
+async function loadDiscussion(){
+  if(!state.connected||!state.token||!window.Discussion)return;
+  try{Discussion.render($('disc-list'),await request('/api/discussion',{headers:{'X-Bureau-Token':state.token}}));}
+  catch(error){$('disc-list').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:errorText(error)}));}
 }
 // Fichiers confiés : faits observés par le serveur pour chaque pièce jointe, jamais un verdict.
 const sourceLabels={file:'file',disque:'disque',herdr:'Herdr',journal:'journal'};
@@ -1614,7 +1620,7 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();if(currentTab()==='equipe')loadTreatments();},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();if(currentTab()==='equipe'){loadTreatments();loadDiscussion();}},5000);
 setTimeout(loadTodos,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}

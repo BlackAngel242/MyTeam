@@ -10,6 +10,7 @@
   <script src="/logos.js" defer></script>
   <script src="/terminal.js" defer></script>
   <script src="/response-card.js" defer></script>
+  <script src="/discussion.js" defer></script>
   <script src="/app.js" defer></script>
 </head>
 <body>
@@ -74,6 +75,7 @@
         </section>
         <section class="mailbox" id="mailbox" aria-labelledby="mailbox-title"><h2 id="mailbox-title">Courrier du chef <span class="count" id="mail-count"></span></h2><p class="panel-intro">Fins de travail observées ; le résultat reste à vérifier dans les sorties.</p><ol class="mail-list" id="mail-list"><li class="list-placeholder">Aucun courrier depuis l’ouverture du bureau.</li></ol></section>
         <section class="queue" aria-labelledby="queue-title"><h2 id="queue-title">File d’attente <span class="count" id="queue-count"></span></h2><p class="panel-intro">Part seule quand l’agent redevient disponible ; jamais vers un agent bloqué.</p><ol class="queue-list" id="queue-list"><li class="list-placeholder">Aucune consigne en attente.</li></ol></section>
+        <section class="discussion" aria-labelledby="disc-title"><h2 id="disc-title">Fil de la salle de contrôle</h2><p class="panel-intro">Dernières réponses écrites par les agents, lues dans leurs journaux locaux. Les messages chiffrés entre agents ne sont jamais affichés.</p><div id="disc-list"></div></section>
         <section class="treatments" aria-labelledby="treat-title"><h2 id="treat-title">Fichiers confiés <span class="count" id="treat-count"></span></h2><p class="panel-intro">Faits observés sur chaque fichier joint à une consigne : file, disque, Herdr, journal. Le bureau observe, il ne juge pas : aucun fait ne dit que le travail est réussi.</p><div id="treat-list"><p class="list-placeholder">Aucun fichier confié pour le moment.</p></div></section>
         <section class="broadcast" aria-labelledby="broadcast-title"><h2 id="broadcast-title">Message à plusieurs agents</h2><p class="panel-intro">Même consigne, envoyée séparément à chaque agent disponible coché.</p><div class="broadcast-targets" id="broadcast-targets"></div><button type="button" class="tool-button select-all" id="broadcast-all">Cocher tous les disponibles</button><label class="visually-hidden" for="broadcast-message">Consigne commune</label><textarea id="broadcast-message" rows="4" maxlength="12000" placeholder="Écris une consigne commune…"></textarea><p id="broadcast-help"></p><button id="broadcast-send" type="button" disabled><span>Coche au moins un agent</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-5 14-3-7-6 0Zm6 0 8-7"/></svg></button><ul id="broadcast-results" role="status" hidden></ul></section>
         <section class="send-log-section" aria-labelledby="send-log-title"><h3 id="send-log-title">Envois de cette session</h3><ol class="send-log" id="send-log"><li class="list-placeholder">Aucune consigne envoyée depuis l’ouverture du bureau.</li></ol></section>

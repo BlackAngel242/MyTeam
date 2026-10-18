@@ -39,7 +39,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] E2 (OpenCode) Envoi d'un fichier avec une consigne : `files` dans `POST /api/queue`, copie sans écrasement avant l'envoi, plafond de volume (`docs/os-fonctions-opencode.md`, section 5)
 - [x] E3 (Claude) Interface « Joindre un fichier » sur la consigne, nom de fichier seul affiché
 - [x] E4 (Claude, OpenCode bloqué) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
-- [ ] E5 (Antigravity) Fil de discussion dans l'interface
+- [x] E5 (Antigravity) Fil de discussion dans l'interface
 - [x] E6 (OpenCode) Traitement de fichier suivi jusqu'au résultat : `GET /api/traitement`, faits sourcés, jamais « réussi » (section 6)
 - [x] E7 (Claude) Interface du dossier de traitement
 
