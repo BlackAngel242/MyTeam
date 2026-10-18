@@ -28,7 +28,7 @@ test('le pied de page est facultatif : par défaut seule la signature de l\'aute
   assert.equal((await send('/api/pied')).status, 403);
   const r = await send('/api/pied', auth);
   assert.equal(r.status, 200);
-  assert.deepEqual(r.data, { gauche: 'DrSmoke « Un Mbokatié engagé »', droite: '', enseigne: '' });
+  assert.deepEqual(r.data, { gauche: '', droite: '', enseigne: '' });
 });
 
 test('chacun règle son propre pied dans .bureau/pied.json : texte nettoyé et borné', async t => {
@@ -43,7 +43,7 @@ test('chacun règle son propre pied dans .bureau/pied.json : texte nettoyé et b
   assert.equal(r.data.enseigne.length, 28);
   assert.deepEqual(Object.keys(r.data), ['gauche', 'droite', 'enseigne']);
   await writeFile(fichier, '{pas du json');
-  assert.deepEqual((await send('/api/pied', auth)).data, { gauche: 'DrSmoke « Un Mbokatié engagé »', droite: '', enseigne: '' });
+  assert.deepEqual((await send('/api/pied', auth)).data, { gauche: '', droite: '', enseigne: '' });
   await writeFile(fichier, JSON.stringify({ gauche: '', droite: '' }));
   assert.deepEqual((await send('/api/pied', auth)).data, { gauche: '', droite: '', enseigne: '' });
 });

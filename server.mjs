@@ -326,7 +326,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         try {
           const brut=JSON.parse(await readFile(piedFile,'utf8'));
           return json(200,{gauche:net(brut?.gauche),droite:net(brut?.droite),enseigne:net(brut?.enseigne).slice(0,28)});
-        } catch {return json(200,{gauche:'DrSmoke « Un Mbokatié engagé »',droite:'',enseigne:''});}
+        } catch {return json(200,{gauche:'',droite:'',enseigne:''});}
       }
       // Tableau mural : fichiers piliers du projet, en lecture seule, protégés comme les tâches.
       if(req.method==='GET'&&url.pathname==='/api/tableau') {
