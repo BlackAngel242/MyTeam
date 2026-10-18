@@ -475,6 +475,21 @@ export function createQueue({
                 throw new QueueError('La cible a changé ou n’est plus disponible après la copie.');
               }
             }
+            // Vérifié juste avant l'envoi : la cible peut être devenue occupée
+            // pendant la sauvegarde ou la copie. Une panne de lecture retarde
+            // l'envoi au lieu de la rejeter : attendre n'est pas une erreur.
+            let courant = null;
+            try {
+              courant = (await listAgents()).find(candidate => candidate && candidate.id === element.id);
+            } catch { courant = null; }
+            if (!courant || !['idle', 'done'].includes(courant.status) || courant.ready !== true
+              || courant.cwd !== target.cwd || courant.kind !== target.kind || courant.sessionId !== target.sessionId) {
+              element.state = 'attente';
+              element.reason = null;
+              element.updatedAt = iso(now());
+              modifie = true;
+              break;
+            }
             // Vérifié juste avant l'envoi : la crise peut être déclenchée pendant la copie.
             if (locked()) {
               element.state = 'attente';

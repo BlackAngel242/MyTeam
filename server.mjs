@@ -19,6 +19,7 @@ import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
 import {createCrise} from './src/crisis.mjs';
 import {createRelais,RelaisError} from './src/relais.mjs';
 import {createAutonomie,AutonomieError} from './src/autonomie.mjs';
+import {masque} from './src/masque.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
@@ -530,14 +531,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(url.pathname==='/api/autonomie') {
         if(req.method==='GET') {
           if(!guard(req,{body:false})) return;
-          return json(200,autonomie.get());
+          return json(200,vueAutonomie());
         }
         if(req.method==='POST') {
           if(!guard(req)) return;
           const parsed=await readJson(req);
           if(parsed===null) return;
           if(typeof parsed?.actif!=='boolean') return json(400,{error:'L’autonomie exige {"actif":true,"objectif":"…"} ou {"actif":false}.'});
-          try {return json(200,parsed.actif?await autonomie.demarrer(parsed):await autonomie.arreter());}
+          try {return json(200,parsed.actif?vueAutonomie(await autonomie.demarrer(parsed)):vueAutonomie(await autonomie.arreter()));}
           catch(error) {return json(error instanceof AutonomieError?error.status:500,{error:error instanceof AutonomieError?error.message:'L’autonomie n’a pas pu être changée.'});}
         }
         return json(404,{error:'Page introuvable.'});
