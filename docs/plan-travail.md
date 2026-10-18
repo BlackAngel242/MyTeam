@@ -95,3 +95,12 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] L7 (Claude) Vocabulaire unifié de l'interface (tutoiement, anglais « chief » et « Mosaic »), `a09fddc`
 - [x] L8 (Antigravity) Documentation du bouton Autonomie et de la reprise automatique, captures régénérées, site vérifié
 - [x] L9 (Claude, OpenCode) Pilote NoBabysitter : interrupteur, récapitulatif, test de bout en bout et procédure d'essai (`docs/pilote-autonomie.md`), release 0.4.1 publiée
+
+## Lot N. Suggestions de l'équipe (revue en famille, 19 octobre 2026)
+
+- [x] N1 (Antigravity) Profils ergonome tactile et a11y, storyteller GitHub, lecteur sceptique : adopté, ajouté au Fixit d'équipe
+- [ ] N2 (Antigravity) Capsule animée de la tournée du chef pour le site et le README : adopté, branche `agent/antigravity/capsule-chef`
+- [x] N3 (Antigravity) Bouton « Aller au poste » sur mobile : écarté, le clic sur un personnage ou une carte fait déjà défiler vers le poste (0.2.0)
+- [x] N4 (OpenCode) Profils ressources et preuve ; (Codex) cinq corrections de méthode (preuves, verdicts, consensus, mémoire) : adoptés dans `docs/fixit-equipe.md`
+- [ ] N5 (Codex) Signaler que le serveur exécute un code plus ancien que les fichiers du projet, sans redémarrage automatique : adopté
+- [ ] N6 (Codex) Fiche de diagnostic copiable (versions, connexion, états, sans chemins ni messages) : adopté, après N5

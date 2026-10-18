@@ -18,19 +18,21 @@ Les profils s'adaptent à ce qui est examiné. Un même agent peut jouer plusieu
 | Senior | Est-ce durable et sans surprise ? | Architecture, dette, risques, cohérence avec l'existant validé, coût de maintenance. |
 | Junior | Qu'est-ce que je ne comprends pas ? | Lisibilité, noms, étapes manquantes, jargon, première utilisation. |
 | Lambda | Est-ce clair en trois secondes pour quelqu'un qui n'est pas du métier ? | Utilisateur ordinaire, lecteur pressé, mobile et grand écran, crédibilité. |
+| Ressources | Que se passe-t-il sur une machine de 8 Go ? | Appels, mémoire, processus qui restent ouverts, tests en parallèle. |
+| Preuve | Quel test ou quelle observation le démontre ? | Rouge puis vert, ce qui reste non vérifié, aucune affirmation sans trace. |
 
-Pour la communication ou la psychologie, remplacer ou ajouter un profil adapté (rédacteur, lecteur sceptique, regard de psychologie inversée) ; pour une interface, ajouter un profil produit. Choisir au moins 2 profils, au plus 4.
+Pour la communication ou la psychologie, remplacer ou ajouter un profil adapté (rédacteur, lecteur sceptique, regard de psychologie inversée) ; pour une interface, ajouter un profil produit. Choisir au moins 2 profils, au plus 4. Plusieurs profils joués par un même agent restent une seule lecture : le compte rendu le dit.
 
 ## 2. Procédure
 
 1. **Partir de l'existant validé** : identifier le support, la version exacte, le public, l'objectif, les décisions déjà adoptées (`git log`, `HANDOFF.md`, plan, `LESSONS.md`). Une option est peut-être déjà adoptée.
-2. **Examiner le résultat réel**, jamais seulement le code ou la mémoire : ouvrir la capture, la page, le fichier, lancer la commande. Pour une interface : ordinateur et téléphone, chacun avec sa conclusion.
+2. **Examiner le résultat réel**, jamais seulement le code ou la mémoire : ouvrir la capture, la page, le fichier, lancer la commande. Pour une interface : ordinateur et téléphone, chacun avec sa conclusion. Une capture prouve l'apparence, pas l'interaction ; un test réussi ne valide pas le rendu.
 3. **Chaque profil relève ses défauts séparément**, avec une preuve observée, classés BLOQUANT, IMPORTANT ou OPTIONNEL.
 4. **Auto-critique** : chaque profil conteste ses propres constats puis ceux des autres (« est-ce un fait ou un goût ? »). Ce qui ne résiste pas est retiré.
 5. **Suggestions d'amélioration** : chaque profil propose, avec la raison et le coût. Les idées d'innovation hors du domaine de l'auteur sont bienvenues.
-6. **Consensus** : une correction est adoptée quand la majorité des profils l'approuve et qu'aucune objection bloquante n'est restée sans réponse. À 2 profils, les deux doivent approuver. Un désaccord est consigné avec ses raisons ; en cas de blocage, le chef tranche.
+6. **Consensus** : une correction est adoptée quand la majorité des profils l'approuve et qu'aucune objection bloquante n'est restée sans réponse. À 2 profils, les deux doivent approuver. Un vote n'efface pas un défaut bloquant démontré et n'autorise aucune modification hors mission. Un désaccord est consigné avec ses raisons ; en cas de blocage, le chef tranche.
 7. **Corriger en une seule passe cohérente**, puis **réexaminer** avec les mêmes supports et tailles. Arrêter quand les corrections sont vérifiées : pas de boucle cosmétique.
-8. **Verdict** : REJETÉ, À CORRIGER, VALIDÉ SOUS RÉSERVE ou VALIDÉ. Si rien n'a pu être examiné, écrire « vérification non effectuée » et dire ce qui manque.
+8. **Verdict** : REJETÉ, À CORRIGER, VALIDÉ SOUS RÉSERVE ou VALIDÉ. Un défaut important restant impose À CORRIGER ; une preuve indispensable manquante interdit VALIDÉ. Si rien n'a pu être examiné, écrire « vérification non effectuée » et dire ce qui manque.
 
 ## 3. S'inspirer sans copier
 
@@ -44,7 +46,7 @@ Pour une question de composition, de parcours ou d'interaction, comparer avec de
 ## 4. Apprendre ensemble
 
 - Après chaque revue : une ligne dans `LESSONS.md` (quoi, cause, règle) et un message court aux autres sur ce qui a été appris, découvert ou résolu.
-- Les préférences personnelles de DrSmoke restent dans la mémoire de chaque agent, hors du dépôt, avec leur date et leur portée ; une recommandation de la revue n'est pas une préférence de DrSmoke tant qu'il ne l'a pas confirmée.
+- Les préférences personnelles de DrSmoke restent dans la mémoire de chaque agent, hors du dépôt, avec leur date et leur portée ; une recommandation de la revue n'est pas une préférence de DrSmoke tant qu'il ne l'a pas confirmée. Chaque entrée garde sa date, sa source, sa portée et son état : confirmé, à valider ou remplacé.
 - Améliorer cette méthode quand une leçon démontrée révèle un défaut valable ailleurs : modification ciblée, proposée au chef, jamais une règle de plus à partir d'un seul exemple.
 
 ## 5. Compte rendu de revue (modèle court)
