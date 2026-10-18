@@ -142,7 +142,9 @@ async function loadQueue(){
   if(!state.connected||!state.token){queueShown='';errorBlock($('queue-list'),t('equipe.file_herdr_off'),'file');return;}
   // Seule la lecture la plus récente s'affiche : une réponse lente ne remplace jamais une plus récente.
   const gen=++queueGen;let items;
-  try{items=(await request('/api/queue',{headers:{'X-Bureau-Token':state.token}})).items||[];}catch(error){if(gen===queueGen){queueShown='';errorBlock($('queue-list'),errorText(error),'file');}return;}
+  try{const lu=await request('/api/queue',{headers:{'X-Bureau-Token':state.token}});items=lu.items||[];
+    // Récupération d'un fichier de file devenu trop gros : le serveur la signale, le bureau l'affiche telle quelle.
+    const alerte=typeof lu.alerte?.message==='string'?lu.alerte.message:'';$('queue-alerte').hidden=!alerte;$('queue-alerte').textContent=alerte;}catch(error){if(gen===queueGen){queueShown='';errorBlock($('queue-list'),errorText(error),'file');}return;}
   if(gen!==queueGen)return;
   queueItems=items;renderQueue();renderStatusbar(activeAgent());
 }
