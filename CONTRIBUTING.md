@@ -1,5 +1,7 @@
 # Contribuer à MyTeam (Bureau des agents)
 
+**Français** | [English](CONTRIBUTING.en.md)
+
 Merci de votre intérêt pour MyTeam (le Bureau des agents) ! Ce projet a été conçu pour offrir un tableau de bord local, vivant et esthétique aux personnes qui pilotent plusieurs agents d'intelligence artificielle dans Herdr.
 
 ## Principes directeurs et règles d'or

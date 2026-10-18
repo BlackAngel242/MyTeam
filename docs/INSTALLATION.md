@@ -1,5 +1,7 @@
 # Installer le Bureau des agents
 
+**Français** | [English](INSTALLATION.en.md)
+
 Le Bureau des agents est une petite application locale : elle s'ouvre dans votre navigateur, montre vos agents Herdr au travail et vous permet de leur écrire. Tout reste sur votre ordinateur, sur l'adresse 127.0.0.1. Aucune clé API ni aucun jeton n'est demandé, lu ou enregistré par le bureau ni par ses scripts d'installation.
 
 ## Prérequis

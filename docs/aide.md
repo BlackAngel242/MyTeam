@@ -1,5 +1,7 @@
 # Guide d'aide du Bureau des agents
 
+**Français** | [English](aide.en.md)
+
 Ce document contient l'aide intégrée du bureau pour DrSmoke et ses agents. Il peut être consulté directement ou affiché dans un panneau « ? » interactif.
 
 ---

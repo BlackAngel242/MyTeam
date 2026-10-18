@@ -1,5 +1,7 @@
 # MyTeam · Le Bureau des agents
 
+**Français** | [English](README.en.md)
+
 Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et piloter vos équipes d'agents d'intelligence artificielle autonomes exécutés dans Herdr.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)

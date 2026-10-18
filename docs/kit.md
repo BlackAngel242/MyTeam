@@ -1,5 +1,7 @@
 # Kit d'équipe : fichiers piliers, auto-évaluation et leçons partagées
 
+**Français** | [English](kit.en.md)
+
 Le kit donne à n'importe quel projet la méthode utilisée pour construire MyTeam : une équipe d'agents d'IA dirigée par un chef, avec des fichiers piliers que toutes les IA lisent, une évaluation par des faits et une mémoire commune des erreurs.
 
 ## Installer le kit dans un projet
