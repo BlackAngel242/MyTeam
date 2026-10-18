@@ -66,3 +66,8 @@ Commits : b56585c, 825fa11 (rangs 1 et 6), 9560c5a, f01f10f, af523d9 (rangs 7 et
 - Nouvelle leçon consignée dans `LESSONS.md` sur l'exécution Playwright de pages statiques avec modules ES.
 
 
+- 18 octobre, soir : banc de mesure à dix agents documenté dans docs/performance.md (commande de reproduction, plafonds, limites connues). Durées mesurées : GET /api/state 9,7 ms, GET /api/discussion 7,7 ms, GET /api/todos 45,8 ms, cycle de sondage des pauses 5,1 ms avec 11 appels Herdr (1 liste + 10 panneaux). Rafale de 9 fins simultanées : 5 consignes créées (plafond de 5 par agent), 4 fins sans consigne. Trois correctifs vérifiés par le banc : cycle de sondage unique (e572828), une seule lecture de liste après la copie (20c7c68), relais hors verrou (96d7201). Suite complète : 433 tests, 427 réussis, 0 échec, 6 ignorés. Leçons ajoutées à LESSONS.md.
+
+## 18 octobre 2026, configuration locale de Pi demandée par DrSmoke
+
+OrcaRouter ajouté aux modèles personnels de Pi 1.3.0, hors du dépôt. Adresse et modèle conformes à la capture fournie ; clé référencée par la variable ORCA_KEY, sans clé réelle enregistrée. Pi reconnaît le modèle en vérification hors ligne. La variable réelle est absente de la session : connexion non testée. Aucun commit ni push ; chef prévenu à la fin.

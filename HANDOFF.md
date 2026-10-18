@@ -125,3 +125,6 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - ? faire : red?marrer le processus du port 4317 pour prendre en compte server.mjs, puis v?rifier ? l'?cran. Le champ d'alerte de r?cup?ration de la file est dans /api/queue mais pas encore affich? par public/app.js.
 - Non fait, hors de mon p?rim?tre : C-CD-12 dans scripts/installer.sh (propri?taire Codex). Un test ?choue dans site.test.mjs (site/assets/autonomie.png absent), p?rim?tre Antigravity.
 - LESSONS.md contient mes nouvelles le?ons mais n'est pas commit? : un autre agent y a des lignes non commit?es, et committer les aurait embarqu?es.
+- 18 octobre soir : docs/performance.md écrit (chiffres réels du banc à dix agents, commande de reproduction, plafonds vérifiés, limites connues). Moi : leçons du banc dans LESSONS.md, docs/performance.md classé note interne et exclu du zip de release (.gitattributes). Rien de poussé.
+- Reste à arbitrer avec le chef : la rafale de fins remplit les 5 places de la file par agent (4 fins sur 9 sans consigne) et le relais déjà actif laisse passer les fins en clair après l'arrêt du mode (correctif attendu dans src/autonomie.mjs).
+- Vérifié : banc 13/13, suite complète 433 tests (427 réussis, 6 ignorés, 0 échec).

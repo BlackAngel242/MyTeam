@@ -15,6 +15,7 @@ docs/plan-file-attente.md export-ignore
 docs/synthese-design.md export-ignore
 docs/idees-os.md export-ignore
 docs/github-pro.md export-ignore
+docs/performance.md export-ignore
 .githooks export-ignore
 # Historique et coordination internes du projet : hors du zip de release (le dépôt les garde)
 /JOURNAL.md export-ignore
