@@ -2,6 +2,8 @@
 
 Source de vérité de l'avancement : les cases ci-dessous. Le bureau les lit (onglet Tâches) et calcule le pourcentage par cases cochées. Une case se coche seulement après évaluation par le chef : `npm run check`, `npm test`, relecture du commit et vérification à l'écran si l'interface change.
 
+Note du 18 octobre au soir : l'historique du dépôt a été réécrit pour purger des images contenant des données personnelles. Les empreintes de commits citées dans ce plan avant cet instant ne résolvent plus : les faits restent datés ici, dans `JOURNAL.md` et dans le `CHANGELOG.md`.
+
 Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seuls fichiers) → évaluation du chef → correction si besoin → leçon ajoutée à `LESSONS.md` et agents informés → case cochée.
 
 ## Lot A. Réponses lisibles (avis de Codex Desktop, P0 à P4)

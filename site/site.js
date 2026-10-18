@@ -58,7 +58,7 @@ const I18N = {
     'feat.relais.desc': 'Alerte discrète et neutre mise en file pour le chef dès qu\'un collaborateur termine sa tâche, l\'invitant à relire son panneau avant de lui confier la suite.',
 
     'feat.mosaique.title': 'Mosaïque multi-terminaux',
-    'feat.mosaique.desc': 'Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande (jusqu\'à 10 agents testés, 12 en envoi groupé, mosaïque 4).',
+    'feat.mosaique.desc': 'Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande (4 tuiles au plus, équipe testée jusqu\'à 10 agents, 12 en envoi groupé).',
 
     'feat.reponses.title': 'Réponses lisibles en Markdown',
     'feat.reponses.desc': 'Extraction des réponses réelles de l\'agent, filtrées de tout contenu privé ou raisonnement brut, avec copie en un clic et fil de discussion complet.',
@@ -242,13 +242,13 @@ const I18N = {
     'feat.postes.desc': 'Clean terminal reading without noise: color highlights for errors and success, smooth scrolling, instant text search, and jump to matches.',
 
     'feat.direction.title': 'Direction desk and embodied rounds',
-    'feat.direction.desc': 'The lead coordinates teammates. Whenever a delegation is observed, they leave their desk to physically deliver the titled folder to their colleague.',
+    'feat.direction.desc': 'The chief coordinates teammates. Whenever a delegation is observed, they leave their desk to physically deliver the titled folder to their colleague.',
 
-    'feat.relais.title': 'Lead notification relay',
-    'feat.relais.desc': 'A discreet and neutral queued reminder for the lead whenever a teammate finishes work, prompting them to review the terminal before delegating next.',
+    'feat.relais.title': 'Chief listening relay',
+    'feat.relais.desc': 'A discreet and neutral queued reminder for the chief whenever a teammate finishes work, prompting them to review the terminal before delegating next.',
 
     'feat.mosaique.title': 'Multi-terminal mosaic mode',
-    'feat.mosaique.desc': 'Switch from the scene to a live grid of 2 to 4 terminal tiles with unified text search, quick prompt dispatch, and single-tile expansion (up to 10 agents tested, 12 in group broadcast, mosaic 4).',
+    'feat.mosaique.desc': 'Switch from the scene to a live grid of 2 to 4 terminal tiles with unified text search, quick prompt dispatch, and single-tile expansion (4 tiles at most, team tested up to 10 agents, 12 in group broadcast).',
 
     'feat.reponses.title': 'Readable Markdown answers',
     'feat.reponses.desc': 'Extraction of clean final responses, filtered from internal reasoning or private paths, with one-click copy and full thread history.',

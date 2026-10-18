@@ -26,14 +26,14 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 
 ## État au 18 octobre 2026 (0.4.x, dépôt public MyTeam)
 
-- Dépôt public `BlackAngel242/MyTeam`, CI Ubuntu et Windows, site GitHub Pages, release 0.4.0 ; le reste à faire est dans `TODO.md`. Aucun nom d'auteur imposé dans l'interface (pied de page dans `.bureau/pied.json`).
-- Suite de tests : près de 400 tests, `npm run check` et `npm test` verts sur l'export propre de `HEAD` avant chaque push.
+- Dépôt public `BlackAngel242/MyTeam`, CI Ubuntu et Windows, site GitHub Pages, releases 0.4.0 et 0.4.1 (tag `v0.4.1`) ; le reste à faire est dans `TODO.md`. Aucun nom d'auteur imposé dans l'interface (pied de page dans `.bureau/pied.json`).
+- Suite de tests : 440 tests (434 réussis, 6 ignorés), `npm run check` et `npm test` verts sur l'export propre de `HEAD` avant chaque push.
 - Lot L (table ronde) : crise atomique et relecture (OpenCode), budget d'écriture de la file et alerte visible, lecture incrémentale contrôlée, masque public unique `src/masque.mjs`, consentement, déplacement exclusif, bilans honnêtes (Codex), accessibilité et performance de l'interface (Claude), documentation et noms (Antigravity).
 - Pause de quota : l'heure annoncée est retrouvée même coupée par le terminal, compte à rebours dans la liste, la barre d'état et la scène, notification au retour, reprise automatique de tout agent une minute après (consigne par la file, une fois par pause).
 - TODO du bureau : le groupe « Demandes en cours » suit les consignes envoyées aux agents ; une demande n'est cochée qu'après une réponse terminée de l'agent.
-- Bouton « Autonomie » (NoBabysitter supervisé) : `src/autonomie.mjs`, `/api/autonomie`. Plafonds de durée et d'échanges, arrêt sur échéance, plafond, boucle, salle de crise ou redémarrage ; jamais de push, suppression, installation, publication ni réponse à une boîte de dialogue ; le chef décide, aucun agent n'écrit à un autre directement.
-- Reste : validation du chef pour le tag et la release 0.4.1. Entrée 0.4.1 prête dans CHANGELOG.md (FR et EN), site GitHub Pages vérifié en local avec Playwright, documentation d'aide (docs/aide.en.md) et README.en.md relus et harmonisés (parité stricte et vocabulaire chief/Mosaic unifié).
-- Captures et plafonds : l'ensemble des 22 captures de docs/captures/ et 12 de site/assets/ ont été régénérées avec un pied de page vide (garantissant l'absence de données personnelles) ; ajout des captures à 10 agents (20 et 21) ; plafonds factuels « jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4 » documentés dans README FR/EN, docs/aide*.md et le site. Suite complète : 433 tests passés (427 réussis, 6 ignorés).
+- Interrupteur « Autonomie » (NoBabysitter supervisé), toujours visible avec son état OFF/ON : `src/autonomie.mjs`, `/api/autonomie`. Plafonds de durée et d'échanges, arrêt sur échéance, plafond, boucle, salle de crise ou redémarrage ; jamais de push, suppression, installation, publication ni réponse à une boîte de dialogue ; le chef décide, aucun agent n'écrit à un autre directement.
+- Release 0.4.1 taguée (`v0.4.1`) et publiée (asset `MyTeam-0.4.1.zip`). Entrée 0.4.1 dans CHANGELOG.md (FR et EN), site GitHub Pages vérifié en local avec Playwright, documentation d'aide (docs/aide.en.md) et README.en.md relus et harmonisés (parité stricte et vocabulaire chief/Mosaic unifié).
+- Captures et plafonds : l'ensemble des captures de docs/captures/ et de site/assets/ ont été régénérées avec un pied de page vide (garantissant l'absence de données personnelles) ; captures à 10 agents et captures du mode actif ajoutées ; plafonds factuels « jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4 » documentés dans README FR/EN, docs/aide*.md et le site. Suite complète : 440 tests (434 réussis, 0 échec, 6 ignorés).
 
 ## État d'avancement au 17 octobre 2026 (Version 0.3.0 livrée et stabilisée)
 
@@ -71,7 +71,7 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 
 ## Deuxième revue de Codex traitée (17 octobre 2026, après 0.3.0)
 
-- Les 11 constats de `docs/revue-codex-interface-2.md` sont corrigés (détail dans la section « Non publié » de `CHANGELOG.md`). 177 tests, 175 réussis, 2 ignorés.
+- Les 11 constats de `docs/revue-codex-interface-2.md` sont corrigés (détail dans les entrées 0.4.0 et 0.4.1 de `CHANGELOG.md`). 177 tests, 175 réussis, 2 ignorés.
 - Vérifications Playwright sur états simulés dans le scratchpad de Claude (`pw/revue2*.mjs`) ; G2 confirmé sans interception sur le vrai serveur par l'essai d'OpenCode (`%TEMP%/opencode/essai-g2`).
 - Après tout changement de `server.mjs` : redémarrer le processus qui écoute sur 4317, sinon l'ancien code reste servi.
 - Codex est au repos (quota bas, 19 % le 17 octobre) : ne pas lui confier de mission avant sa remise à zéro. OpenCode reprend ses fichiers si besoin.
@@ -89,20 +89,20 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 
 - Plan et missions : `docs/plan-travail.md` (cases lues par l'onglet Tâches) et `docs/missions-18-octobre.md`. Cycle : mission écrite, travail de l'agent, évaluation du chef (`npm run check`, `npm test`, relecture du commit, Playwright), correction, leçon dans `LESSONS.md`, agents prévenus par message, case cochée. Règle écrite dans `AGENTS.md` (« Boucle de correction »).
 - Avancement visible : onglet Tâches avec « À faire » et « Réalisées » par fichier et pourcentage (cases cochées sur cases totales, jamais une estimation) ; pourcentage du plan publié affiché sur le poste de l'agent.
-- Réponses lisibles : `src/responses.mjs` (Claude par session exacte, Codex et OpenCode par dossier, jamais en cas d'ambiguïté), `GET /api/reponses`, `public/response-card.js` (Markdown sûr, copie, export `.md`), volet « Réponses lisibles » du poste. Limite constatée : Herdr n'expose pas `agent_session` pour Claude sur ce poste, donc pas de réponses de Claude ; Antigravity non exposé.
+- Réponses lisibles : `src/responses.mjs` (Claude par session exacte, Codex et OpenCode par dossier, jamais en cas d'ambiguïté), `GET /api/reponses`, `public/response-card.js` (Markdown sûr, copie, export `.md`), volet « Réponses lisibles » du poste. La session de Claude est retrouvée par le pid du panneau (`~/.claude/sessions/<pid>.json`) ; Antigravity n'expose pas ses réponses.
 - Fil de la salle de contrôle : `GET /api/discussion`, `public/discussion.js`, onglet Équipe. Messages inter-agents chiffrés de Codex jamais affichés.
 - Fichiers : joindre un fichier à une consigne (`files` dans `POST /api/queue`, copie sans écrasement, deux fichiers de 20 Mo au plus, par la file) ; `GET /api/traitement` et section « Fichiers confiés » : faits sourcés, jamais « réussi ».
 - Installeurs : correctifs de sécurité de Codex (injection par nom de dossier, `--oui` ne valide plus aucune installation, chemin Herdr littéral), tests réparés sous Windows par le chef.
 - Après tout changement de `server.mjs` : redémarrer le processus du port 4317.
 - OpenCode est resté bloqué par une boîte « Worktrees / Choose directory » : non traitée à la place de DrSmoke. Ses missions (A1b, E2, E4, E6) ont été reprises par Codex et le chef.
-- Lot G livré : salle de crise (`src/crisis.mjs`, `/api/crise`, `docs/contrat-crise.md`, verrou 423, file suspendue, arrêt poli par `esc`, bouton sous clapet et `Ctrl+Maj+C`) et mosaïque (`public/tiles.js`, bouton Mosaïque / Vue scène). Dépôt public https://github.com/BlackAngel242/MyTeam créé et configuré avec l'accord de DrSmoke (fenêtre de pleins droits du 18 octobre), CI verte. Plus rien en suspens ; des fenêtres entièrement libres n'ont pas été demandées.
+- Lot G livré : salle de crise (`src/crisis.mjs`, `/api/crise`, `docs/contrat-crise.md`, verrou 423, file suspendue, arrêt poli par `esc`, bouton sous clapet et `Ctrl+Maj+C`) et mosaïque (`public/tiles.js`, bouton Mosaïque / Vue scène). Dépôt public https://github.com/BlackAngel242/MyTeam créé et configuré avec l'accord de DrSmoke (fenêtre de pleins droits du 18 octobre), CI verte. Reste ouvert : voir `docs/plan-travail.md` (L7 à L9) et les points à arbitrer plus bas ; des fenêtres entièrement libres n'ont pas été demandées.
 
 ## Préparation à la publication GitHub et prochaines étapes
 
 1. Fichiers maintenus par Antigravity :
    - `README.md` : Guide d'accueil public complet avec cycle de délégation, bureau Direction, file d'attente, tâches réelles, sons et raccourcis.
    - `CONTRIBUTING.md` : Consignes pour contribuer en respectant l'architecture zéro dépendance.
-   - `CHANGELOG.md` : Historique des versions 0.1.0, 0.2.0 et 0.3.0.
+   - `CHANGELOG.md` : Historique des versions 0.1.0 à 0.4.1.
    - `docs/aide.md` : Guide d'aide complet et fidèle à l'interface réelle.
    - `docs/publication-github.md` : Audit de publication, politique de sécurité et préparation des illustrations.
    - `docs/idees-os.md` : 8 pistes d'innovations pour transformer le bureau en OS d'agents.
@@ -114,24 +114,25 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
    - Création manuelle du dépôt public GitHub (`MyTeam`) et publication initiale sur la branche `main`.
    - Arbitrage sur les évolutions d'OS d'agents (bureau en tuiles ou en fenêtres libres).
 
-- Node actif : 24.22.0 LTS depuis le 18 octobre (nvm-windows, accord de DrSmoke). Le serveur en cours d'exécution tourne encore sur l'ancien Node 25.6.1 : le redémarrer quand DrSmoke le souhaite.
+- Node actif : 24.22.0 LTS depuis le 18 octobre (nvm-windows, accord de DrSmoke). La version de Node du serveur en cours d'exécution n'est pas vérifiée : aucun redémarrage du port 4317 tant que le mode autonomie de DrSmoke tourne.
 
 ## 18 octobre 2026, lot L, part OpenCode (rangs 1, 6, 7, 5)
 
-- Rangs 1, 6, 7 et 5 livr?s et committ?s : b56585c, 825fa11, 9560c5a, f01f10f, af523d9. V?rification faite par reproduction avant correction, test rouge sur l'ancien code, puis test vert.
-- Rang 1 : lev?e de crise effective seulement apr?s ?criture r?ussie, contr?le apr?s lecture du corps et juste avant chaque envoi (diffusion destinataire par destinataire). La file rev?rifiait d?j? avant son appel : test ajout?, aucun changement de code n?cessaire.
-- Rang 6 : budget d'?criture de la file ?gal au budget de lecture, refus explicite avant acceptation, alerte de r?cup?ration visible.
-- Rang 7 : continuit? des octets au point de reprise avant de reprendre un offset (activit? Claude et t?ches).
-- Rang 5 : masque public unique dans src/masque.mjs, trois r?gles distinctes (chemins avec espaces et UNC, secrets, adresses web et routes /api conserv?es), appliqu? avant toute troncature, y compris aux descriptions de sous-agents. Destinataire tiers ?cart? des r?ponses Codex.
-- ? faire : red?marrer le processus du port 4317 pour prendre en compte server.mjs, puis v?rifier ? l'?cran. Le champ d'alerte de r?cup?ration de la file est dans /api/queue mais pas encore affich? par public/app.js.
-- Non fait, hors de mon p?rim?tre : C-CD-12 dans scripts/installer.sh (propri?taire Codex). Un test ?choue dans site.test.mjs (site/assets/autonomie.png absent), p?rim?tre Antigravity.
+- Rangs 1, 6, 7 et 5 livrés et committés (empreintes d'avant la purge d'historique du 18 octobre : elles ne résolvent plus). Vérification faite par reproduction avant correction, test rouge sur l'ancien code, puis test vert.
+- Rang 1 : levée de crise effective seulement après écriture réussie, contrôle après lecture du corps et juste avant chaque envoi (diffusion destinataire par destinataire). La file revérifiait déjà avant son appel : test ajouté, aucun changement de code nécessaire.
+- Rang 6 : budget d'écriture de la file égal au budget de lecture, refus explicite avant acceptation, alerte de récupération visible.
+- Rang 7 : continuité des octets au point de reprise avant de reprendre un offset (activité Claude et tâches).
+- Rang 5 : masque public unique dans src/masque.mjs, trois règles distinctes (chemins avec espaces et UNC, secrets, adresses web et routes /api conservées), appliqué avant toute troncature, y compris aux descriptions de sous-agents. Destinataire tiers écarté des réponses Codex.
+- Fait depuis : l'alerte de récupération de la file est affichée par public/app.js (champ #queue-alerte). Le redémarrage du processus du port 4317 pour prendre en compte server.mjs reste à faire, mais il est interdit tant que le mode autonomie de DrSmoke tourne.
+- Fait depuis : C-CD-12 est livré (plan-travail L2) et site.test.mjs est vert (site/assets/autonomie.png présent et suivi).
 - LESSONS.md contient mes nouvelles le?ons mais n'est pas commit? : un autre agent y a des lignes non commit?es, et committer les aurait embarqu?es.
-- 18 octobre soir : docs/performance.md écrit (chiffres réels du banc à dix agents, commande de reproduction, plafonds vérifiés, limites connues). Moi : leçons du banc dans LESSONS.md, docs/performance.md classé note interne et exclu du zip de release (.gitattributes). Rien de poussé.
+- 18 octobre soir : docs/performance.md écrit (chiffres réels du banc à dix agents, commande de reproduction, plafonds vérifiés, limites connues). Moi : leçons du banc dans LESSONS.md, docs/performance.md classé note interne et exclu du zip de release (.gitattributes). Poussé (ca3d3ec).
 - Reste à arbitrer avec le chef : la rafale de fins remplit les 5 places de la file par agent (4 fins sur 9 sans consigne) et le relais déjà actif laisse passer les fins en clair après l'arrêt du mode (correctif attendu dans src/autonomie.mjs).
 - Vérifié : banc 13/13, suite complète 433 tests (427 réussis, 6 ignorés, 0 échec).
 - 18 octobre, soir : pilote autonomie livré (test/pilote-autonomie.test.mjs, docs/pilote-autonomie.md, banc étendu avec option panneaux et rouvrir()). 7 phases vérifiées de bout en bout, 20/20 sur le banc.
-- Défaut d'usage à corriger (il passe devant tout) : le panneau Autonomie ne propose que 15 min / 10 échanges au plus court alors que le serveur accepte 5 min / 3 échanges (demande de DrSmoke du 18 octobre). Correctif attendu : ajouter 5 min et 3 échanges aux listes de public/app.js (fichier d'un autre agent, pas touché par moi).
-- Aussi constaté : le récapitulatif GET /api/autonomie/recap n'est affiché nulle part dans l'interface ; le document indique l'adresse et ce qui est réellement visible à l'écran.
+- Défaut d'usage corrigé par d5492bc : le panneau Autonomie propose maintenant 5 min et 3 échanges (listes 5/15/30/60/120 min et 3/10/20/40/60 échanges), comme demandé par DrSmoke le 18 octobre.
+- Le récapitulatif GET /api/autonomie/recap, d'abord invisible à l'écran, est maintenant affiché par le bouton « Récapitulatif » de la fenêtre Autonomie (d5492bc).
 - 18 octobre, soir : toutes les captures de docs/captures/ et site/assets/ ont été régénérées avec le nouvel interrupteur « Autonomie [bascule] OFF/ON » (6ecbecc) et les options 5 min / 3 échanges + bouton Récapitulatif (d5492bc) ; captures 16, 17, 18, 19 refaites avec crise levée ; captures du mode actif 22, 23, 24, 25, 26 prises avec ON vert et journal de 2 fins réelles (FR/EN, ordinateur et mobile).
 - 18 octobre, soir : refonte de README.md et README.en.md (accroche 2 phrases, parcours 30 s, 5 fonctions clés avec captures, installation 3 lignes, liens vers docs, faits vérifiables uniquement).
 - 18 octobre, soir : ajout de la section « Nouveautés 0.4.1 » dans site/index.html et site/site.js (interrupteur Autonomie, reprise après pause, 10 agents, récapitulatif factuel) en FR et EN. Tests site validés (6/6).
+- 18 octobre, soir : liens Herdr alignés sur le dépôt officiel https://github.com/herdrdev/herdr (site https://herdr.dev) dans README.md et README.en.md ; distinction claire entre la mosaïque (4 tuiles au plus) et l'équipe (jusqu'à 10 agents testés, 12 en envoi groupé) dans les README et le site.

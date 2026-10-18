@@ -3,7 +3,7 @@
 > 🌐 **Language / Langue** : [Français](README.md) | **English**  
 > 📚 **Complete Documentation** : [docs/index.en.md](docs/index.en.md) ([Français](docs/index.md)) | [Installation](docs/INSTALLATION.en.md) | [Help](docs/aide.en.md) | [GitHub Pages site](https://blackangel242.github.io/MyTeam/)
 
-MyTeam is a living pixel art workshop that turns your AI agent terminal sessions run in [Herdr](https://github.com/atoll92/herdr) into a visible, coordinated, and local team on your machine. No more blind terminal windows: each agent has a dedicated workstation, visible real-time activity, and project folders under your eyes, with zero npm dependencies and zero outbound requests.
+MyTeam is a living pixel art workshop that turns your AI agent terminal sessions run in [Herdr](https://github.com/herdrdev/herdr) (website [herdr.dev](https://herdr.dev)) into a visible, coordinated, and local team on your machine. No more blind terminal windows: each agent has a dedicated workstation, visible real-time activity, and project folders under your eyes, with zero npm dependencies and zero outbound requests.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -15,9 +15,9 @@ MyTeam is a living pixel art workshop that turns your AI agent terminal sessions
 ## What you see in 30 seconds
 
 1. **The chief at the Direction desk**: The team chief coordinates tasks, receives milestone mail, and physically walks across the room to hand over folders to teammates.
-2. **Dedicated visual workstations**: Each AI (Claude Code, Codex, Antigravity, OpenCode, and 20 others) works at its own desk with a 16×16 pixel art badge, genuine posture cues, and explicit quota pauses.
+2. **Dedicated visual workstations**: Each AI (Claude Code, Codex, Antigravity, OpenCode, and 20 others) works at its own desk with a 16×16 pixel art badge, genuine posture cues, and explicit quota pauses (team capacity tested up to 10 agents, 12 in group broadcast).
 3. **Supervised Autonomy (NoBabysitter)**: A permanent toolbar toggle switch sets a scoped autonomous run bounded by an objective, a time limit (5 to 120 min), and an exchange cap (3 to 60), with immediate emergency stop guards.
-4. **Multi-terminal Mosaic monitoring**: Switch in one click to a live multi-terminal view (2 to 4 simultaneous tiles, up to 10 agents tested, 12 in group broadcast) with instant text search and quick prompt dispatch.
+4. **Multi-terminal Mosaic monitoring**: Switch in one click to a live multi-terminal view (4 tiles at most) with instant text search and quick prompt dispatch.
 5. **Crisis Room circuit breaker**: Under unexpected circumstances, a guarded button (`Ctrl+Shift+C`) instantly freezes all outgoing prompts without killing running processes.
 
 ---
@@ -35,7 +35,7 @@ Every collaborator has an interactive terminal with syntax color highlighting, i
 ![Workstation and terminal](docs/captures/02-ordinateur-poste.png)
 
 ### 3. Live multi-terminal Mosaic
-The Mosaic mode (2 to 4 workstations side-by-side) displays agent terminals together to supervise team work in real time. It features synchronized text search across all tiles, quick prompt dispatch (`Ctrl+Enter`), and an energy-efficient refresh loop that suspends when the tab is hidden.
+The Mosaic mode displays collaborator terminals side-by-side (4 tiles at most) to monitor work in real time, while the overall team capacity is verified up to 10 agents (12 in broadcast). It features synchronized text search across all tiles, quick prompt dispatch (`Ctrl+Enter`), and an energy-efficient refresh loop that suspends when the tab is hidden.
 
 ![Multi-terminal mosaic mode](docs/captures/11-ordinateur-mosaique.png)
 
@@ -60,7 +60,7 @@ git clone https://github.com/BlackAngel242/MyTeam.git && cd MyTeam
 ```
 
 Then open `http://127.0.0.1:4317` in your browser.  
-*Requirements: [Node.js](https://nodejs.org) >= 22 and [Herdr](https://github.com/atoll92/herdr). Zero npm dependencies required.*
+*Requirements: [Node.js](https://nodejs.org) >= 22 and [Herdr](https://github.com/herdrdev/herdr). Zero npm dependencies required.*
 
 For the step-by-step setup guide, demo mode, and options, see [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md).
 
@@ -71,7 +71,7 @@ For the step-by-step setup guide, demo mode, and options, see [docs/INSTALLATION
 - **Observed factual truth**: No invented percentages, no fake tasks, no simulated emotional states. Everything comes exclusively from real events measured on your machine (Herdr processes, local logs, disk files, and system clock).
 - **Local sovereignty and security**: Local HTTP server strictly bound to `127.0.0.1`, random session token (`X-Bureau-Token`), zero outbound telemetry, and zero intercepted secrets.
 - **Zero npm dependencies**: Built entirely with standard Node.js native modules (`node:http`, `node:fs`, `node:crypto`, `node:test`).
-- **Tested with 10 agents**: Supports 24 AI tools, successfully tested up to 10 simultaneous agents (12 in group broadcast, mosaic 4).
+- **Tested with 10 agents**: Supports 24 AI tools, successfully tested up to 10 simultaneous agents (12 in group broadcast, mosaic 4 tiles at most).
 
 ---
 

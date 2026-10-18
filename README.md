@@ -3,7 +3,7 @@
 > 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
 > 📚 **Documentation complète** : [docs/index.md](docs/index.md) ([English](docs/index.en.md)) | [Installation](docs/INSTALLATION.md) | [Aide](docs/aide.md) | [Site GitHub Pages](https://blackangel242.github.io/MyTeam/)
 
-MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exécutés dans [Herdr](https://github.com/atoll92/herdr) en une équipe visible, coordonnée et souveraine sur votre machine. Fini les terminaux aveugles : chaque agent a son poste de travail, ses outils réels et ses dossiers sous vos yeux, sans aucune dépendance npm ni appel sortant.
+MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exécutés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) en une équipe visible, coordonnée et souveraine sur votre machine. Fini les terminaux aveugles : chaque agent a son poste de travail, ses outils réels et ses dossiers sous vos yeux, sans aucune dépendance npm ni appel sortant.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -15,9 +15,9 @@ MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exé
 ## Ce que tu vois en 30 secondes
 
 1. **Le chef au bureau Direction** : Le chef d'équipe centralise les consignes, reçoit les courriers d'étape et traverse physiquement la pièce pour remettre les dossiers à ses collaborateurs.
-2. **Des postes de travail incarnés** : Chaque IA (Claude Code, Codex, Antigravity, OpenCode et 20 autres) travaille à son propre bureau avec son emblème pixel art 16×16, ses postures réelles et ses pauses de quota explicites.
+2. **Des postes de travail incarnés** : Chaque IA (Claude Code, Codex, Antigravity, OpenCode et 20 autres) travaille à son propre bureau avec son emblème pixel art 16×16, ses postures réelles et ses pauses de quota explicites (l'équipe accueille jusqu'à 10 agents testés, 12 en envoi groupé).
 3. **L'autonomie supervisée (NoBabysitter)** : Un interrupteur permanent dans la barre d'outils permet de cadrer un cycle autonome par un objectif, une durée (5 à 120 min) et un plafond d'échanges (3 à 60), avec arrêt d'urgence immédiat.
-4. **La surveillance en Mosaïque** : Basculez en un clic sur une vue multi-terminaux (2 à 4 tuiles simultanées, jusqu'à 10 agents testés, 12 en envoi groupé) avec recherche textuelle instantanée et consigne rapide.
+4. **La surveillance en Mosaïque** : Basculez en un clic sur une vue multi-terminaux (4 tuiles au plus) avec recherche textuelle instantanée et consigne rapide.
 5. **Le disjoncteur Salle de crise** : En cas d'imprévu, le bouton sous clapet (`Ctrl+Maj+C`) gèle instantanément tous les départs de consignes sans jamais forcer un arrêt violent.
 
 ---
@@ -35,7 +35,7 @@ Chaque collaborateur dispose de son terminal interactif avec filtrage des couleu
 ![Poste de travail et terminal](docs/captures/02-ordinateur-poste.png)
 
 ### 3. La mosaïque multi-terminaux
-Le mode Mosaïque (surveillance 2 à 4 postes) affiche les terminaux de vos agents côte à côte pour surveiller le travail d'équipe en direct. Il intègre une recherche synchronisée sur toutes les tuiles, un envoi rapide de consigne (`Ctrl+Entrée`) et un rafraîchissement économique suspendu dès que l'onglet n'est plus actif.
+Le mode Mosaïque affiche les terminaux de vos coéquipiers côte à côte (4 tuiles au plus) pour surveiller le travail en direct, tandis que l'effectif global de l'équipe est testé jusqu'à 10 agents (12 en envoi groupé). Il intègre une recherche synchronisée sur toutes les tuiles, un envoi rapide de consigne (`Ctrl+Entrée`) et un rafraîchissement économique suspendu dès que l'onglet n'est plus actif.
 
 ![Mode mosaïque multi-terminaux](docs/captures/11-ordinateur-mosaique.png)
 
@@ -60,7 +60,7 @@ git clone https://github.com/BlackAngel242/MyTeam.git && cd MyTeam
 ```
 
 Ouvrez ensuite `http://127.0.0.1:4317` dans votre navigateur.  
-*Prérequis : [Node.js](https://nodejs.org) >= 22 et [Herdr](https://github.com/atoll92/herdr). Zéro dépendance npm requise.*
+*Prérequis : [Node.js](https://nodejs.org) >= 22 et [Herdr](https://github.com/herdrdev/herdr). Zéro dépendance npm requise.*
 
 Pour le guide d'installation pas-à-pas, le mode démonstration et les options avancées, consultez [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
@@ -71,7 +71,7 @@ Pour le guide d'installation pas-à-pas, le mode démonstration et les options a
 - **Vérité des faits observés** : Aucun pourcentage inventé, aucune tâche simulée, aucun état émotionnel fictif. Tout provient exclusivement des faits réels mesurés sur votre machine (processus Herdr, journaux locaux, fichiers sur disque et horloge système).
 - **Souveraineté et sécurité** : Serveur HTTP local strictement restreint à `127.0.0.1`, jeton de session aléatoire (`X-Bureau-Token`), aucune télémétrie sortante et aucun secret intercepté.
 - **Zéro dépendance npm** : Entièrement conçu avec les modules standards de Node.js (`node:http`, `node:fs`, `node:crypto`, `node:test`).
-- **Équipe de 10 agents testée** : Support de 24 outils d'IA, testé avec succès jusqu'à 10 agents simultanés (12 en envoi groupé, mosaïque 4).
+- **Équipe de 10 agents testée** : Support de 24 outils d'IA, testé avec succès jusqu'à 10 agents simultanés (12 en envoi groupé, mosaïque 4 tuiles au plus).
 
 ---
 

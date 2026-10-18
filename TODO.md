@@ -48,7 +48,7 @@
 
 - [x] Audit de partage des chemins et données spécifiques à la machine (`docs/publication-github.md`).
 - [x] Rédaction du guide de contribution (`CONTRIBUTING.md`).
-- [x] Rédaction du journal des versions (`CHANGELOG.md` versions 0.1.0, 0.2.0 et 0.3.0).
+- [x] Rédaction du journal des versions (`CHANGELOG.md` versions 0.1.0 à 0.4.1).
 - [x] Enrichissement du guide d'accueil et présentation publique (`README.md`).
 - [x] Validation de la licence libre par DrSmoke (Licence MIT dans `LICENSE` et avis de marques dans `NOTICE.md`).
 - [x] Inventaire des commandes locales vérifiées pour modèles et compétences (`docs/commandes-outils.md`).
@@ -58,7 +58,7 @@
 - [x] Deuxième revue de Codex (`docs/revue-codex-interface-2.md`) : G1, G2, M1 à M9 corrigés et vérifiés.
 - [x] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, terminée par OpenCode).
 - [x] Scripts d'installation automatique (`scripts/`, testés par OpenCode).
-- [x] Production et validation des captures d'illustration pour le dossier `docs/captures/` (11 captures réelles ; à rafraîchir par Antigravity pour les nouveaux volets, au choix de DrSmoke).
+- [x] Production et validation des captures d'illustration pour le dossier `docs/captures/` (captures réelles, régénérées le 18 octobre : nouvel interrupteur Autonomie, 10 agents, mode actif).
 - [x] Création du dépôt public GitHub et publication initiale (faite le 18 octobre avec l'accord de DrSmoke : https://github.com/BlackAngel242/MyTeam).
 - [x] Propositions d'OpenCode P3, P6 et P7 (bandeau de pause, courrier sur 12 h, trois messages d'erreur).
 - [x] P1 de l'avis de Codex : copie unitaire des contenus déjà disponibles (« Lire tout » et « Copier la consigne » sur la consigne intégrale dans le journal des envois, « Copier la délégation » avec ses champs nommés dans le courrier, fonction de copie commune avec repli manuel accessible, par OpenCode).
