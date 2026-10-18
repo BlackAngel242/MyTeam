@@ -74,6 +74,18 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - Décisions de DrSmoke (17 octobre au soir) : replay abandonné (pas de bulles de dialogue comme Atoll92/agent-standup), météo abandonnée (consomme pour rien), salle de crise à garder en réserve, bureau en tuiles accepté. Pause de quota mise en scène livrée.
 - Étude en cours de l'organisation fonctionnelle de l'OS d'agents : fil de la salle de contrôle, transfert de direction, priorité des envois, envoi et traitement de fichiers. OpenCode : docs/os-fonctions-opencode.md (données et serveur) ; Antigravity : docs/os-fonctions-antigravity.md (parcours et organisation).
 
+## 18 octobre 2026 : plan de travail, avancement visible, fonctions de l'OS
+
+- Plan et missions : `docs/plan-travail.md` (cases lues par l'onglet Tâches) et `docs/missions-18-octobre.md`. Cycle : mission écrite, travail de l'agent, évaluation du chef (`npm run check`, `npm test`, relecture du commit, Playwright), correction, leçon dans `LESSONS.md`, agents prévenus par message, case cochée. Règle écrite dans `AGENTS.md` (« Boucle de correction »).
+- Avancement visible : onglet Tâches avec « À faire » et « Réalisées » par fichier et pourcentage (cases cochées sur cases totales, jamais une estimation) ; pourcentage du plan publié affiché sur le poste de l'agent.
+- Réponses lisibles : `src/responses.mjs` (Claude par session exacte, Codex et OpenCode par dossier, jamais en cas d'ambiguïté), `GET /api/reponses`, `public/response-card.js` (Markdown sûr, copie, export `.md`), volet « Réponses lisibles » du poste. Limite constatée : Herdr n'expose pas `agent_session` pour Claude sur ce poste, donc pas de réponses de Claude ; Antigravity non exposé.
+- Fil de la salle de contrôle : `GET /api/discussion`, `public/discussion.js`, onglet Équipe. Messages inter-agents chiffrés de Codex jamais affichés.
+- Fichiers : joindre un fichier à une consigne (`files` dans `POST /api/queue`, copie sans écrasement, deux fichiers de 20 Mo au plus, par la file) ; `GET /api/traitement` et section « Fichiers confiés » : faits sourcés, jamais « réussi ».
+- Installeurs : correctifs de sécurité de Codex (injection par nom de dossier, `--oui` ne valide plus aucune installation, chemin Herdr littéral), tests réparés sous Windows par le chef.
+- Après tout changement de `server.mjs` : redémarrer le processus du port 4317.
+- OpenCode est resté bloqué par une boîte « Worktrees / Choose directory » : non traitée à la place de DrSmoke. Ses missions (A1b, E2, E4, E6) ont été reprises par Codex et le chef.
+- Restent à DrSmoke : création du dépôt `MyTeam` et publication, salle de crise, évolution en fenêtres ou tuiles libres.
+
 ## Préparation à la publication GitHub et prochaines étapes
 
 1. Fichiers maintenus par Antigravity :
