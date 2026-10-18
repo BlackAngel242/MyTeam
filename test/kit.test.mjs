@@ -11,6 +11,8 @@ import { evaluer, texte } from '../scripts/evaluer.mjs';
 import { partagerLecon } from '../scripts/partager-lecons.mjs';
 
 const executer = promisify(execFile);
+// Le crochet de commit exporte GIT_INDEX_FILE : les dépôts temporaires des tests doivent l'ignorer.
+const envGit = Object.fromEntries(Object.entries(process.env).filter(([cle]) => !cle.startsWith('GIT_')));
 const temporaire = async t => { const d = await mkdtemp(join(tmpdir(), 'kit-')); t.after(() => rm(d, { recursive: true, force: true })); return d; };
 const existe = async chemin => Boolean(await stat(chemin).catch(() => null));
 
@@ -82,7 +84,7 @@ test('evaluer lance check et test seulement s’ils existent et échoue si un co
 test('evaluer lit l’état git réel d’un dépôt', async t => {
   const dossier = await temporaire(t);
   await initKit(dossier, { lang: 'fr' });
-  try { await executer('git', ['-C', dossier, 'init', '-q']); } catch { t.skip('git indisponible'); return; }
+  try { await executer('git', ['-C', dossier, 'init', '-q'], { env: envGit }); } catch { t.skip('git indisponible'); return; }
   const r = await evaluer(dossier, { lancerTests: false });
   assert.ok(r.git.fichiersEnAttente > 5);
   assert.equal(r.git.dernierCommit, null);

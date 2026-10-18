@@ -8,3 +8,4 @@ node_modules/
 captures/
 .impeccable/hook.cache.json
 .playwright-mcp/
+dist/

@@ -59,6 +59,9 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Installeurs
 
+- Bash : un état modifié dans `(cd ... && executer ...)` reste dans le sous-shell. Remonter aussi son code de retour au parent, sinon l'interface peut afficher une réussite après l'échec des tests. Vérifier `@@DONE fail` et `@@END fail` avec une commande factice en échec.
+- Une entrée fermée ne doit pas seulement refuser la question en cours : mémoriser aussi sa fermeture pour ignorer les écritures de configuration qui suivent, sans demander de confirmation. Tester que le profil existant reste intact après EOF.
+
 - Dans une chaîne PowerShell, une variable suivie directement de deux-points doit être délimitée (`${nom}:`) : traduire « $nom : » en anglais sans espace a cassé la syntaxe. Vérifier le parseur après traduction et tester les deux langues.
 
 - Une boucle Bash lisant les panneaux avec une redirection consomme aussi les réponses des invites internes : charger d'abord la liste dans un tableau, puis poser les questions dans une boucle séparée.
@@ -77,3 +80,4 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Index Git partagé : un fichier ajouté avec `git add` peut être emporté par le commit d'un autre agent (vu le 18 octobre : le kit d'équipe est parti dans le commit des emblèmes). Ajouter et commiter en une seule commande avec chemins : `git add <chemins> && git commit -m "..." -- <chemins>`, et ne jamais laisser de fichiers indexés entre deux commandes.
 - PowerShell : `Get-Command nom` peut renvoyer plusieurs exécutables (le runner Windows de la CI en a deux pour node) et `.Source` devient alors une chaîne à deux chemins : prendre toujours `@(Get-Command nom -CommandType Application)[0]`.
 - Un script de public/ oublié dans index.html ne produit aucune erreur : la fonction disparaît en silence (sons « module absent » et icônes d'états vides, vus par DrSmoke le 18 octobre). Le test test/index-scripts.test.mjs exige que chaque public/*.js soit chargé par index.html et servi par server.mjs ; en ajouter un nouveau demande les deux.
+- Le crochet de commit exporte GIT_INDEX_FILE (et d'autres GIT_*) à tout ce qu'il lance, dont `npm test` : un test ou un script qui lance `git -C <autre dépôt>` lit alors le mauvais index et échoue seulement au moment du commit. Retirer les variables GIT_* de l'environnement des appels git (`env` filtré) et vérifier avec `GIT_INDEX_FILE=/tmp/faux npm test`.

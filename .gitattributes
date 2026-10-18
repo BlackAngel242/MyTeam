@@ -1,2 +1,18 @@
 * text=auto eol=lf
 *.png binary
+*.bat text eol=crlf
+*.cmd text eol=crlf
+# Notes de travail internes : hors du zip de release (elles restent dans le dépôt)
+docs/revue-*.md export-ignore
+docs/missions-18-octobre.md export-ignore
+docs/propositions-*.md export-ignore
+docs/os-fonctions-*.md export-ignore
+docs/suggestions-*.md export-ignore
+docs/avis-codex.md export-ignore
+docs/mission-claude.md export-ignore
+docs/patch-mobile.md export-ignore
+docs/plan-file-attente.md export-ignore
+docs/synthese-design.md export-ignore
+docs/idees-os.md export-ignore
+docs/github-pro.md export-ignore
+.githooks export-ignore
