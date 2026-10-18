@@ -515,3 +515,30 @@ test('un message de limite resté affiché après l\'heure annoncée ne garde pa
   await server.pauses.tick();
   assert.notEqual((await send('/api/state')).data.agents[0].activity?.limitReached,true);
 });
+
+test('reprise après pause : une minute après le retour, une seule consigne en file',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'w5:p4@fp',paneId:'w5:p4',kind:'Codex',name:'Codex',status:'idle',ready:true}];
+  let maintenant=Date.parse('2026-10-18T15:00:00.000Z'),limite=true;
+  const retour='2026-10-18T15:39:00.000Z';
+  const {server}=await bureau(t,{list:async()=>agents},{
+    now:()=>maintenant,
+    readOtherActivity:async()=>null,
+    lireEtat:async()=>limite?{limitReached:true,resetsAt:retour,usedPercent:null,source:'terminal'}:null,
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  await server.pauses.tick();
+  assert.equal(server.queue.list().items.length,0);
+  limite=false;maintenant=Date.parse('2026-10-18T15:39:10.000Z');
+  await server.pauses.tick();
+  assert.equal(server.queue.list().items.length,0,'pas avant une minute après le retour');
+  maintenant=Date.parse('2026-10-18T15:40:05.000Z');
+  await server.pauses.tick();
+  const items=server.queue.list().items;
+  assert.equal(items.length,1);
+  assert.equal(items[0].id,'w5:p4@fp');
+  assert.match(items[0].message,/limite d'usage est levée/);
+  await server.pauses.tick();
+  assert.equal(server.queue.list().items.length,1,'une seule fois par pause');
+});

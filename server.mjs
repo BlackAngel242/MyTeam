@@ -71,7 +71,35 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         if(etat) etats.set(agent.id,etat); else etats.delete(agent.id);
       } catch { /* Lecture impossible : on garde le dernier état connu. */ }
     }
+    await reprendreApresPause(liste).catch(()=>{});
   };
+  // Reprise après une pause de quota, pour tous les agents : une minute après l'heure de retour, une consigne
+  // courte passe par la file (donc jamais en crise, jamais à un agent occupé) pour vérifier qu'il est de nouveau là.
+  // Une seule fois par pause ; en mémoire seulement, un redémarrage du serveur n'en rattrape aucune.
+  const enPause=new Map(),reprises=new Map();
+  async function reprendreApresPause(liste) {
+    const maintenant=now();
+    for(const agent of liste) {
+      let limite;
+      try {limite=await limiteQuota(agent.id,liste);} catch {continue;}
+      if(limite.limitReached) {
+        const retour=limite.resetsAt?Date.parse(limite.resetsAt):null;
+        enPause.set(agent.id,Number.isFinite(retour)?retour:null);
+      } else if(enPause.has(agent.id)) {
+        const retour=enPause.get(agent.id);enPause.delete(agent.id);
+        reprises.set(agent.id,{nom:agent.name,echeance:(retour??maintenant)+60000,retour});
+      }
+    }
+    for(const [id,reprise] of [...reprises]) {
+      const agent=liste.find(a=>a.id===id);
+      if(!agent) {reprises.delete(id);continue;}
+      if(maintenant<reprise.echeance||salleDeCrise.isActive()||!['idle','done'].includes(agent.status)) continue;
+      reprises.delete(id);
+      const heure=reprise.retour?new Date(reprise.retour).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):null;
+      const message=`Chef : ta limite d'usage est levée${heure?` (retour annoncé à ${heure})`:''}. Réponds « dispo » en une ligne, puis reprends ta mission en cours (git status, puis la mission du chef) sans rien refaire de déjà commité. Économise ton quota.`;
+      await fileAttente.enqueue({id,message,priority:'normale',requestKey:createHash('sha256').update(`reprise:${id}:${reprise.echeance}`).digest('hex')},{allowRepeatedMessage:true}).catch(()=>{});
+    }
+  }
   const pauses={
     tick:sonderEtats,
     start(intervalMs=20000){pauses.stop();sondeur=setInterval(()=>{sonderEtats().catch(()=>{});},intervalMs);sondeur.unref?.();},
