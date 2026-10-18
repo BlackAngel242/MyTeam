@@ -19,7 +19,7 @@ const I18N = {
     'hero.badge': '100% Local · Zéro Dépendance npm · Vérité des faits',
     'hero.titre': 'Surveillez, lisez et dirigez vos agents d\'IA dans un atelier vivant en pixel art',
     'hero.description': 'Un tableau de bord local immersif pour orchestrer vos équipes d\'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.',
-    'hero.btn-telecharger': 'Télécharger la release v0.4.0',
+    'hero.btn-telecharger': 'Télécharger la dernière version',
     'hero.btn-github': 'Voir le projet sur GitHub',
     'hero.preview-caption': 'Scène vivante de l\'atelier : chef au bureau Direction, tableau mural, collaborateurs à leurs postes et salle de réflexion.',
 
@@ -128,7 +128,7 @@ const I18N = {
     'step1.badge': 'Geste 1',
     'step1.title': 'Télécharger l\'archive',
     'step1.desc': 'Récupérez le fichier ZIP de la dernière version stable sur GitHub et décompressez-le dans le dossier de votre choix.',
-    'step1.snippet': 'MyTeam-v0.4.0.zip (sans dépendance externe)',
+    'step1.snippet': 'MyTeam-<version>.zip (sans dépendance externe)',
 
     'step2.badge': 'Geste 2',
     'step2.title': 'Lancer l\'installation',
@@ -209,7 +209,7 @@ const I18N = {
     'hero.badge': '100% Local · Zero npm Dependencies · Factual Truth',
     'hero.titre': 'Monitor, inspect, and direct your AI agent teams in a living pixel art workshop',
     'hero.description': 'An immersive local dashboard to orchestrate your autonomous agent teams running in Herdr. No more blind consoles: every agent has their own desk, tool emblem, and visible dossiers.',
-    'hero.btn-telecharger': 'Download release v0.4.0',
+    'hero.btn-telecharger': 'Download the latest version',
     'hero.btn-github': 'View project on GitHub',
     'hero.preview-caption': 'Live workshop scene: lead at the Direction desk, status board, team workstations, and glass reflection room.',
 
@@ -318,7 +318,7 @@ const I18N = {
     'step1.badge': 'Step 1',
     'step1.title': 'Download release archive',
     'step1.desc': 'Download the latest ZIP release archive from GitHub and extract all files into your preferred directory.',
-    'step1.snippet': 'MyTeam-v0.4.0.zip (zero external dependencies)',
+    'step1.snippet': 'MyTeam-<version>.zip (zero external dependencies)',
 
     'step2.badge': 'Step 2',
     'step2.title': 'Run the installer',
