@@ -57,6 +57,8 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Installeurs
 
+- Dans une chaîne PowerShell, une variable suivie directement de deux-points doit être délimitée (`${nom}:`) : traduire « $nom : » en anglais sans espace a cassé la syntaxe. Vérifier le parseur après traduction et tester les deux langues.
+
 - Une boucle Bash lisant les panneaux avec une redirection consomme aussi les réponses des invites internes : charger d'abord la liste dans un tableau, puis poser les questions dans une boucle séparée.
 - PowerShell traite aussi l'apostrophe typographique comme un délimiteur : dans les messages qui la contiennent, utiliser des guillemets doubles ou doubler l'apostrophe, puis vérifier la syntaxe.
 - Tests de scripts bash sous Windows : ne jamais passer le script par `bash -c <texte>` (le guillemetage d'arguments de Windows mutile les `\"` et `'` et fait échouer à tort), l'écrire dans un fichier temporaire et lancer `bash <fichier>`. Un test qui échoue doit faire douter du test avant du code, mais seul son lancement le prouve.

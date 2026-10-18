@@ -18,7 +18,7 @@ async function ps(t,names,body){
   const path=await temporary(t),script=join(path,'test.ps1');
   await writeFile(script,`$ErrorActionPreference='Stop'
 $ast=[System.Management.Automation.Language.Parser]::ParseFile(${literal(join(root,'scripts/installer.ps1'))},[ref]$null,[ref]$null)
-foreach($nom in @(${names.map(literal).join(',')})) {
+foreach($nom in @(${['Texte',...names].map(literal).join(',')})) {
  $f=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $nom},$true)
  if(-not $f){throw "fonction absente : $nom"}
  . ([scriptblock]::Create($f.Extent.Text))
@@ -28,7 +28,7 @@ ${body}`);
 }
 async function bash(t,names,body){
   const text=await readFile(join(root,'scripts/installer.sh'),'utf8');
-  const functions=names.map(name=>{const match=text.match(new RegExp(`^${name}\\(\\) \\{[\\s\\S]*?^\\}`,'m'));assert.ok(match,`fonction ${name}`);return match[0];}).join('\n');
+  const functions=['texte',...names].map(name=>{const match=text.match(new RegExp(`^${name}\\(\\) \\{[\\s\\S]*?^\\}`,'m'));assert.ok(match,`fonction ${name}`);return match[0];}).join('\n');
   const path=await temporary(t),script=join(path,'test.sh');
   await writeFile(script,functions+'\n'+body);
   return execute(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash',['--noprofile','--norc',script.replaceAll('\\','/')],options);
@@ -149,4 +149,40 @@ exec(){ printf 'HERDR:%s\\n' "$1"; }
 . "$work/bureau.command"`);
   assert.match(result.stdout,/ROOT:\/tmp\/dossier '\$\(commande\)/);
   assert.match(result.stdout,/NODE:4321:scripts\/ouvrir-bureau.mjs\nHERDR:\/tmp\/herdr avec espaces/);
+});
+
+test('H3 langues : simulation anglaise complète sans installation',async t=>{
+  const bashBin=process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash';
+  const sh=await execute(bashBin,[join(root,'scripts/installer.sh'),'--lang','en','--dry-run','--sans-raccourci'],options);
+  assert.match(sh.stdout,/Agent desktop: installation/);assert.match(sh.stdout,/Project tests/);assert.match(sh.stdout,/Summary/);
+  assert.doesNotMatch(sh.stdout,/Installer |Dossier du projet|Tests :|Rien a signaler/);
+  if(process.platform==='win32') {
+    const win=await execute('C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',['-NoProfile','-File',join(root,'scripts/installer.ps1'),'-Lang','en','-DryRun','-SansRaccourci'],options);
+    assert.match(win.stdout,/Agent desktop: installation/);assert.match(win.stdout,/Project tests/);assert.match(win.stdout,/Summary/);
+    assert.doesNotMatch(win.stdout,/Installer |Dossier du projet|Tests :|Rien a signaler/);
+  }
+});
+
+test('H3 confirmations : y en anglais, o en français, aucun accord sur EOF',async t=>{
+  const sh=await bash(t,['confirmer'],`
+DRY_RUN=0;OUI=1;dire(){ :; };simuler(){ :; }
+LANGUE=en
+confirmer installation individuel <<< y || exit 1
+if confirmer installation individuel <<< o; then exit 2; fi
+LANGUE=fr
+confirmer installation individuel <<< o || exit 3
+if confirmer installation individuel </dev/null; then exit 4; fi
+printf 'ok'`);
+  assert.match(sh.stdout,/ok$/);
+  const win=await ps(t,['Confirmer'],`
+$DryRun=$false;$Oui=$true;$Lang='en'
+function Dire($texte) {};function Simuler($texte) {}
+function Read-Host($question){return 'y'}
+if(-not (Confirmer installation -Individuel)){throw 'y refusé'}
+$Lang='fr';function Read-Host($question){return 'o'}
+if(-not (Confirmer installation -Individuel)){throw 'o refusé'}
+function Read-Host($question){return $null}
+if(Confirmer installation -Individuel){throw 'EOF accepté'}
+'ok'`);
+  if(win)assert.equal(win.stdout.trim(),'ok');
 });

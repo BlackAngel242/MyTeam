@@ -20,7 +20,7 @@ const psLiteral = valeur => `'${valeur.replaceAll("'", "''")}'`;
 
 // On ne charge que des fonctions : jamais le corps des installeurs.
 function fonctionsBash(...noms) {
-  return noms.map(nom => {
+  return ['texte',...noms].map(nom => {
     const texte = sh.match(new RegExp(`^${nom}\\(\\) \\{[\\s\\S]*?^\\}`, 'm'))?.[0];
     assert.ok(texte, `fonction ${nom} présente`);
     return texte;
@@ -55,7 +55,7 @@ async function powershell(t, corps) {
   if (!existsSync(binaire)) { t.skip('PowerShell Windows absent'); return null; }
   const script = `$ErrorActionPreference='Stop'
 $ast=[System.Management.Automation.Language.Parser]::ParseFile(${psLiteral(ps1)},[ref]$null,[ref]$null)
-foreach($nom in @('Confirmer','Resoudre-Herdr','Chercher-Herdr')) {
+foreach($nom in @('Texte','Confirmer','Resoudre-Herdr','Chercher-Herdr')) {
   $fonction=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $nom},$true)
   if(-not $fonction){throw "fonction absente : $nom"}
   . ([scriptblock]::Create($fonction.Extent.Text))
@@ -74,15 +74,15 @@ ${corps}`;
 test('B1/B2 : les chemins ne sont plus interpolés dans une commande shell', () => {
   assert.doesNotMatch(sh, /\bsh -c\b|\beval\b/);
   assert.match(sh, /"\$@"/);
-  assert.match(sh, /cd -- "\$RACINE" && executer 'Execution de npm test\.' npm test/);
+  assert.match(sh, /cd -- "\$RACINE" && executer .*Execution de npm test\..* npm test/);
   assert.match(sh, /FICHIERS_PROFIL=\("\$HOME\/\.profile"\)/);
 });
 
 test('B3 : Herdr et chaque extension exigent leur confirmation particulière', () => {
-  assert.match(sh, /confirmer 'Installer Herdr[^\n]+ individuel; then/);
-  assert.match(sh, /confirmer "Installer l'extension[^\n]+ individuel; then/);
-  assert.match(ps, /Confirmer 'Installer Herdr[^\n]+ -Individuel\)/);
-  assert.match(ps, /Confirmer "Installer l'extension[^\n]+ -Individuel\)/);
+  assert.match(sh, /confirmer .*Installer Herdr[^\n]+ individuel; then/);
+  assert.match(sh, /confirmer .*Installer l'extension[^\n]+ individuel; then/);
+  assert.match(ps, /Confirmer .*Installer Herdr[^\n]+ -Individuel\)/);
+  assert.match(ps, /Confirmer .*Installer l'extension[^\n]+ -Individuel\)/);
 });
 
 test('B1 : un argument piégé reste un seul argument, sans exécution', async t => {
