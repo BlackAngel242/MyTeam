@@ -54,20 +54,46 @@ MyTeam runs on Windows, macOS, and Linux. It only requires [Node.js](https://nod
 
 ### 1. Automated setup
 
-Interactive and hardened scripts are provided in `scripts/` to verify requirements, configure a 2×2 Herdr grid, detect 24 supported tools, propose official integrations and team collaboration kit, without modifying your system blindly:
+Two installation methods are available depending on your workflow:
+
+#### Method 1: From the release archive (recommended, no Git required)
+
+1. Download the ZIP archive of the latest version from the GitHub repository [Releases page](https://github.com/BlackAngel242/MyTeam/releases).
+2. Extract the archive into your preferred folder.
+3. Launch setup:
+   - **On Windows**: double-click `Installer MyTeam.bat`. If Node.js (v22 or higher) is detected, the animated installer starts immediately (pixel art gradient banner, live task list updating in real time, visual status badges, optional Clink step for cmd.exe convenience, and interactive y/n confirmations for each tool or integration). If Node.js is missing or too old, the script switches to secure text mode to offer Node.js installation via winget, then invites you to run the .bat file again for the animated setup experience.
+   - **On macOS or Linux**: open a terminal in the folder and run `bash scripts/installer.sh` (or `node scripts/installateur-anime.mjs` if Node.js is already available).
+
+> [!NOTE]
+> **Windows SmartScreen warning**: Like any `.bat` script downloaded from the Internet without a costly commercial code-signing certificate, Windows SmartScreen may display a warning dialog ("Windows protected your PC"). You can safely proceed by clicking **More info** followed by **Run anyway**, or in advance by right-clicking the `.bat` file (or the `.zip` archive before extraction) > **Properties** > check the **Unblock** box at the bottom > **OK**.
+
+> [!TIP]
+> **Demo mode**: You can preview the installer terminal animation without installing anything or altering your system by running:
+> ```bash
+> node scripts/installateur-anime.mjs --demo
+> ```
+
+#### Method 2: By cloning the Git repository (for developers)
+
+Clone the repository and run the setup script for your platform:
 
 - **On Windows (PowerShell):**
   ```powershell
+  git clone https://github.com/BlackAngel242/MyTeam.git
+  cd MyTeam
   powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
   ```
+  *(or double-click `Installer MyTeam.bat` directly)*
 
 - **On macOS or Linux (bash):**
   ```bash
+  git clone https://github.com/BlackAngel242/MyTeam.git
+  cd MyTeam
   bash scripts/installer.sh
   ```
 
 > [!TIP]
-> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer `herdr integration install` integrations, install the lead skill (`herdr --skill`) or guide with `CHEF.md`, prepare the lead orientation prompt, offer 3 desktop shortcuts (including combined "Herdr and desktop"), and initialize the team kit (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) ([Français](docs/INSTALLATION.md)) for the complete guide.
+> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer Clink on Windows (cmd.exe comfort via winget), official `herdr integration install` integrations, lead skill (`herdr --skill` or `CHEF.md`), orientation prompt, 3 desktop shortcuts (including combined "Herdr and desktop"), and team kit initialization (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) ([Français](docs/INSTALLATION.md)) for the complete guide.
 
 ### 2. Starting the office
 

@@ -54,20 +54,46 @@ MyTeam fonctionne sur Windows, macOS et Linux. Il nécessite uniquement [Node.js
 
 ### 1. Préparation automatique
 
-Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `scripts/` pour vérifier vos prérequis, préparer la grille Herdr 2×2, détecter les 24 outils supportés, proposer les intégrations officielles et le kit d'équipe, sans jamais modifier votre système à l'aveugle :
+Deux méthodes d'installation sont disponibles selon vos préférences :
+
+#### Méthode 1 : Par la release (recommandée, sans Git)
+
+1. Téléchargez le fichier ZIP de la dernière version sur la page [Releases du dépôt GitHub](https://github.com/BlackAngel242/MyTeam/releases).
+2. Décompressez l'archive dans le dossier de votre choix.
+3. Lancez l'installation :
+   - **Sous Windows** : double-cliquez sur `Installer MyTeam.bat`. Si Node.js (version 22 ou supérieure) est présent, l'installeur animé démarre directement (bannière en dégradé pixel art, liste de tâches actualisée en direct, progression visuelle, étape facultative Clink pour le confort de cmd.exe, et confirmations interactives o/n pour chaque outil ou intégration). Si Node.js est absent ou trop ancien, le script bascule en mode texte sécurisé pour vous proposer son installation via winget, puis vous invite à relancer le fichier .bat pour profiter de l'expérience animée.
+   - **Sous macOS ou Linux** : ouvrez un terminal dans le dossier et lancez `bash scripts/installer.sh` (ou `node scripts/installateur-anime.mjs` si Node.js est déjà présent).
+
+> [!NOTE]
+> **Avertissement Windows SmartScreen** : Comme tout script `.bat` téléchargé depuis Internet sans signature numérique commerciale payante, Windows SmartScreen peut afficher une fenêtre préventive (« Windows a protégé votre ordinateur »). Vous pouvez poursuivre en toute sécurité en cliquant sur **Informations complémentaires** puis sur **Exécuter quand même**, ou en amont par un clic droit sur le fichier `.bat` (ou l'archive `.zip` avant extraction) > **Propriétés** > cocher la case **Débloquer** en bas > **OK**.
+
+> [!TIP]
+> **Mode démonstration** : Vous pouvez prévisualiser l'animation de l'installeur sans rien installer ni modifier sur votre machine en exécutant :
+> ```bash
+> node scripts/installateur-anime.mjs --demo
+> ```
+
+#### Méthode 2 : Par clonage du dépôt Git (pour les développeurs)
+
+Clonez le dépôt puis lancez le script correspondant à votre système :
 
 - **Sous Windows (PowerShell) :**
   ```powershell
+  git clone https://github.com/BlackAngel242/MyTeam.git
+  cd MyTeam
   powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
   ```
+  *(ou double-cliquez directement sur `Installer MyTeam.bat`)*
 
 - **Sous macOS ou Linux (bash) :**
   ```bash
+  git clone https://github.com/BlackAngel242/MyTeam.git
+  cd MyTeam
   bash scripts/installer.sh
   ```
 
 > [!TIP]
-> **Ce que fait et ne fait pas l'installation** : Les scripts vérifient Node.js (>= 22) et Herdr, créent une grille Herdr 2×2 (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), détectent les 24 outils compatibles, proposent les intégrations `herdr integration install`, installent la compétence du chef (`herdr --skill`) ou orientent avec `CHEF.md`, préparent la consigne d'orientation, proposent 3 raccourcis de bureau (dont « Herdr et bureau » combiné) et l'initialisation du kit d'équipe (`node scripts/init-kit.mjs`). Ils n'installent aucune dépendance npm, ne demandent ni ne stockent aucune clé API, et ne valident aucune installation silencieuse : le commutateur `-Oui` / `--oui` n'auto-approuve jamais les installations ou lancements (un accord individuel o/n reste obligatoire). Paramètres utiles : `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) ([English](docs/INSTALLATION.en.md)) pour le guide complet.
+> **Ce que fait et ne fait pas l'installation** : Les scripts vérifient Node.js (>= 22) et Herdr, créent une grille Herdr 2×2 (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), détectent les 24 outils compatibles, proposent Clink sous Windows (confort de cmd.exe via winget), les intégrations officielles `herdr integration install`, la compétence du chef (`herdr --skill` ou `CHEF.md`), la consigne d'orientation, 3 raccourcis de bureau (dont « Herdr et bureau » combiné) et l'initialisation du kit d'équipe (`node scripts/init-kit.mjs`). Ils n'installent aucune dépendance npm, ne demandent ni ne stockent aucune clé API, et ne valident aucune installation silencieuse : le commutateur `-Oui` / `--oui` n'auto-approuve jamais les installations ou lancements (un accord individuel o/n reste obligatoire). Paramètres utiles : `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) ([English](docs/INSTALLATION.en.md)) pour le guide complet.
 
 ### 2. Démarrage du bureau
 

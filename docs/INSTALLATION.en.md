@@ -16,6 +16,7 @@ The Agent Office (Bureau des agents) is a lightweight local application: it open
 ### What the installer does
 
 - **Rigorous verification**: Validates presence and minimum version of Node.js (>= 22) and Herdr.
+- **Terminal comfort (Clink on Windows)**: Offers optional Clink installation via winget (`chrisant996.Clink`) to enhance cmd.exe with persistent history, advanced autocompletion, and color support.
 - **2×2 Herdr grid**: Automatically configures a 4-pane workspace named `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`.
 - **Detection of all 24 Herdr tools**: Identifies in PATH all supported executables recognized by Herdr (`pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`).
 - **Custom agent launch**: Prompts pane by pane to launch the tool of your choice, never forcing any agent.
@@ -26,6 +27,7 @@ The Agent Office (Bureau des agents) is a lightweight local application: it open
 - **Launcher shortcut choice**: Offers to create a desktop shortcut for Herdr alone, the Web office alone, or the combined "Herdr and desktop" launcher.
 - **Team collaboration kit**: Offers to initialize project collaboration files (`init-kit.mjs`) in your chosen project directory.
 - **Immediate verification**: Offers to run `npm test` and `npm run check` to validate your environment.
+- **Animated or text interface**: Available in an interactive live animated terminal interface (`scripts/installateur-anime.mjs` with pixel art banner and real-time task checklist) or in classic plain text mode.
 
 ### What the installer does NOT do
 
@@ -35,56 +37,97 @@ The Agent Office (Bureau des agents) is a lightweight local application: it open
 - **No file overwriting**: The scripts never overwrite existing skills or project documents without explicit user confirmation.
 - **No unauthorized external network requests**: The server strictly binds to the local interface `127.0.0.1`.
 
-## One-Command Installation (Recommended)
+## Method 1: Installation from the Release Archive (Recommended)
 
-**Windows** (open PowerShell in the project directory):
+This method is the easiest and does not require any developer tools upfront (no Git, no compilers).
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
-```
+1. **Download the archive**: Go to the GitHub repository [Releases page](https://github.com/BlackAngel242/MyTeam/releases) and download the ZIP file for the latest release.
+2. **Extract the archive**: Extract all files into your preferred directory (for instance in your personal folder or documents).
+3. **Run installation**:
+   - **On Windows**: double-click `Installer MyTeam.bat`.
+     * **Animated mode**: If Node.js (v22 or higher) is already present on your machine, the animated installer starts immediately inside your terminal (pixel art gradient banner, live task list updating in real time with color badges and spinner, optional Clink step for cmd.exe convenience, and interactive prompts).
+     * **Text fallback if Node.js is missing**: If Node.js is missing or older than v22, the `.bat` file automatically switches to the secure text installer via PowerShell to offer Node.js installation via winget. Once Node.js is installed, simply close and rerun `Installer MyTeam.bat` to enjoy the animated setup experience.
+   - **On macOS or Linux**: open a terminal in the extracted folder and run:
+     ```bash
+     bash scripts/installer.sh
+     ```
+     *(or `node scripts/installateur-anime.mjs` if Node.js 22+ is already available)*
 
-**macOS or Linux** (open a terminal in the project directory):
+> [!NOTE]
+> **Windows SmartScreen security warning**: Like any `.bat` script downloaded from the Internet without a costly commercial code-signing certificate, Windows SmartScreen may display a blue warning box stating "Windows protected your PC". You can safely run the installer:
+> - Click **More info**, then click the **Run anyway** button.
+> - Or in advance: right-click `Installer MyTeam.bat` (or the ZIP archive before extraction) > **Properties** > check the **Unblock** box at the bottom of the General tab > click **OK**.
+
+> [!TIP]
+> **Demo mode**: You can preview the installer animation without installing anything, without network requests, and without altering your machine by running:
+> ```bash
+> node scripts/installateur-anime.mjs --demo
+> ```
+
+## Method 2: Installation from the Git Repository (Developers)
+
+To contribute to the project or clone the latest development version:
 
 ```bash
-bash scripts/installer.sh
+git clone https://github.com/BlackAngel242/MyTeam.git
+cd MyTeam
 ```
+
+Then run the script suited for your operating system:
+
+- **On Windows (PowerShell):**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
+  ```
+  *(or double-click `Installer MyTeam.bat` directly)*
+
+- **On macOS or Linux (bash):**
+  ```bash
+  bash scripts/installer.sh
+  ```
 
 ### Command-line Parameters
 
-| Windows Option | macOS / Linux Option | Effect |
-|---|---|---|
-| `-DryRun` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
-| `-Oui` | `--oui` | Accepts standard configuration choices, but never auto-confirms software installations, integrations, agent launches, or kit setup (individual y/n confirmation remains mandatory). |
-| `-Port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
-| `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | Points to the full Herdr executable path if missing from PATH. |
-| `-SansRaccourci` | `--sans-raccourci` | Skips offering to create the desktop launcher shortcut. |
-| `-Lang fr` or `-Lang en` | `--lang fr` or `--lang en` | Forces installer message language (defaults to your operating system UI language). |
-| `-Aide` | `--aide` | Displays detailed command-line help. |
+The setup scripts `scripts/installer.ps1` and `scripts/installer.sh`, as well as the animated driver `scripts/installateur-anime.mjs`, support options to customize setup:
+
+| Windows Option | macOS / Linux Option | Node Animated Driver | Effect |
+|---|---|---|---|
+| `-DryRun` | `--dry-run` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
+| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms software installations, integrations, agent launches, or kit setup (individual y/n confirmation remains mandatory). |
+| `-Port 8317` | `--port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
+| `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | (PATH auto-detection) | Points to the full Herdr executable path if missing from PATH. |
+| `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Skips offering to create the desktop launcher shortcut. |
+| `-Lang fr` or `-Lang en` | `--lang fr` or `--lang en` | `--lang fr` or `--lang en` | Forces installer message language (defaults to your operating system UI language). |
+| `-Interface` | `--interface` | (enabled by default) | Structured protocol mode for communication with the animated installer. |
+| (not applicable) | (not applicable) | `--demo` | Interactive demonstration of terminal animations without installing anything or using network. |
+| (not applicable) | (not applicable) | `--simple` | Plain text output without ANSI codes or cursor rewrites (used automatically outside interactive TTY terminals). |
+| `-Aide` | `--aide` | (not applicable) | Displays detailed command-line help. |
 
 The script can be rerun safely at any time: it inspects your system and only sets up missing items.
 
 ### Detailed Step-by-Step Flow
 
 1. **Node.js (version 22 or higher)**: The script checks Node.js presence. If missing or older than v22, it offers installation via your system package manager (`winget` on Windows, `brew` on macOS, or distribution package on Linux).
-2. **Herdr (terminal manager)**: Searches for the Herdr executable in PATH or under `~/.herdr`. If not found, it prints official Herdr instructions and offers interactive setup. If Herdr is installed outside PATH, it records `BUREAU_HERDR_PATH`.
-3. **4-pane Herdr workspace in 2×2 grid**: Creates a "Bureau des agents" workspace (`herdr workspace create`), splits right (`herdr pane split --direction right`), and splits each column downward (`--direction down`) to produce a balanced 2×2 grid. The four panes are automatically renamed `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`. If parsing fails, verified manual commands are displayed.
-4. **Detection of 24 tools and optional agent launch**: The script checks your environment for all 24 Herdr-supported tools: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`. For each pane (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), it displays a numbered list of detected tools and offers to launch the selected tool via `herdr agent start <name> --kind <tool> --pane <id>` after individual "y/n" confirmation.
-5. **Official Herdr integrations**: For each detected tool supporting Herdr integrations (`pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`), the script offers to execute `herdr integration install <tool>`. The script explicitly warns that this alters the tool configuration and requests confirmation.
-6. **Lead commands and orientation prompt**:
+2. **Clink (terminal comfort on Windows)**: On Windows with winget available, the script offers optional installation of Clink (`chrisant996.Clink`), adding persistent command history, advanced completion, and user-friendly colors to cmd.exe. Skipped automatically if Clink is already installed or if winget is missing.
+3. **Herdr (terminal manager)**: Searches for the Herdr executable in PATH or under `~/.herdr`. If not found, it prints official Herdr instructions and offers interactive setup. If Herdr is installed outside PATH, it records `BUREAU_HERDR_PATH`.
+4. **4-pane Herdr workspace in 2×2 grid**: Creates a "Bureau des agents" workspace (`herdr workspace create`), splits right (`herdr pane split --direction right`), and splits each column downward (`--direction down`) to produce a balanced 2×2 grid. The four panes are automatically renamed `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`. If parsing fails, verified manual commands are displayed.
+5. **Detection of 24 tools and optional agent launch**: The script checks your environment for all 24 Herdr-supported tools: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`. For each pane (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), it displays a numbered list of detected tools and offers to launch the selected tool via `herdr agent start <name> --kind <tool> --pane <id>` after individual "y/n" confirmation.
+6. **Official Herdr integrations**: For each detected tool supporting Herdr integrations (`pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`), the script offers to execute `herdr integration install <tool>`. The script explicitly warns that this alters the tool configuration and requests confirmation.
+7. **Lead commands and orientation prompt**:
    - If Claude Code is chosen for the lead pane, the script offers to extract the official skill (`herdr --skill`) and write it safely into `~/.claude/skills/herdr/SKILL.md` without overwriting existing files.
    - For other tools, the script explains that `CHEF.md` from the team kit provides all required instructions.
    - The script then prepares the verified orientation prompt:
      *"You are the team chief. Read AGENTS.md and CHEF.md, list agents with `herdr agent list`, then wait for instructions from DrSmoke."*
      It offers to send it directly to the lead pane via `herdr agent prompt <id>` after confirmation.
-7. **Recommended VS Code extensions** (optional): If VS Code (`code`) is detected, the script offers to install verified extensions one by one: `yzhang.markdown-all-in-one` (Markdown All in One), `dbaeumer.vscode-eslint` (ESLint), and `esbenp.prettier-vscode` (Prettier).
-8. **Port configuration and Desktop shortcut**:
+8. **Recommended VS Code extensions** (optional): If VS Code (`code`) is detected, the script offers to install verified extensions one by one: `yzhang.markdown-all-in-one` (Markdown All in One), `dbaeumer.vscode-eslint` (ESLint), and `esbenp.prettier-vscode` (Prettier).
+9. **Port configuration and Desktop shortcut**:
    - Configures the HTTP listening port (default: 4317), saved into user environment variables.
    - Offers 3 desktop shortcut choices:
      * Option 1: Starts Herdr directly.
      * Option 2: Starts the office in your browser (runs `node server.mjs` and opens the local URL).
      * Option 3: "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
-9. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
-10. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
+10. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
+11. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
 
 ## 6-Step Post-Installation Walkthrough
 
