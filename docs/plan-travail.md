@@ -51,6 +51,16 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] G4 (Claude) Intégration de la mosaïque : bouton « Mosaïque », « Vue scène », entrée dans la palette `Ctrl+K`
 - [x] G5 (Claude) Évaluation, vérification Playwright (1440, 390, 360 px), documentation et mise à jour de `docs/aide.md` par Antigravity, fusion et push
 
+## Lot H. Installation clé en main, kit d'équipe et version anglaise (demandés par DrSmoke le 18 octobre)
+
+- [ ] H1 (Antigravity) Documentation anglaise : `README.en.md`, `docs/INSTALLATION.en.md`, `docs/aide.en.md`, `CONTRIBUTING.en.md`, `docs/kit.en.md`, liens de bascule FR/EN
+- [ ] H2 (OpenCode) Interface bilingue FR/EN : `public/i18n.js`, dictionnaire anglais, bascule dans l'en-tête, langue auto du navigateur, test de parité des clés
+- [ ] H3 (Codex) Installeurs : espace Herdr en grille 2×2 comme celui de DrSmoke, lancement facultatif d'un outil par panneau (confirmé un par un), raccourci unique « Herdr et bureau dans le navigateur », invites en français et anglais, étape « kit d'équipe »
+- [ ] H4 (Claude) Kit d'équipe : modèles de fichiers piliers (`kit/`), `scripts/init-kit.mjs` (jamais d'écrasement), auto-évaluation `scripts/evaluer.mjs`, partage des leçons entre agents, `docs/kit.md`
+- [ ] H5 (Claude) Visite guidée mise à jour (Mosaïque, Salle de crise, fichiers joints, réponses, kit) et récapitulatif guidé à la fin de l'installation
+- [ ] H6 (Claude) `docs/plugins-recommandes.md` : outils et extensions utilisés par DrSmoke, à installer au choix (aucune installation silencieuse)
+- [ ] H7 (Claude) Évaluation, vérification, fusion ; publication sur GitHub seulement avec l'accord de DrSmoke (fenêtre de pleins droits terminée)
+
 ## Lot F. Clôture
 
 - [x] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)

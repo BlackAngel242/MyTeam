@@ -89,3 +89,28 @@ Fichier à toi : `public/tiles.js` (nouveau) et styles `.tl-` dans `public/style
 - Accessibilité : grille avec `role="group"` et noms accessibles, tout au clavier.
 - Vérifie avec Playwright sur des états simulés (1440, 390 et 360 px) : aucune consigne réelle.
 
+# Lot H : installation clé en main, kit d'équipe, version anglaise
+
+Demande de DrSmoke : que l'installation donne à un nouvel utilisateur le même environnement que le sien (Herdr en 4 panneaux répartis en grille 2×2, bureau en pixel art dans le navigateur, raccourci du bureau qui lance tout), avec visite guidée, version anglaise, et le système de fichiers piliers, d'auto-évaluation et de partage des leçons. Rappels : `LESSONS.md` d'abord ; ne commiter que si `npm run check` et `npm test` ont tourné ; pas de push (le chef demande l'accord de DrSmoke) ; chaque installation reste confirmée par un vrai o/n.
+
+## Antigravity : H1, documentation anglaise
+
+`README.en.md`, `docs/INSTALLATION.en.md`, `docs/aide.en.md`, `CONTRIBUTING.en.md` : traductions fidèles et naturelles des versions françaises (le français reste la référence), avec un lien « English / Français » en tête de chaque version. Garde les noms de fichiers, commandes et identifiants exacts. Quand `docs/kit.md` existe (le chef l'écrit), traduis-le en `docs/kit.en.md`. Ne touche ni au code ni aux scripts.
+
+## OpenCode : H2, interface bilingue (tu es propriétaire de `public/app.js`, `public/index.html` et des modules `public/*.js` pendant cette mission ; le chef n'y touche pas)
+
+- `public/i18n.js` (nouveau) : `window.t(clé, valeurs)` ; le français reste la langue de référence ; dictionnaire anglais dans `public/i18n-en.js`. Langue choisie par `localStorage` (`bureau.langue`), sinon `navigator.language` (commence par `fr` = français, sinon anglais). Bouton de bascule FR / EN dans l'en-tête (accessible, `aria-pressed`, `lang` du document mis à jour).
+- `index.html` : textes statiques par `data-i18n` (et `data-i18n-attr` pour `aria-label`, `title`, `placeholder`). `app.js` et les modules `response-card.js`, `discussion.js`, `tiles.js` : chaînes visibles passées par `t()` ; pas de concaténation de phrases : un gabarit avec `{nom}`. Pluriels explicites.
+- Messages d'erreur du serveur (en français) : table exacte dans le dictionnaire pour les afficher en anglais ; message inconnu = affiché tel quel. Ne change pas le serveur.
+- Texte dessiné dans le canvas (libellés de la scène) : traduire aussi, sans signe absent de la police pixel.
+- Test `test/i18n.test.mjs` : chaque clé utilisée existe dans le dictionnaire anglais, pas de clé orpheline, `t` remplace les valeurs, repli sur le français. Vérifie avec Playwright en français puis en anglais (1440, 390, 360 px), sans débordement de texte.
+
+## Codex : H3, installeurs (`scripts/installer.ps1`, `scripts/installer.sh`, `Ouvrir le bureau.ps1`/`.cmd`, tests)
+
+- Espace Herdr : grille 2×2 (gauche et droite, chacune coupée en haut et en bas), comme celui de DrSmoke. Vérifie dans `herdr pane split --help` comment cibler un panneau précis ; sinon le dire. Panneaux nommés Chef, Agent 2, 3, 4.
+- Après la création : proposer, panneau par panneau, de lancer un outil détecté sur la machine (`claude`, `codex`, `agy`, `opencode`) avec `herdr agent start <nom> --kind <type> --pane <id>`, un o/n par outil ; jamais un outil absent ; jamais de lancement avec `-Oui`.
+- Raccourci : troisième choix « Herdr et bureau » : ouvre un terminal qui lance Herdr, démarre le serveur du bureau et ouvre le navigateur sur `http://127.0.0.1:<port>`, sans second serveur si celui-ci écoute déjà. Défaut inchangé.
+- Invites et messages en français et en anglais : option `-Lang fr|en` / `--lang fr|en`, sinon langue du système. Les tests existants restent verts.
+- Nouvelle étape finale facultative « Kit d'équipe » : propose d'initialiser un projet avec `node scripts/init-kit.mjs <dossier>` (le chef écrit ce script ; prévois l'appel et son test avec un faux script).
+- Même règles de sécurité que B1 à B4 : aucune valeur du disque interpolée dans une commande. Mission longue : économise ton quota, un point à la fois, compte rendu court avec hash.
+
