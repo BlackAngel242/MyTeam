@@ -84,12 +84,20 @@ export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
     for (const o of etat.question.lignes ?? []) L.push(p.gris('│') + '   ' + o);
     L.push(p.gris('│') + '   ' + p.cyan(etat.question.invite));
   }
-  if (etat.fin) L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + (etat.fin.ok ? (fr ? 'Installation terminée.' : 'Installation finished.') : (fr ? 'Installation arrêtée : voir le message ci-dessus.' : 'Installation stopped: see the message above.')));
+  if (etat.fin) L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
   return L.map(l => ajuster(l, largeur - 1));
 }
 
 // --- état -------------------------------------------------------------------------------------
-export function etatInitial({ lang = 'fr', simulation = false } = {}) { return { lang, simulation, taches: [], info: '', question: null, fin: null }; }
+export function etatInitial({ lang = 'fr', simulation = false, demo = false } = {}) { return { lang, simulation, demo, taches: [], info: '', question: null, fin: null }; }
+// Bilan final : une démonstration ou une simulation ne prétend jamais avoir installé quoi que ce soit.
+export function bilanFin(etat) {
+  const fr = etat.lang !== 'en';
+  if (!etat.fin?.ok) return fr ? 'Installation arrêtée : voir le message ci-dessus.' : 'Installation stopped: see the message above.';
+  if (etat.demo) return fr ? 'Démonstration terminée : rien n’a été installé ni modifié.' : 'Demo finished: nothing was installed or changed.';
+  if (etat.simulation) return fr ? 'Simulation terminée : rien n’a été installé ni modifié.' : 'Dry run finished: nothing was installed or changed.';
+  return fr ? 'Installation terminée.' : 'Installation finished.';
+}
 export function appliquer(etat, evt) {
   const tache = id => etat.taches.find(t => t.id === id);
   switch (evt.type) {
@@ -151,7 +159,8 @@ function questionsClavier(entree, etat, rafraichir, lang) {
     const surDonnees = buf => {
       const s = buf.toString('utf8');
       if (s === '\u0003') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
-      const t = acceptes(s);
+      let t;
+      for (const ch of s) { t = acceptes(ch); if (t !== undefined) break; }
       if (t !== undefined) { entree.removeListener('data', surDonnees); resolve(t); }
     };
     entree.on('data', surDonnees);
@@ -195,9 +204,11 @@ function questionsTexte(sortie, lecteurLignes, lang) {
   const fr = lang !== 'en';
   const lire = async () => { const { value, done } = await lecteurLignes.next(); return done ? null : String(value).trim(); };
   return {
-    async confirm(texte) { sortie.write(`? ${texte} ${fr ? '(o/n)' : '(y/n)'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r !== null && /^(o|oui|y|yes)$/i.test(r); },
-    async choice(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n> `); const r = await lire(); sortie.write((r ?? '') + '\n'); const n = Number(r); return Number.isInteger(n) && n >= 1 && n <= options.length ? n : 1; },
-    async input(texte, defaut) { sortie.write(`? ${texte}${defaut ? ` [${defaut}]` : ''} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r || defaut; },
+    // Fin de l'entrée (null) = aucune réponse : l'appelant ferme l'entrée de l'installeur, qui la traite comme un refus.
+    // Jamais de réponse synthétique (ni « n » prétendu saisi, ni valeur par défaut) à la place de la personne.
+    async confirm(texte) { sortie.write(`? ${texte} ${fr ? '(o/n)' : '(y/n)'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : /^(o|oui|y|yes)$/i.test(r); },
+    async choice(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n> `); const r = await lire(); sortie.write((r ?? '') + '\n'); if (r === null) return null; const n = Number(r); return Number.isInteger(n) && n >= 1 && n <= options.length ? n : 1; },
+    async input(texte, defaut) { sortie.write(`? ${texte}${defaut ? ` [${defaut}]` : ''} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : (r || defaut); },
   };
 }
 
@@ -240,8 +251,8 @@ export function commandeInstalleur({ plateforme = process.platform, lang = 'fr',
   return { commande: 'bash', args };
 }
 
-export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, lancer = spawn } = {}) {
-  const etat = etatInitial({ lang, simulation });
+export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn } = {}) {
+  const etat = etatInitial({ lang, simulation, demo });
   const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false });
   let rendu, questions, lecteurEntree = null;
   if (anime) {
@@ -267,9 +278,11 @@ export async function executer({ commande, args, sortie = process.stdout, entree
       const evt = parseLigne(ligne);
       if (!evt) return;
       appliquer(etat, evt);
-      if (evt.type === 'confirm') repondre((await questions.confirm(evt.question)) ? 'o' : 'n');
-      else if (evt.type === 'choice') repondre(String(await questions.choice(evt.question, evt.options)));
-      else if (evt.type === 'input') repondre(await questions.input(evt.question, evt.defaut));
+      if (['confirm', 'choice', 'input'].includes(evt.type)) {
+        const reponse = evt.type === 'confirm' ? await questions.confirm(evt.question) : evt.type === 'choice' ? await questions.choice(evt.question, evt.options) : await questions.input(evt.question, evt.defaut);
+        if (reponse === null) { try { enfant.stdin.end(); } catch { /* déjà fermé */ } }
+        else repondre(evt.type === 'confirm' ? (reponse ? 'o' : 'n') : String(reponse));
+      }
       else { rendu.evenement?.(evt, etat); rendu.maj(); }
       if (evt.type === 'end') { fin = evt; try { enfant.stdin.end(); } catch { /* déjà fermé */ } }
     });
@@ -280,7 +293,7 @@ export async function executer({ commande, args, sortie = process.stdout, entree
   if (!etat.fin) etat.fin = { ok: sortieCode === 0 };
   rendu.arreter();
   if (anime && entree.isTTY) entree.setRawMode(false);
-  if (!anime) { lecteurEntree?.return?.(); sortie.write((etat.fin.ok ? (lang === 'en' ? 'Installation finished.' : 'Installation terminée.') : (lang === 'en' ? 'Installation stopped.' : 'Installation arrêtée.')) + '\n'); }
+  if (!anime) { lecteurEntree?.return?.(); sortie.write(bilanFin(etat) + '\n'); }
   entree.pause?.();
   return { code: sortieCode, ok: etat.fin.ok && sortieCode === 0, etat, fin };
 }
@@ -291,6 +304,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const lang = option('--lang') ?? ((process.env.LANG ?? process.env.LANGUAGE ?? Intl.DateTimeFormat().resolvedOptions().locale ?? '').toLowerCase().startsWith('fr') ? 'fr' : 'en');
   const anime = Boolean(process.stdout.isTTY && process.stdin.isTTY) && !args.includes('--simple');
   const { commande, args: argsInstalleur } = commandeInstalleur({ lang, simulation: args.includes('--dry-run'), port: option('--port'), demo: args.includes('--demo') });
-  const r = await executer({ commande, args: argsInstalleur, anime, couleur: anime && !process.env.NO_COLOR, lang, simulation: args.includes('--dry-run') });
+  const r = await executer({ commande, args: argsInstalleur, anime, couleur: anime && !process.env.NO_COLOR, lang, simulation: args.includes('--dry-run'), demo: args.includes('--demo') });
   process.exit(r.ok ? 0 : (r.code || 1));
 }

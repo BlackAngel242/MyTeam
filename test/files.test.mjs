@@ -69,3 +69,26 @@ test('dossier, action inconnue et sortie de racine refusés', async t => {
   await assert.rejects(transfer({fromRoot:a, fromPath:'rapport.md', toRoot:b, mode:'delete'}), /Action inconnue/);
   await assert.rejects(transfer({fromRoot:a, fromPath:'rapport.md', toRoot:b, toPath:'../dehors'}), /sort du dossier/);
 });
+
+test('un déplacement ne remplace jamais un fichier apparu après le contrôle du nom libre', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'deplace-'));
+  t.after(() => rm(dir, {recursive: true, force: true}));
+  const a = join(dir, 'source'), b = join(dir, 'cible');
+  await mkdir(a); await mkdir(b);
+  await writeFile(join(a, 'rapport.txt'), 'nouveau');
+  // Un écrivain extérieur crée la destination juste après le contrôle d'existence (existsSync), avant la création.
+  const fs = (await import('node:fs')).default;
+  const {syncBuiltinESMExports} = await import('node:module');
+  const original = fs.existsSync;
+  let injecte = false;
+  fs.existsSync = chemin => { const vu = original(chemin); if (!vu && !injecte && chemin.endsWith('rapport.txt') && chemin.startsWith(b)) { injecte = true; fs.writeFileSync(chemin, 'concurrent'); } return vu; };
+  syncBuiltinESMExports();
+  try {
+    const r = await transfer({fromRoot: a, fromPath: 'rapport.txt', toRoot: b, mode: 'move'});
+    assert.equal(injecte, true);
+    assert.equal(r.name, 'rapport (2).txt');
+    assert.equal(await readFile(join(b, 'rapport.txt'), 'utf8'), 'concurrent');
+    assert.equal(await readFile(join(b, 'rapport (2).txt'), 'utf8'), 'nouveau');
+    assert.equal(original(join(a, 'rapport.txt')), false);
+  } finally { fs.existsSync = original; syncBuiltinESMExports(); }
+});

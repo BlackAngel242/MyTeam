@@ -69,6 +69,7 @@ export async function evaluer(dossier, { lancerTests = true, lancer = npm, maint
   rapport.lecons.total = ((await lire(join(dossier, 'LESSONS.md'))) ?? '').split(/\r?\n/).filter(l => /^-\s+\S/.test(l)).length;
   const paquet = JSON.parse((await lire(join(dossier, 'package.json'))) ?? '{}');
   if (lancerTests) for (const script of ['check', 'test']) if (paquet.scripts?.[script]) rapport.controles.push({ nom: `npm run ${script}`, reussi: await lancer(dossier, script) });
+  rapport.controlesLances = rapport.controles.length;
   rapport.ok = rapport.piliers.manquants.length === 0 && rapport.controles.every(c => c.reussi);
   return rapport;
 }
@@ -86,7 +87,9 @@ export function texte(r, lang = 'fr') {
   else l.push(fr ? 'Git : dossier hors dépôt' : 'Git: not a repository');
   for (const nom of r.anciens) l.push(fr ? `À mettre à jour : ${nom} (plus de 3 jours de retard sur le dernier commit)` : `Update needed: ${nom} (more than 3 days behind the last commit)`);
   for (const c of r.controles) l.push(`${c.reussi ? '✔' : '✖'} ${c.nom}`);
-  l.push(r.ok ? (fr ? 'Bilan : aucun défaut constaté.' : 'Result: no defect found.') : (fr ? 'Bilan : défauts à corriger avant de déclarer terminé.' : 'Result: defects to fix before calling it done.'));
+  if (!r.ok) l.push(fr ? 'Bilan : défauts à corriger avant de déclarer terminé.' : 'Result: defects to fix before calling it done.');
+  else if (!r.controlesLances) l.push(fr ? 'Bilan : inventaire seulement, aucun contrôle lancé (tests non exécutés) : cela ne dit rien de la qualité du travail.' : 'Result: inventory only, no check was run (tests not executed): this says nothing about the quality of the work.');
+  else l.push(fr ? 'Bilan : aucun défaut constaté par les contrôles lancés ci-dessus.' : 'Result: no defect found by the checks run above.');
   return l.join('\n');
 }
 

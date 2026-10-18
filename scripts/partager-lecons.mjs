@@ -23,7 +23,7 @@ export async function partagerLecon(texte, { dossier = '.', lang = 'fr', dryRun 
   const fichier = join(resolve(dossier), 'LESSONS.md');
   const ligne = `- ${texte.trim()}`;
   const actuel = await readFile(fichier, 'utf8').catch(() => null);
-  const resultat = { ajoutee: false, prevenus: [], plusTard: [], injoignables: false };
+  const resultat = { ajoutee: false, prevenus: [], serait: [], plusTard: [], aVerifier: [], injoignables: false, simulation: dryRun };
   if (actuel === null || !actuel.split(/\r?\n/).includes(ligne)) {
     if (!dryRun) { if (actuel === null) await writeFile(fichier, `# ${lang === 'fr' ? 'Leçons' : 'Lessons'}\n\n${ligne}\n`); else await appendFile(fichier, (actuel.endsWith('\n') ? '' : '\n') + ligne + '\n'); }
     resultat.ajoutee = true;
@@ -37,12 +37,22 @@ export async function partagerLecon(texte, { dossier = '.', lang = 'fr', dryRun 
     if (typeof a.pane_id !== 'string' || !/^[\w:.@-]{1,64}$/.test(a.pane_id)) continue;
     const nom = a.name || a.agent || a.pane_id;
     if (!['idle', 'done'].includes(a.agent_status)) { resultat.plusTard.push(nom); continue; }
-    if (!dryRun) {
-      await lancer(herdr, ['agent', 'prompt', a.pane_id, message]);
-      await attendre(2000);
-      await lancer(herdr, ['pane', 'send-keys', a.pane_id, 'Enter']); // le texte collé peut rester dans la zone de saisie
-    }
-    resultat.prevenus.push(nom);
+    if (dryRun) { resultat.serait.push(nom); continue; }
+    await lancer(herdr, ['agent', 'prompt', a.pane_id, message]);
+    await attendre(2000);
+    // Le texte déposé peut rester dans la zone de saisie sans partir. Entrée n'est envoyée que si l'agent est toujours
+    // disponible ET que le début de NOTRE message est visible à l'écran : jamais sur une autorisation ou une boîte de dialogue.
+    let envoye = false;
+    try {
+      const maintenant = JSON.parse(await lancer(herdr, ['agent', 'list'])).result?.agents?.find(x => x.pane_id === a.pane_id);
+      const ecran = await lancer(herdr, ['agent', 'read', a.pane_id, '--source', 'visible', '--lines', '15']);
+      const debut = message.slice(0, 28);
+      if (maintenant && ['idle', 'done'].includes(maintenant.agent_status) && String(ecran).includes(debut)) {
+        await lancer(herdr, ['pane', 'send-keys', a.pane_id, 'Enter']);
+        envoye = true;
+      }
+    } catch { /* état illisible : aucune touche envoyée */ }
+    (envoye ? resultat.prevenus : resultat.aVerifier).push(nom);
   }
   return resultat;
 }
@@ -55,9 +65,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   try {
     const r = await partagerLecon(libres[0], { dossier: libres[1] ?? '.', lang, dryRun: args.includes('--dry-run') });
     const fr = lang === 'fr';
-    console.log(r.ajoutee ? (fr ? 'Leçon ajoutée à LESSONS.md.' : 'Lesson added to LESSONS.md.') : (fr ? 'Leçon déjà présente.' : 'Lesson already present.'));
+    console.log(r.ajoutee ? (r.simulation ? (fr ? 'Serait ajoutée à LESSONS.md (non fait).' : 'Would be added to LESSONS.md (not done).') : (fr ? 'Leçon ajoutée à LESSONS.md.' : 'Lesson added to LESSONS.md.')) : (fr ? 'Leçon déjà présente.' : 'Lesson already present.'));
     if (r.injoignables) console.log(fr ? 'Herdr injoignable : aucun agent prévenu.' : 'Herdr unreachable: no agent notified.');
+    if (r.simulation) console.log(fr ? 'Simulation : rien n’a été écrit ni envoyé.' : 'Dry run: nothing was written or sent.');
+    if (r.serait.length) console.log((fr ? 'Serait prévenu (non fait) : ' : 'Would be notified (not done): ') + r.serait.join(', '));
     if (r.prevenus.length) console.log((fr ? 'Prévenus : ' : 'Notified: ') + r.prevenus.join(', '));
+    if (r.aVerifier.length) console.log((fr ? 'Message déposé, envoi non confirmé : vérifiez le panneau de ' : 'Message left, sending not confirmed: check the pane of ') + r.aVerifier.join(', '));
     if (r.plusTard.length) console.log((fr ? 'À prévenir plus tard (au travail) : ' : 'To notify later (busy): ') + r.plusTard.join(', '));
   } catch (erreur) { console.error(erreur.message); process.exit(1); }
 }

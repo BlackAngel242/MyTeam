@@ -102,16 +102,21 @@ test('partagerLecon ajoute la leçon une seule fois et ne prévient que les agen
       { pane_id: 'w1:p4', name: 'agy', agent_status: 'done' },
       { pane_id: 'w1:p5; rm -rf /', name: 'piege', agent_status: 'idle' },
     ] } });
+    // Écran visible : le texte déposé reste dans la zone de saisie de codex ; agy affiche autre chose (une autorisation, par exemple).
+    if (args[0] === 'agent' && args[1] === 'read') return args[2] === 'w1:p2' ? '> Nouvelle leçon du chef : Une leçon utile. Relis LESSONS.md' : 'Autoriser la commande ? (o/n)';
     return '';
   };
   const r = await partagerLecon('Une leçon utile.', { dossier, lancer, attendre: async () => {} });
   assert.equal(r.ajoutee, true);
-  assert.deepEqual(r.prevenus, ['codex', 'agy']);
+  assert.deepEqual(r.prevenus, ['codex']);
+  assert.deepEqual(r.aVerifier, ['agy']);
   assert.deepEqual(r.plusTard, ['opencode']);
   const prompts = appels.filter(a => a[1] === 'prompt');
   assert.equal(prompts.length, 2);
   assert.match(prompts[0][3], /Une leçon utile\./);
   assert.equal(appels.filter(a => a[0] === 'pane' && a[2] === 'w1:p2' && a[3] === 'Enter').length, 1);
+  // jamais d'Entrée sur un écran qui ne montre pas notre message (autorisation, boîte de dialogue)
+  assert.equal(appels.filter(a => a[0] === 'pane' && a[2] === 'w1:p4').length, 0);
   const encore = await partagerLecon('Une leçon utile.', { dossier, lancer, attendre: async () => {} });
   assert.equal(encore.ajoutee, false);
   assert.equal((await readFile(join(dossier, 'LESSONS.md'), 'utf8')).split('Une leçon utile.').length - 1, 1);
@@ -124,10 +129,26 @@ test('partagerLecon : simulation sans écriture ni envoi, Herdr injoignable sans
   const avant = await readFile(join(dossier, 'LESSONS.md'), 'utf8');
   const envois = [];
   const r = await partagerLecon('Simulée.', { dossier, dryRun: true, lancer: async (_b, a) => { envois.push(a); return JSON.stringify({ result: { agents: [{ pane_id: 'w1:p2', name: 'codex', agent_status: 'idle' }] } }); } });
-  assert.deepEqual(r.prevenus, ['codex']);
+  assert.deepEqual(r.serait, ['codex']);
+  assert.deepEqual(r.prevenus, []);
+  assert.equal(r.simulation, true);
   assert.equal(envois.filter(a => a[1] === 'prompt').length, 0);
   assert.equal(await readFile(join(dossier, 'LESSONS.md'), 'utf8'), avant);
   const hors = await partagerLecon('Sans Herdr.', { dossier, lancer: async () => { throw new Error('absent'); } });
   assert.equal(hors.injoignables, true);
   assert.equal(hors.ajoutee, true);
+});
+
+test('evaluer sans contrôle lancé ne dit pas « aucun défaut » mais « inventaire seulement »', async t => {
+  const dossier = await temporaire(t);
+  await initKit(dossier, { lang: 'fr' });
+  const sans = await evaluer(dossier, { lancerTests: false });
+  assert.equal(sans.controlesLances, 0);
+  assert.match(texte(sans, 'fr'), /inventaire seulement, aucun contrôle lancé/);
+  assert.match(texte(sans, 'en'), /inventory only, no check was run/);
+  assert.doesNotMatch(texte(sans, 'fr'), /aucun défaut constaté/);
+  await writeFile(join(dossier, 'package.json'), JSON.stringify({ scripts: { check: 'x' } }));
+  const avec = await evaluer(dossier, { lancer: async () => true });
+  assert.equal(avec.controlesLances, 1);
+  assert.match(texte(avec, 'fr'), /aucun défaut constaté par les contrôles lancés/);
 });

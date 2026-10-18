@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière } from '../scripts/installateur-anime.mjs';
+import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin } from '../scripts/installateur-anime.mjs';
 
 test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@PLAN node\tNode.js 22 ou plus'), { type: 'plan', id: 'node', libelle: 'Node.js 22 ou plus' });
@@ -119,7 +119,8 @@ const r = await lire();
 console.log('@@DONE a\\t' + (r === 'o' ? 'ok' : 'skip') + '\\t' + r);
 console.log('@@END ok');`);
   const sansReponse = await lancer(script, []);
-  assert.match(sansReponse.texte, /– Outil : n/);
+  // la fin de l'entrée est transmise telle quelle à l'installeur (il lit EOF) : aucune réponse « n » n'est inventée
+  assert.match(sansReponse.texte, /– Outil : EOF/);
   const accord = await lancer(script, ['oui']);
   assert.match(accord.texte, /✔ Outil : o/);
 });
@@ -144,4 +145,25 @@ test('les caractères de contrôle venant de l\'installeur sont retirés avant l
   assert.equal(evt.texte, '[2J]0;titretexte propre');
   assert.ok(!/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/.test(evt.texte));
   assert.equal(parseLigne('@@PLAN node\tNode' + E + '[31m rouge').libelle, 'Node[31m rouge');
+});
+
+test('une entrée fermée devant une saisie n\'envoie jamais la valeur par défaut', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tConfig');
+console.log('@@STEP a');
+console.log('@@INPUT a\\tPort ?\\t4317');
+const r = await lire();
+console.log('@@DONE a\\t' + (r === 'EOF' ? 'skip' : 'ok') + '\\t' + r);
+console.log('@@END ok');`);
+  const r = await lancer(script, []);
+  assert.match(r.texte, /– Config : EOF/);
+  assert.doesNotMatch(r.texte, /4317\n/);
+});
+
+test('le bilan dit démonstration ou simulation, jamais installation, et signale un arrêt', async () => {
+  const e = etatInitial({ lang: 'fr', demo: true });
+  assert.match(bilanFin({ ...e, fin: { ok: true } }), /Démonstration terminée : rien n’a été installé/);
+  assert.match(bilanFin({ ...etatInitial({ lang: 'en', simulation: true }), fin: { ok: true } }), /Dry run finished: nothing was installed/);
+  assert.equal(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: true } }), 'Installation terminée.');
+  assert.match(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: false } }), /arrêtée/);
 });

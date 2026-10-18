@@ -1,4 +1,4 @@
-import {lstat, opendir, realpath, copyFile, rename, unlink, stat, constants} from 'node:fs/promises';
+import {lstat, opendir, realpath, copyFile, link, unlink, stat, constants} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {join, resolve, sep, basename, extname, relative} from 'node:path';
 import {homedir} from 'node:os';
@@ -83,15 +83,28 @@ export async function transfer({fromRoot, fromPath, toRoot, toPath = '', mode = 
   if (!info.isFile()) throw new FileError('Seuls les fichiers peuvent être copiés ou déplacés pour le moment.');
   const dst = await resolveInside(toRoot, toPath);
   if (!(await stat(dst.real)).isDirectory()) throw new FileError('La destination doit être un dossier.');
-  const target = await freeName(dst.real, basename(src.real));
-  if (fold(target) === fold(src.real)) throw new FileError('Le fichier est déjà à cet endroit.');
-  if (mode === 'copy') await copyFile(src.real, target, constants.COPYFILE_EXCL);
-  else {
-    try { await rename(src.real, target); }
-    catch (error) {
-      if (error.code !== 'EXDEV') throw error;
-      await copyFile(src.real, target, constants.COPYFILE_EXCL); await unlink(src.real);
+  // La destination est CRÉÉE de façon exclusive (copie avec COPYFILE_EXCL, ou lien dur puis retrait de la source) :
+  // un fichier apparu entre le contrôle et la création, écrit par un autre programme, n'est jamais remplacé.
+  // En cas de collision, on prend le nom libre suivant.
+  let target;
+  for (let essai = 0; essai < 20; essai++) {
+    target = await freeName(dst.real, basename(src.real));
+    if (fold(target) === fold(src.real)) throw new FileError('Le fichier est déjà à cet endroit.');
+    try {
+      if (mode === 'copy') await copyFile(src.real, target, constants.COPYFILE_EXCL);
+      else {
+        try { await link(src.real, target); }
+        catch (error) {
+          if (error.code === 'EEXIST') throw error;
+          // Volume différent ou système de fichiers sans lien dur : copie exclusive.
+          await copyFile(src.real, target, constants.COPYFILE_EXCL);
+        }
+        await unlink(src.real);
+      }
+      return {ok:true, name:basename(target), path:relative(dst.rootReal, target).split(sep).join('/'), mode};
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
     }
   }
-  return {ok:true, name:basename(target), path:relative(dst.rootReal, target).split(sep).join('/'), mode};
+  throw new FileError('Trop de fichiers portent déjà ce nom dans la destination.');
 }
