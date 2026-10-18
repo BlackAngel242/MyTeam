@@ -45,8 +45,9 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot F. Clôture
 
-- [ ] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)
-- [ ] F2 (Antigravity) `CHANGELOG.md`, `README.md` et `docs/aide.md` à jour
-- [ ] F3 (Claude) `TODO.md`, `HANDOFF.md`, `JOURNAL.md` à jour
-- [ ] F4 (Claude) `npm run check` et `npm test` verts, fusion dans `main`, aucun fichier en attente
+- [x] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)
+- [x] F2 (Antigravity) `CHANGELOG.md`, `README.md` et `docs/aide.md` à jour
+- [x] F3 (Claude) `TODO.md`, `HANDOFF.md`, `JOURNAL.md` à jour
+- [x] F4 (Claude) `npm run check` et `npm test` verts, fusion dans `main`, aucun fichier en attente
+- [x] F6 (Claude) Revue QA finale à la place d'OpenCode (sa session reste bloquée par la boîte « Choose directory », laissée à DrSmoke) : gardes jeton et origine, traversée de chemin refusée, aucune fuite de chemin, identifiant ou secret dans `/api/discussion`, `/api/traitement`, `/api/reponses`
 - [ ] F5 (DrSmoke) Création du dépôt GitHub public et publication : jamais faite sans son feu vert
