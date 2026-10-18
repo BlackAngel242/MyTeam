@@ -58,13 +58,27 @@
 - [x] Deuxième revue de Codex (`docs/revue-codex-interface-2.md`) : G1, G2, M1 à M9 corrigés et vérifiés.
 - [x] Documentation d'installation multi-plateforme (`docs/INSTALLATION.md`, terminée par OpenCode).
 - [x] Scripts d'installation automatique (`scripts/`, testés par OpenCode).
-- [ ] Production et validation des captures d'illustration pour le dossier `docs/captures/`.
+- [x] Production et validation des captures d'illustration pour le dossier `docs/captures/` (11 captures réelles ; à rafraîchir par Antigravity pour les nouveaux volets, au choix de DrSmoke).
 - [ ] Création du dépôt public GitHub et publication initiale par DrSmoke.
 - [x] Propositions d'OpenCode P3, P6 et P7 (bandeau de pause, courrier sur 12 h, trois messages d'erreur).
 - [x] P1 de l'avis de Codex : copie unitaire des contenus déjà disponibles (« Lire tout » et « Copier la consigne » sur la consigne intégrale dans le journal des envois, « Copier la délégation » avec ses champs nommés dans le courrier, fonction de copie commune avec repli manuel accessible, par OpenCode).
 - [x] Chef qui porte le dossier à l'agent lors d'une délégation (retenu par DrSmoke).
 - [x] Tableau mural de mémoire partagée en lecture seule (retenu par DrSmoke, `/api/tableau`).
 - [x] Pause de quota mise en scène : départ, compte à rebours, retour (retenu par DrSmoke).
-- [ ] Organisation fonctionnelle de l'OS d'agents : fil de la salle de contrôle, transfert de direction, priorité des envois, envoi et traitement de fichiers (études d'OpenCode et d'Antigravity en cours).
+- [x] Organisation fonctionnelle de l'OS d'agents : fil de la salle de contrôle, transfert de direction, priorité des envois, envoi et traitement de fichiers (livrés le 18 octobre, voir `docs/plan-travail.md`).
 - [ ] Salle de crise (en réserve, décision DrSmoke).
 - [ ] Évolution vers un OS d'agents en fenêtres ou tuiles libres (décision DrSmoke).
+
+## 18 octobre 2026 : plan de travail et avancement visible
+
+Détail, propriétaires et état de chaque case dans `docs/plan-travail.md` (lu par l'onglet Tâches du bureau).
+
+- [x] Onglet Tâches : tableau « À faire » et « Réalisées » par fichier, pourcentage de cases cochées, plan publié affiché sur le poste de l'agent.
+- [x] Réponses lisibles : `src/responses.mjs`, `GET /api/reponses` (Claude, Codex, OpenCode), carte de réponse `public/response-card.js` avec copie et export `.md`.
+- [x] Fil de la salle de contrôle : `GET /api/discussion`, `public/discussion.js`.
+- [x] Fichiers joints à une consigne (`POST /api/queue` avec `files`) et suivi des fichiers confiés (`GET /api/traitement`).
+- [x] Installeurs : plus d'injection par nom de dossier, o/n obligatoire pour toute installation.
+- [x] Boucle de correction : `LESSONS.md` commune, rangée par thèmes, relue par chaque agent après chaque correction.
+- [ ] Création du dépôt public GitHub `MyTeam` et publication : décision de DrSmoke.
+- [ ] Salle de crise et évolution en fenêtres ou tuiles libres : en réserve, décision de DrSmoke.
+

@@ -153,10 +153,18 @@ Cet onglet permet d'inspecter l'agent sélectionné et d'échanger directement a
 - Bouton « Agrandir » : étend la hauteur du terminal pour occuper tout l'espace disponible et lire de longs historiques en pleine page, y compris sur téléphone où il déploie une hauteur dédiée confortable.
 - Pause automatique sur sélection : dès que vous sélectionnez du texte à la souris dans les sorties, l'actualisation se met en pause avec la mention « Sélection en cours, affichage en pause ». Votre sélection ne saute jamais.
 
+#### Volet « Réponses lisibles »
+- Sous les sorties brutes du terminal, un volet dépliable permet de lire les réponses structurées de l'agent lues dans son journal local (Claude, Codex, OpenCode).
+- Rendu Markdown sûr et propre sans `innerHTML` (titres, listes, citations, gras, code en ligne et blocs de code).
+- Bouton « Copier le code » pour chaque bloc de code et bouton « Copier la réponse » pour récupérer le Markdown source exact.
+- Boutons d'exportation locale en fichier `.md` (réponse unitaire ou session complète). Une réponse en cours est exportée comme instantané daté portant la mention « partiel ».
+- Repli accessible : si l'accès au presse-papiers est refusé ou indisponible, une boîte modale avec zone de texte en lecture seule s'ouvre pour vous permettre de copier le texte manuellement.
+
 #### Envoi de consigne, mise en file et priorité
 - Agent disponible : la zone de texte est déverrouillée et permet un envoi immédiat avec le raccourci clavier Ctrl+Entrée (ou Cmd+Entrée).
 - Agent occupé ou en pause de quota : le bouton affiche « Mettre en file ». La consigne est enregistrée dans la file d'attente sécurisée du serveur et partira toute seule dès que l'agent sera disponible ou 5 minutes après sa remise à zéro de limite.
 - Case « Prioritaire » : en cochant cette case avant de cliquer sur « Mettre en file », la consigne reçoit une priorité haute (`priority: "haute"` au lieu de `"normale"`) pour être traitée en tête de file dès que l'agent redevient disponible.
+- Joindre des fichiers : vous pouvez associer jusqu'à 2 fichiers locaux (20 Mo max) à une consigne mise en file d'attente. Les fichiers sont copiés de manière sécurisée sans écrasement dans le dossier de travail de l'agent avant le départ de la consigne.
 - Conservation des brouillons : si vous changez d'agent alors qu'un texte est commencé ou pendant l'envoi d'une consigne en file, chaque brouillon reste mémorisé indépendamment sans être écrasé par l'autre poste.
 
 ---
@@ -205,6 +213,16 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 - Consigne chaque envoi réalisé depuis l'ouverture du bureau.
 - Affiche l'heure, les destinataires, le texte et le statut de transmission retourné par Herdr.
 
+#### Fichiers confiés et suivi de traitement
+- Affiche la liste des dossiers de traitement pour les fichiers confiés aux agents par consigne.
+- Retrace chronologiquement chaque fait observé avec sa source exacte (`file`, `disque`, `herdr`, `journal`) : date de mise en file, copie effectuée, changements du fichier sur le disque pendant le travail de l'agent, et détection de fin de réponse.
+- Règle de vérité : aucun verdict « réussi » ou « terminé » n'est affirmé ; seuls les faits datés et observés sont affichés.
+
+#### Fil de discussion (Salle de contrôle)
+- Centralise les extraits des réponses récentes de l'ensemble des agents de l'équipe, ordonnées de la plus récente à la plus ancienne.
+- Chaque bulle présente le nom de l'agent, l'heure de publication, son état observé et un extrait textuel de sa réponse.
+- Sous le fil, une section recense les agents non lus avec la raison observée (« non exposé par cet outil » ou « non rattaché avec certitude »).
+
 ---
 
 ### Zone 4 : Onglet « Fichiers » (Explorateur sécurisé)
@@ -242,7 +260,8 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 - Consulter les plans d'action structurés publiés par les agents dans leurs journaux d'activité.
 - Observer une barre de progression strictement calculée sur le nombre de tâches cochées par rapport au total.
 
-#### Règle de vérité des tâches
+#### Règle de vérité des tâches et pourcentage
+- La barre de progression et le pourcentage affiché sont strictement calculés sur le ratio de cases cochées réelles par rapport au total.
 - Aucun pourcentage n'est extrapolé ni prédit.
 - Si un agent ne publie pas de plan dans ses sorties ou journaux, le bureau affiche « Aucun plan publié par un agent pour le moment ».
 
@@ -285,6 +304,7 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 | **Poste** | Case à cocher « Prioritaire » | Marque la consigne pour un traitement prioritaire en file. |
 | **Poste** | Bouton « Mettre en file » | Place la consigne dans la file d'attente si l'agent est occupé. |
 | **Poste** | Bouton « Agrandir » | Agrandit ou réduit le terminal en pleine hauteur (y compris sur mobile). |
+| **Poste** | Volet « Réponses lisibles » | Déplie les réponses structurées de l'agent avec copie de code et export Markdown. |
 | **Poste** | Sélection de texte dans le terminal | Suspend temporairement l'actualisation pour copier. |
 | **Poste** | Bouton « Figer » | Bloque le suivi automatique vers le bas. |
 | **Poste** | Bouton « Copier » | Place le texte complet du terminal dans le presse-papier. |

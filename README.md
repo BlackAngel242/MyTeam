@@ -64,7 +64,7 @@ Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `
   ```
 
 > [!TIP]
-> Pour simuler l'installation sans rien exécuter, utilisez le paramètre `-DryRun` (PowerShell) ou `--dry-run` (bash). Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour les détails avancés.
+> Les installeurs sont durcis contre les injections (noms de dossiers piégés isolés, résolution stricte de Herdr) et exigent une confirmation interactive o/n sans option d'approbation automatique. Pour simuler l'installation sans rien exécuter, utilisez le paramètre `-DryRun` (PowerShell) ou `--dry-run` (bash). Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour les détails avancés.
 
 ### 2. Démarrage du bureau
 
@@ -105,6 +105,7 @@ http://127.0.0.1:4317
 - **Sorties du terminal réelles** : Affiche les dernières lignes brutes provenant du terminal Herdr de l'agent sélectionné.
 - **Outils de confort** : Champ de recherche avec surlignage instantané des occurrences et compteur, bouton « Figer » pour suspendre le défilement automatique, bouton « Copier » pour récupérer le texte, et bouton « Agrandir » pour lire le terminal en pleine hauteur (avec hauteur dédiée confortable sur smartphone).
 - **Pause automatique sur sélection** : Dès qu'une sélection de texte est active à la souris dans les sorties, le rafraîchissement se met en pause pour ne jamais faire sauter votre sélection.
+- **Volet « Réponses lisibles »** : Sous le terminal, un volet dépliable (composant `public/response-card.js` branché sur `GET /api/reponses`) restitue les réponses structurées de l'agent lues dans son journal local (Claude, Codex, OpenCode). Il propose un rendu Markdown sûr sans `innerHTML`, la copie par bloc de code, la copie fidèle du texte source Markdown, l'export en `.md` (marqué « partiel » si la réponse est en cours) et un repli accessible pour le presse-papiers.
 - **Formulaire de consigne, mise en file et priorité** : Si l'agent est disponible, le formulaire permet un envoi immédiat (Ctrl+Entrée ou Cmd+Entrée). S'il est occupé ou en pause de quota, le bouton affiche « Mettre en file » pour différer l'envoi en toute sécurité. Une case à cocher « Prioritaire » permet de marquer une consigne urgente (`priority: "haute"`) pour qu'elle passe devant les consignes normales du même agent.
 - **Conservation des brouillons** : Changer d'agent pendant la rédaction ou l'envoi d'une consigne ne détruit aucun texte ; chaque brouillon est mémorisé indépendamment.
 
@@ -113,13 +114,15 @@ http://127.0.0.1:4317
 - **Direction de l'équipe et passation** : Affiche le chef effectif et permet à DrSmoke de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut (premier panneau). Le choix est persisté hors Git dans `.bureau/direction.json`. Si le chef entre en pause de limite, un bandeau propose proactivement de passer la direction à un suppléant disponible. DrSmoke valide le changement, et le message de passation préparé est relu et validé avant d'être expédié (par envoi direct ou en tête de file). Les délégations de missions sont ensuite suivies dans le journal du chef effectif.
 - **Courrier du chef** : Enregistre les fins de travail observées avec compteur dans le titre de section ; la liste se remet à zéro dès que vous consultez l'onglet Équipe. Cliquer sur un courrier ouvre directement le terminal de l'agent pour vérifier son travail.
 - **File d'attente collective et gestion des priorités** : Liste toutes les consignes différées avec leur cible, statut et niveau de priorité (« haute » ou « normale »), ordonnées selon l'ordre réel d'envoi. Un bouton « Passer en tête » permet de promouvoir une consigne normale en attente. Les consignes hautes partent en premier dès que l'agent est libre. Un garde-fou automatique promeut toute consigne normale en attente depuis plus de 30 minutes au rang des hautes pour prévenir la famine. Chaque consigne peut être retirée d'un clic, sans jamais forcer d'envoi vers un agent occupé.
+- **Fichiers joints et fichiers confiés** : Vous pouvez joindre des fichiers locaux à une consigne mise en file d'attente (plafond de 2 fichiers de 20 Mo). Les fichiers sont copiés sans écrasement dans le dossier de travail de l'agent avant l'expédition, et les faits observés lors du traitement sont consultables dans la section « Fichiers confiés » de l'onglet Équipe.
+- **Fil de discussion (salle de contrôle)** : Réunit les extraits des dernières réponses de toute l'équipe (composant `public/discussion.js` branché sur `GET /api/discussion`), classées de la plus récente à la plus ancienne. Les agents non lus sont explicitement signalés en bas de liste avec leur raison (« non exposé par cet outil » ou « non rattaché avec certitude »).
 - **Message à plusieurs agents (envoi groupé armé)** : Cochez les agents disponibles ou cliquez sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en affichant la liste des destinataires, et le second confirme l'expédition individuelle via Herdr.
 - **Journal des envois** : Consigne l'historique complet des transmissions de la session avec l'horodatage, les destinataires, le texte et le statut retourné par Herdr.
 
 ### Onglets Fichiers et Tâches
 
 - **Onglet Fichiers (Explorateur sécurisé)** : Consultation rapide des fichiers récemment créés ou modifiés (dernières 48 h) dans le dossier de travail de l'agent sélectionné, ou navigation dossier par dossier avec fil d'Ariane. Les emplacements sont strictement limités au dossier de travail de chaque agent, au Bureau, aux Documents et aux Téléchargements. Bouton « Afficher » pour révéler le fichier dans l'Explorateur Windows. Glisser-déposer standard pour copier un fichier, ou Maj + glisser-déposer pour le déplacer (avec double validation). Aucune suppression et aucun écrasement de fichier ne sont autorisés (renommage automatique avec indice numérique).
-- **Onglet Tâches (Suivi factuel)** : Tableau de bord observant les cases cochées dans les fichiers Markdown du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux d'activité. La barre de progression est strictement calculée sur le ratio de tâches cochées. Si aucun plan n'est publié, la mention « Aucun plan publié par un agent pour le moment » est fidèlement affichée.
+- **Onglet Tâches (Suivi factuel avec pourcentage)** : Tableau de bord observant les cases cochées dans les fichiers Markdown du projet (`TODO.md`) et les plans d'action publiés par les agents dans leurs journaux d'activité. La barre de progression et le pourcentage affiché sont strictement calculés sur le ratio de tâches cochées. Si aucun plan n'est publié, la mention « Aucun plan publié par un agent pour le moment » est fidèlement affichée.
 
 ### Palette de commandes, aide et signaux
 
