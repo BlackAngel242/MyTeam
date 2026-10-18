@@ -12,7 +12,7 @@ import {createBureauServer} from '../server.mjs';
 
 const PORT = 4317;
 const ORIGINE = `http://127.0.0.1:${PORT}`;
-const ERREUR = 'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.';
+const ERREUR = 'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.';
 
 function reponse() {
   return {

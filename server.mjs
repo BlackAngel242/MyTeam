@@ -263,17 +263,17 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const guard=(req,{body=true}={})=>{
       const sent=Buffer.from(req.headers['x-bureau-token']||'');
       const expected=Buffer.from(token);
-      if(sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+      if(sent.length!==expected.length||!timingSafeEqual(sent,expected)) {json(403,{error:'Session expirée. Actualise le bureau.'});return false;}
       // Un POST exige l'origine exacte. Un GET de navigateur n'envoie pas
       // toujours Origin : la provenance est alors prouvée par Sec-Fetch-Site
       // = same-origin (en-tête posé par le navigateur, non modifiable par une
       // page). Sans aucune preuve, le refus reste la règle.
       const origine=req.headers.origin;
       if(body) {
-        if(origine!==origin) {json(403,{error:'Session expirée. Actualisez le bureau.'});return false;}
+        if(origine!==origin) {json(403,{error:'Session expirée. Actualise le bureau.'});return false;}
         if(!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
       } else if(!(origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin'))) {
-        json(403,{error:'Session expirée. Actualisez le bureau.'});return false;
+        json(403,{error:'Session expirée. Actualise le bureau.'});return false;
       }
       return true;
     };
@@ -454,7 +454,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         return json(200,await bridge.read(url.searchParams.get('id')));
       }
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {
-        const verrouille=()=>json(423,{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
+        const verrouille=()=>json(423,{error:'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.'});
         if(!guard(req)) return;
         if(salleDeCrise.isActive()) return verrouille();
         const parsed=await readJson(req);
@@ -468,12 +468,12 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(200,await bridge.prompt(parsed.id,parsed.message));
         }
         const ids=parsed.ids;
-        if(!Array.isArray(ids)||ids.length<1||ids.length>12||ids.some(id=>typeof id!=='string'||!id)||new Set(ids).size!==ids.length) return json(400,{error:'Choisissez de 1 à 12 agents différents.'});
+        if(!Array.isArray(ids)||ids.length<1||ids.length>12||ids.some(id=>typeof id!=='string'||!id)||new Set(ids).size!==ids.length) return json(400,{error:'Choisis de 1 à 12 agents différents.'});
         // Un destinataire après l'autre : le verrou est revérifié juste avant
         // chaque envoi, une crise déclenchée en route arrête la suite.
         const results=[];
         for(const id of ids) {
-          if(salleDeCrise.isActive()) return json(423,results.length?{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.',results}:{error:'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.'});
+          if(salleDeCrise.isActive()) return json(423,results.length?{error:'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.',results}:{error:'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.'});
           try {
             const un=await bridge.broadcast([id],parsed.message);
             if(Array.isArray(un?.results)) results.push(...un.results);

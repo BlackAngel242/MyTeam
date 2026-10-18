@@ -195,10 +195,10 @@ test('crise : envoi et diffusion refusés en 423, puis repris à la levée',asyn
   assert.equal((await send('/api/crise',{method:'POST',headers,body:JSON.stringify({active:true})})).status,200);
   const consigne=await send('/api/prompt',{method:'POST',headers,body:JSON.stringify({id:'agent-1',message:'Arrête-toi'})});
   assert.equal(consigne.status,423);
-  assert.equal(consigne.data.error,'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.');
+  assert.equal(consigne.data.error,'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.');
   const diffusion=await send('/api/broadcast',{method:'POST',headers,body:JSON.stringify({ids:['agent-1'],message:'Arrêtez-vous'})});
   assert.equal(diffusion.status,423);
-  assert.equal(diffusion.data.error,'Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre.');
+  assert.equal(diffusion.data.error,'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.');
   assert.deepEqual(calls,[]);
   assert.equal((await send('/api/crise',{method:'POST',headers,body:JSON.stringify({active:false})})).status,200);
   assert.equal((await send('/api/prompt',{method:'POST',headers,body:JSON.stringify({id:'agent-1',message:'On reprend'})})).status,200);

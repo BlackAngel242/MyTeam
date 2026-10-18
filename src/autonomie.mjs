@@ -67,9 +67,9 @@ export function createAutonomie({ file, enqueue, relais, now = () => Date.now(),
   function demarrer({ objectif, minutes, echanges } = {}) {
     return exclusive(async () => {
       if (etat) throw new AutonomieError("L'autonomie est déjà active.", 409);
-      if (locked()) throw new AutonomieError('Salle de crise active : levez la crise avant de lancer l\'autonomie.', 423);
+      if (locked()) throw new AutonomieError('Salle de crise active : lève la crise avant de lancer l\'autonomie.', 423);
       const texte = typeof objectif === 'string' ? Array.from(objectif.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, LIMITES.objectif).join('') : '';
-      if (texte.length < 5) throw new AutonomieError("Décrivez l'objectif en quelques mots (5 caractères au moins).");
+      if (texte.length < 5) throw new AutonomieError("Décris l'objectif en quelques mots (5 caractères au moins).");
       const duree = entier(minutes, LIMITES.minutes), plafond = entier(echanges, LIMITES.echanges);
       const debut = now();
       const relaisAvant = relais.get().actif;
