@@ -184,7 +184,9 @@ foreach($chemin in @(${[faux, join(dossier, 'dossier.exe'), join(dossier, '*.exe
   if(-not $refuse){throw 'faux chemin Herdr accepté'}
 }
 $HerdrChemin=${psLiteral(executable)}
-if((Chercher-Herdr) -cne ${psLiteral(executable)}){throw 'chemin littéral perdu'}
+$trouve=Chercher-Herdr
+# Les runners Windows exposent des noms courts (8.3) : on compare le nom et l'existence, pas la forme du chemin.
+if((Split-Path $trouve -Leaf) -cne 'herdr[1].exe' -or -not (Test-Path -LiteralPath $trouve)){throw 'chemin littéral perdu'}
 'ok'`);
   if (resultat) assert.equal(resultat.stdout.trim(), 'ok');
 });
