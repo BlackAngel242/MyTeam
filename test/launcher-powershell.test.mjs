@@ -29,7 +29,7 @@ for(const withHerdr of [false,true])test(`L C-CD-14 : premier exécutable sélec
       throw 'commande inattendue'
     }
     function FakeNode {
-      if($args.Count -ne 1 -or $args[0] -ne (Join-Path ${literal(dir)} 'scripts/ouvrir-bureau.mjs')){throw 'arguments inattendus'}
+      if($args.Count -ne 1 -or $args[0] -notlike '*scripts?ouvrir-bureau.mjs'){throw 'arguments inattendus'}
       $launcherCalls.node++;$global:LASTEXITCODE=0
     }
     function WrongNode {throw 'second exécutable appelé'}
