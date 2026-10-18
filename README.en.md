@@ -53,7 +53,7 @@ MyTeam runs on Windows, macOS, and Linux. It only requires [Node.js](https://nod
 
 ### 1. Automated setup
 
-Interactive and hardened scripts are provided in `scripts/` to check requirements, test AI tools, and configure Herdr access without silent modifications:
+Interactive and hardened scripts are provided in `scripts/` to verify requirements, configure a 2×2 Herdr grid, detect 24 supported tools, propose official integrations and team collaboration kit, without modifying your system blindly:
 
 - **On Windows (PowerShell):**
   ```powershell
@@ -66,7 +66,7 @@ Interactive and hardened scripts are provided in `scripts/` to check requirement
   ```
 
 > [!TIP]
-> Installers are hardened against path injections and require explicit y/n interactive confirmation with no silent auto-approval flags. To simulate without modifying your system, pass `-DryRun` (PowerShell) or `--dry-run` (bash). Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) for full details.
+> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer `herdr integration install` integrations, install the lead skill (`herdr --skill`) or guide with `CHEF.md`, prepare the lead orientation prompt, offer 3 desktop shortcuts (including combined "Herdr and desktop"), and initialize the team kit (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) for the complete guide.
 
 ### 2. Starting the office
 
@@ -76,12 +76,21 @@ Once requirements are met, launch the local server:
 node server.mjs
 ```
 
-*(On Windows, you can also double-click `Ouvrir le bureau.cmd`)*
+*(On Windows, you can also double-click `Ouvrir le bureau.cmd` or the combined "Herdr and desktop" shortcut)*
 
 Then open the application in your browser:
 ```text
 http://127.0.0.1:4317
 ```
+
+### 3. 6-Step Post-Installation Walkthrough
+
+1. **Open the shortcut**: Double-click the "Herdr and desktop" shortcut (or start Herdr and run `node server.mjs`).
+2. **See the 4 panes and animated office**: Check the 4 panes in your 2×2 Herdr grid and explore the live office scene at `http://127.0.0.1:4317`.
+3. **The lead reads CHEF.md**: In the Chef pane, the team lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by.
+4. **First delegation**: Send an initial prompt to the lead from the web office; watch their physical round across the office scene to deliver the folder to their teammate.
+5. **Tasks tab**: Open the Tasks tab to monitor real-time factual progress of checked boxes in `TODO.md` and action plans published by agents, with zero invented percentages.
+6. **Crisis room**: Locate the flip-covered "Salle de crise" (Crisis Room) button (`Ctrl+Shift+C`) to instantly freeze outgoing instructions and request a polite interruption via the Escape key.
 
 ---
 

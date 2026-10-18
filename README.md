@@ -53,7 +53,7 @@ MyTeam fonctionne sur Windows, macOS et Linux. Il nécessite uniquement [Node.js
 
 ### 1. Préparation automatique
 
-Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `scripts/` pour vérifier vos prérequis, tester les outils d'IA et configurer l'accès à Herdr sans modifier votre système à l'aveugle :
+Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `scripts/` pour vérifier vos prérequis, préparer la grille Herdr 2×2, détecter les 24 outils supportés, proposer les intégrations officielles et le kit d'équipe, sans jamais modifier votre système à l'aveugle :
 
 - **Sous Windows (PowerShell) :**
   ```powershell
@@ -66,7 +66,7 @@ Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `
   ```
 
 > [!TIP]
-> Les installeurs sont durcis contre les injections (noms de dossiers piégés isolés, résolution stricte de Herdr) et exigent une confirmation interactive o/n sans option d'approbation automatique. Pour simuler l'installation sans rien exécuter, utilisez le paramètre `-DryRun` (PowerShell) ou `--dry-run` (bash). Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour les détails avancés.
+> **Ce que fait et ne fait pas l'installation** : Les scripts vérifient Node.js (>= 22) et Herdr, créent une grille Herdr 2×2 (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), détectent les 24 outils compatibles, proposent les intégrations `herdr integration install`, installent la compétence du chef (`herdr --skill`) ou orientent avec `CHEF.md`, préparent la consigne d'orientation, proposent 3 raccourcis de bureau (dont « Herdr et bureau » combiné) et l'initialisation du kit d'équipe (`node scripts/init-kit.mjs`). Ils n'installent aucune dépendance npm, ne demandent ni ne stockent aucune clé API, et ne valident aucune installation silencieuse : le commutateur `-Oui` / `--oui` n'auto-approuve jamais les installations ou lancements (un accord individuel o/n reste obligatoire). Paramètres utiles : `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour le guide complet.
 
 ### 2. Démarrage du bureau
 
@@ -76,12 +76,21 @@ Une fois les prérequis validés, démarrez le serveur local :
 node server.mjs
 ```
 
-*(Sous Windows, vous pouvez également double-cliquer directement sur le raccourci `Ouvrir le bureau.cmd`)*
+*(Sous Windows, vous pouvez également double-cliquer directement sur le raccourci `Ouvrir le bureau.cmd` ou le raccourci combiné « Herdr et bureau »)*
 
 Ouvrez ensuite l'application dans votre navigateur :
 ```text
 http://127.0.0.1:4317
 ```
+
+### 3. Parcours après installation en 6 étapes
+
+1. **Ouvrir le raccourci** : Double-cliquez sur le raccourci « Herdr et bureau » (ou ouvrez Herdr puis lancez `node server.mjs`).
+2. **Voir les 4 panneaux et le bureau animé** : Constatez l'ouverture des 4 panneaux dans la grille Herdr 2×2 et découvrez l'atelier en direct sur `http://127.0.0.1:4317`.
+3. **Le chef lit CHEF.md** : Dans le panneau Chef, le chef d'équipe prend connaissance de `CHEF.md` et `AGENTS.md`, liste ses coéquipiers avec `herdr agent list` et se tient prêt.
+4. **Première délégation** : Envoyez une consigne au chef depuis le bureau ; observez sa tournée physique dans la scène jusqu'au poste du collaborateur pour lui remettre le dossier.
+5. **Onglet Tâches** : Consultez l'onglet Tâches pour suivre l'avancement factuel des cases de `TODO.md` et des plans d'action publiés, sans pourcentage inventé.
+6. **Salle de crise** : Repérez le bouton sous clapet « Salle de crise » (`Ctrl+Maj+C`) permettant de geler instantanément les départs de consignes et de demander une interruption polie par la touche Échap.
 
 ---
 

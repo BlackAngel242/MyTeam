@@ -11,38 +11,91 @@ The Agent Office (Bureau des agents) is a lightweight local application: it open
 - Herdr, started before running the office: Herdr is the process manager that detects your agents.
 - Optional: one or more command-line AI agents (Claude Code, Codex, OpenCode, Gemini CLI, Antigravity). The office functions without any of them installed: it displays whatever Herdr detects.
 
-## One-Command Installation
+## What the installer does and does not do
 
-**Windows** (open PowerShell in the project directory, then run):
+### What the installer does
+
+- **Rigorous verification**: Validates presence and minimum version of Node.js (>= 22) and Herdr.
+- **2×2 Herdr grid**: Automatically configures a 4-pane workspace named `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`.
+- **Detection of all 24 Herdr tools**: Identifies in PATH all supported executables recognized by Herdr (`pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`).
+- **Custom agent launch**: Prompts pane by pane to launch the tool of your choice, never forcing any agent.
+- **Official Herdr integrations**: Offers to run `herdr integration install <tool>` for detected tools, warning that it alters their configuration.
+- **Team lead orientation**: Installs the official lead skill (`herdr --skill`) for Claude Code or points to `CHEF.md` for other tools, then offers to send the orientation prompt to the lead pane.
+- **Recommended extensions**: Suggests 3 useful VS Code project extensions (`Markdown All in One`, `ESLint`, `Prettier`).
+- **Local configuration**: Saves `BUREAU_PORT` and `BUREAU_HERDR_PATH` in user environment without duplicates.
+- **Launcher shortcut choice**: Offers to create a desktop shortcut for Herdr alone, the Web office alone, or the combined "Herdr and desktop" launcher.
+- **Team collaboration kit**: Offers to initialize project collaboration files (`init-kit.mjs`) in your chosen project directory.
+- **Immediate verification**: Offers to run `npm test` and `npm run check` to validate your environment.
+
+### What the installer does NOT do
+
+- **No external npm dependencies**: The project contains no `node_modules` and never runs `npm install`.
+- **No key or secret collection**: No password, token, or API key is requested or handled. Each AI manages its own credentials.
+- **No forced silent installation**: The `-Oui` / `--oui` flag NEVER auto-confirms software installations, integrations, agent launches, or team kit setup. Each sensitive action requires explicit interactive "y/n" consent.
+- **No file overwriting**: The scripts never overwrite existing skills or project documents without explicit user confirmation.
+- **No unauthorized external network requests**: The server strictly binds to the local interface `127.0.0.1`.
+
+## One-Command Installation (Recommended)
+
+**Windows** (open PowerShell in the project directory):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\installer.ps1
 ```
 
-**macOS or Linux** (open a terminal in the project directory, then run):
+**macOS or Linux** (open a terminal in the project directory):
 
 ```bash
 bash scripts/installer.sh
 ```
 
-The script first performs pre-flight checks, then prompts for each component with a clear interactive "y/n" question. Nothing is installed without explicit consent. It also configures a 4-pane Herdr workspace (the first pane designated as lead), offers three recommended project extensions, and creates a desktop launcher shortcut of your choice. Useful parameters:
+### Command-line Parameters
 
 | Windows Option | macOS / Linux Option | Effect |
 |---|---|---|
-| `-DryRun` | `--dry-run` | Simulation: displays everything that would be done without installing or modifying anything |
-| `-Oui` | `--oui` | Automatically answers yes to "y/n" prompts |
-| `-Port 8317` | `--port 8317` | Customizes the office port (default is 4317) |
-| `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | Points to Herdr binary if not found in PATH |
-| `-SansRaccourci` | `--sans-raccourci` | Skips offering the desktop launcher shortcut |
-| `-Aide` | `--aide` | Displays script command-line help |
+| `-DryRun` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
+| `-Oui` | `--oui` | Accepts standard configuration choices, but never auto-confirms software installations, integrations, agent launches, or kit setup (individual y/n confirmation remains mandatory). |
+| `-Port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
+| `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | Points to the full Herdr executable path if missing from PATH. |
+| `-SansRaccourci` | `--sans-raccourci` | Skips offering to create the desktop launcher shortcut. |
+| `-Lang fr` or `-Lang en` | `--lang fr` or `--lang en` | Forces installer message language (defaults to your operating system UI language). |
+| `-Aide` | `--aide` | Displays detailed command-line help. |
 
-The script can be rerun safely as often as needed: it inspects existing configuration and only sets up missing items. At the end, it outputs a clean summary of installed components, remaining tasks, and declined items.
+The script can be rerun safely at any time: it inspects your system and only sets up missing items.
 
-### Additional steps offered by the installer
+### Detailed Step-by-Step Flow
 
-1. **4-pane Herdr workspace** (pane 1 = lead): created via `herdr workspace create --label "Bureau des agents"`, followed by three splits (`herdr pane split`) and renaming (`herdr pane rename`) into Chef, Agent 2, Agent 3, Agent 4. If a command fails or its output cannot be parsed, the script provides manual instructions instead of exiting abruptly. No AI tool is launched automatically: to launch an agent in a pane, the verified command is `herdr agent start <name> --kind claude --pane <pane-id>`.
-2. **Recommended extensions** (optional): the script asks if you wish to see the list, then presents verified VS Code extensions one by one: `yzhang.markdown-all-in-one` (Markdown All in One, Yu Zhang), `dbaeumer.vscode-eslint` (ESLint, Microsoft), and `esbenp.prettier-vscode` (Prettier). They are installed via `code --install-extension` if VS Code is detected; otherwise, this step is skipped.
-3. **Office launcher shortcut**: offers to create a launcher that starts Herdr and opens the office in your default browser without duplicating running servers.
+1. **Node.js (version 22 or higher)**: The script checks Node.js presence. If missing or older than v22, it offers installation via your system package manager (`winget` on Windows, `brew` on macOS, or distribution package on Linux).
+2. **Herdr (terminal manager)**: Searches for the Herdr executable in PATH or under `~/.herdr`. If not found, it prints official Herdr instructions and offers interactive setup. If Herdr is installed outside PATH, it records `BUREAU_HERDR_PATH`.
+3. **4-pane Herdr workspace in 2×2 grid**: Creates a "Bureau des agents" workspace (`herdr workspace create`), splits right (`herdr pane split --direction right`), and splits each column downward (`--direction down`) to produce a balanced 2×2 grid. The four panes are automatically renamed `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`. If parsing fails, verified manual commands are displayed.
+4. **Detection of 24 tools and optional agent launch**: The script checks your environment for all 24 Herdr-supported tools: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`. For each pane (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), it displays a numbered list of detected tools and offers to launch the selected tool via `herdr agent start <name> --kind <tool> --pane <id>` after individual "y/n" confirmation.
+5. **Official Herdr integrations**: For each detected tool supporting Herdr integrations (`pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`), the script offers to execute `herdr integration install <tool>`. The script explicitly warns that this alters the tool configuration and requests confirmation.
+6. **Lead commands and orientation prompt**:
+   - If Claude Code is chosen for the lead pane, the script offers to extract the official skill (`herdr --skill`) and write it safely into `~/.claude/skills/herdr/SKILL.md` without overwriting existing files.
+   - For other tools, the script explains that `CHEF.md` from the team kit provides all required instructions.
+   - The script then prepares the verified orientation prompt:
+     *"You are the team chief. Read AGENTS.md and CHEF.md, list agents with `herdr agent list`, then wait for instructions from DrSmoke."*
+     It offers to send it directly to the lead pane via `herdr agent prompt <id>` after confirmation.
+7. **Recommended VS Code extensions** (optional): If VS Code (`code`) is detected, the script offers to install verified extensions one by one: `yzhang.markdown-all-in-one` (Markdown All in One), `dbaeumer.vscode-eslint` (ESLint), and `esbenp.prettier-vscode` (Prettier).
+8. **Port configuration and Desktop shortcut**:
+   - Configures the HTTP listening port (default: 4317), saved into user environment variables.
+   - Offers 3 desktop shortcut choices:
+     * Option 1: Starts Herdr directly.
+     * Option 2: Starts the office in your browser (runs `node server.mjs` and opens the local URL).
+     * Option 3: "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
+9. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
+10. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
+
+## 6-Step Post-Installation Walkthrough
+
+Once setup completes, follow this 6-step walkthrough to start your working session:
+
+1. **Open the shortcut**: Double-click the "Herdr and desktop" shortcut created on your Desktop (or open Herdr in a terminal, then start `node server.mjs`).
+2. **See the 4 panes in a 2×2 grid and the animated office in your browser**: Verify that Herdr displays your 4 terminals (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) and open `http://127.0.0.1:4317` in your browser to view the animated office scene with desk emblems and real-time lighting matching your system clock.
+3. **The lead reads CHEF.md**: In the lead pane (or via the Desk tab in the web office), the lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by to coordinate.
+4. **First delegation**: Send an initial prompt to the lead from the office form (Ctrl+Enter). When the lead delegates a task in their log, observe their physical round across the office scene: they step away from the Direction desk and walk over to hand the folder to their teammate.
+5. **Tasks tab**: Switch to the Tasks tab to monitor real-time factual progress of checked boxes in `TODO.md` and action plans published by agents, with zero invented percentages.
+6. **Crisis room**: Locate the flip-covered "Salle de crise" (Crisis Room) button at the top of the office (shortcut: `Ctrl+Shift+C`) to instantly freeze outgoing instructions and order a polite interruption (Escape key) whenever needed.
 
 ## Manual Installation
 
@@ -50,7 +103,7 @@ The script can be rerun safely as often as needed: it inspects existing configur
 
 - **Windows**: `winget install OpenJS.NodeJS.LTS` (verified winget package), or official installer from https://nodejs.org/en/download
 - **macOS**: `brew install node`
-- **Debian / Ubuntu**: `sudo apt-get update && sudo apt-get install -y nodejs npm`, then verify `node --version`: if below v22, distribution packages are outdated; install Node from https://nodejs.org/en/download
+- **Debian / Ubuntu**: `sudo apt-get update && sudo apt-get install -y nodejs npm`, then verify `node --version` (if below v22, download Node from https://nodejs.org/en/download)
 - **Fedora / RHEL**: `sudo dnf install -y nodejs npm`, same version check
 
 Verification: `node --version` must show v22 or higher.
@@ -65,11 +118,11 @@ Herdr is the terminal manager that detects your agents. Official installation co
 
 Then run `herdr` once. Verify with `herdr --version`. To update: `herdr update`.
 
-If Herdr is installed but not in your PATH, the office can still locate it: set the `BUREAU_HERDR_PATH` environment variable to the full binary path (for example `C:\Users\you\.herdr\packages\standalone\releases\0.9.5-x86_64-pc-windows-msvc\herdr.exe` or equivalent under `~/.herdr/packages` on macOS and Linux).
+If Herdr is installed but not in your PATH, set the `BUREAU_HERDR_PATH` environment variable to the full binary path (for example `C:\Users\you\.herdr\packages\standalone\releases\0.9.5-x86_64-pc-windows-msvc\herdr.exe` or equivalent under `~/.herdr/packages` on macOS and Linux).
 
 ### 3. The Project
 
-1. Copy the project folder to your preferred local directory (no remote git repository required).
+1. Copy the project folder to your preferred local directory.
 2. Start the local server:
 
 ```powershell
@@ -107,7 +160,7 @@ The installer script writes these configuration variables to user environment se
 
 ## Verification Checklist
 
-1. `npm test`: The test suite must pass; execution outputs the exact number of passed and skipped tests.
+1. `npm test`: The test suite must pass (verifies local modules and system integrity).
 2. `npm run check`: Validates syntax of all project JavaScript files via `node --check`.
 3. `node server.mjs` then `http://127.0.0.1:4317`: The office dashboard renders connected agents currently active in Herdr.
 
