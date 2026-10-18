@@ -43,3 +43,12 @@ Avant de signaler une tâche importante terminée, l'agent applique le Fixit d'�
 
 - Tout agent peut demander conseil ou suggérer une amélioration (qualité, innovation, nouveauté) hors de son domaine : un regard différent apporte souvent plus.
 - Une ligne au chef, avec l'idée, la raison et le coût estimé. Le chef tranche et consigne la décision dans le plan (adoptée, reportée ou écartée, avec la raison).
+
+## 8. Machine légère : 8 Go de mémoire
+
+La machine de DrSmoke a 8 Go : elle se bloque quand plusieurs gros traitements tournent ensemble.
+
+- Une seule suite complète de tests à la fois (`npm test`) ; les autres agents attendent la fin ou lancent seulement les fichiers qui les concernent.
+- Fermer ce qu'on lance : serveurs d'essai, navigateurs sans interface, banc de mesure. Rien ne reste en arrière-plan après la tâche.
+- Les dossiers temporaires d'essai se créent dans le dossier temporaire du système et se suppriment à la fin ; ne supprimer que ce qu'on a créé soi-même.
+- Pas de sous-agents ni de captures en rafale sans besoin.
