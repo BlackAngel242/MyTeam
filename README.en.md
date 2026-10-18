@@ -3,7 +3,7 @@
 > 🌐 **Language / Langue** : [Français](README.md) | **English**  
 > 📚 **Complete Documentation** : [docs/index.en.md](docs/index.en.md) ([Français](docs/index.md)) | [Installation](docs/INSTALLATION.en.md) | [Help](docs/aide.en.md) | [GitHub Pages site](https://blackangel242.github.io/MyTeam/)
 
-MyTeam is a living pixel art workshop that turns your AI agent terminal sessions run in [Herdr](https://github.com/herdrdev/herdr) (website [herdr.dev](https://herdr.dev)) into a visible, coordinated, and local team on your machine. No more blind terminal windows: each agent has a dedicated workstation, visible real-time activity, and project folders under your eyes, with zero npm dependencies and zero outbound requests.
+MyTeam shows your AI agents running in [Herdr](https://github.com/herdrdev/herdr) (website [herdr.dev](https://herdr.dev)) at work in a pixel art office: follow their status, send them instructions and read their replies. Everything stays on your machine: no npm dependency, no outbound request.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -29,8 +29,8 @@ The Direction desk hosts the team chief. On each delegation observed in the chie
 
 ![Main scene in MyTeam](docs/captures/01-ordinateur-scene.png)
 
-### 2. Workstation tab and live terminal
-Every collaborator has an interactive terminal with syntax color highlighting, instant search across raw output lines, and clean Markdown extraction without log noise. A priority queue safely defers prompts for busy agents or those on quota pauses, with automatic resumption one minute after a pause lifts.
+### 2. Workstation tab and live output
+Every collaborator has live terminal output, with instant search and highlighting of errors and waiting states, and a separate instruction field. Markdown replies are extracted without log noise. A priority queue defers instructions for busy agents or those on quota pauses: an availability notice goes out one minute after a pause lifts, and the queue waits 5 more minutes before resending an instruction that stayed queued.
 
 ![Workstation and terminal](docs/captures/02-ordinateur-poste.png)
 
@@ -40,7 +40,7 @@ The Mosaic mode displays collaborator terminals side-by-side (4 tiles at most) t
 ![Multi-terminal mosaic mode](docs/captures/11-ordinateur-mosaique.png)
 
 ### 4. Supervised autonomy (NoBabysitter)
-The permanent "Autonomy OFF/ON" switch starts a star-topology coordination loop where the chief decides and delegates each step toward the designated goal. Strict safety stops are enforced: timeout, exchange cap, loop detection, or crisis room, without ever performing a `git push`, file deletion, installation, or dialog response without explicit approval. A Summary button extracts the full factual Markdown report directly from the event log.
+The permanent "Autonomy OFF/ON" switch starts a star-topology coordination loop where the chief decides and delegates each step toward the designated goal. The mode stops by itself on timeout, exchange cap, detected loop or crisis room. It reminds the chief never to `git push`, delete, install or publish without you: this is a precaution, not a technical lock, the server does not control the chief's commands. A Summary button extracts the full factual Markdown report directly from the event log.
 
 ![Active autonomy mode](docs/captures/23-ordinateur-autonomie-fenetre-active.png)
 

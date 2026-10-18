@@ -3,7 +3,7 @@
 > 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
 > 📚 **Documentation complète** : [docs/index.md](docs/index.md) ([English](docs/index.en.md)) | [Installation](docs/INSTALLATION.md) | [Aide](docs/aide.md) | [Site GitHub Pages](https://blackangel242.github.io/MyTeam/)
 
-MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exécutés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) en une équipe visible, coordonnée et souveraine sur votre machine. Fini les terminaux aveugles : chaque agent a son poste de travail, ses outils réels et ses dossiers sous vos yeux, sans aucune dépendance npm ni appel sortant.
+MyTeam vous montre vos agents d'IA lancés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) au travail dans un bureau en pixel art : suivez leur état, envoyez-leur des consignes et lisez leurs réponses. Tout reste sur votre machine : aucune dépendance npm, aucun appel sortant.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -29,8 +29,8 @@ Le bureau Direction accueille le chef d'équipe. À chaque délégation observé
 
 ![Scène principale de MyTeam](docs/captures/01-ordinateur-scene.png)
 
-### 2. Le poste de travail et le terminal en direct
-Chaque collaborateur dispose de son terminal interactif avec filtrage des couleurs, recherche instantanée dans les sorties brutes et extraction sécurisée des réponses Markdown sans pollution. La file d'attente prioritaire permet de différer les envois pour les agents occupés ou en pause de quota, avec reprise automatique une minute après la levée de la pause.
+### 2. Le poste de travail et les sorties en direct
+Chaque collaborateur a ses sorties de terminal en direct, avec recherche instantanée et repérage des erreurs et des attentes, et un champ de consigne séparé. Les réponses Markdown sont extraites sans pollution. La file d'attente prioritaire diffère les envois vers les agents occupés ou en pause de quota : un avis de disponibilité part une minute après la levée de la pause, et la file attend 5 minutes avant de renvoyer une consigne restée en attente.
 
 ![Poste de travail et terminal](docs/captures/02-ordinateur-poste.png)
 
@@ -40,7 +40,7 @@ Le mode Mosaïque affiche les terminaux de vos coéquipiers côte à côte (4 tu
 ![Mode mosaïque multi-terminaux](docs/captures/11-ordinateur-mosaique.png)
 
 ### 4. L'autonomie supervisée (NoBabysitter)
-L'interrupteur « Autonomie OFF/ON » lance un cycle de coordination en étoile où le chef décide et délègue chaque sous-tâche vers l'objectif fixé. Le système applique des garde-fous stricts : arrêt automatique sur échéance, plafond d'échanges, détection de boucle ou salle de crise, sans jamais effectuer de `git push`, suppression, publication ni validation sans votre accord explicite. Un bouton Récapitulatif extrait le bilan Markdown complet directement depuis le journal des faits.
+L'interrupteur « Autonomie OFF/ON » lance un cycle de coordination en étoile où le chef décide et délègue chaque sous-tâche vers l'objectif fixé. Le mode s'arrête seul sur échéance, plafond d'échanges, boucle détectée ou salle de crise. Il rappelle au chef de ne jamais faire de `git push`, de suppression, d'installation ni de publication sans vous : c'est une consigne de prudence, pas un verrou technique, le serveur ne contrôle pas les commandes du chef. Un bouton Récapitulatif extrait le bilan Markdown complet directement depuis le journal des faits.
 
 ![Mode autonomie active](docs/captures/23-ordinateur-autonomie-fenetre-active.png)
 
