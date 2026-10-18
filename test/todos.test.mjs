@@ -74,6 +74,19 @@ test('Claude : TodoWrite exact, dernier état et liste vide explicite', async t 
   assert.deepEqual((await f.reader([{ ...agent, sessionId: '../../secret' }])).agents, {});
 });
 
+test('Claude : une réécriture plus longue du transcript est relue depuis le début', async t => {
+  const f = await fixture(t);
+  const agent = { id: 'claude-a', kind: 'Claude', sessionId: sid };
+  const cases = n => Array.from({ length: n }, (_, i) => ({ content: `Étape ${i + 1}`, status: 'pending' }));
+  const todoWrite = (id, n) => jsonl(assistant(tool(id, 'TodoWrite', { todos: cases(n) })));
+  await writeFile(f.claudeFile, todoWrite('t1', 10));
+  assert.equal((await f.reader([agent])).agents['claude-a'].length, 10);
+  // Même fichier, plus long, réécrit en une seule ligne : sans contrôle de
+  // continuité l'ancien décalage reste au milieu de la ligne et la fin se perd.
+  await writeFile(f.claudeFile, todoWrite('outil-long', 20));
+  assert.equal((await f.reader([agent])).agents['claude-a'].length, 20);
+});
+
 test('Claude : TaskCreate lié au résultat puis TaskUpdate', async t => {
   const f = await fixture(t);
   const agent = { id: 'claude-a', kind: 'Claude', sessionId: sid };

@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { lstat, opendir } from 'node:fs/promises';
+import { lstat, opendir, open } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -17,6 +17,47 @@ function remember(map, key, value, limit) {
   map.delete(key);
   map.set(key, value);
   if (map.size > limit) map.delete(map.keys().next().value);
+}
+
+// Plafond du controle de continuite : on ne relit jamais tout le journal pour
+// decider si l'ancien offset est encore valable.
+const CONTINUITY_BYTES = 4096;
+
+function freshState() {
+  return { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, retained: 0, counted: new Set(), active: new Map(), tokens: { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 } };
+}
+
+// Continuite des octets avant de reprendre un offset (constat C-CD-07) : une
+// reecriture plus longue sur le meme fichier garde l'ancien decalage et fait
+// relire le journal en milieu de ligne, ce qui perd la fin du fichier.
+// Le point de reprise doit toujours etre celui ou l'on s'est arrete :
+//   - ligne partielle conservee : ses octets doivent toujours occuper la place
+//     juste avant l'offset (sinon le debut a change) ;
+//   - sinon la lecture s'est arretee juste apres un saut de ligne, qui doit
+//     toujours se trouver la ;
+//   - une ligne geante en cours d'ignorance n'a rien de conserve : le saut
+//     se poursuit, sans relecture du journal deja parcouru.
+// Un changement d'octets AVANT ce point (uniquement un ajout en tete, comme le
+// test « lit seulement les octets ajoutes ») n'est pas relu : c'est le principe
+// de la lecture incremental bornee.
+async function resumePossible(path, state) {
+  if (state.offset <= 0) return true;
+  if (state.skipping) return true;
+  const conserve = state.partial.length
+    ? state.partial.subarray(Math.max(0, state.partial.length - CONTINUITY_BYTES))
+    : null;
+  const longueur = conserve ? conserve.length : 1;
+  const depart = state.offset - longueur;
+  if (depart < 0) return false;
+  try {
+    const handle = await open(path, 'r');
+    try {
+      const octets = Buffer.allocUnsafe(longueur);
+      const { bytesRead } = await handle.read(octets, 0, longueur, depart);
+      if (bytesRead !== longueur) return false;
+      return conserve ? octets.equals(conserve) : octets[0] === 10;
+    } finally { await handle.close(); }
+  } catch { return false; }
 }
 
 async function transcriptInfo(path, root) {
@@ -176,7 +217,12 @@ async function readSession(sessionId, root, key) {
       if (!info) return { found: false };
     }
     if (!state || info.size < state.size || (!state.exhausted && info.size === state.size && info.mtimeMs !== state.mtimeMs) || info.ino !== state.ino || info.birthtimeMs !== state.birthtimeMs) {
-      state = { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, retained: 0, counted: new Set(), active: new Map(), tokens: { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 } };
+      state = freshState();
+    }
+    // Un offset ne se reprend que si les octets du point de reprise sont
+    // toujours en place ; sinon le journal a ete reecrit et on relu tout.
+    if (!state.exhausted && state.offset < info.size && !(await resumePossible(path, state))) {
+      state = freshState();
     }
     if (!state.exhausted && state.offset < info.size) {
       const stream = createReadStream(path, { start: state.offset, end: Math.min(info.size, state.offset + MAX_BYTES) - 1 });

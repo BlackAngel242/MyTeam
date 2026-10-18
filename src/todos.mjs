@@ -1,5 +1,5 @@
 import {createReadStream} from 'node:fs';
-import {lstat,opendir} from 'node:fs/promises';
+import {lstat,opendir,open} from 'node:fs/promises';
 import {join,dirname} from 'node:path';
 import {homedir} from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -184,6 +184,37 @@ function consumeClaude(state,entry) {
   }
 }
 
+// Plafond du controle de continuite : jamais de relecture du journal entier
+// pour decider si l'ancien decalage est encore valable (constat C-CD-07).
+const CONTINUITY_BYTES=4096;
+
+function freshClaudeState() {
+  return {offset:0,partial:Buffer.alloc(0),skipping:false,exhausted:false,tasks:new Map(),creates:new Map(),seen:new Set(),published:false,reliable:true};
+}
+
+// Les transcripts Claude ne se relient qu'a un point de reprise intact : la
+// ligne conservee occupe toujours sa place, ou la lecture s'est arretee juste
+// apres un saut de ligne. Une reecriture plus longue sur le meme fichier garde
+// sinon l'ancien decalage et fait perdre la fin du journal. Une ligne geante
+// en cours d'ignorance n'a rien de conserve : le saut se poursuit.
+async function resumePossible(path,state) {
+  if(state.offset<=0) return true;
+  if(state.skipping) return true;
+  const conserve=state.partial.length?state.partial.subarray(Math.max(0,state.partial.length-CONTINUITY_BYTES)):null;
+  const longueur=conserve?conserve.length:1;
+  const depart=state.offset-longueur;
+  if(depart<0) return false;
+  try {
+    const handle=await open(path,'r');
+    try {
+      const octets=Buffer.allocUnsafe(longueur);
+      const {bytesRead}=await handle.read(octets,0,longueur,depart);
+      if(bytesRead!==longueur) return false;
+      return conserve?octets.equals(conserve):octets[0]===10;
+    } finally {await handle.close();}
+  } catch {return false;}
+}
+
 export function createTodosReader({projectRoot=projectDirectory,claudeRoot=join(homedir(),'.claude','projects'),codexRoot}={}) {
   const codex=codexRoot===undefined?readAgentActivity:createAgentActivityReader({codexRoot});
   const cache=new Map(),pending=new Map();
@@ -195,7 +226,10 @@ export function createTodosReader({projectRoot=projectDirectory,claudeRoot=join(
       if(path) {try {info=await validClaudeFile(path,claudeRoot);} catch {} }
       if(!info) {cache.delete(sessionId);path=await findClaude(claudeRoot,sessionId+'.jsonl');if(!path) return null;info=await validClaudeFile(path,claudeRoot);if(!info) return null;saved=null;}
       let state=saved?.state;
-      if(!state||info.size<state.size||info.ino!==state.ino||info.birthtimeMs!==state.birthtimeMs||(!state.exhausted&&info.size===state.size&&info.mtimeMs!==state.mtimeMs)) state={offset:0,partial:Buffer.alloc(0),skipping:false,exhausted:false,tasks:new Map(),creates:new Map(),seen:new Set(),published:false,reliable:true};
+      if(!state||info.size<state.size||info.ino!==state.ino||info.birthtimeMs!==state.birthtimeMs||(!state.exhausted&&info.size===state.size&&info.mtimeMs!==state.mtimeMs)) state=freshClaudeState();
+      // Un offset ne se reprend que si les octets du point de reprise sont
+      // toujours en place ; sinon le transcript a ete reecrit et on relu tout.
+      if(!state.exhausted&&state.offset<info.size&&!(await resumePossible(path,state))) state=freshClaudeState();
       await readLines(path,state,info.size,line=>{try {consumeClaude(state,JSON.parse(line));} catch {}});
       Object.assign(state,{size:info.size,mtimeMs:info.mtimeMs,ino:info.ino,birthtimeMs:info.birthtimeMs});
       cache.delete(sessionId);cache.set(sessionId,{path,state});if(cache.size>32) cache.delete(cache.keys().next().value);

@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFile, mkdir, mkdtemp, open, rm, symlink, utimes, writeFile } from 'node:fs/promises';
+import fs from 'node:fs';
+import { appendFile, mkdir, mkdtemp, open, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { readClaudeActivity } from '../src/claude-activity.mjs';
@@ -174,6 +176,51 @@ test('repart de zero apres troncature, sans garder la ligne partielle', async t 
   await readClaudeActivity(sessionId, { root });
   await writeFile(path, jsonl([assistant('m2', { input_tokens: 1 })]));
   assert.equal((await readClaudeActivity(sessionId, { root })).tokens.input, 1);
+});
+
+test('une reecriture plus longue du meme transcript est relue depuis le debut', async t => {
+  const { root, path } = await fixture(t, Array.from({ length: 10 }, (_, i) => assistant(`msg${String(i + 1).padStart(2, '0')}`, { input_tokens: 1 })));
+  assert.equal((await readClaudeActivity(sessionId, { root })).tokens.input, 10);
+  // Meme fichier, plus long, reecrit en une seule ligne : sans controle de
+  // continuite l'ancien decalage reste en milieu de ligne et la fin se perd.
+  await writeFile(path, jsonl([{
+    type: 'assistant',
+    message: { id: 'agent-unique', usage: { input_tokens: 20 }, content: [{ type: 'text', text: 'mot '.repeat(400) }] },
+  }]));
+  const result = await readClaudeActivity(sessionId, { root });
+  assert.equal(result.tokens.input, 20);
+  assert.deepEqual(result.subagents, []);
+});
+
+test('un fichier tronque puis reecrit plus court est aussi relu depuis le debut', async t => {
+  const { root, path } = await fixture(t, Array.from({ length: 6 }, (_, i) => assistant(`ancien-${i}`, { input_tokens: 5 })));
+  assert.equal((await readClaudeActivity(sessionId, { root })).tokens.input, 30);
+  await writeFile(path, jsonl([assistant('m2', { input_tokens: 4 })]));
+  assert.equal((await readClaudeActivity(sessionId, { root })).tokens.input, 4);
+});
+
+test('un simple ajout en fin de fichier reste lu de facon incrementale', async t => {
+  const { root, path } = await fixture(t, [assistant('m1', { input_tokens: 3 })]);
+  await readClaudeActivity(sessionId, { root });
+  const dejaLu = (await stat(path)).size;
+  const original = fs.createReadStream;
+  const lectures = [];
+  const mocked = t.mock.method(fs, 'createReadStream', (chemin, options) => {
+    lectures.push({ ...options });
+    return original(chemin, options);
+  });
+  syncBuiltinESMExports();
+  try {
+    await appendFile(path, jsonl([assistant('m2', { input_tokens: 2 })]));
+    const result = await readClaudeActivity(sessionId, { root });
+    assert.equal(result.tokens.input, 5);
+    // Une seule lecture de contenu, reprise exactement a l'ancien offset.
+    assert.equal(lectures.length, 1);
+    assert.equal(lectures[0].start, dejaLu);
+  } finally {
+    mocked.mock.restore();
+    syncBuiltinESMExports();
+  }
 });
 
 test('des lectures simultanees ne comptent pas deux fois les nouveaux messages', async t => {
