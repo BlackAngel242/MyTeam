@@ -10,7 +10,7 @@ This index catalogs all public documentation files for the MyTeam · Agent desk 
 | --- | --- | --- |
 | [README.md](../README.md) | [README.en.md](../README.en.md) | Project overview, quick start, and key features. |
 | [INSTALLATION.md](INSTALLATION.md) | [INSTALLATION.en.md](INSTALLATION.en.md) | Complete setup guide (one-command automated and manual). |
-| [aide.md](aide.md) | [aide.en.md](aide.en.md) | User manual, 7-step guided tour, and keyboard shortcuts reference. |
+| [aide.md](aide.md) | [aide.en.md](aide.en.md) | Illustrated key features, user manual, 7-step guided tour, and keyboard shortcuts reference. |
 | [kit.md](kit.md) | [kit.en.md](kit.en.md) | Team kit: pillar files, factual self-evaluation, and shared lessons. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | [CONTRIBUTING.en.md](../CONTRIBUTING.en.md) | Contribution guidelines, project rules, and PR submission. |
 | [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | [CODE_OF_CONDUCT.en.md](../CODE_OF_CONDUCT.en.md) | Community code of conduct and pledge. |

@@ -3,66 +3,35 @@
 > 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
 > 📚 **Documentation complète** : [docs/index.md](docs/index.md) ([English](docs/index.en.md)) | [Installation](docs/INSTALLATION.md) | [Aide](docs/aide.md) | [Site GitHub Pages](https://blackangel242.github.io/MyTeam/)
 
-MyTeam vous montre vos agents d'IA lancés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) au travail dans un bureau en pixel art : suivez leur état, envoyez-leur des consignes et lisez leurs réponses. Tout reste sur votre machine : aucune dépendance npm, aucun appel sortant.
+MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exécutés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) en une équipe visible, coordonnée et souveraine sur votre machine. Fini les terminaux aveugles : chaque agent a son poste de travail, ses outils réels et ses dossiers sous vos yeux, sans aucune dépendance npm ni appel sortant.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
 [![CI](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml)
 [![Dépendances](https://img.shields.io/badge/d%C3%A9pendances-0%20npm-informational.svg)](package.json)
 
----
-
-## Ce que tu vois en 30 secondes
-
-1. **Le chef au bureau Direction** : Le chef d'équipe centralise les consignes, reçoit les courriers d'étape et traverse physiquement la pièce pour remettre les dossiers à ses collaborateurs.
-2. **Des postes de travail incarnés** : Chaque IA (Claude Code, Codex, Antigravity, OpenCode et 20 autres) travaille à son propre bureau avec son emblème pixel art 16×16, ses postures réelles et ses pauses de quota explicites (l'équipe accueille jusqu'à 10 agents testés, 12 en envoi groupé).
-3. **L'autonomie supervisée (NoBabysitter)** : Un interrupteur permanent dans la barre d'outils permet de cadrer un cycle autonome par un objectif, une durée (5 à 120 min) et un plafond d'échanges (3 à 60), avec arrêt d'urgence immédiat.
-4. **La surveillance en Mosaïque** : Basculez en un clic sur une vue multi-terminaux (4 tuiles au plus) avec recherche textuelle instantanée et consigne rapide.
-5. **Le disjoncteur Salle de crise** : En cas d'imprévu, le bouton sous clapet (`Ctrl+Maj+C`) gèle instantanément tous les départs de consignes sans jamais forcer un arrêt violent.
-
----
-
-## 5 fonctions clés
-
-### 1. La scène vivante et le bureau Direction
-Le bureau Direction accueille le chef d'équipe. À chaque délégation observée dans son journal local, le chef sort de son bureau, traverse l'atelier et remet en main propre le dossier doré à son coéquipier. L'éclairage s'adapte automatiquement à l'heure locale, avec lever de soleil le matin et allumage des lampes de bureau dès 19 h 00.
-
 ![Scène principale de MyTeam](docs/captures/01-ordinateur-scene.png)
 
-### 2. Le poste de travail et les sorties en direct
-Chaque collaborateur a ses sorties de terminal en direct, avec recherche instantanée et repérage des erreurs et des attentes, et un champ de consigne séparé. Les réponses Markdown sont extraites sans pollution. La file d'attente prioritaire diffère les envois vers les agents occupés ou en pause de quota : un avis de disponibilité part une minute après la levée de la pause, et la file attend 5 minutes avant de renvoyer une consigne restée en attente.
+---
 
-![Poste de travail et terminal](docs/captures/02-ordinateur-poste.png)
+## Trois bénéfices pour vos équipes d'IA
 
-### 3. La mosaïque multi-terminaux
-Le mode Mosaïque affiche les terminaux de vos coéquipiers côte à côte (4 tuiles au plus) pour surveiller le travail en direct, tandis que l'effectif global de l'équipe est testé jusqu'à 10 agents (12 en envoi groupé). Il intègre une recherche synchronisée sur toutes les tuiles, un envoi rapide de consigne (`Ctrl+Entrée`) et un rafraîchissement économique suspendu dès que l'onglet n'est plus actif.
-
-![Mode mosaïque multi-terminaux](docs/captures/11-ordinateur-mosaique.png)
-
-### 4. L'autonomie supervisée (NoBabysitter)
-L'interrupteur « Autonomie OFF/ON » lance un cycle de coordination en étoile où le chef décide et délègue chaque sous-tâche vers l'objectif fixé. Le mode s'arrête seul sur échéance, plafond d'échanges, boucle détectée ou salle de crise. Il rappelle au chef de ne jamais faire de `git push`, de suppression, d'installation ni de publication sans vous : c'est une consigne de prudence, pas un verrou technique, le serveur ne contrôle pas les commandes du chef. Un bouton Récapitulatif extrait le bilan Markdown complet directement depuis le journal des faits.
-
-![Mode autonomie active](docs/captures/23-ordinateur-autonomie-fenetre-active.png)
-
-### 5. La salle de crise sous clapet
-Accessible par raccourci clavier (`Ctrl+Maj+C`) ou depuis la barre d'outils, la salle de crise verrouille immédiatement les départs de consignes (code HTTP 423) et affiche un diagnostic en direct des sorties de chaque agent. Elle permet de transmettre un arrêt poli par la touche Échap sans tuer les processus en cours.
-
-![Salle de crise](docs/captures/12-ordinateur-crise.png)
+- **Visibilité totale et incarnée** : voyez qui tape, qui attend, qui termine et qui prend une pause de quota, avec tournée physique du chef lors des délégations.
+- **Autonomie supervisée et garde-fous** : lancez un cycle autonome cadré par un objectif, avec arrêt d'urgence immédiat, sans jamais de push ni de suppression sans accord.
+- **Souveraineté locale et vérité des faits** : écoute exclusive sur `127.0.0.1`, zéro dépendance npm, et aucun pourcentage inventé (tout vient des faits mesurés).
 
 ---
 
-## Installation en 3 lignes
+## Démarrage en 3 lignes
 
 ```bash
 git clone https://github.com/BlackAngel242/MyTeam.git && cd MyTeam
-# Sous Windows : double-cliquez sur "Installer MyTeam.bat" (ou lancez : node server.mjs)
-# Sous macOS / Linux : bash scripts/installer.sh (ou lancez : node server.mjs)
+# Sous Windows : double-cliquez sur "Installer MyTeam.bat" (ou : node server.mjs)
+# Sous macOS / Linux : bash scripts/installer.sh (ou : node server.mjs)
 ```
 
-Ouvrez ensuite `http://127.0.0.1:4317` dans votre navigateur.  
-*Prérequis : [Node.js](https://nodejs.org) >= 22 et [Herdr](https://github.com/herdrdev/herdr). Zéro dépendance npm requise.*
-
-Pour le guide d'installation pas-à-pas, le mode démonstration et les options avancées, consultez [docs/INSTALLATION.md](docs/INSTALLATION.md).
+Ouvrez `http://127.0.0.1:4317` dans votre navigateur. Prérequis : [Node.js](https://nodejs.org) >= 22 et [Herdr](https://github.com/herdrdev/herdr).  
+Pour découvrir les 5 fonctions clés illustrées et le guide pas à pas, consultez les [fonctions détaillées dans docs/aide.md](docs/aide.md#2-fonctions-clés) et le [guide d'installation dans docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ---
 
@@ -77,8 +46,8 @@ Pour le guide d'installation pas-à-pas, le mode démonstration et les options a
 
 ## Documentation et liens
 
+- [Fonctions clés et guide d'utilisation (docs/aide.md)](docs/aide.md#2-fonctions-clés)
 - [Guide d'installation détaillé (docs/INSTALLATION.md)](docs/INSTALLATION.md)
-- [Guide d'utilisation et aide (docs/aide.md)](docs/aide.md)
 - [Kit d'équipe et collaboration (docs/kit.md)](docs/kit.md)
 - [Index de la documentation (docs/index.md)](docs/index.md)
 - [Journal des versions (CHANGELOG.md)](CHANGELOG.md)

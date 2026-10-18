@@ -10,7 +10,7 @@ Ce répertoire recense l'ensemble des documents publics du projet MyTeam (le Bur
 | --- | --- | --- |
 | [README.md](../README.md) | [README.en.md](../README.en.md) | Présentation générale du projet, démarrage rapide et fonctionnalités. |
 | [INSTALLATION.md](INSTALLATION.md) | [INSTALLATION.en.md](INSTALLATION.en.md) | Guide d'installation complet (automatique en une commande et manuel). |
-| [aide.md](aide.md) | [aide.en.md](aide.en.md) | Manuel d'utilisation du bureau, visite guidée en 7 étapes et raccourcis. |
+| [aide.md](aide.md) | [aide.en.md](aide.en.md) | Fonctions clés illustrées, manuel d'utilisation, visite guidée en 7 étapes et raccourcis. |
 | [kit.md](kit.md) | [kit.en.md](kit.en.md) | Kit d'équipe : fichiers piliers, auto-évaluation et leçons partagées. |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | [CONTRIBUTING.en.md](../CONTRIBUTING.en.md) | Guide de contribution, règles du projet et soumission de pull requests. |
 | [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | [CODE_OF_CONDUCT.en.md](../CODE_OF_CONDUCT.en.md) | Code de conduite de la communauté et engagements de bienveillance. |

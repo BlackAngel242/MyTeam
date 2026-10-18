@@ -16,7 +16,36 @@ L'application est bilingue (français et anglais). Un bouton « FR / EN » dans 
 
 ---
 
-## 2. Visite guidée en 7 étapes
+## 2. Fonctions clés <a id="fonctions-clés"></a>
+
+### 1. La scène vivante et le bureau Direction
+Le bureau Direction accueille le chef d'équipe. À chaque délégation observée dans son journal local, le chef sort de son bureau, traverse l'atelier et remet en main propre le dossier doré à son coéquipier. L'éclairage s'adapte automatiquement à l'heure locale, avec lever de soleil le matin et allumage des lampes de bureau dès 19 h 00.
+
+![Scène principale de MyTeam](captures/01-ordinateur-scene.png)
+
+### 2. Le poste de travail et les sorties en direct
+Chaque collaborateur a ses sorties de terminal en direct, avec recherche instantanée et repérage des erreurs et des attentes, et un champ de consigne séparé. Les réponses Markdown sont extraites sans pollution. La file d'attente prioritaire diffère les envois vers les agents occupés ou en pause de quota : un avis de disponibilité part une minute après la levée de la pause, et la file attend 5 minutes avant de renvoyer une consigne restée en attente.
+
+![Poste de travail et terminal](captures/02-ordinateur-poste.png)
+
+### 3. La mosaïque multi-terminaux
+Le mode Mosaïque affiche les terminaux de vos coéquipiers côte à côte (4 tuiles au plus) pour surveiller le travail en direct, tandis que l'effectif global de l'équipe est testé jusqu'à 10 agents (12 en envoi groupé). Il intègre une recherche synchronisée sur toutes les tuiles, un envoi rapide de consigne (`Ctrl+Entrée`) et un rafraîchissement économique suspendu dès que l'onglet n'est plus actif.
+
+![Mode mosaïque multi-terminaux](captures/11-ordinateur-mosaique.png)
+
+### 4. L'autonomie supervisée (NoBabysitter)
+L'interrupteur « Autonomie OFF/ON » lance un cycle de coordination en étoile où le chef décide et délègue chaque sous-tâche vers l'objectif fixé. Le mode s'arrête seul sur échéance, plafond d'échanges, boucle détectée ou salle de crise. Il rappelle au chef de ne jamais faire de `git push`, de suppression, d'installation ni de publication sans vous : c'est une consigne de prudence, pas un verrou technique, le serveur ne contrôle pas les commandes du chef. Un bouton Récapitulatif extrait le bilan Markdown complet directement depuis le journal des faits.
+
+![Mode autonomie active](captures/23-ordinateur-autonomie-fenetre-active.png)
+
+### 5. La salle de crise sous clapet
+Accessible par raccourci clavier (`Ctrl+Maj+C`) ou depuis la barre d'outils, la salle de crise verrouille immédiatement les départs de consignes (code HTTP 423) et affiche un diagnostic en direct des sorties de chaque agent. Elle permet de transmettre un arrêt poli par la touche Échap sans tuer les processus en cours.
+
+![Salle de crise](captures/12-ordinateur-crise.png)
+
+---
+
+## 3. Visite guidée en 7 étapes
 
 Cette visite rapide présente le fonctionnement essentiel de votre bureau.
 
@@ -43,7 +72,7 @@ Le bouton sous clapet « Salle de crise » (raccourci d'urgence Ctrl+Maj+C) perm
 
 ---
 
-## 3. Guide complet par zone
+## 4. Guide complet par zone
 
 ### Zone 1 : La scène du bureau (Vue globale)
 
@@ -368,7 +397,7 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 
 ---
 
-## 4. Kit d'équipe et outillage (docs/kit.md)
+## 5. Kit d'équipe et outillage (docs/kit.md)
 
 Le kit d'équipe apporte à n'importe quel projet la méthode et les outils de collaboration multi-agents utilisés pour bâtir MyTeam. Consultez [docs/kit.md](kit.md) pour la documentation exhaustive.
 
@@ -385,7 +414,7 @@ Le kit d'équipe apporte à n'importe quel projet la méthode et les outils de c
 
 ---
 
-## 5. Tableau des raccourcis et commandes rapides
+## 6. Tableau des raccourcis et commandes rapides
 
 | Zone | Action ou raccourci | Effet |
 | :--- | :--- | :--- |
@@ -433,7 +462,7 @@ Le kit d'équipe apporte à n'importe quel projet la méthode et les outils de c
 
 ---
 
-## 6. Règle d'or : La vérité des faits
+## 7. Règle d'or : La vérité des faits
 
 Le Bureau des agents applique une règle d'intégrité stricte :
 1. Seuls les faits observables sont affichés (processus réels, horloge de l'ordinateur, journaux locaux, fichiers du disque).

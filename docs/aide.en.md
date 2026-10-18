@@ -16,7 +16,36 @@ The interface is bilingual (French and English). An "FR / EN" button in the top 
 
 ---
 
-## 2. 7-Step Guided Tour
+## 2. Key Features <a id="key-features"></a>
+
+### 1. Animated scene and Direction desk
+The Direction desk hosts the team chief. On each delegation observed in the chief's local log, the chief leaves the desk, walks across the workshop, and delivers the golden folder directly to the teammate. The room lighting adjusts automatically to local time, with morning sunrise and warm desk lamps turning on at 7:00 PM.
+
+![Main scene in MyTeam](captures/01-ordinateur-scene.png)
+
+### 2. Workstation tab and live output
+Every collaborator has live terminal output, with instant search and highlighting of errors and waiting states, and a separate instruction field. Markdown replies are extracted without log noise. A priority queue defers instructions for busy agents or those on quota pauses: an availability notice goes out one minute after a pause lifts, and the queue waits 5 more minutes before resending an instruction that stayed queued.
+
+![Workstation and terminal](captures/02-ordinateur-poste.png)
+
+### 3. Live multi-terminal Mosaic
+The Mosaic mode displays collaborator terminals side-by-side (4 tiles at most) to monitor work in real time, while the overall team capacity is verified up to 10 agents (12 in broadcast). It features synchronized text search across all tiles, quick prompt dispatch (`Ctrl+Enter`), and an energy-efficient refresh loop that suspends when the tab is hidden.
+
+![Multi-terminal mosaic mode](captures/11-ordinateur-mosaique.png)
+
+### 4. Supervised autonomy (NoBabysitter)
+The permanent "Autonomy OFF/ON" switch starts a star-topology coordination loop where the chief decides and delegates each step toward the designated goal. The mode stops by itself on timeout, exchange cap, detected loop or crisis room. It reminds the chief never to `git push`, delete, install or publish without you: this is a precaution, not a technical lock, the server does not control the chief's commands. A Summary button extracts the full factual Markdown report directly from the event log.
+
+![Active autonomy mode](captures/23-ordinateur-autonomie-fenetre-active.png)
+
+### 5. Guarded Crisis Room
+Accessible via shortcut (`Ctrl+Shift+C`) or from the toolbar, the Crisis Room immediately blocks all outgoing prompts (HTTP 423) and displays live diagnostic tail outputs for every agent. It enables sending a polite Escape key stop without terminating processes.
+
+![Crisis room](captures/12-ordinateur-crise.png)
+
+---
+
+## 3. 7-Step Guided Tour
 
 This quick walkthrough explains core office operations.
 
@@ -43,7 +72,7 @@ The flip-covered "Crisis room" button (emergency shortcut: Ctrl+Shift+C) enables
 
 ---
 
-## 3. Comprehensive Area Guide
+## 4. Comprehensive Area Guide
 
 ### Zone 1: Office Scene (Global View)
 
@@ -368,7 +397,7 @@ The Crisis Room is a safety mechanism designed to regain control during loops or
 
 ---
 
-## 4. Team Kit and Collaboration Tooling (docs/kit.en.md)
+## 5. Team Kit and Collaboration Tooling (docs/kit.en.md)
 
 The team kit brings the multi-agent collaboration methodology used to build MyTeam to any project. Refer to [docs/kit.en.md](kit.en.md) for full documentation.
 
@@ -385,7 +414,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 
 ---
 
-## 5. Shortcut and Fast Commands Table
+## 6. Shortcut and Fast Commands Table
 
 | Area | Action or Shortcut | Effect |
 | :--- | :--- | :--- |
@@ -393,7 +422,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | **General** | `FR / EN` Button | Instantly toggles interface language between French and English. |
 | **General** | "Autonomy" Button | Opens configuration modal for supervised autonomy (NoBabysitter). |
 | **General** | Palette Ctrl+K: "Team board" ("Tableau de l'équipe") | Opens read-only team board modal (pillar files). |
-| **General** | Palette Ctrl+K: "Tile mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal Mosaic. |
+| **General** | Palette Ctrl+K: "Mosaic mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal Mosaic. |
 | **General** | Palette Ctrl+K: "Crisis room" ("Salle de crise") | Opens crisis room diagnostic and control modal. |
 | **General** | `Ctrl + Shift + C` | Immediately opens crisis room modal (emergency breaker). |
 | **General** | `?` Key | Opens or closes this help drawer. |
@@ -433,7 +462,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 
 ---
 
-## 6. Golden Rule: Truth of Facts
+## 7. Golden Rule: Truth of Facts
 
 MyTeam · Agent desk strictly enforces factual integrity:
 1. Only observable facts are displayed (real processes, system clock, local logs, disk files).
