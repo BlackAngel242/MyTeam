@@ -114,3 +114,14 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
    - Arbitrage sur les évolutions d'OS d'agents (bureau en tuiles ou en fenêtres libres).
 
 - Node actif : 24.22.0 LTS depuis le 18 octobre (nvm-windows, accord de DrSmoke). Le serveur en cours d'exécution tourne encore sur l'ancien Node 25.6.1 : le redémarrer quand DrSmoke le souhaite.
+
+## 18 octobre 2026, lot L, part OpenCode (rangs 1, 6, 7, 5)
+
+- Rangs 1, 6, 7 et 5 livr?s et committ?s : b56585c, 825fa11, 9560c5a, f01f10f, af523d9. V?rification faite par reproduction avant correction, test rouge sur l'ancien code, puis test vert.
+- Rang 1 : lev?e de crise effective seulement apr?s ?criture r?ussie, contr?le apr?s lecture du corps et juste avant chaque envoi (diffusion destinataire par destinataire). La file rev?rifiait d?j? avant son appel : test ajout?, aucun changement de code n?cessaire.
+- Rang 6 : budget d'?criture de la file ?gal au budget de lecture, refus explicite avant acceptation, alerte de r?cup?ration visible.
+- Rang 7 : continuit? des octets au point de reprise avant de reprendre un offset (activit? Claude et t?ches).
+- Rang 5 : masque public unique dans src/masque.mjs, trois r?gles distinctes (chemins avec espaces et UNC, secrets, adresses web et routes /api conserv?es), appliqu? avant toute troncature, y compris aux descriptions de sous-agents. Destinataire tiers ?cart? des r?ponses Codex.
+- ? faire : red?marrer le processus du port 4317 pour prendre en compte server.mjs, puis v?rifier ? l'?cran. Le champ d'alerte de r?cup?ration de la file est dans /api/queue mais pas encore affich? par public/app.js.
+- Non fait, hors de mon p?rim?tre : C-CD-12 dans scripts/installer.sh (propri?taire Codex). Un test ?choue dans site.test.mjs (site/assets/autonomie.png absent), p?rim?tre Antigravity.
+- LESSONS.md contient mes nouvelles le?ons mais n'est pas commit? : un autre agent y a des lignes non commit?es, et committer les aurait embarqu?es.
