@@ -81,3 +81,15 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] F4 (Claude) `npm run check` et `npm test` verts, fusion dans `main`, aucun fichier en attente
 - [x] F6 (Claude) Revue QA finale à la place d'OpenCode (sa session reste bloquée par la boîte « Choose directory », laissée à DrSmoke) : gardes jeton et origine, traversée de chemin refusée, aucune fuite de chemin, identifiant ou secret dans `/api/discussion`, `/api/traitement`, `/api/reponses`
 - [x] F5 (DrSmoke) Création du dépôt GitHub public et publication : faite le 18 octobre avec son accord explicite (pleins droits de deux heures)
+
+## Lot L. Corrections de la table ronde (18 octobre 2026)
+
+- [x] L1 (OpenCode) Salle de crise atomique et revérifiée avant chaque envoi, budget d'écriture de la file, lecture incrémentale contrôlée, masque public unique `src/masque.mjs`
+- [x] L2 (Codex) C-CD-12 `aa452b1`, C-CD-16 `31fb64d`, C-CD-14 `3977bce`, C-CD-13 `649839a` (validation du ZIP et de la révision)
+- [x] L3 (Claude) Accessibilité et performance de l'interface (`9c472ac`), consentement, déplacement exclusif et bilans honnêtes (`b6922e1`)
+- [x] L4 (Antigravity) Rang 10 : noms, notices de marques, matrice des 24 outils, aide anglaise (`61cbf08`, `a57aa31`)
+- [x] L5 (Claude) Pause de quota : heure retrouvée, compte à rebours, reprise automatique ; demandes dans la TODO ; alerte de la file affichée
+- [x] L6 (Claude) Bouton Autonomie (NoBabysitter supervisé), `982c936`
+- [ ] L7 (Claude) Vocabulaire unifié de l'interface (C-OC-01 à C-OC-04)
+- [ ] L8 (Antigravity) Documentation du bouton Autonomie et de la reprise automatique, captures régénérées, site vérifié
+- [ ] L9 (Claude) Pilote NoBabysitter au-delà du bouton, puis release 0.4.1

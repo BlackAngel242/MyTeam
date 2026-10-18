@@ -24,6 +24,16 @@ L'application MyTeam (« Bureau des agents ») est une tour de contrôle locale 
 
 Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux locaux, fichiers du disque, horloge de la machine. Jamais de pourcentage fictif, de tâche imaginaire ou d'humeur inventée. Toute lacune d'un outil est signalée par « Non exposé par cet outil ».
 
+## État au 18 octobre 2026 (0.4.x, dépôt public MyTeam)
+
+- Dépôt public `BlackAngel242/MyTeam`, CI Ubuntu et Windows, site GitHub Pages, release 0.4.0 ; le reste à faire est dans `TODO.md`. Aucun nom d'auteur imposé dans l'interface (pied de page dans `.bureau/pied.json`).
+- Suite de tests : près de 400 tests, `npm run check` et `npm test` verts sur l'export propre de `HEAD` avant chaque push.
+- Lot L (table ronde) : crise atomique et relecture (OpenCode), budget d'écriture de la file et alerte visible, lecture incrémentale contrôlée, masque public unique `src/masque.mjs`, consentement, déplacement exclusif, bilans honnêtes (Codex), accessibilité et performance de l'interface (Claude), documentation et noms (Antigravity).
+- Pause de quota : l'heure annoncée est retrouvée même coupée par le terminal, compte à rebours dans la liste, la barre d'état et la scène, notification au retour, reprise automatique de tout agent une minute après (consigne par la file, une fois par pause).
+- TODO du bureau : le groupe « Demandes en cours » suit les consignes envoyées aux agents ; une demande n'est cochée qu'après une réponse terminée de l'agent.
+- Bouton « Autonomie » (NoBabysitter supervisé) : `src/autonomie.mjs`, `/api/autonomie`. Plafonds de durée et d'échanges, arrêt sur échéance, plafond, boucle, salle de crise ou redémarrage ; jamais de push, suppression, installation, publication ni réponse à une boîte de dialogue ; le chef décide, aucun agent n'écrit à un autre directement.
+- Reste : vocabulaire de l'interface (noms de l'outil, rang 5 de la table ronde), documentation et captures du bouton Autonomie (Antigravity), pilote NoBabysitter au-delà du bouton (contrat d'objectif, relecture), release 0.4.1.
+
 ## État d'avancement au 17 octobre 2026 (Version 0.3.0 livrée et stabilisée)
 
 - Suite de tests : 161 tests automatisés (159 réussis, 2 ignorés sur les liens symboliques Windows, 0 échec). Syntaxe irréprochable validée avec `npm run check`.

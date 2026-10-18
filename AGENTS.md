@@ -52,6 +52,13 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 - Chaque agent qui rencontre une nouvelle erreur l'ajoute lui-même à `LESSONS.md` et le dit dans son compte rendu. Ne jamais répéter une erreur déjà inscrite.
 - Avancement : `docs/plan-travail.md` fait foi. Seul le chef coche une case, après évaluation. Un agent signale « prêt à évaluer » avec le hash de son commit.
 
+## Après chaque tâche terminée (consigne de DrSmoke, 18 octobre 2026)
+
+- Prévenir le chef tout de suite, sans attendre la fin du lot : tâche, hash du commit, nombre de tests, ce qui n'a pas pu être vérifié.
+- Mettre à jour les fichiers piliers touchés : `LESSONS.md`, `HANDOFF.md`, `JOURNAL.md`, `TODO.md` et `docs/plan-travail.md` (seul le chef coche).
+- Partager ce qui a été appris : une ligne dans `LESSONS.md` pour chaque erreur, découverte ou astuce (quoi, cause, règle), et le dire dans le compte rendu pour que le chef prévienne les autres.
+- Quota : quand la limite d'usage d'un agent se lève, le bureau lui envoie une minute après l'heure de retour une consigne courte. Répondre « dispo » en une ligne, puis reprendre la mission en cours sans refaire ce qui est commité.
+
 ## Écriture
 
 Français accentué et simple, sans tiret cadratin. Code : commentaires seulement pour la logique non évidente, sans dépendance ajoutée sans raison.
