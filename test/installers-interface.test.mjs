@@ -10,6 +10,7 @@ const root=fileURLToPath(new URL('..',import.meta.url));
 const ps='C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
 const bash=process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash';
 const literal=value=>`'${value.replaceAll("'","''")}'`;
+const shellLiteral=value=>`'${String(value).replaceAll("'","'\\''")}'`;
 async function fixture(t) {
   const path=await mkdtemp(join(tmpdir(),'installer-interface-'));t.after(()=>rm(path,{recursive:true,force:true}));
   await mkdir(join(path,'scripts'));
@@ -64,7 +65,7 @@ async function run(t,platform,options={}) {
     builtin command "$@"
   }
   node(){ printf 'v24.22.0\\n'; }
-  . '${join(path,'scripts/installer.sh').replaceAll('\\','/')}' --dry-run --lang ${options.lang??'fr'} --port 4317 ${options.classic?'':'--interface'} ${options.yes?'--oui':''} --herdr-chemin '${path.replaceAll('\\','/')}/herdr'
+  . '${join(path,'scripts/installer.sh').replaceAll('\\','/')}' --dry-run --lang ${options.lang??'fr'} --port ${shellLiteral(options.port??'4317')} ${options.classic?'':'--interface'} ${options.yes?'--oui':''} --herdr-chemin '${path.replaceAll('\\','/')}/herdr'
   `);
   return {...await dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options),path};
 }
@@ -136,6 +137,23 @@ async function functions(t,platform,names,body,options={}) {
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
 const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Executer','Proposer-Clink'];
+test('L C-CD-16 bash : port invalide refusé clairement avant toute étape',async t=>{
+  for(const [port,lang] of [['999999999999999999999999999999','fr'],['65536','en'],['1023','fr'],['','fr'],['4317; commande','en']]) {
+    const data=await run(t,'bash',{port,lang,eof:true});
+    assert.equal(data.code,1,port);
+    assert.match(data.output+data.errors,/Port invalide|Invalid port/);
+    assert.doesNotMatch(data.output+data.errors,/integer expected|@@STEP |@@END ok/);
+  }
+});
+test('L C-CD-16 bash : bornes du port et saisies excessives sans erreur arithmétique',async t=>{
+  const body=`for value in 1024 65535 4317 01024 1023 65536 00000 999999999999999999999999999999 '';do
+    if port_valide "$value";then printf 'oui\\n';else printf 'non\\n';fi
+  done`;
+  const data=await functions(t,'bash',['port_valide'],body,{eof:true});
+  assert.equal(data.code,0,data.errors);
+  assert.deepEqual(data.output.trim().split(/\r?\n/),['oui','oui','oui','oui','non','non','non','non','non']);
+  assert.equal(data.errors,'');
+});
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L C-CD-12 ${platform} : adresses Web intactes et chemins Windows masqués`,async t=>{
   const urls=['https://antigravity.google/download','http://127.0.0.1:4317/api/state'];
   const samples=[...urls,'Lire C:/Users/Personne/Projet Prive/client.txt'];

@@ -30,12 +30,20 @@ case "$LANGUE" in fr*) LANGUE=fr ;; *) LANGUE=en ;; esac
 texte() {
   if [ "${LANGUE:-fr}" = en ]; then printf '%s' "$2"; else printf '%s' "$1"; fi
 }
+port_valide() {
+  [[ "${1:-}" =~ ^[0-9]{4,5}$ ]] && [ "$1" -ge 1024 ] && [ "$1" -le 65535 ]
+}
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --oui) OUI=1 ;;
-    --port) PORT="${2:-}"; shift ;;
+    --port)
+      if ! port_valide "${2:-}"; then
+        printf '%s\n' "$(texte 'Port invalide : indiquez un nombre entre 1024 et 65535.' 'Invalid port: enter a number between 1024 and 65535.')" >&2
+        exit 1
+      fi
+      PORT="$2"; shift ;;
     --herdr-chemin) HERDR_CHEMIN="${2:-}"; shift ;;
     --sans-raccourci) SANS_RACCOURCI=1 ;;
     --interface) INTERFACE=1 ;;
@@ -657,7 +665,7 @@ PORT_CHOISI=""
 if [ -n "$PORT" ]; then PORT_CHOISI="$PORT"
 else
   existant=$(sed -n 's/^export BUREAU_PORT="\([0-9]*\)"$/\1/p' "$HOME/.profile" 2>/dev/null | tail -n 1)
-  if [ -n "$existant" ]; then
+  if port_valide "$existant"; then
     PORT_CHOISI="$existant"
     dire "$(texte "Port deja enregistre : $PORT_CHOISI" "Previously saved port: $PORT_CHOISI")"
   else
@@ -670,20 +678,12 @@ if [ -z "$PORT" ] && [ "$DRY_RUN" != "1" ]; then
     while true; do
       lire_saisie "$(texte 'Entrez un port entre 1024 et 65535' 'Enter a port between 1024 and 65535')" "$PORT_CHOISI" || break
       saisie="$REPONSE_INTERFACE"
-      case "$saisie" in
-        ''|*[!0-9]*) dire "$(texte 'Port invalide.' 'Invalid port.')" ;;
-        *)
-          if [ "$saisie" -ge 1024 ] && [ "$saisie" -le 65535 ]; then PORT_CHOISI="$saisie"; break; fi
-          dire "$(texte 'Port invalide.' 'Invalid port.')"
-          ;;
-      esac
+      if port_valide "$saisie"; then PORT_CHOISI="$saisie"; break; fi
+      dire "$(texte 'Port invalide : indiquez un nombre entre 1024 et 65535.' 'Invalid port: enter a number between 1024 and 65535.')"
     done
   fi
 fi
-case "$PORT_CHOISI" in
-  ''|*[!0-9]*) PORT_CHOISI="4317" ;;
-esac
-if [ "$PORT_CHOISI" -lt 1024 ] || [ "$PORT_CHOISI" -gt 65535 ]; then PORT_CHOISI="4317"; fi
+if ! port_valide "$PORT_CHOISI"; then PORT_CHOISI="4317"; fi
 
 ecrire_profil() {
   if [ "${INTERFACE:-0}" = 1 ] && [ "${ENTREE_FERMEE:-0}" = 1 ];then dire "$(texte 'Entrée fermée : configuration conservée.' 'Input closed: configuration kept.')";return 0;fi
