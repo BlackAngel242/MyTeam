@@ -40,6 +40,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Un message d'assertion qui stringify une grosse réponse est calculé même quand le test réussit : le rendre paresseux (détail seulement en cas d'échec), surtout pour /api/state qui pèse avec 10 agents.
 - Un test sans plafond de durée traîne sous charge au lieu de donner un résultat clair : poser un plafond large et expliqué (5 s pour des mesures réelles d'une seconde) qui borne le diagnostic, en gardant les budgets fonctionnels (appels Herdr, plafonds de consignes) stricts et inchangés.
 - Fin de tâche : l'agent écrit spontanément au chef le rapport du protocole (`herdr agent prompt <panneau du chef>` : id, branche, hash, résumé 3 lignes, tests, non vérifié) et un mot aux deux autres agents sur l'appris, sans attendre que DrSmoke transmette (19 octobre : OpenCode avait laissé DrSmoke faire, signalé par DrSmoke).
+- Un nouveau module de `src/` n'est pas couvert par `npm run check` tout seul : ajouter son `node --check` à la chaîne de package.json en même temps que le module (19 octobre : `src/sante.mjs` oublié, vu au moment de vérifier).
 - Ce que le serveur accepte n'est pas ce que l'écran propose : avant d'écrire une procédure d'essai, vérifier les valeurs réellement choisissables dans l'interface (public/app.js). Le mode autonomie accepte 5 minutes et 3 échanges, mais le panneau ne propose que 15 min et 10 échanges au plus court (demande de DrSmoke du 18 octobre : lancer à 5 min / 3 échanges).
 
 ## Interface et Playwright
