@@ -141,3 +141,13 @@ Demande de DrSmoke : la bascule FR / EN qui marche dans le bureau doit aussi exi
 - Dans `README.md` et `README.en.md` : remplace la ligne de bascule par un bloc bien visible (deux liens, drapeaux ou libellés « Français / English »), ajoute un lien vers l'index et vers les versions anglaises des documents dans les listes de liens du README.
 - Modèles GitHub : `.github/PULL_REQUEST_TEMPLATE.md` et `.github/ISSUE_TEMPLATE/*.yml` en deux langues (titre et libellés « Français / English », une seule fois chacun, sans doublonner tout le texte).
 - Vérifie que tous les liens relatifs des deux langues existent (un petit script Node jetable suffit, ne le commite pas). Commit avec chemins, pas de nom d'IA dans le message, compte rendu court avec hash. Ne pousse pas : le chef pousse.
+
+## Codex : J1, mode interface des installeurs (puis OpenCode : J5, revue)
+
+Lis `docs/installeur-protocole.md` : c'est le contrat exact. DrSmoke veut une installation animée (liste de tâches qui s'actualise, ligne de temps, comme `npx skills add`), lancée par un double-clic sur un `.bat` d'une release. Le dessin est fait par le chef en Node ; toi, tu rends les installeurs capables de parler ce protocole.
+
+- `scripts/installer.ps1 -Interface` et `scripts/installer.sh --interface` : sans ce drapeau, rien ne change (tests existants verts). Avec : `Dire` devient `@@INFO`, chaque section numérotée devient `@@STEP`/`@@DONE` (dans l'ordre du protocole), `Confirmer` devient `@@CONFIRM` (réponse lue sur l'entrée standard, EOF = non), le choix du raccourci devient `@@CHOICE`, le dossier du kit devient `@@INPUT`. `@@PLAN` au début, `@@END` à la fin. Écris en UTF-8 (sortie PowerShell : `[Console]::OutputEncoding`).
+- Nouvelle étape `clink` (Windows seulement, après Node.js) : Clink (chrisant996) ajoute couleurs, complétion et historique à cmd.exe ; propose `winget install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements` après une confirmation individuelle (jamais avec `-Oui`), saute si `clink` est déjà présent ou si winget manque (dis-le). Identifiant vérifié par le chef : `chrisant996.Clink`, version 1.9.34 dans winget.
+- Tests : un faux winget / faux Herdr, le protocole complet de bout en bout dans les deux scripts (PLAN, STEP, CONFIRM avec réponses o et n, EOF = refus, END), `-Oui` ne répond jamais à un CONFIRM d'installation, sans -Interface la sortie est inchangée. Règles B1 à B4 inchangées (aucune valeur du disque dans une commande).
+- Ne modifie pas `scripts/installateur-anime.mjs` ni `Installer MyTeam.bat` (chef). Commit avec chemins, pas de nom d'IA, compte rendu court avec hash.
+

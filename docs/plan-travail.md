@@ -65,6 +65,14 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] H11 (Codex, après H3) Relais d'écoute facultatif, désactivé par défaut : quand un agent délégué passe de « au travail » à « disponible », le bureau met en file un message neutre au chef (« X a terminé, lis son panneau »), une seule fois par fin observée, jamais en salle de crise, bascule dans l'onglet Équipe
 - [x] H7 (Claude) Évaluation, vérification et fusion faites ; réécriture de l’historique (signature DrSmoke) et publication faites avec l’accord de DrSmoke
 
+## Lot J. Release avec installeur animé (demandé par DrSmoke le 18 octobre)
+
+- [ ] J1 (Codex) Mode interface des installeurs : `-Interface` (PowerShell) et `--interface` (bash) émettent le protocole `@@` de `docs/installeur-protocole.md` et lisent les réponses sur l'entrée standard ; étape Clink (winget `chrisant996.Clink`, confirmée, Windows seulement) ; la logique reste dans les scripts existants
+- [ ] J2 (Claude) `scripts/installateur-anime.mjs` : bannière, ligne de temps et liste de tâches qui s'actualise en direct (style de `npx skills add`), invites o/n et choix, repli en texte simple hors terminal ; tests du rendu et du protocole
+- [ ] J3 (Claude) `Installer MyTeam.bat` à la racine (double-clic : Node 22+ présent = installeur animé, sinon installeur texte qui propose Node puis relance), `.gitattributes` (.bat et .cmd en CRLF)
+- [ ] J4 (Claude) `scripts/empaqueter-release.mjs` : archive zip des fichiers suivis ; release GitHub avec le zip en pièce jointe, notes tirées du CHANGELOG
+- [ ] J5 (OpenCode) Revue QA de l'installeur animé et du paquet (injection, confirmations, `-Oui` jamais pour une installation, fichiers du zip)
+
 ## Lot F. Clôture
 
 - [x] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)
