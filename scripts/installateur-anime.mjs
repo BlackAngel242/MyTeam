@@ -22,7 +22,9 @@ const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', 
 
 // --- protocole -----------------------------------------------------------------------------
 export function parseLigne(ligne) {
-  const m = /^@@([A-Z]+)(?: (.*))?$/.exec(String(ligne).replace(/\r$/, ''));
+  // Les textes viennent d'un autre programme : aucun caractère de contrôle (séquences ANSI comprises) ne doit atteindre le terminal.
+  const propre = String(ligne).replace(/\r$/, '').replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, '');
+  const m = /^@@([A-Z]+)(?: (.*))?$/.exec(propre);
   if (!m) return null;
   const champs = (m[2] ?? '').split('\t');
   switch (m[1]) {

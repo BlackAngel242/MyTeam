@@ -6,6 +6,23 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.4.0] - October 18, 2026
+
+### Added (installation and release)
+
+- Animated installer (`scripts/installateur-anime.mjs`): banner revealed line by line, timeline and live task list (done, skipped, failed), yes/no questions and choices under the list, plain-text fallback outside a terminal, `--demo` to see the animation without installing anything.
+- `Installer MyTeam.bat`: double-click the file from the release zip; animated installer when Node.js 22 or later is present, otherwise the text installer, which offers Node.js.
+- Optional Clink step (Windows, individual confirmation, `winget install chrisant996.Clink`).
+- Protocol between the installer and its interface (`docs/installeur-protocole.md`); the PowerShell and bash installers speak it with `-Interface` / `--interface`.
+- `scripts/empaqueter-release.mjs`: zip archive of the files tracked by Git, without the internal working notes.
+
+### Fixed
+
+- Sounds and empty-state icons: `sounds.js` and `empty-icons.js` were not loaded by the page ("Sounds: module missing"); a test now requires every script in `public/` to be loaded and served.
+
+
 ### Fixed
 
 - Draft preservation on enqueue (G1): enqueueing a prompt for an agent then switching workstations during the network request no longer clears drafts on other stations.

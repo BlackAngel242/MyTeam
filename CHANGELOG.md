@@ -6,6 +6,23 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 ## [Non publié]
 
+_Rien pour l’instant._
+
+## [0.4.0] - 18 octobre 2026
+
+### Ajouté (installation et release)
+
+- Installeur animé (`scripts/installateur-anime.mjs`) : bannière révélée ligne par ligne, ligne de temps et liste de tâches qui se met à jour en direct (réussie, ignorée, en échec), questions o/n et choix sous la liste, repli en texte simple hors terminal, `--demo` pour voir l'animation sans rien installer.
+- `Installer MyTeam.bat` : double-clic sur le fichier du zip de la release ; installeur animé si Node.js 22 ou plus est présent, sinon installeur texte qui propose Node.js.
+- Étape Clink facultative (Windows, confirmation individuelle, `winget install chrisant996.Clink`).
+- Protocole entre l'installeur et son interface (`docs/installeur-protocole.md`) ; les installeurs PowerShell et bash parlent ce protocole avec `-Interface` / `--interface`.
+- `scripts/empaqueter-release.mjs` : archive zip des fichiers suivis par Git, sans les notes de travail internes.
+
+### Corrigé
+
+- Sons et icônes d'états vides : `sounds.js` et `empty-icons.js` n'étaient pas chargés par la page (« Sons : module absent ») ; un test exige désormais que chaque script de `public/` soit chargé et servi.
+
+
 ### Corrigé
 
 - Sauvegarde des brouillons lors de la mise en file (G1) : mettre une consigne en file pour un agent puis changer de poste pendant la requête réseau n'efface plus le brouillon saisi sur l'autre poste.

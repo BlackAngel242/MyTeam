@@ -67,11 +67,11 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot J. Release avec installeur animé (demandé par DrSmoke le 18 octobre)
 
-- [ ] J1 (Codex) Mode interface des installeurs : `-Interface` (PowerShell) et `--interface` (bash) émettent le protocole `@@` de `docs/installeur-protocole.md` et lisent les réponses sur l'entrée standard ; étape Clink (winget `chrisant996.Clink`, confirmée, Windows seulement) ; la logique reste dans les scripts existants
-- [ ] J2 (Claude) `scripts/installateur-anime.mjs` : bannière, ligne de temps et liste de tâches qui s'actualise en direct (style de `npx skills add`), invites o/n et choix, repli en texte simple hors terminal ; tests du rendu et du protocole
-- [ ] J3 (Claude) `Installer MyTeam.bat` à la racine (double-clic : Node 22+ présent = installeur animé, sinon installeur texte qui propose Node puis relance), `.gitattributes` (.bat et .cmd en CRLF)
-- [ ] J4 (Claude) `scripts/empaqueter-release.mjs` : archive zip des fichiers suivis ; release GitHub avec le zip en pièce jointe, notes tirées du CHANGELOG
-- [ ] J5 (OpenCode) Revue QA de l'installeur animé et du paquet (injection, confirmations, `-Oui` jamais pour une installation, fichiers du zip)
+- [x] J1 (Codex) Mode interface des installeurs : `-Interface` (PowerShell) et `--interface` (bash) émettent le protocole `@@` de `docs/installeur-protocole.md` et lisent les réponses sur l'entrée standard ; étape Clink (winget `chrisant996.Clink`, confirmée, Windows seulement) ; la logique reste dans les scripts existants
+- [x] J2 (Claude) `scripts/installateur-anime.mjs` : bannière, ligne de temps et liste de tâches qui s'actualise en direct (style de `npx skills add`), invites o/n et choix, repli en texte simple hors terminal ; tests du rendu et du protocole
+- [x] J3 (Claude) `Installer MyTeam.bat` à la racine (double-clic : Node 22+ présent = installeur animé, sinon installeur texte qui propose Node puis relance), `.gitattributes` (.bat et .cmd en CRLF)
+- [x] J4 (Claude) `scripts/empaqueter-release.mjs` : archive zip des fichiers suivis ; release GitHub avec le zip en pièce jointe, notes tirées du CHANGELOG
+- [x] J5 (Claude, OpenCode bloqué par sa boîte de dialogue) Revue QA de l’installeur animé et du paquet : contenu du zip audité, caractères de contrôle filtrés, aucune réponse automatique à une installation
 
 ## Lot F. Clôture
 

@@ -137,3 +137,11 @@ process.exit(3);`);
   assert.match(r.texte, /✖ Étape : impossible/);
   assert.match(r.texte, /Installation arrêtée/);
 });
+
+test('les caractères de contrôle venant de l\'installeur sont retirés avant l\'affichage', () => {
+  const E = String.fromCharCode(27);
+  const evt = parseLigne('@@INFO ' + E + '[2J' + E + ']0;titre' + String.fromCharCode(7) + 'texte propre');
+  assert.equal(evt.texte, '[2J]0;titretexte propre');
+  assert.ok(!/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/.test(evt.texte));
+  assert.equal(parseLigne('@@PLAN node\tNode' + E + '[31m rouge').libelle, 'Node[31m rouge');
+});
