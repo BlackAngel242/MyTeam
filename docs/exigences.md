@@ -8,7 +8,7 @@ Chaque exigence est vérifiable. La colonne « Preuve » indique où elle est co
 |---|---|---|
 | F1 | Un poste par agent réellement détecté dans Herdr, avec son nom, son outil, son panneau et son état en toutes lettres. | test/herdr.test.mjs, capture Playwright |
 | F2 | Le premier agent démarré est le chef, placé dans le bureau « Direction » ; les autres sont ses agents. | public/app.js `bossOf`, scénario chef |
-| F3 | Une délégation observée dans le journal du chef fait venir l'agent chercher son dossier ; sa fin réelle envoie un courrier au chef. | scénario Playwright chef, src/delegations.mjs |
+| F3 | Une délégation observée dans le journal du chef déclenche la tournée du chef qui porte le dossier au poste de l'agent ; sa fin réelle envoie un courrier au chef. | public/app.js (tournée du chef), test/delegations.test.mjs |
 | F4 | Les sous-agents actifs d'un agent vont en salle de réflexion et reviennent remettre leur dossier quand ils finissent. | scénario Playwright sous-agents |
 | F5 | Lecture des sorties du terminal avec recherche, défilement figé, copie, surlignage des erreurs et des demandes de saisie. | test/terminal.test.mjs |
 | F6 | Barre d'état propre à chaque IA (tâche, activité, modèle, limites, avertissements), lue dans l'outil lui-même. | public/app.js `splitChrome` |

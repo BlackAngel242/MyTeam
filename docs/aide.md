@@ -97,6 +97,11 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Si l'application perd la liaison avec Herdr, la mention `HORS LIGNE` s'affiche sous le bureau.
 - L'état n'a pas besoin d'être répété en texte : il est clairement exprimé par la posture de l'agent, le contenu de son écran, sa bulle, son emblème et le soulignement coloré de son nom.
 
+#### Matrice de compatibilité des 24 outils Herdr
+Tous les outils pris en charge par Herdr bénéficient du socle universel de surveillance et de pilotage :
+- **Socle universel (tous les 24 outils)** : Détection automatique au lancement, emblème pixel art 16×16 dédié, lecture en direct des flux bruts de terminal, état unifié (travail, disponible, attente, pause de limite, hors ligne), expédition et mise en file prioritaire des consignes individuelles, et envoi groupé armé en deux clics.
+- **Télémétrie enrichie (Claude Code, Codex, OpenCode)** : Pour ces 3 outils, le bureau analyse en profondeur les journaux d'activité locaux pour extraire les réponses lisibles en Markdown sans commandes brutes, la consommation exacte de jetons par tour et par session, le fil de discussion unifié, les plans d'action structurés pour l'onglet Tâches, et le suivi visuel des sous-agents dans la salle de réflexion.
+
 #### Intégrations Herdr officielles
 - La commande `herdr integration install <outil>` permet d'installer les intégrations officielles pour les outils compatibles : `pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`.
 - Ces intégrations modifient la configuration de l'outil pour faire remonter à Herdr et au bureau les états précis, les contextes de session et l'activité réelle de l'agent.

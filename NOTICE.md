@@ -2,11 +2,11 @@
 
 **Français** | [English](NOTICE.en.md)
 
-Le code du Bureau des agents est publié sous licence MIT (voir `LICENSE`).
+Le code de MyTeam · Bureau des agents est publié sous licence MIT (voir `LICENSE`).
 
 ## Marques
 
-Claude et Claude Code sont des marques d'Anthropic. Codex est une marque d'OpenAI. Gemini et Antigravity sont des marques de Google. OpenCode et Herdr appartiennent à leurs auteurs respectifs. Les emblèmes en pixels de `public/logos.js` servent uniquement à identifier l'outil qui occupe chaque poste. Ce projet n'est affilié à aucune de ces entreprises et n'est pas approuvé par elles.
+Claude et Claude Code sont des marques d'Anthropic. Codex et ChatGPT sont des marques d'OpenAI. Gemini et Antigravity sont des marques de Google. GitHub et Copilot sont des marques de Microsoft. Grok est une marque de xAI. Cursor est une marque d'Anysphere. Devin est une marque de Cognition. Kimi est une marque de Moonshot AI. Qwen est une marque d'Alibaba. Hermes est une marque de Nous Research. Letta, Cline, Droid, Amp, Kiro, Kilo, Maki, Muse, Mastra, Pi, Qoder, OpenCode et Herdr appartiennent à leurs auteurs ou éditeurs respectifs. Les emblèmes en pixels de `public/logos.js` servent uniquement à identifier visuellement l'outil qui occupe chaque poste. Ce projet n'est affilié à aucune de ces entreprises et n'est pas approuvé par elles.
 
 ## Données
 

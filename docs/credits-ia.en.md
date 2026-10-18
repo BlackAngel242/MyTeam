@@ -2,7 +2,7 @@
 
 [Français](credits-ia.md) | **English**
 
-MyTeam (The Agent Office) was realized with the assistance of artificial intelligence. The tools and models below helped design, write, review, and test the project under the direction of its author.
+MyTeam · Agent desk was realized with the assistance of artificial intelligence. The tools and models below helped design, write, review, and test the project under the direction of its author.
 
 | Tool | Creator | Model Reported During Development |
 | --- | --- | --- |

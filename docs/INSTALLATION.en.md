@@ -1,8 +1,8 @@
-# Installing The Agent Office
+# Installing MyTeam · Agent desk
 
 [Français](INSTALLATION.md) | **English**
 
-The Agent Office (Bureau des agents) is a lightweight local application: it opens in your web browser, visualizes your Herdr agents at work, and allows you to send them instructions. Everything stays on your local machine at address `127.0.0.1`. No API keys or tokens are ever requested, read, or saved by the office or by its setup scripts.
+MyTeam · Agent desk (Bureau des agents) is a lightweight local application: it opens in your web browser, visualizes your Herdr agents at work, and allows you to send them instructions. Everything stays on your local machine at address `127.0.0.1`. No API keys or tokens are ever requested, read, or saved by the office or by its setup scripts.
 
 ## Prerequisites
 
@@ -214,7 +214,7 @@ The installer script writes these configuration variables to user environment se
 - **Office starts but no agents appear**: Herdr must be running with agents active in its panes. The office never simulates agents: if none are visible, Herdr reports none.
 - **403 "Adresse locale requise" (Local address required)**: Connect using exact IP `http://127.0.0.1:4317` (not `http://localhost:4317`).
 - **"Session expirée. Actualisez le bureau." (Session expired)**: The server process restarted. Simply refresh your browser tab.
-- **Server fails to start**: Check `bureau.log` and `bureau-erreurs.log` in the project root directory for server logs.
+- **Server fails to start**: Open a terminal in the project directory and run `node server.mjs` directly. Messages and stack traces will be displayed clearly in the console. You can also verify whether port 4317 is already in use (`netstat -ano | findstr 4317` on Windows, `lsof -i :4317` on macOS/Linux) or if another Node instance is running.
 - **Node.js missing or outdated**: `node --version` must show v22 or higher. Install from https://nodejs.org/en/download, open a new terminal, and re-run the setup script.
 - **Antivirus blocks setup command**: This can occur with direct download-and-execute commands (`irm ... | iex`). Official Herdr and Claude Code docs provide alternative workflows with downloaded `install.cmd` files.
 - **Tests fail**: Verify your Node.js version, then re-run `npm test`.

@@ -214,7 +214,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 - **Le bureau démarre mais aucun agent n'apparaît** : Herdr doit être ouvert avec des agents lancés dans ses panneaux. Le bureau n'invente rien : s'il ne voit personne, c'est que Herdr ne voit personne non plus.
 - **403 « Adresse locale requise »** : ouvrez le bureau avec l'adresse IP locale exacte `http://127.0.0.1:4317` (et non `http://localhost:4317`).
 - **« Session expirée. Actualisez le bureau. »** : le serveur a redémarré. Actualisez simplement la page dans votre navigateur.
-- **Le serveur ne démarre pas** : consultez les fichiers de journalisation `bureau.log` et `bureau-erreurs.log` dans le dossier du projet.
+- **Le serveur ne démarre pas** : ouvrez un terminal dans le dossier du projet et lancez directement `node server.mjs`. Les messages et erreurs éventuelles s'affichent en clair dans la console. Vous pouvez aussi vérifier si le port 4317 est déjà occupé (`netstat -ano | findstr 4317` sous Windows, `lsof -i :4317` sous macOS/Linux) ou si un autre processus Node tourne déjà.
 - **Node.js absent ou trop vieux** : `node --version` doit indiquer v22 ou plus. Téléchargez la dernière version LTS sur https://nodejs.org/en/download puis relancez le script d'installation.
 - **Un antivirus bloque une commande d'installation** : certaines protections bloquent les commandes sans fichier de type `irm ... | iex`. Utilisez la variante par fichier `install.cmd` proposée par Herdr et Claude Code.
 - **Les tests échouent** : assurez-vous de la version de Node.js, puis relancez `npm test`.

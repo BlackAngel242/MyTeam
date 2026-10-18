@@ -2,7 +2,7 @@
 
 [Français](index.md) | **English**
 
-This index catalogs all public documentation files for the MyTeam (The Agent Office) project, available in French and English.
+This index catalogs all public documentation files for the MyTeam · Agent desk project, available in French and English.
 
 ## Public Documents
 

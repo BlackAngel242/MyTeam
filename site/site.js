@@ -172,7 +172,7 @@ const I18N = {
   en: {
     // Navigation
     'nav.marque': 'MyTeam',
-    'nav.sous-titre': 'The Agent Office',
+    'nav.sous-titre': 'Agent desk',
     'nav.presentation': 'Overview',
     'nav.fonctions': 'Features',
     'nav.captures': 'Screenshots',

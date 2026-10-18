@@ -1,4 +1,4 @@
-# MyTeam · The Agent Office
+# MyTeam · Agent desk
 
 > 🌐 **Language / Langue** : [Français](README.md) | **English**  
 > 📚 **Documentation index** : [docs/index.en.md](docs/index.en.md) ([Index en français](docs/index.md))
@@ -37,11 +37,11 @@ An immersive and living pixel art dashboard to monitor, inspect, and direct your
 
 ## Who is it for and why?
 
-MyTeam (The Agent Office) is built for developers, researchers, and orchestrators running multiple AI agents in parallel (Claude Code, Codex, Antigravity, OpenCode, and others) managed by [Herdr](https://github.com/atoll92/herdr). It transforms a dry grid of terminal windows into a lively graphical workshop where every observable action counts.
+MyTeam · Agent desk is built for developers, researchers, and orchestrators running multiple AI agents in parallel (Claude Code, Codex, Antigravity, OpenCode, and others) managed by [Herdr](https://github.com/atoll92/herdr). It transforms a dry grid of terminal windows into a lively graphical workshop where every observable action counts.
 
 - **Clear team hierarchy**: The Direction desk hosts the team lead, surrounded by collaborators at their dedicated desks.
 - **Embodied task delegation**: When the lead delegates a prompt (`herdr agent prompt`), they walk across the room to place the golden folder directly on the collaborator's desk.
-- **Priority queue**: Safely queue instructions for busy agents or those on quota breaks, with high-priority flagging, a "Move to top" button, and automated dispatch.
+- **Priority queue**: Safely queue instructions for busy agents or those on quota breaks, with high-priority flagging, a "Move to the front" button, and automated dispatch.
 - **Glass reflection room**: Subagents step away from their desk to deliberate together in a dedicated area before reporting back.
 - **Factual task progress**: Direct aggregation of checked boxes in project Markdown files (`TODO.md`) and action plans published by agents, with zero invented percentages.
 - **100% local with zero npm dependencies**: Standalone local server bound to `127.0.0.1`, no external npm packages, no outbound network requests, and no stored API keys.
@@ -142,37 +142,48 @@ http://127.0.0.1:4317
 - **Direct selection**: A clean landing view presents fast buttons to pick an agent. On mobile, selecting an agent scrolls automatically to their workstation panel.
 - **Tool status bar**: Displays current task or active thought extracted directly from the tool, active model, mode, effort, remaining quota gauge with reset time, and elapsed run time.
 - **Raw terminal output**: Streams raw lines from the selected agent's Herdr terminal.
-- **Utility controls**: Instant search with occurrence highlighting and match counter, "Figer" button to freeze autoscroll, "Copier" button to copy buffer, and "Agrandir" button for comfortable full-height reading.
+- **Utility controls**: Instant search with occurrence highlighting and match counter, "Freeze" button to freeze autoscroll, "Copy" button to copy buffer, and "Expand" button for comfortable full-height reading.
 - **Selection freeze**: Selecting text inside the output terminal automatically suspends polling so your selection is never cleared mid-read.
-- **"Réponses lisibles" structured response view**: An expandable drawer below the terminal renders formatted Markdown responses from local session logs (Claude, Codex, OpenCode). Includes safe rendering without `innerHTML`, block code copy, source Markdown copy, `.md` file export (marked "partial" if ongoing), and accessible clipboard fallbacks.
-- **Prompt form, queuing, and priority**: If the agent is available, prompts are dispatched immediately (`Ctrl+Enter` or `Cmd+Enter`). If the agent is busy or on quota break, the button becomes "Mettre en file" to safely queue the message. A "Prioritaire" checkbox tags urgent instructions (`priority: "haute"`) to jump ahead of regular instructions for that agent.
+- **"Readable answers" structured response view**: An expandable drawer below the terminal renders formatted Markdown responses from local session logs (Claude, Codex, OpenCode). Includes safe rendering without `innerHTML`, block code copy, source Markdown copy, `.md` file export (marked "partial" if ongoing), and accessible clipboard fallbacks.
+- **Prompt form, queuing, and priority**: If the agent is available, prompts are dispatched immediately (`Ctrl+Enter` or `Cmd+Enter`). If the agent is busy or on quota break, the button becomes "Queue prompt" to safely queue the message. A "Priority" checkbox tags urgent instructions (`priority: "haute"`) to jump ahead of regular instructions for that agent.
 - **Draft preservation**: Switching agents while typing preserves unsent drafts individually.
 
 ### Team tab, leadership, and priority queue
 
 - **Team leadership and handoff**: Displays the active team lead and allows appointing any connected agent as lead or resetting to default (first panel). Changes persist in `.bureau/direction.json`. If the lead enters a quota break, a banner proposes handing leadership over to an available substitute. The handover instruction is reviewed before sending.
-- **Lead mail**: Logs completed tasks with counter in the section title; the list resets when viewing the Team tab. Clicking a mail item navigates directly to that agent's terminal.
-- **Collective queue and priority management**: Lists all deferred instructions with targets, statuses, and priority levels ("haute" or "normale"). A "Passer en tête" button promotes regular instructions. High-priority items are sent first as soon as the agent becomes free. An automatic anti-starvation guard promotes normal instructions waiting over 30 minutes to high priority. Any queued item can be cancelled with one click.
-- **Attached files and entrusted files**: Attach local files to queued instructions (up to 2 files of 20 MB). Files are copied without overwriting into the agent's workspace before dispatch, and observed processing facts are logged in the "Fichiers confiés" section.
+- **Chief's mail**: Logs completed tasks with counter in the section title; the list resets when viewing the Team tab. Clicking a mail item navigates directly to that agent's terminal.
+- **Collective queue and priority management**: Lists all deferred instructions with targets, statuses, and priority levels ("haute" or "normale"). A "Move to front" button promotes regular instructions. High-priority items are sent first as soon as the agent becomes free. An automatic anti-starvation guard promotes normal instructions waiting over 30 minutes to high priority. Any queued item can be cancelled with one click.
+- **Attached files and entrusted files**: Attach local files to queued instructions (up to 2 files of 20 MB). Files are copied without overwriting into the agent's workspace before dispatch, and observed processing facts are logged in the "Entrusted files" section.
 - **Control room discussion feed**: Aggregates excerpts of the latest responses from the entire team sorted newest to oldest. Agents that could not be read are reported at the bottom with reason.
-- **"Salle de crise" emergency circuit breaker**: An emergency safety button behind a protective flip cover (`Ctrl+Shift+C` or command palette) immediately blocks all prompt dispatches (HTTP 423) and freezes the queue without data loss. An amber security glow frames the scene, and a diagnostic modal shows live statuses and recent terminal lines for each agent. The user can request a polite stop (`POST /api/crise/arret`) sending the canonical Escape key (`esc` in Herdr) after double confirmation, never using a hard kill. Persisted atomically in `.bureau/crise.json`.
-- **Broadcast message**: Select available agents or click "Cocher tous les disponibles". First click arms the dispatch showing recipient list; second click confirms individual dispatch via Herdr.
+- **"Crisis Room" emergency circuit breaker**: An emergency safety button behind a protective flip cover (`Ctrl+Shift+C` or command palette) immediately blocks all prompt dispatches (HTTP 423) and freezes the queue without data loss. An amber security glow frames the scene, and a diagnostic modal shows live statuses and recent terminal lines for each agent. The user can request a polite stop (`POST /api/crise/arret`) sending the canonical Escape key (`esc` in Herdr) after double confirmation, never using a hard kill. Persisted atomically in `.bureau/crise.json`.
+- **Broadcast message**: Select available agents or click "Check all available". First click arms the dispatch showing recipient list; second click confirms individual dispatch via Herdr.
+- **Lead listening relay**: Subtle option persisted in `.bureau/relais.json` (disabled by default) queuing a neutral notification to the lead when a teammate completes a task ("{name} just finished. Review its pane before delegating the next step."). Never triggered during a crisis or for the lead itself.
 - **Dispatch log**: Logs full session dispatch history with timestamps, recipients, text, and status returned by Herdr.
+
+### Herdr 24 Tools Compatibility Matrix
+
+The office accurately detects and visualizes the 24 tool types supported by Herdr:
+
+| Support tier | Tools | Supported capabilities |
+|---|---|---|
+| **Universal support (24 tools)** | `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse` | Auto-detection, dedicated desk, 16×16 pixel art emblem, raw Herdr status (busy, idle, wait, done, quota break), prompt dispatch, queueing, and live raw terminal output. |
+| **Deep enriched telemetry (3 tools)** | **Claude Code**, **Codex**, **OpenCode** | Read-only local transcript parsing: structured Markdown answers in "Readable answers", token counting and turn extraction, team discussion feed, and published action plans. Other tools clearly indicate "Not exposed by this tool". |
 
 ### Files and Tasks tabs
 
-- **Files tab (Secure Explorer)**: Fast inspection of files created or modified in the last 48 hours in the selected agent's workspace, or step-by-step folder navigation with breadcrumbs. Access is strictly scoped to the agent's workspace, Desktop, Documents, and Downloads. "Afficher" button reveals the file in file manager. Safe drag-and-drop copies files; Shift + drag-and-drop moves files after confirmation. No file deletion or overwriting is permitted (automatic numeric suffixing).
-- **Tasks tab (Factual tracking with percentage)**: Observes checkboxes in project Markdown files (`TODO.md`) and action plans published by agents. Progress bar and percentages are calculated strictly from the ratio of checked tasks. If no plan is published, it faithfully indicates "Aucun plan publié par un agent pour le moment".
+- **Files tab (Secure Explorer)**: Fast inspection of files created or modified in the last 48 hours in the selected agent's workspace, or step-by-step folder navigation with breadcrumbs. Access is strictly scoped to the agent's workspace, Desktop, Documents, and Downloads. "Show in folder" button reveals the file in file manager. Safe drag-and-drop copies files; Shift + drag-and-drop moves files after confirmation. No file deletion or overwriting is permitted (automatic numeric suffixing).
+- **Tasks tab (Factual tracking with percentage)**: Observes checkboxes in project Markdown files (`TODO.md`) and action plans published by agents. Progress bar and percentages are calculated strictly from the ratio of checked tasks. If no plan is published, it faithfully indicates "No plan published by an agent yet".
 
 ### Command palette, help, and audio-visual cues
 
 - **Command Palette (`Ctrl+K`)**: Opens a keyboard modal to search for an agent, open their station, write an instruction, view the team board, switch tabs, or trigger actions without using the mouse.
-- **Contextual Help drawer (`?` key)**: Side panel accessible via "Aide" button or `?` key, presenting a 5-step guided tour, visual scene legend, keyboard shortcuts reference table, and sound settings.
+- **Contextual Help drawer (`?` key)**: Side panel accessible via "Help" button or `?` key, presenting a 7-step guided tour, visual scene legend, keyboard shortcuts reference table, and sound settings.
+- **Instant Bilingual Interface (FR / EN)**: "FR / EN" button in the top toolbar to instantly switch the entire interface between French and English (saved in browser localStorage).
 - **Signals: 8-bit sound effects and desktop notifications**: System notifications when the browser tab is hidden (checks every 15s), and synthesized 8-bit Web Audio chimes (`public/sounds.js`) for blocked states, task completions, quota breaks, and delegations. Preferences are saved in localStorage.
 
 ### Fullscreen mode
 
-The "Plein écran" button in the upper-right corner expands the app to full screen, maintaining both the animated pixel scene AND the workstation/team panel together in a single panoramic control view. Pressing Escape exits fullscreen.
+The "Fullscreen" button in the upper-right corner expands the app to full screen, maintaining both the animated pixel scene AND the workstation/team panel together in a single panoramic control view. Pressing Escape exits fullscreen.
 
 ---
 
@@ -214,13 +225,19 @@ Contributions that align with the project's philosophy (technical independence, 
   - `src/queue.mjs`: Atomic priority queue with disk persistence.
   - `src/direction.mjs`: Team lead tracking and persistence.
   - `src/todos.mjs`: Factual extraction of task plans.
+  - `src/blackboard.mjs`: Extraction and structured parsing of the corkboard from project Markdown sections.
+  - `src/crisis.mjs`: Crisis room handling, HTTP 423 dispatch locking, and atomic persistence.
+  - `src/delegations.mjs`: Detection and tracking of delegations in the lead's log over a rolling 12-hour window.
+  - `src/relais.mjs`: Neutral listening relay notifying the lead when an agent completes a task.
+  - `src/responses.mjs`: Turn-by-turn parsing and extraction of readable assistant responses.
+  - `src/terminal-status.mjs`: Live detection of quota pauses and session limits in terminal streams.
   - `server.mjs`: Hardened native HTTP server.
   - `scripts/`: Setup and verification scripts (`installer.ps1`, `installer.sh`, `init-kit.mjs`, `evaluer.mjs`, `partager-lecons.mjs`).
 - **Environment variables**:
   - `BUREAU_PORT`: Customizes listening port (default `4317`).
   - `BUREAU_HERDR_PATH`: Absolute path to the Herdr binary if not in PATH.
 - **Verification commands**:
-  - `npm test`: Runs full automated test suite using `node:test`.
+  - `npm test`: Runs full automated test suite using `node:test` (the command displays the exact test count on each run).
   - `npm run check`: Validates syntax of all JavaScript files via `node --check`.
 - **Clean shutdown**: Use `Ctrl+C` in the terminal running `node server.mjs`.
 
@@ -230,7 +247,7 @@ Contributions that align with the project's philosophy (technical independence, 
 
 MyTeam source code is released under the **MIT License** (see [LICENSE](LICENSE)).
 
-Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) remain the property of their respective owners. Pixel art representations in `public/logos.js` are used solely to visually distinguish tools occupying each workstation, without commercial affiliation or endorsement: see [NOTICE.en.md](NOTICE.en.md) ([Français](NOTICE.md)).
+Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr, and all 24 supported tools) remain the property of their respective owners. Pixel art representations in `public/logos.js` are used solely to visually distinguish tools occupying each workstation, without commercial affiliation or endorsement: see [NOTICE.en.md](NOTICE.en.md) ([Français](NOTICE.md)).
 
 DrSmoke « Un Mbokatié engagé »
 

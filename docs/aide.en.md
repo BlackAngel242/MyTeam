@@ -1,14 +1,14 @@
-# Agent Office User Guide
+# MyTeam · Agent desk User Guide
 
 [Français](aide.md) | **English**
 
-This document contains integrated help documentation for The Agent Office for the user and their agents. It can be read directly or browsed via the interactive "?" drawer in the UI.
+This document contains integrated help documentation for MyTeam · Agent desk for the user and their agents. It can be read directly or browsed via the interactive "?" drawer in the UI.
 
 ---
 
 ## 1. Welcome to Your Office
 
-The Agent Office is your local control tower. It lets you monitor your AI agents connected in Herdr and send them instructions.
+MyTeam · Agent desk is your local control tower. It lets you monitor your AI agents connected in Herdr and send them instructions.
 
 Everything displayed on screen originates from real observations: active Herdr processes, raw terminal streams, local logs, and files on disk. The office never fabricates data, completion percentages, or fictional states.
 
@@ -18,28 +18,28 @@ The interface is bilingual (French and English). An "FR / EN" button in the top 
 
 ## 2. 7-Step Guided Tour
 
-This quick walkthrough explains core office operations. You can skip this tour at any time by clicking "Passer la visite".
+This quick walkthrough explains core office operations. You can skip this tour at any time by clicking "Skip tour".
 
 ### Step 1: Observe the team in the pixel art scene
-The main window renders your team in an animated pixel art environment. The sky shifts continuously according to your computer's clock (6:30 AM sunrise, 7:30 PM sunset), and indoor lighting automatically turns on in the evening (pendant ceiling lights and desk lamps). The wall board summarizes key operational facts (RETOUR, EN FILE, COURRIER, SOUS-AGENTS). The team lead sits at the Direction desk. Each character shows their real state through their pose, monitor glow, desk front emblem, and color-coded name underline.
+The main window renders your team in an animated pixel art environment. The sky shifts continuously according to your computer's clock (6:30 AM sunrise, 7:30 PM sunset), and indoor lighting automatically turns on in the evening (pendant ceiling lights and desk lamps). The wall board summarizes key operational facts (BACK, QUEUED, MAIL, SUBAGENTS). The team lead sits at the Direction desk. Each character shows their real state through their pose, monitor glow, desk front emblem, and color-coded name underline.
 
 ### Step 2: Select a workstation
 Click any character in the scene (or tap on a touchscreen), click their name in the desk list below the canvas, or click directly in the landing view of the station. On mobile or narrow screens, the view automatically scrolls down to the control panel.
 
-### Step 3: Inspect and instruct in the "Poste" tab
-The "Poste" (Workstation) tab displays detailed agent metrics: model, activity, token usage, and live terminal output. You can freeze scrolling, expand the terminal to full height, search for text, read formatted markdown in the "Réponses lisibles" drawer, and send prompts using `Ctrl+Enter` (or click "Mettre en file" if busy, with optional local file attachments).
+### Step 3: Inspect and instruct in the "Desk" tab
+The "Desk" tab displays detailed agent metrics: model, activity, token usage, and live terminal output. You can freeze scrolling ("Freeze"), expand the terminal to full height ("Expand"), search for text, read formatted markdown in the "Readable replies" drawer, and send prompts using `Ctrl+Enter` (or click "Queue prompt" if busy, with optional local file attachments).
 
-### Step 4: Coordinate in the "Équipe" tab
-The "Équipe" (Team) tab centralizes collective workflows. The "Courrier du chef" section alerts you whenever an agent finishes work. The "Relais d'écoute du chef" section allows automatically notifying the lead via the instruction queue when a teammate completes a task. The "File d'attente" section lists queued instructions with automatic retry. You can also check multiple available agents to send a common instruction with a 2-click armed dispatch.
+### Step 4: Coordinate in the "Team" tab
+The "Team" tab centralizes collective workflows. The "Chief’s mail" section alerts you whenever an agent finishes work. The "Lead listening relay" section allows automatically notifying the lead via the instruction queue when a teammate completes a task. The "Queue" section lists queued instructions with automatic retry. You can also check multiple available agents to send a common instruction with a 2-click armed dispatch.
 
 ### Step 5: Manage documents and track tasks
-The "Fichiers" (Files) tab lets you inspect recently modified files or browse project folders via safe copy or move without deletion. The "Tâches" (Tasks) tab tracks real checked boxes in project Markdown files (`TODO.md`) and action plans published by agents.
+The "Files" tab lets you inspect recently modified files or browse project folders via safe copy or move without deletion. The "Tasks" tab tracks real checked boxes in project Markdown files (`TODO.md`) and action plans published by agents.
 
 ### Step 6: Mosaic (multi-terminal monitoring)
-The "Mosaïque" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side, with highlighted text search, toggle between 2×2 grid or columns, and a quick prompt field (Ctrl+Enter). The "Revenir à la scène" button restores the office view at any time.
+The "Mosaic" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side, with highlighted text search, toggle between "2x2 Grid" or "Columns", and a quick prompt field (Ctrl+Enter). The "Scene view" button restores the office view at any time.
 
 ### Step 7: Crisis room (emergency circuit breaker)
-The flip-covered "Salle de crise" button (emergency shortcut: Ctrl+Shift+C) enables instant reaction if things drift: it locks all direct sends (HTTP 423), freezes the queue, and opens a calm diagnostic modal to request a polite interruption of an agent via the Escape key, without ever resorting to forced process kills.
+The flip-covered "Crisis room" button (emergency shortcut: Ctrl+Shift+C) enables instant reaction if things drift: it locks all direct sends (HTTP 423), freezes the queue, and opens a calm diagnostic modal to request a polite interruption of an agent via the Escape key, without ever resorting to forced process kills.
 
 ---
 
@@ -57,15 +57,15 @@ The canvas provides an immediate overview of your entire agent team.
 
 #### Wall Scoreboard
 - Located on the back wall, this board highlights key operational facts not repeated on desks or cards.
-- `RETOUR` line: lights up in purple when an agent is on quota break, showing the exact resume time reported by the tool (or `??:??` if unspecified).
-- `EN FILE` line: displays the number of queued prompts waiting in the secure queue (lights up in blue when instructions are queued).
-- `COURRIER` line: counts unread completion letters (lights up in mint when letters await review).
-- `SOUS-AGENTS` line: counts assistants currently active in the reflection room (lights up in light grey when subagents are running).
+- `BACK` (`RETOUR`) line: lights up in purple when an agent is on quota break, showing the exact resume time reported by the tool (or `??:??` if unspecified).
+- `QUEUED` (`EN FILE`) line: displays the number of queued prompts waiting in the secure queue (lights up in blue when instructions are queued).
+- `MAIL` (`COURRIER`) line: counts unread completion letters (lights up in mint when letters await review).
+- `SUBAGENTS` (`SOUS-AGENTS`) line: counts assistants currently active in the reflection room (lights up in light grey when subagents are running).
 - Each line illuminates in vivid color when its fact is observed; inactive lines remain subtle and dark.
 
 #### Corkboard and Team Board Modal
 - A pixel art corkboard hangs on the back wall (to the right of the neon sign). Its colored pins indicate the count of open tasks in `TODO.md` (`+` symbol when over 6 tasks remain).
-- Clicking the corkboard or the "Tableau" button opens the **Tableau de l'équipe** modal.
+- Clicking the corkboard or the "Board" button opens the **Team board** modal.
 - This view provides read-only access to the 4 pillar files:
   1. **Current stage**: excerpt from `HANDOFF.md` presenting the active project phase.
   2. **To do / ideas**: tasks and roadmap items from `TODO.md`.
@@ -94,8 +94,13 @@ The canvas provides an immediate overview of your entire agent team.
 - On the front of each desk, a 16×16 pixel art emblem identifies the tool among all 24 types supported by Herdr: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`, or a fallback generic agent emblem if unspecified.
 - These emblems also appear on agent cards and in mosaic tiles.
 - Below each desk, the agent's name is underlined with a thin status bar (blue for working, mint for available, amber for awaiting input, purple for quota break).
-- If connection with Herdr is lost, `HORS LIGNE` is displayed.
+- If connection with Herdr is lost, `OFFLINE` (`HORS LIGNE`) is displayed.
 - Status is clearly communicated through character pose, screen glow, bubble, tool emblem, and underline without redundant textual clutter.
+
+#### Compatibility Matrix for all 24 Herdr Tools
+All 24 tools supported by Herdr benefit from universal monitoring and command orchestration:
+- **Universal support (all 24 tools)**: Automatic detection on startup, dedicated 16×16 pixel art emblem, live raw terminal stream monitoring, unified statuses (working, available, waiting for reply, quota pause, offline), prompt dispatch and priority queueing, and armed 2-click broadcast dispatch.
+- **Deep telemetry (Claude Code, Codex, OpenCode)**: For these 3 tools, the desk additionally analyzes local activity logs to provide structured readable Markdown answers, exact token usage breakdown per turn and session, unified discussion thread, structured action plans for the Tasks tab, and physical subagent tracking in the reflection room.
 
 #### Official Herdr Integrations
 - The command `herdr integration install <tool>` sets up official integrations for supported tools: `pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`.
@@ -123,11 +128,11 @@ The canvas provides an immediate overview of your entire agent team.
 #### Quota Break and "RETOUR" Easel
 - When an agent reaches its token or request rate limit, the agent leaves their seat.
 - Their screen turns off, desk lamp turns off, and a subtle purple standby light blinks.
-- A white desktop easel with "RETOUR" displays the exact resume time reported by the tool.
+- A white desktop easel with "BACK" ("RETOUR") displays the exact resume time reported by the tool.
 - The local server schedules automatic retry of queued instructions 5 minutes after that time.
 
 #### Reflection Room for Subagents
-- Glass-walled dedicated room with fixed label "SALLE DE REFLEXION" (or "REFLEXION" on small screens), never truncated.
+- Glass-walled dedicated room with fixed label "THINKING ROOM" ("SALLE DE REFLEXION" in French view, or "REFLEXION" on small screens), never truncated.
 - When an agent delegates part of their workload to subagents, assistants leave their desk carrying a golden folder.
 - They cross the hallway into the glass room.
 - They work at laptops around the table or gather around the whiteboard.
@@ -135,30 +140,30 @@ The canvas provides an immediate overview of your entire agent team.
 - When completed, they return to deliver the folder back to their primary agent's desk.
 - The room can be collapsed to optimize space on smaller displays.
 
-#### "Disposer" Layout Mode
-- Click the "Disposer" button in the upper right corner of the scene frame.
+#### "Arrange" Layout Mode ("Disposer")
+- Click the "Arrange" button in the upper right corner of the scene frame.
 - A dedicated helper bar appears under the toolbar to remind you of controls.
 - Drag any workstation across the floor (or move it with keyboard arrow keys).
 - Move the lead's Direction desk or resize it by dragging its gold corner.
-- Click "Réinitialiser" to restore default auto-layout.
-- Press Escape or click "Terminer" to save and lock your layout.
+- Click "Reset" ("Réinitialiser") to restore default auto-layout.
+- Press Escape or click "Done" ("Terminer") to save and lock your layout.
 
 #### Mosaic Mode (Multi-Terminal Surveillance)
-- The "Mosaïque" button (or "Mode mosaïque" in Ctrl+K) replaces pixel art with a modular mosaic of 2 to 4 live terminals side by side.
+- The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular mosaic of 2 to 4 live terminals side by side.
 - Working agents appear at the top of the list for immediate visibility.
 - If more than 4 agents are connected, checkboxes allow choosing which 4 agents to display.
-- Layout toggle: "Grille 2×2" and "Colonnes" buttons (on mobile, tiles stack into a single comfortable column).
+- Layout toggle: "2x2 Grid" and "Columns" buttons (on mobile, tiles stack into a single comfortable column).
 - Each tile features:
-  - Compact header with name, tool emblem, status badge, and "Agrandir" button to open the full individual workstation view.
+  - Compact header with name, tool emblem, status badge, and "Expand" button to open the full individual workstation view.
   - Clean terminal output stripped of ANSI escape sequences.
   - Text search box with highlighted matches and occurrence counter.
   - Quick prompt field dispatched with `Ctrl+Enter`, disabled with clear explanation when the agent is unavailable.
 - Economical polling: visible tiles are refreshed every 3 seconds, paused when browser tab is hidden, one read at a time per tile, preserving active text selections.
-- The "Revenir à la scène" button restores the animated office view instantly.
+- The "Scene view" button restores the animated office view instantly.
 
 ---
 
-### Zone 2: "Poste" Tab (Individual Workstation)
+### Zone 2: "Desk" Tab (Individual Workstation)
 
 This tab lets you inspect and interact with the selected agent.
 
@@ -175,29 +180,29 @@ This tab lets you inspect and interact with the selected agent.
 - Elapsed runtime and detected warnings counter.
 
 #### Terminal Tools
-- "Rechercher dans les sorties" field: highlights query terms and shows match count.
-- "Figer" button: pauses auto-scroll to let you read error traces or code. Click "Reprendre" to resume following.
-- "Copier" button: copies entire terminal text into clipboard.
-- "Agrandir" button: expands terminal height to fill available viewport space, including dedicated comfortable mobile height.
+- "Search in outputs" field: highlights query terms and shows match count.
+- "Freeze" button: pauses auto-scroll to let you read error traces or code. Click "Resume" to resume following.
+- "Copy" button: copies entire terminal text into clipboard.
+- "Expand" button: expands terminal height to fill available viewport space, including dedicated comfortable mobile height.
 - Auto-pause on selection: selecting text pauses live updates with an informative notice. Your selection never jumps.
 
-#### "Réponses lisibles" Drawer
+#### "Readable replies" Drawer
 - Beneath raw terminal output, a collapsible drawer renders structured agent responses from local logs (Claude, Codex, OpenCode).
 - Safe markdown formatting without `innerHTML` (headings, lists, quotes, bold, code spans, code blocks).
-- "Copier le code" button per code block and "Copier la réponse" for raw markdown source.
-- Local `.md` export buttons (single response or full session). In-progress turns are exported as dated snapshots marked "partiel".
+- "Copy code" button per code block and "Copy response" for raw markdown source.
+- Local `.md` export buttons (single response or full session). In-progress turns are exported as dated snapshots marked "partial".
 - Accessible fallback: if clipboard access is denied, a read-only modal dialog opens for manual copying.
 
 #### Sending Instructions, Queueing, and Priorities
 - Available agent: text area is unlocked for immediate sending with `Ctrl+Enter` (or `Cmd+Enter`).
-- Busy agent or quota break: button displays "Mettre en file". Instruction is safely stored in the server queue and dispatched when the agent is free or 5 minutes after quota reset.
-- "Prioritaire" checkbox: flags the prompt as high priority (`priority: "haute"`) to be dispatched ahead of standard prompts once the agent becomes available.
+- Busy agent or quota break: button displays "Queue prompt" (or "Queue for {name}"). Instruction is safely stored in the server queue and dispatched when the agent is free or 5 minutes after quota reset.
+- "Priority" checkbox: flags the prompt as high priority (`priority: "haute"`) to be dispatched ahead of standard prompts once the agent becomes available.
 - File attachments: attach up to 2 local files (20 MB max). Files are safely copied without overwriting into the agent's working directory before dispatch.
 - Draft preservation: switching agents while composing or during a queued request never loses text; each draft is stored independently.
 
 ---
 
-### Zone 3: "Équipe" Tab (Collective Coordination)
+### Zone 3: "Team" Tab (Collective Coordination)
 
 This tab coordinates multiple agents, the queue, leadership, and task completion reports.
 
@@ -211,19 +216,19 @@ This tab coordinates multiple agents, the queue, leadership, and task completion
 
 #### Leadership and Handover
 - Active lead: the Direction desk hosts the team lead (default: first agent started in Herdr).
-- User selection: the "Direction de l'équipe" section lets you assign any connected agent as lead or revert to default. Choice is persisted in `.bureau/direction.json`. If the assigned lead disappears from Herdr, default rule applies gracefully.
+- User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as lead or revert to default. Choice is persisted in `.bureau/direction.json`. If the assigned lead disappears from Herdr, default rule applies gracefully.
 - Handover proposal banner: if the lead hits their quota limit, a banner proactively suggests passing leadership to an available deputy.
 - Human confirmation and review: handover is never automatic. The user confirms, reviews the handover message, and sends it directly or via queue.
 - Delegation tracking: delegations (`herdr agent prompt`) and lead rounds are monitored in the active lead's local log.
 
-#### Lead Mail ("Courrier du chef")
+#### Chief’s Mail ("Courrier du chef")
 - Whenever an agent shifts from "working" to "available" or "done", completion mail is logged with a counter in the section title.
 - List resets automatically when you view the Team tab.
-- Clicking a mail item or "Ouvrir son poste" opens the agent's workstation terminal to verify results.
+- Clicking a mail item or "Open their desk" ("Ouvrir son poste") opens the agent's workstation terminal to verify results.
 - Caution reminder: mail confirms the process stopped, not that the goal succeeded. Always verify actual outputs.
 
 #### Lead Listening Relay
-- Dedicated section in the Team tab: "Prévenir le chef quand un agent termine" checkbox.
+- Dedicated section in the Team tab: "Notify the lead when an agent finishes" ("Prévenir le chef quand un agent termine") checkbox.
 - Optional feature, off by default, persisted on disk in `.bureau/relais.json`.
 - Operation: whenever an agent transitions from "working" to "available" or "done", the server inserts a normal-priority instruction into the queue for the active lead: *"[Name] vient de terminer. Lis son panneau avant de lui confier la suite."*
 - Safety and throttling: only one notification per observed finish, at least 1 minute interval between alerts for the same agent, state persisted before enqueueing to prevent duplicates on dropped responses.
@@ -231,7 +236,7 @@ This tab coordinates multiple agents, the queue, leadership, and task completion
 
 #### Instruction Queue and Priorities
 - Displays queued instructions with target, timestamp, status, and priority level ("haute" or "normale"), sorted by scheduled dispatch order.
-- "Passer en tête" button: promotes a normal instruction to high priority with one click.
+- "Move to the front" ("Passer en tête") button: promotes a normal instruction to high priority with one click.
 - Dispatch order: high-priority instructions go first (by arrival timestamp), followed by normal ones.
 - Starvation safeguard: normal instructions waiting over 30 minutes are automatically promoted to high priority.
 - Strict state respect: high priority never forces a send to a busy agent or one on quota break. The server awaits availability.
@@ -240,9 +245,9 @@ This tab coordinates multiple agents, the queue, leadership, and task completion
 
 #### Multi-Agent Broadcast (2-Click Armed Dispatch)
 - Check the agents you wish to instruct (only available agents can be checked).
-- "Cocher tous les disponibles" selects all ready agents in one click.
+- "Tick all available" ("Cocher tous les disponibles") selects all ready agents in one click.
 - Type your shared instruction in the text area.
-- First click on "Envoyer" (or `Ctrl+Enter`): arms dispatch and displays all recipient names clearly.
+- First click on "Send the instruction" ("Envoyer", or `Ctrl+Enter`): arms dispatch and displays all recipient names clearly.
 - Second click: confirms dispatch. The instruction is transmitted individually to each selected agent via Herdr.
 
 #### Transmission Journal
@@ -261,7 +266,7 @@ This tab coordinates multiple agents, the queue, leadership, and task completion
 
 ---
 
-### Zone 4: "Fichiers" Tab (Secure File Explorer)
+### Zone 4: "Files" Tab (Secure File Explorer)
 
 This tab inspects and organizes project files linked to your agents.
 
@@ -277,17 +282,17 @@ This tab inspects and organizes project files linked to your agents.
 - Navigation restricted to allowed roots: agent working folder, Desktop, Documents, Downloads. No raw paths from the browser are accepted.
 
 #### Recent and Browse Views
-- "Récents" button: lists files modified in the last 48 hours in the selected agent's working folder.
-- "Parcourir" button: folder-by-folder navigation with clickable breadcrumbs.
+- "Recent" ("Récents") button: lists files modified in the last 48 hours in the selected agent's working folder.
+- "Browse" ("Parcourir") button: folder-by-folder navigation with clickable breadcrumbs.
 
 #### File Actions
-- "Afficher" button: reveals the selected file directly in Windows Explorer.
-- Standard drag and drop: drag a file to any target in the "Déposer dans" list to copy it.
+- "Reveal" ("Afficher") button: reveals the selected file directly in Windows Explorer.
+- Standard drag and drop: drag a file to any target in the "Drop into" ("Déposer dans") list to copy it.
 - Shift + Drag and drop: hold Shift to move a file. An alert prompt requires a second identical gesture to confirm.
 
 ---
 
-### Zone 5: "Tâches" Tab (Factual Task Progress)
+### Zone 5: "Tasks" Tab (Factual Task Progress)
 
 This tab monitors concrete work progress without artificial metrics.
 
@@ -299,15 +304,15 @@ This tab monitors concrete work progress without artificial metrics.
 #### Factual Progress Rules
 - Progress percentage is strictly calculated from real checked boxes.
 - No percentage is extrapolated or guessed.
-- If an agent does not publish an action plan, "Aucun plan publié par un agent pour le moment" is displayed.
+- If an agent does not publish an action plan, "No plan published by an agent for now" ("Aucun plan publié par un agent pour le moment") is displayed.
 
 ---
 
 ### Zone 6: Command Palette, Bilingual Interface, and Signals
 
 #### Command Palette (Ctrl+K)
-- Accessible via "Commandes" button or `Ctrl+K`.
-- Search for agents, open workstations, draft prompts, open the team board ("Mémoire partagée"), switch tabs, or trigger actions from the keyboard.
+- Accessible via "Commands" ("Commandes") button or `Ctrl+K`.
+- Search for agents, open workstations, draft prompts, open the team board ("Shared memory"), switch tabs, or trigger actions from the keyboard.
 - Fluid navigation: arrow keys to choose, Enter to confirm, Escape to close.
 
 #### Bilingual FR / EN Interface
@@ -317,12 +322,12 @@ This tab monitors concrete work progress without artificial metrics.
 - Full coverage: all buttons, metrics, drawers, forms, and server error messages are instantly translated.
 
 #### Help Drawer (Key: ?)
-- Accessible via "Aide" button or `?` key, opened automatically on first visit.
+- Accessible via "Help" ("Aide") button or `?` key, opened automatically on first visit.
 - Contains the 7-step guided tour, visual legends, and signal controls.
 
 #### Signals: 8-Bit Audio and Windows Notifications
-- "Notifications Windows" button: enables system alerts when page is in background (agent waiting, task complete, quota break). Polling happens every 15s in background.
-- "Sons" button: enables discreet 8-bit Web Audio chimes (`public/sounds.js`, < 0.6s, low volume).
+- "Windows notifications" ("Notifications Windows") button: enables system alerts when page is in background (agent waiting, task complete, quota break). Polling happens every 15s in background.
+- "Sounds" ("Sons") button: enables discreet 8-bit Web Audio chimes (`public/sounds.js`, < 0.6s, low volume).
 - Preferences are saved locally in browser storage (`bureau.sons`).
 
 ---
@@ -332,21 +337,21 @@ This tab monitors concrete work progress without artificial metrics.
 The Crisis Room is a safety mechanism designed to regain control during loops or critical issues without destroying work in progress.
 
 #### Triggering and Visual Alarm
-- Accessible via the flip-covered "Salle de crise" button in the header, shortcut `Ctrl+Shift+C`, or command palette.
+- Accessible via the flip-covered "Crisis room" ("Salle de crise") button in the header, shortcut `Ctrl+Shift+C`, or command palette.
 - Canvas wraps in an amber safety glow and an alert banner appears.
-- Primary button requires explicit confirmation to arm the crisis ("Confirmer : enclencher la crise").
+- Primary button requires explicit confirmation to arm the crisis ("Confirm: start the crisis").
 
 #### Immediate Circuit Breaker Effects
-- **Absolute direct send lock**: `/api/prompt` and `/api/broadcast` return HTTP 423 ("Salle de crise active : les envois sont verrouillés").
+- **Absolute direct send lock**: `/api/prompt` and `/api/broadcast` return HTTP 423 ("Crisis room active: sends are locked").
 - **Queue freeze**: instructions are received and stored safely, but no automatic dispatches occur while crisis is active.
 - **Handover and listening relay suspension**: leadership handover dispatches and the lead listening relay are fully suspended.
 - **Atomic state**: saved in `.bureau/crise.json` outside Git. Defaults to active if file is corrupted.
 
 #### Calm Diagnostics and Polite Interruption
 - Modal lists each connected agent with observed status, Herdr pane ID, and the last 4 raw terminal lines.
-- **Polite interruption per agent**: click "Arrêter cet agent", then confirm. Server sends canonical Escape (`esc` in Herdr via `POST /api/crise/arret`).
+- **Polite interruption per agent**: click "Stop this agent" ("Arrêter cet agent"), then confirm. Server sends canonical Escape (`esc` in Herdr via `POST /api/crise/arret`).
 - **Absolute rule**: no process is killed (`kill`). Agents are politely asked to exit at application level to safeguard disk files.
-- **Resuming**: click "Lever la crise" to unlock sends and resume queue processing.
+- **Resuming**: click "Lift the crisis" ("Lever la crise") to unlock sends and resume queue processing.
 
 ---
 
@@ -373,51 +378,51 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | :--- | :--- | :--- |
 | **General** | `Ctrl + K` | Opens modal command palette. |
 | **General** | `FR / EN` Button | Instantly toggles interface language between French and English. |
-| **General** | Palette Ctrl+K: "Tableau de l'équipe" | Opens read-only team board modal (pillar files). |
-| **General** | Palette Ctrl+K: "Mode mosaïque" | Toggles between pixel art canvas and multi-terminal mosaic. |
-| **General** | Palette Ctrl+K: "Salle de crise" | Opens crisis room diagnostic and control modal. |
+| **General** | Palette Ctrl+K: "Team board" ("Tableau de l'équipe") | Opens read-only team board modal (pillar files). |
+| **General** | Palette Ctrl+K: "Tile mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal mosaic. |
+| **General** | Palette Ctrl+K: "Crisis room" ("Salle de crise") | Opens crisis room diagnostic and control modal. |
 | **General** | `Ctrl + Shift + C` | Immediately opens crisis room modal (emergency breaker). |
 | **General** | `?` Key | Opens or closes this help drawer. |
-| **Scene** | Click corkboard or "Tableau" button | Opens team board modal (pillar files). |
-| **Scene** | "Mosaïque" / "Vue scène" button | Toggles display between animated scene and 2 to 4 terminal mosaic. |
+| **Scene** | Click corkboard or "Board" ("Tableau") button | Opens team board modal (pillar files). |
+| **Scene** | "Mosaic" / "Scene view" button | Toggles display between animated scene and 2 to 4 terminal mosaic. |
 | **Scene** | Click character (or tap on screen) | Opens workstation panel (scrolls on mobile). |
-| **Scene** | Click mail stack | Opens Team tab and Lead Mail section. |
-| **Scene** | "Disposer" button | Enables manual desk arrangement mode. |
+| **Scene** | Click mail stack | Opens Team tab and Chief’s mail section. |
+| **Scene** | "Arrange" ("Disposer") button | Enables manual desk arrangement mode. |
 | **Scene** | `Escape` Key | Closes one layer at a time: crisis room, palette, team board, arrangement, help. |
-| **Scene** | "Plein écran" button | Expands scene and panel into unified full-screen view. |
-| **Scene** | "Mettre en pause" button | Pauses or resumes canvas animations (frozen scene updates once a minute). |
-| **Navigation**| `Right Arrow` / `Left Arrow` | Cycles through tabs (Poste, Équipe, Fichiers, Tâches). |
-| **Poste** | `Ctrl + Enter` (or `Cmd + Enter`) | Sends instruction to selected agent. |
-| **Poste** | "Prioritaire" checkbox | Flags instruction for high-priority queue processing. |
-| **Poste** | "Mettre en file" button | Queues instruction if agent is busy. |
-| **Poste** | "Agrandir" button | Toggles full-height terminal view (including mobile). |
-| **Poste** | "Réponses lisibles" drawer | Expands structured markdown responses with code copy and export. |
-| **Poste** | Text selection in terminal | Pauses auto-refresh to allow easy copying. |
-| **Poste** | "Figer" button | Freezes auto-scroll. |
-| **Poste** | "Copier" button | Copies full terminal content to clipboard. |
-| **Mosaic** | "Grille 2×2" / "Colonnes" button | Toggles mosaic tile layout. |
+| **Scene** | "Full screen" ("Plein écran") button | Expands scene and panel into unified full-screen view. |
+| **Scene** | "Pause" ("Mettre en pause") button | Pauses or resumes canvas animations (frozen scene updates once a minute). |
+| **Navigation**| `Right Arrow` / `Left Arrow` | Cycles through tabs (Desk, Team, Files, Tasks). |
+| **Desk** | `Ctrl + Enter` (or `Cmd + Enter`) | Sends instruction to selected agent. |
+| **Desk** | "Priority" ("Prioritaire") checkbox | Flags instruction for high-priority queue processing. |
+| **Desk** | "Queue prompt" ("Mettre en file") button | Queues instruction if agent is busy. |
+| **Desk** | "Expand" ("Agrandir") button | Toggles full-height terminal view (including mobile). |
+| **Desk** | "Readable replies" ("Réponses lisibles") drawer | Expands structured markdown responses with code copy and export. |
+| **Desk** | Text selection in terminal | Pauses auto-refresh to allow easy copying. |
+| **Desk** | "Freeze" ("Figer") button | Freezes auto-scroll. |
+| **Desk** | "Copy" ("Copier") button | Copies full terminal content to clipboard. |
+| **Mosaic** | "2x2 Grid" / "Columns" button | Toggles mosaic tile layout. |
 | **Mosaic** | `Ctrl + Enter` in a tile | Dispatches quick instruction to the agent in that tile. |
-| **Mosaic** | "Agrandir" button on a tile | Opens full individual workstation panel for that agent. |
-| **Mosaic** | "Revenir à la scène" button | Closes mosaic and restores animated office scene. |
-| **Crisis** | "Salle de crise" button | Opens crisis room diagnostic panel. |
-| **Crisis** | "Arrêter cet agent" button | Requests polite interruption (Escape) for an agent after confirmation. |
-| **Crisis** | "Lever la crise" button | Unlocks direct sends and resumes queue processing. |
-| **Équipe** | "Direction de l'équipe" section | Sets lead agent, restores default rule, or confirms handover. |
-| **Équipe** | "Relais d'écoute du chef" checkbox | Toggles automatic neutral notification to lead upon task completion. |
-| **Équipe** | "Passer en tête" button | Promotes queued instruction to high priority. |
-| **Équipe** | "Retirer" button | Removes an instruction from the queue. |
-| **Équipe** | `Ctrl + Enter` (or `Cmd + Enter`) | Triggers armed broadcast dispatch. |
-| **Équipe** | "Cocher tous les disponibles" button| Selects all ready agents in one click. |
-| **Fichiers** | Drag and drop onto a destination | Copies file to chosen folder. |
-| **Fichiers** | `Shift` + Drag and drop | Moves file (requires confirmation). |
-| **Fichiers** | "Afficher" button | Reveals file location in Windows Explorer. |
+| **Mosaic** | "Expand" ("Agrandir") button on a tile | Opens full individual workstation panel for that agent. |
+| **Mosaic** | "Scene view" ("Revenir à la scène") button | Closes mosaic and restores animated office scene. |
+| **Crisis** | "Crisis room" ("Salle de crise") button | Opens crisis room diagnostic panel. |
+| **Crisis** | "Stop this agent" ("Arrêter cet agent") button | Requests polite interruption (Escape) for an agent after confirmation. |
+| **Crisis** | "Lift the crisis" ("Lever la crise") button | Unlocks direct sends and resumes queue processing. |
+| **Team** | "Team direction" ("Direction de l'équipe") section | Sets lead agent, restores default rule, or confirms handover. |
+| **Team** | "Lead listening relay" ("Relais d'écoute du chef") checkbox | Toggles automatic neutral notification to lead upon task completion. |
+| **Team** | "Move to the front" ("Passer en tête") button | Promotes queued instruction to high priority. |
+| **Team** | "Remove" ("Retirer") button | Removes an instruction from the queue. |
+| **Team** | `Ctrl + Enter` (or `Cmd + Enter`) | Triggers armed broadcast dispatch. |
+| **Team** | "Tick all available" ("Cocher tous les disponibles") button| Selects all ready agents in one click. |
+| **Files** | Drag and drop onto a destination | Copies file to chosen folder. |
+| **Files** | `Shift` + Drag and drop | Moves file (requires confirmation). |
+| **Files** | "Reveal" ("Afficher") button | Reveals file location in Windows Explorer. |
 
 ---
 
 ## 6. Golden Rule: Truth of Facts
 
-The Agent Office strictly enforces factual integrity:
+MyTeam · Agent desk strictly enforces factual integrity:
 1. Only observable facts are displayed (real processes, system clock, local logs, disk files).
 2. No completion percentage is invented if a tool does not calculate it.
-3. If a tool does not report token usage or subagents, "Non exposé par cet outil" is faithfully displayed.
+3. If a tool does not report token usage or subagents, "Not exposed by this tool" ("Non exposé par cet outil") is faithfully displayed.
 4. Detected errors are never concealed: they appear in outputs and enrich LESSONS.md to prevent future regressions.

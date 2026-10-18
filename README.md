@@ -1,4 +1,4 @@
-# MyTeam · Le Bureau des agents
+# MyTeam · Bureau des agents
 
 > 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
 > 📚 **Index de la documentation** : [docs/index.md](docs/index.md) ([English index](docs/index.en.md))
@@ -157,7 +157,17 @@ http://127.0.0.1:4317
 - **Fil de discussion (salle de contrôle)** : Réunit les extraits des dernières réponses de toute l'équipe (composant `public/discussion.js` branché sur `GET /api/discussion`), classées de la plus récente à la plus ancienne. Les agents non lus sont explicitement signalés en bas de liste avec leur raison (« non exposé par cet outil » ou « non rattaché avec certitude »).
 - **Disjoncteur général « Salle de crise »** : Un bouton de protection sous clapet « Salle de crise » (raccourci d'urgence `Ctrl+Maj+C` ou palette de commandes) déclenche un gel instantané de tous les départs de consignes (code HTTP 423) et suspend la file d'attente sans rien altérer. La scène s'entoure d'un halo ambré de sécurité et une modale de diagnostic détaille l'état et les dernières sorties de chaque agent. DrSmoke peut alors demander une interruption polie (`POST /api/crise/arret`) qui transmet la touche Échap canonique (`esc` dans Herdr) à l'agent ciblé après confirmation, sans jamais recourir à un arrêt forcé (`kill`). L'état est persisté atomiquement dans `.bureau/crise.json` (crise active par sécurité si le fichier est corrompu).
 - **Message à plusieurs agents (envoi groupé armé)** : Cochez les agents disponibles ou cliquez sur « Cocher tous les disponibles ». Le premier clic sur « Envoyer » arme l'envoi en affichant la liste des destinataires, et le second confirme l'expédition individuelle via Herdr.
+- **Relais d'écoute du chef** : Option discrète persistée dans `.bureau/relais.json` (désactivée par défaut) qui met en file d'attente un message neutre au chef dès qu'un collaborateur termine sa tâche (« {nom} vient de terminer. Lis son panneau avant de lui confier la suite. »). Ce message n'est jamais envoyé si la salle de crise est active ni pour le chef lui-même.
 - **Journal des envois** : Consigne l'historique complet des transmissions de la session avec l'horodatage, les destinataires, le texte et le statut retourné par Herdr.
+
+### Matrice de compatibilité des 24 outils Herdr
+
+Le bureau détecte et affiche fidèlement les 24 types d'outils supportés par Herdr :
+
+| Niveau de prise en charge | Outils concernés | Capacités réelles |
+|---|---|---|
+| **Support universel (24 outils)** | `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse` | Détection automatique, bureau dédié, emblème pixel art 16×16, état brut Herdr (travail, disponible, attente, terminé, pause de quota), envoi de consignes, mise en file d'attente et lecture brute du terminal. |
+| **Télémétrie enrichie (3 outils)** | **Claude Code**, **Codex**, **OpenCode** | Analyse en lecture seule des journaux locaux : réponses Markdown structurées (« Réponses lisibles »), extraction des tokens et tours de parole, fil de discussion collectif et plans d'action. Les autres outils affichent avec franchise « Non exposé par cet outil ». |
 
 ### Onglets Fichiers et Tâches
 
@@ -167,7 +177,8 @@ http://127.0.0.1:4317
 ### Palette de commandes, aide et signaux
 
 - **Palette de commandes (Ctrl+K)** : Ouvre une boîte modale au clavier pour chercher un agent, ouvrir son poste, rédiger une consigne, ouvrir le tableau de l'équipe, changer d'onglet ou lancer une action sans toucher à la souris.
-- **Aide contextuelle escamotable (touche ?)** : Volet latéral accessible par le bouton « Aide » ou la touche « ? », présentant la visite guidée en 5 étapes, la légende visuelle de la scène, la table complète des raccourcis clavier et le réglage des signaux.
+- **Aide contextuelle escamotable (touche ?)** : Volet latéral accessible par le bouton « Aide » ou la touche « ? », présentant la visite guidée en 7 étapes, la légende visuelle de la scène, la table complète des raccourcis clavier et le réglage des signaux.
+- **Interface bilingue instantanée (FR / EN)** : Bouton « FR / EN » dans la barre d'outils supérieure permettant de basculer à la volée l'ensemble de l'interface entre français et anglais (choix mémorisé dans le navigateur).
 - **Signaux : Sons 8 bits et notifications Windows** : Notifications système Windows quand la page est en arrière-plan (relève toutes les 15 secondes quand l'onglet est masqué), et signaux sonores discrets synthétisés en Web Audio (`public/sounds.js`) pour les blocages, fins de travail, pauses de limite et délégations. Les préférences sont mémorisées dans le navigateur.
 
 ### Mode plein écran
@@ -214,13 +225,19 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
   - `src/queue.mjs` : File d'attente atomique avec priorités et persistance sur disque.
   - `src/direction.mjs` : Gestion de la direction d'équipe et persistance du choix de chef.
   - `src/todos.mjs` : Extraction factuelle des tâches et plans d'action.
+  - `src/blackboard.mjs` : Extraction et structuration du tableau de liège mural à partir des sections Markdown du projet.
+  - `src/crisis.mjs` : Gestion de la salle de crise, verrouillage HTTP 423 des envois et persistance atomique de l'état d'urgence.
+  - `src/delegations.mjs` : Détection et suivi des délégations observées dans le journal du chef sur 12 heures glissantes.
+  - `src/relais.mjs` : Relais d'écoute notifiant le chef quand un collaborateur termine son travail.
+  - `src/responses.mjs` : Découpage et extraction des réponses lisibles des agents tour par tour.
+  - `src/terminal-status.mjs` : Analyse en direct des pauses de quota et de la consommation de session dans les flux de terminal.
   - `server.mjs` : Serveur HTTP natif sécurisé.
   - `scripts/` : Scripts d'installation et de vérification automatisés (`installer.ps1`, `installer.sh`).
 - **Variables d'environnement utiles** :
   - `BUREAU_PORT` : Personnalise le port d'écoute HTTP (par défaut `4317`).
   - `BUREAU_HERDR_PATH` : Définit le chemin absolu vers l'exécutable Herdr s'il n'est pas dans le PATH.
 - **Commandes de contrôle** :
-  - `npm test` : Exécute la suite complète de 200 tests automatisés avec le moteur natif `node:test`.
+  - `npm test` : Exécute l'ensemble de la suite de tests automatisés natifs avec le moteur `node:test` (la commande affiche le décompte exact des tests à chaque passage).
   - `npm run check` : Valide la syntaxe de tous les fichiers JavaScript du projet via `node --check`.
 - **Arrêt propre** : Utilisez Ctrl+C dans le terminal exécutant `node server.mjs`.
 
@@ -230,7 +247,7 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
 
 Le code de MyTeam est distribué sous **licence MIT** (consultez le fichier [LICENSE](LICENSE)).
 
-Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md) ([English](NOTICE.en.md)).
+Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr et l'ensemble des 24 outils supportés) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md) ([English](NOTICE.en.md)).
 
 DrSmoke « Un Mbokatié engagé »
 

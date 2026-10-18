@@ -25,7 +25,7 @@ Windows, Herdr 0.9.5 installé. Cette conversation Codex est extérieure à Herd
 ## Capabilities and Constraints
 
 - Un personnage par agent réellement détecté dans Herdr. Le premier agent démarré dans Herdr est le chef (bureau VIP) ; les autres sont ses agents.
-- Délégations observées : quand le chef délègue (commande `herdr agent prompt` observée dans son journal), l'agent vient chercher sa tâche, retourne à son poste pour travailler, puis transmet son courrier de fin de mission au chef qui apprécie le résultat.
+- Délégations observées : quand le chef délègue (commande `herdr agent prompt` observée dans son journal), le chef quitte son bureau Direction pour apporter physiquement le dossier au poste du collaborateur. À la fin réelle de la tâche, le collaborateur transmet son courrier de retour au chef.
 - Salle de réflexion : les sous-agents actifs se réunissent dans une salle de réflexion animée puis rapportent leur dossier de travail.
 - Règle de « vérité des faits » : le bureau n'affiche que ce qui est réellement observé (états Herdr, journaux locaux, fichiers du disque, heure de la machine). Jamais de pourcentage, de tâche, d'humeur ou de relation inventés. Les erreurs observées nourrissent `LESSONS.md`.
 - États réels : travail, disponible, attente de réponse, terminé, inconnu.
