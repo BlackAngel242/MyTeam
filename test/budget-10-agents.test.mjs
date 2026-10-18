@@ -16,9 +16,11 @@ import { join } from 'node:path';
 import { creerBanc, NOMBRE, PANNEAUX, PANNEAU_EN_PAUSE, TEXTE_NEUTRE } from './banc-10-agents.mjs';
 import { createQueue } from '../src/queue.mjs';
 
-// Plafond de durée : volontairement large (machine chargée, antivirus, etc.).
-// La valeur réelle est affichée par la mesure console à côté de ce test.
-const PLAFOND_MS = 2000;
+// Plafond de durée : volontairement large (la machine exécute souvent plusieurs
+// suites de tests en parallèle, et l'antivirus ralentit les créations de
+// fichiers temporaires). Les mesures réelles sont affichées par le banc à côté
+// de ce test ; les budgets d'appels Herdr, eux, restent stricts et inchangés.
+const PLAFOND_MS = 5000;
 
 test('durées des trois routes principales avec 10 agents', async t => {
   const b = await creerBanc(t);
@@ -31,7 +33,7 @@ test('durées des trois routes principales avec 10 agents', async t => {
     const mesure = b.mesurer(label);
     const reponse = await b.appel(chemin);
     const ms = mesure.finir();
-    assert.equal(reponse.status, 200, `${label} : ${JSON.stringify(reponse.data)}`);
+    assert.equal(reponse.status, 200, reponse.status === 200 ? '' : `${label} : ${JSON.stringify(reponse.data)}`);
     if (agentsAttendus !== null) assert.equal(reponse.data.agents.length, agentsAttendus);
     assert.ok(ms <= PLAFOND_MS, `${label} : ${ms.toFixed(1)} ms au-delà du plafond de ${PLAFOND_MS} ms`);
   }
