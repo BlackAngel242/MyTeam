@@ -71,9 +71,6 @@ test('les installeurs préparent les panneaux Herdr et les extensions utiles', a
       assert.ok(texte.includes(attendu), `${nom} : ${attendu}`);
     }
     assert.match(texte, /Proc[eé]dure manuelle/, `${nom} : repli manuel affiché`);
-    for (const ligne of texte.split('\n').filter(l => l.includes('agent start'))) {
-      assert.ok(ligne.includes('#'), `${nom} : agent start n'apparaît qu'en commentaire`);
-    }
     // Extensions : les trois identifiants vérifiés, chacun confirmé à part.
     for (const id of ['yzhang.markdown-all-in-one', 'dbaeumer.vscode-eslint', 'esbenp.prettier-vscode']) {
       assert.ok(texte.includes(id), `${nom} : ${id}`);

@@ -257,14 +257,43 @@ function Creer-GrilleHerdr {
   return $ids
 }
 
+function Detecter-Outils {
+  foreach ($type in @('pi','claude','codex','gemini','cursor','devin','agy','cline','omp','mastracode','opencode','copilot','kimi','kiro','droid','amp','grok','hermes','kilo','qodercli','qwen','letta','maki','muse')) {
+    if (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue) { $type }
+  }
+}
+
+function Proposer-Agents([string[]]$Panneaux) {
+  if ($Oui) { Dire 'Le mode -Oui ne lance aucun agent.'; return }
+  $outils = @(Detecter-Outils)
+  if ($outils.Count -eq 0) { Dire 'Aucun outil compatible detecte : aucun agent lance.'; return }
+  $noms = @('Chef','Agent 2','Agent 3','Agent 4')
+  for ($i=0; $i -lt $Panneaux.Count; $i++) {
+    if ($DryRun) { Simuler "Choix et confirmation de l'outil pour $($noms[$i])."; continue }
+    Dire "Panneau $($noms[$i]) : outils detectes"
+    for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
+    $choix = Read-Host "Numero de l'outil (0 ou Entree pour ignorer)"
+    if ([string]::IsNullOrWhiteSpace($choix) -or $choix -eq '0') { continue }
+    if ($choix -notmatch '^[0-9]{1,2}$' -or [int]$choix -lt 1 -or [int]$choix -gt $outils.Count) { Dire 'Choix invalide : panneau ignore.'; continue }
+    $type = $outils[[int]$choix-1]
+    if (-not (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue)) { Dire "Cet outil n'est plus disponible."; continue }
+    if (Confirmer "Lancer $type dans le panneau $($noms[$i]) ?" -Individuel) {
+      try {
+        Appeler-Herdr @('agent','start',$noms[$i],'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
+        if (-not $script:chefPane) { $script:chefPane=$Panneaux[$i]; $script:chefOutil=$type }
+        Noter "$type : lancement confirme par Herdr."
+      } catch { Dire "Le lancement de $type n’a pas ete confirme. Consultez le panneau avant de reessayer." }
+    }
+  }
+}
+
 Dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
 # Commandes verifiees dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
 # --pane <id>. NON VERIFIE : le format exact des sorties de ces commandes.
 # Si une commande echoue ou si sa sortie n'est pas lisible, la procedure
 # manuelle est affichee au lieu d'echouer silencieusement.
-# Aucun outil d'IA n'est lance automatiquement : herdr agent start demarrerait
-# un vrai agent, c'est a DrSmoke de le faire.
+# Aucun outil d'IA n'est lance sans choix et confirmation individuelle.
 if ($herdrTrouve) {
   if (Confirmer 'Creer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?') {
     if ($DryRun) {
@@ -278,6 +307,7 @@ if ($herdrTrouve) {
         $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
         Dire "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))."
         Noter 'Panneaux Herdr : 4 panneaux crees et nommes.'
+        Proposer-Agents $ids
       } catch {
         Dire "La creation automatique n'a pas abouti : $($_.Exception.Message)"
         Dire 'Procedure manuelle (commandes verifiees de Herdr) :'

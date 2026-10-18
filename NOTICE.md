@@ -9,3 +9,7 @@ Claude et Claude Code sont des marques d'Anthropic. Codex est une marque d'OpenA
 ## Données
 
 Le bureau fonctionne entièrement sur l'ordinateur de son utilisateur. Il lit Herdr et les journaux locaux des outils en lecture seule, n'envoie rien sur Internet et ne stocke aucune clé.
+
+## Auteur et assistance par IA
+
+L'auteur du projet est DrSmoke (BlackAngel242). Le projet a été réalisé avec l'aide d'assistants d'IA (voir `docs/credits-ia.md`), qui ne sont ni auteurs ni contributeurs.

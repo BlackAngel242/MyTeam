@@ -150,6 +150,10 @@ MyTeam applique des règles d'ingénierie et d'intégrité strictes :
 
 ---
 
+## Réalisé avec l'aide de l'IA
+
+Ce projet a été concrétisé grâce à l'intelligence artificielle : Claude (Anthropic, Opus 5.5 et Sonnet 5.5), Codex (OpenAI, GPT-6.1-Sol), Antigravity (Google, Gemini 3.8 Flash) et OpenCode (MiMo V2.6 Pro) ont aidé à le concevoir, l'écrire et le tester. **L'auteur et le contributeur du projet est DrSmoke** ([BlackAngel242](https://github.com/BlackAngel242)) : les idées, les décisions et la publication sont les siennes, aucune IA ne signe de contribution. Détails dans [`docs/credits-ia.md`](docs/credits-ia.md).
+
 ## Contribuer
 
 Les contributions respectant la philosophie du projet (indépendance technique, vérité des faits, esthétique pixel art et accessibilité) sont les bienvenues.

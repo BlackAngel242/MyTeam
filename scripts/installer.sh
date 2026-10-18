@@ -304,14 +304,47 @@ creer_grille_herdr() {
   printf '%s\n' "${ids[@]}"
 }
 
+detecter_outils() {
+  local type
+  for type in pi claude codex gemini cursor devin agy cline omp mastracode opencode copilot kimi kiro droid amp grok hermes kilo qodercli qwen letta maki muse; do
+    command -v "$type" >/dev/null 2>&1 && printf '%s\n' "$type"
+  done
+  return 0
+}
+
+proposer_agents() {
+  [ "$OUI" = 1 ] && { dire 'Le mode --oui ne lance aucun agent.'; return 0; }
+  local outils=() panneaux=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4') type pane i=0 j choix liste
+  liste=$(detecter_outils)
+  [ -n "$liste" ] || { dire 'Aucun outil compatible détecté : aucun agent lancé.'; return 0; }
+  while read -r type; do outils+=("$type"); done <<< "$liste"
+  while read -r pane; do panneaux+=("$pane"); done <<< "$1"
+  for pane in "${panneaux[@]}"; do
+    if [ "$DRY_RUN" = 1 ]; then simuler "Choix et confirmation de l'outil pour ${noms[$i]}."; i=$((i+1)); continue; fi
+    dire "Panneau ${noms[$i]} : outils détectés"
+    for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
+    printf 'Numéro de l’outil (0 ou Entrée pour ignorer) : '
+    read -r choix || choix=0
+    if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
+      type="${outils[$((10#$choix-1))]}"
+      if command -v "$type" >/dev/null 2>&1 && confirmer "Lancer $type dans le panneau ${noms[$i]} ?" individuel; then
+        if "$HERDR_TROUVE" agent start "${noms[$i]}" --kind "$type" --pane "$pane" >/dev/null; then
+          if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
+          noter "$type : lancement confirmé par Herdr."
+        else dire "Le lancement de $type n’a pas été confirmé. Consultez le panneau avant de réessayer."; fi
+      fi
+    fi
+    i=$((i+1))
+  done
+}
+
 dire '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---'
 # Commandes verifiées dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
 # --pane <id>. NON VERIFIÉ : le format exact des sorties de ces commandes.
 # Si une commande échoue ou si sa sortie n'est pas lisible, la procédure
 # manuelle est affichée au lieu d'échouer silencieusement.
-# Aucun outil d'IA n'est lancé automatiquement : herdr agent start démarrerait
-# un vrai agent, c'est à DrSmoke de le faire.
+# Aucun outil d'IA n'est lancé sans choix et confirmation individuelle.
 if [ -n "$HERDR_TROUVE" ]; then
   if confirmer 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?'; then
     if [ "$DRY_RUN" = "1" ]; then
@@ -324,6 +357,7 @@ if [ -n "$HERDR_TROUVE" ]; then
       if [ "$panneaux_ok" = "1" ]; then
         dire 'Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4.'
         noter 'Panneaux Herdr : 4 panneaux créés et nommés.'
+        proposer_agents "$ids"
       fi
       if [ "$panneaux_ok" = "0" ]; then
         dire "La création automatique n'a pas abouti."

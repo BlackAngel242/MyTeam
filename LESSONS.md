@@ -57,6 +57,8 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Installeurs
 
+- Une boucle Bash lisant les panneaux avec une redirection consomme aussi les réponses des invites internes : charger d'abord la liste dans un tableau, puis poser les questions dans une boucle séparée.
+- PowerShell traite aussi l'apostrophe typographique comme un délimiteur : dans les messages qui la contiennent, utiliser des guillemets doubles ou doubler l'apostrophe, puis vérifier la syntaxe.
 - Tests de scripts bash sous Windows : ne jamais passer le script par `bash -c <texte>` (le guillemetage d'arguments de Windows mutile les `\"` et `'` et fait échouer à tort), l'écrire dans un fichier temporaire et lancer `bash <fichier>`. Un test qui échoue doit faire douter du test avant du code, mais seul son lancement le prouve.
 - Sécurité des installeurs : aucune option `--oui` / `-Oui` ne valide une installation (Node.js, Herdr, outils, extensions) ; chaque installation exige un vrai o/n saisi. Les valeurs venant du disque (dossier, chemin Herdr) sont des données : jamais interpolées dans une commande shell, un profil ou un lanceur sans échappement du format cible.
 - Avant toute publication publique, chercher les chemins personnels et noms d'utilisateur aussi dans les jeux d'essai des tests (`git grep` sur tout l'arbre, pas seulement `docs/`), et décider de l'historique : un commit de nettoyage ne retire rien des révisions déjà poussées. Réécrire l'historique reste une décision de DrSmoke.

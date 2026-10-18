@@ -31,7 +31,7 @@ export function findHerdr({home=homedir(),env=process.env,platform=process.platf
 export function normalizeAgent(a) {
   const status=['idle','working','blocked','done','unknown'].includes(a.agent_status)?a.agent_status:'unknown';
   const fingerprint=createHash('sha256').update(JSON.stringify([a.terminal_id,a.agent,a.agent_session?.value])).digest('hex').slice(0,16);
-  const names={claude:'Claude',codex:'Codex',agy:'Antigravity',antigravity:'Antigravity',gemini:'Gemini',opencode:'OpenCode'};
+  const names={pi:'Pi',claude:'Claude',codex:'Codex',gemini:'Gemini',cursor:'Cursor',devin:'Devin',agy:'Antigravity',antigravity:'Antigravity',cline:'Cline',omp:'OMP',mastracode:'Mastra Code',opencode:'OpenCode',copilot:'Copilot',kimi:'Kimi',kiro:'Kiro',droid:'Droid',amp:'Amp',grok:'Grok',hermes:'Hermes',kilo:'Kilo',qodercli:'Qoder',qwen:'Qwen',letta:'Letta',maki:'Maki',muse:'Muse'};
   const supplied=a.name||a.display_agent||names[a.agent]||a.agent||'Agent';
   const name=names[a.agent]&&typeof supplied==='string'&&[a.agent,names[a.agent].toLowerCase()].includes(supplied.trim())?names[a.agent]:supplied;
   return {id:`${a.pane_id}@${fingerprint}`,paneId:a.pane_id,name,kind:names[a.agent]||a.agent||'inconnu',status,

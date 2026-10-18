@@ -25,6 +25,12 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 - Toute approximation est nommée comme telle à l'écran (exemple : « dossier et activité récente »).
 - Une animation démarre uniquement sur un fait observé et peut être mise en pause.
 
+## Signature et auteur (obligatoire)
+
+- Toute contribution passe par le profil GitHub de l'auteur du projet (DrSmoke, compte BlackAngel242) : l'auteur et le contributeur sont lui, et personne d'autre. L'identité Git du dépôt est déjà réglée (`git config user.name` et `user.email`) : ne jamais la changer.
+- Aucune IA ne signe quoi que ce soit : pas de `Co-Authored-By`, pas de « Generated with … », pas de nom d'IA ou d'outil dans le nom d'auteur, le message de commit, le titre ou le corps d'une pull request, une release ou un commentaire public.
+- Le crédit aux IA se fait à un seul endroit : la section « Réalisé avec l'aide de l'IA » du `README.md` et `docs/credits-ia.md`, qui citent les modèles utilisés. Le projet a été concrétisé grâce à l'IA ; l'auteur reste l'auteur.
+
 ## Sécurité
 
 - Serveur sur 127.0.0.1 uniquement, origine exacte et jeton pour toute écriture et toute lecture de fichiers.

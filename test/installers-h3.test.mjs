@@ -6,6 +6,7 @@ import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeAgent } from '../src/herdr.mjs';
 
 const execute=promisify(execFile);
 const root=fileURLToPath(new URL('..',import.meta.url));
@@ -83,4 +84,54 @@ grep 'pane split' "$work/calls"`);
     'pane split --pane w9:p1 --direction down --no-focus',
     'pane split --pane w9:p2 --direction down --no-focus',
   ]);
+});
+
+test('H3 : les 24 types Herdr ont un nom propre sans changer les noms personnalisés',()=>{
+  const names={pi:'Pi',claude:'Claude',codex:'Codex',gemini:'Gemini',cursor:'Cursor',devin:'Devin',agy:'Antigravity',cline:'Cline',omp:'OMP',mastracode:'Mastra Code',opencode:'OpenCode',copilot:'Copilot',kimi:'Kimi',kiro:'Kiro',droid:'Droid',amp:'Amp',grok:'Grok',hermes:'Hermes',kilo:'Kilo',qodercli:'Qoder',qwen:'Qwen',letta:'Letta',maki:'Maki',muse:'Muse'};
+  for(const [agent,name] of Object.entries(names)) {
+    const raw={agent,name:agent,pane_id:'w9:p1',terminal_id:'factice'};
+    assert.equal(normalizeAgent(raw).name,name);assert.equal(normalizeAgent(raw).kind,name);
+    assert.equal(normalizeAgent({...raw,name:'Équipe personnelle'}).name,'Équipe personnelle');
+  }
+});
+
+test('H3 PowerShell : applications seules, outil absent ignoré et Oui sans lancement',async t=>{
+  const result=await ps(t,['Detecter-Outils','Proposer-Agents'],`
+function Get-Command {param($Name,$CommandType,$ErrorAction)
+ if($CommandType -ne 'Application'){throw 'detection non native'}
+ if($Name -in @('codex','qwen')){return @{Source='factice.exe'}}
+}
+function Dire($texte) {};function Noter($texte) {};function Simuler($texte) {}
+$script:reads=0;$script:starts=@();$DryRun=$false;$Oui=$true
+function Read-Host($texte){$script:reads++;return '1'}
+function Confirmer($question,[switch]$Individuel){if(-not $Individuel){throw 'accord non individuel'};return $true}
+function Appeler-Herdr($Arguments){$script:starts+=,@($Arguments);return @{result=@{}}}
+if((@(Detecter-Outils) -join ',') -ne 'codex,qwen'){throw 'detection incorrecte'}
+Proposer-Agents @('w9:p1','w9:p2')
+if($starts.Count -ne 0 -or $reads -ne 0){throw 'Oui a lance un agent'}
+$Oui=$false
+Proposer-Agents @('w9:p1')
+if(($starts[0] -join ' ') -ne 'agent start Chef --kind codex --pane w9:p1'){throw 'mauvaise cible ou outil'}
+if($chefOutil -ne 'codex' -or $chefPane -ne 'w9:p1'){throw 'chef non memorise'}
+'ok'`);
+  if(result)assert.equal(result.stdout.trim(),'ok');
+});
+
+test('H3 bash : exécutable absent refusé, confirmation par panneau, Oui sans lancement',async t=>{
+  const result=await bash(t,['detecter_outils','proposer_agents'],`
+set -e
+dire(){ :; };noter(){ :; };simuler(){ :; }
+command(){ if [ "$1" = '-v' ];then case "$2" in codex|qwen) printf '/factice/%s\n' "$2";return 0;;*)return 1;;esac;fi;builtin command "$@"; }
+confirmer(){ [ "$2" = individuel ]; }
+fake_herdr(){ STARTED="$*"; }
+HERDR_TROUVE=fake_herdr;DRY_RUN=0;OUI=1
+[ "$(detecter_outils | tr '\n' ',')" = 'codex,qwen,' ]
+proposer_agents 'w9:p1'
+[ -z "$STARTED" ]
+OUI=0
+proposer_agents 'w9:p1' <<< 1
+[ "$CHEF_TYPE:$CHEF_PANE" = 'codex:w9:p1' ]
+printf 'START:%s\n' "$STARTED"`);
+  assert.match(result.stdout,/START:agent start Chef --kind codex --pane w9:p1/);
+  assert.equal((result.stdout.match(/START:/g)||[]).length,1);
 });
