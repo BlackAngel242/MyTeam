@@ -102,3 +102,5 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
    - Choix des captures finales pour `docs/captures/`.
    - Création manuelle du dépôt public GitHub (`MyTeam`) et publication initiale sur la branche `main`.
    - Arbitrage sur les évolutions d'OS d'agents (bureau en tuiles ou en fenêtres libres).
+
+- Node actif : 24.22.0 LTS depuis le 18 octobre (nvm-windows, accord de DrSmoke). Le serveur en cours d'exécution tourne encore sur l'ancien Node 25.6.1 : le redémarrer quand DrSmoke le souhaite.
