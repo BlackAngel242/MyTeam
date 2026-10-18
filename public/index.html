@@ -26,9 +26,11 @@
       <button id="palette-open" class="icon-button" type="button" title="Commandes (Ctrl+K)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"/></svg><span>Commandes</span><kbd>Ctrl K</kbd></button>
       <button id="help-open" class="icon-button" type="button" aria-expanded="false" aria-controls="help"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.4-1.5 1.2-1.5 2.1v.4M12 17.5v.5M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/></svg><span>Aide</span></button>
       <button id="motion" class="icon-button" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Mettre en pause</span></button>
+      <button id="crise-open" class="icon-button crise-btn" type="button" aria-pressed="false" aria-haspopup="dialog" title="Salle de crise (Ctrl+Maj+C)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5M10.3 4.2 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z"/></svg><span>Salle de crise</span></button>
       <button class="icon-button" id="refresh" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-2L20 8M4 16l2.3 3A7 7 0 0 0 18 17"/></svg><span>Actualiser</span></button>
     </div>
   </header>
+  <div class="crise-banner" id="crise-banner" role="alert" hidden><span id="crise-banner-text"></span><button type="button" class="tool-button" id="crise-banner-open">Ouvrir la salle de crise</button></div>
   <main>
     <section class="office-section" aria-labelledby="office-title">
       <h1 class="visually-hidden" id="office-title">Bureau des agents de DrSmoke</h1>
@@ -149,6 +151,16 @@
       <input id="palette-input" type="text" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-label="Rechercher une commande" placeholder="Que veux-tu faire ? Ouvrir un poste, écrire, fichiers…" autocomplete="off" aria-controls="palette-list">
       <ul id="palette-list" role="listbox"></ul>
       <p class="palette-foot"><kbd>↑</kbd> <kbd>↓</kbd> choisir · <kbd>Entrée</kbd> lancer · <kbd>Échap</kbd> fermer</p>
+    </div>
+  </div>
+  <div class="palette-backdrop" id="crise" hidden>
+    <div class="palette-box crise-box" role="dialog" aria-modal="true" aria-labelledby="crise-title">
+      <h2 id="crise-title">Salle de crise</h2>
+      <p id="crise-state"></p>
+      <p id="crise-queue" class="crise-queue"></p>
+      <ul id="crise-agents" class="crise-agents"></ul>
+      <p id="crise-result" class="crise-result" role="status"></p>
+      <div class="crise-actions"><button type="button" class="tool-button" id="crise-main"></button><button type="button" class="tool-button" id="crise-close">Fermer</button></div>
     </div>
   </div>
   <footer class="page-footer"><span>DrSmoke « Un Mbokatié engagé »</span><span></span></footer>

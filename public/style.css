@@ -951,3 +951,18 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
   .disc-head{padding:6px 10px;gap:4px}
   .disc-body{padding:8px 10px;font-size:12.5px}
 }
+
+.crise-btn[aria-pressed="true"]{background:#5a3b0b;border-color:#e0a63a;color:#ffe2a8}
+.crise-banner{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 16px;background:#5a3b0b;color:#ffe2a8;font-size:13px;border-bottom:1px solid #e0a63a}
+.crise .office-frame{box-shadow:0 0 0 2px #e0a63a,0 0 40px -8px #e0a63a99}
+.crise #scene,.crise canvas{filter:sepia(.55) saturate(1.5) hue-rotate(-12deg)}
+.crise-box{padding:18px;max-height:84vh;overflow:auto}.crise-box h2{margin:0 0 8px;font-size:16px}
+.crise-queue,.crise-result{font-size:12.5px;color:var(--muted);margin:6px 0}
+.crise-agents{list-style:none;margin:10px 0;padding:0;display:grid;gap:10px}
+.crise-agent{display:block;font-size:12.5px;font-weight:550;color:#d5e2f1}
+.crise-tail{margin:4px 0 6px;padding:6px 8px;max-height:84px;overflow:auto;background:#0b1626;border-radius:6px;font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.crise-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.tool-button.danger{border-color:#e0a63a;color:#ffe2a8}
+@media (prefers-reduced-motion:no-preference){.crise .crise-btn{animation:crise-pulse 2.4s ease-in-out infinite}}
+@keyframes crise-pulse{50%{box-shadow:0 0 0 3px #e0a63a66}}
+.crise-box .crise-tail{min-height:0;height:auto;max-height:84px;flex:none}

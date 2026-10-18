@@ -4,6 +4,7 @@ const canvas = $('office'), ctx = canvas.getContext('2d');
 // Teintes d'identité volontairement éloignées des couleurs d'état (menthe, bleu, ambre, gris).
 const colors = ['#d98a74','#9b86e0','#d17aa6','#a3b05f','#b5654f','#7e5fa8'];
 const drafts = new Map();
+let crisisState = null;
 let state = { connected:false, agents:[], token:null }, selected = null, stateBusy = false, readBusy = false, sending = false, readSequence = 0, spots = [];
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 // Animation active par défaut (choix de DrSmoke) ; sa préférence est mémorisée dans ce navigateur.
@@ -15,7 +16,8 @@ const label = a => quotaPause(a) ? 'En pause (limite)' : labels[a.status] || 'É
 const tint = a => quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
 const activeAgent = () => state.agents.find(a => a.id === selected);
 // Un agent en pause de limite ne peut pas répondre : pas d'envoi direct, seulement la file d'attente.
-const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].includes(a.status) && !quotaPause(a));
+const crisisOn = () => crisisState?.active === true;
+const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].includes(a.status) && !quotaPause(a) && !crisisOn());
 async function request(url, options = {}) {
   // Délais au moins égaux au pire cas du serveur (liste puis lecture Herdr) pour ne pas abandonner une réponse en route.
   const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:30000), cache:'no-store' });
@@ -36,7 +38,7 @@ function errorText(error,context='lecture') {
   return (context==='envoi'?'Envoi non abouti : ':'Lecture en panne : ')+detail+'. Réessaie dans un instant.';
 }
 // Agent occupé ou en pause : la consigne peut être mise en file ; le serveur l'enverra seul quand il sera prêt.
-const canQueue = a => Boolean(state.connected && a && !canSend(a));
+const canQueue = a => Boolean(state.connected && a && !crisisOn() && !canSend(a));
 function updateForm() {
   const a = activeAgent(), allowed = canSend(a), queue = canQueue(a);
   $('message').disabled = !(allowed || queue) || sending;
@@ -45,7 +47,7 @@ function updateForm() {
   $('priority-wrap').hidden = !queue;if(!queue)$('priority').checked=false;
   $('send').querySelector('span').textContent = sending ? 'Envoi en cours…' : queue ? 'Mettre en file pour ' + a.name : attached.length ? 'Envoyer avec le fichier par la file' : 'Envoyer la consigne';
   const pause = queue && quotaPause(a);
-  $('send-help').textContent = !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : queue ? a.name + (pause ? ' est en pause' + (pause.until ? ' jusqu’à ' + hhmm(pause.until) : '') : ' n’est pas disponible') + ' : la consigne attendra dans la file et partira seule dès qu’il sera prêt.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
+  $('send-help').textContent = crisisOn() ? 'Salle de crise active : les envois sont verrouillés. Lève la crise pour reprendre.' : !a ? 'Sélectionne un agent pour lui écrire.' : !state.connected ? 'Envoi indisponible : Herdr est déconnecté.' : queue ? a.name + (pause ? ' est en pause' + (pause.until ? ' jusqu’à ' + hhmm(pause.until) : '') : ' n’est pas disponible') + ' : la consigne attendra dans la file et partira seule dès qu’il sera prêt.' : 'La consigne sera envoyée à ' + a.name + ' dans Herdr. Ctrl+Entrée pour envoyer.';
 }
 function renderAgents() {
   const list = $('agents-list'), focused = document.activeElement?.dataset?.agentId;
@@ -702,6 +704,80 @@ async function loadAttach(){
   }catch(error){if(a.id===selected)note(errorText(error));}
 }
 $('attach').addEventListener('toggle',loadAttach);
+// Salle de crise : verrou général des envois, diagnostic calme, interruption polie par agent (jamais un arrêt brutal).
+let criseArmed=null,criseStopArmed=null,criseBusy=false,criseTrigger=null;
+const criseTails=new Map();
+async function loadCrisis(){
+  if(!state.connected||!state.token)return;
+  try{
+    const c=await request('/api/crise',{headers:{'X-Bureau-Token':state.token}});
+    const was=crisisOn();crisisState={active:c.active===true,since:c.since||null,reason:c.reason||null};
+    syncCrisis();if(was!==crisisOn()){updateForm();renderBroadcast();}
+  }catch{ /* Lecture facultative : sans réponse, l'état précédent est conservé. */ }
+}
+function syncCrisis(){
+  const on=crisisOn();document.body.classList.toggle('crise',on);
+  $('crise-open').setAttribute('aria-pressed',String(on));$('crise-open').querySelector('span').textContent=on?'Crise en cours':'Salle de crise';
+  $('crise-banner').hidden=!on;
+  if(on)$('crise-banner-text').textContent='Salle de crise active'+(crisisState.since?' depuis '+hhmm(new Date(crisisState.since)):'')+' : les envois et la file sont verrouillés.'+(crisisState.reason?' '+crisisState.reason:'');
+  if(!$('crise').hidden)renderCrisis();
+}
+async function criseSet(active){
+  if(criseBusy)return;criseBusy=true;renderCrisis();
+  try{await request('/api/crise',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({active})});await loadCrisis();$('crise-result').textContent=active?'Crise enclenchée : plus aucun envoi ne part.':'Crise levée : les envois reprennent.';}
+  catch(error){$('crise-result').textContent=errorText(error,'envoi');}
+  finally{criseBusy=false;renderCrisis();}
+}
+async function criseStop(agent){
+  if(criseBusy)return;criseBusy=true;renderCrisis();
+  try{await request('/api/crise/arret',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:agent.id})});$('crise-result').textContent='Interruption polie (Échap) demandée à '+agent.name+'. Vérifie son panneau : rien n’a été tué.';}
+  catch(error){$('crise-result').textContent=errorText(error,'envoi');}
+  finally{criseStopArmed=null;criseBusy=false;renderCrisis();}
+}
+function renderCrisis(){
+  const on=crisisOn();
+  $('crise-state').textContent=on?'Crise active : envois et file verrouillés, rien n’est arrêté de force.':'Aucune crise. Enclencher la crise verrouille tous les envois du bureau et suspend la file ; tu peux ensuite demander à un agent de s’arrêter poliment.';
+  const main=$('crise-main');main.disabled=criseBusy;main.className='tool-button'+(on?'':' danger');
+  main.textContent=on?'Lever la crise':criseArmed?'Confirmer : enclencher la crise':'Enclencher la crise';
+  const waiting=queueItems.filter(q=>q.state==='attente').length;
+  $('crise-queue').textContent=waiting?waiting+' consigne'+(waiting>1?'s':'')+' en file, suspendue'+(waiting>1?'s':'')+' tant que la crise dure.':'Aucune consigne en file.';
+  $('crise-agents').replaceChildren(...state.agents.map(a=>{
+    const li=document.createElement('li'),head=document.createElement('span');head.className='crise-agent';head.textContent=a.name+' · '+label(a).toLowerCase()+(a.paneId?' · '+a.paneId:'');
+    const tail=document.createElement('pre');tail.className='crise-tail';tail.textContent=criseTails.get(a.id)||'Lecture du terminal…';
+    li.append(head,tail);
+    if(on){
+      const b=document.createElement('button');b.type='button';b.className='tool-button';b.disabled=criseBusy;
+      b.textContent=criseStopArmed===a.id?'Confirmer : interrompre '+a.name:'Arrêter cet agent';
+      b.addEventListener('click',()=>{if(criseStopArmed===a.id)criseStop(a);else{criseStopArmed=a.id;renderCrisis();setTimeout(()=>{if(criseStopArmed===a.id){criseStopArmed=null;renderCrisis();}},5000);}});
+      li.append(b);
+    }
+    return li;
+  }));
+}
+async function loadCrisisTails(){
+  await Promise.all(state.agents.map(async a=>{
+    try{const d=await request('/api/read?id='+encodeURIComponent(a.id),{headers:{'X-Bureau-Token':state.token||''}});criseTails.set(a.id,splitChrome(d.text||'').body.trim().split('\n').filter(Boolean).slice(-4).join('\n')||'Aucune sortie.');}
+    catch{criseTails.set(a.id,'Lecture impossible.');}
+  }));
+  if(!$('crise').hidden)renderCrisis();
+}
+function openCrisis(){
+  criseTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
+  for(const el of backdrop($('crise')))el.inert=true;
+  $('crise').hidden=false;$('crise-result').textContent='';criseArmed=null;criseStopArmed=null;renderCrisis();loadCrisis();loadCrisisTails();$('crise-main').focus();
+}
+function closeCrisis(){
+  $('crise').hidden=true;for(const el of backdrop($('crise')))el.inert=false;criseArmed=null;criseStopArmed=null;
+  (criseTrigger?.isConnected?criseTrigger:$('crise-open')).focus({preventScroll:true});
+}
+$('crise-open').addEventListener('click',openCrisis);
+$('crise-close').addEventListener('click',closeCrisis);
+$('crise-banner-open').addEventListener('click',openCrisis);
+$('crise-main').addEventListener('click',()=>{
+  if(crisisOn())return criseSet(false);
+  if(criseArmed){clearTimeout(criseArmed);criseArmed=null;return criseSet(true);}
+  criseArmed=setTimeout(()=>{criseArmed=null;renderCrisis();},5000);renderCrisis();
+});
 // Réponses lisibles : journal de l'agent, chargé seulement quand le volet est ouvert.
 let respBusy=false;
 async function loadResponses(){
@@ -1471,6 +1547,7 @@ function commands(){
   list.push({label:'Tâches du projet et des agents',hint:'Tâches',run:()=>showTab('taches')});
   list.push({label:editLayout?'Terminer la disposition':'Disposer les postes',hint:'Scène',run:()=>{editLayout=!editLayout;syncLayoutEdit();}});
   list.push({label:paused?'Animer le bureau':'Mettre le bureau en pause',hint:'Scène',run:()=>$('motion').click()});
+  list.push({label:'Salle de crise',hint:'Urgence',run:openCrisis});
   if(document.fullscreenEnabled)list.push({label:'Plein écran',hint:'Scène',run:()=>$('fullscreen').click()});
   list.push({label:'Actualiser les agents',hint:'Herdr',run:()=>$('refresh').click()});
   list.push({label:'Aide',hint:'?',run:()=>toggleHelp(true)});
@@ -1613,6 +1690,8 @@ $('palette-input').addEventListener('keydown',e=>{
 addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.isContentEditable;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&$('board').hidden){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
+  if(!$('crise').hidden){if(e.key==='Escape'){e.preventDefault();closeCrisis();}return;}
+  if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='c'&&$('palette').hidden&&$('board').hidden){e.preventDefault();openCrisis();return;}
   if(!$('palette').hidden){if(e.key==='Escape'){e.preventDefault();closePalette();}return;}
   if(!$('board').hidden){if(e.key==='Escape'){e.preventDefault();closeBoard();}return;}
   if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
@@ -1620,8 +1699,8 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();if(currentTab()==='equipe'){loadTreatments();loadDiscussion();}},5000);
-setTimeout(loadTodos,1500);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(currentTab()==='equipe'){loadTreatments();loadDiscussion();}},5000);
+setTimeout(loadTodos,1500);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});requestAnimationFrame(frame);
