@@ -18,8 +18,13 @@ Les profils s'adaptent à ce qui est examiné. Un même agent peut jouer plusieu
 | Senior | Est-ce durable et sans surprise ? | Architecture, dette, risques, cohérence avec l'existant validé, coût de maintenance. |
 | Junior | Qu'est-ce que je ne comprends pas ? | Lisibilité, noms, étapes manquantes, jargon, première utilisation. |
 | Lambda | Est-ce clair en trois secondes pour quelqu'un qui n'est pas du métier ? | Utilisateur ordinaire, lecteur pressé, mobile et grand écran, crédibilité. |
+| Ressources | Que se passe-t-il sur une machine de 8 Go ? | Appels, mémoire, processus qui restent ouverts, tests en parallèle. |
+| Preuve | Quel test ou quelle observation le démontre ? | Rouge puis vert, ce qui reste non vérifié, aucune affirmation sans trace. |
+| Ergonome tactile & a11y | Est-ce immédiatement praticable au doigt et accessible à tous ? | Interface : cibles tactiles, lisibilité sur écran étroit (390 px), contrastes pixel art, navigation clavier. |
+| Storyteller GitHub | Est-ce percutant dès les trois premières secondes ? | Texte et vitrine : accroche en 30 secondes, rythme, incarnation vivante, promesses visibles et vérifiables. |
+| Lecteur sceptique | Qu'est-ce qui ressemble à du vent ou à une sur-promesse ? | Vérité des faits : chasse au jargon, détection des garanties techniques non tenues, réfutation du flou. |
 
-Pour la communication ou la psychologie, remplacer ou ajouter un profil adapté (rédacteur, lecteur sceptique, regard de psychologie inversée) ; pour une interface, ajouter un profil produit. Choisir au moins 2 profils, au plus 4.
+Pour la communication, l'interface ou la documentation, piocher parmi ces profils ou en combiner selon le contexte. Choisir au moins 2 profils, au plus 4.
 
 ## 2. Procédure
 

@@ -21,7 +21,7 @@ const I18N = {
     'hero.description': 'Un tableau de bord local immersif pour orchestrer vos équipes d\'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.',
     'hero.btn-telecharger': 'Télécharger la dernière version',
     'hero.btn-github': 'Voir le projet sur GitHub',
-    'hero.preview-caption': 'Scène vivante de l\'atelier : chef au bureau Direction, tableau mural, collaborateurs à leurs postes et salle de réflexion.',
+    'hero.preview-caption': 'Tournée du chef : délégation animée en direct avec remise du dossier doré au poste d\'un collaborateur.',
 
     // Piliers (3 idées)
     'pillars.badge': 'Philosophie',
@@ -211,7 +211,7 @@ const I18N = {
     'hero.description': 'An immersive local dashboard to orchestrate your autonomous agent teams running in Herdr. No more blind consoles: every agent has their own desk, tool emblem, and visible dossiers.',
     'hero.btn-telecharger': 'Download the latest version',
     'hero.btn-github': 'View project on GitHub',
-    'hero.preview-caption': 'Live workshop scene: lead at the Direction desk, status board, team workstations, and glass reflection room.',
+    'hero.preview-caption': 'Chief tour: live animated delegation delivering the golden folder to a teammate\'s workstation.',
 
     // Piliers (3 idées)
     'pillars.badge': 'Philosophy',
