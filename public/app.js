@@ -883,7 +883,7 @@ motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=mo
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
 const WORK=['busy','working','running'], FREE=['idle','done'], WAIT=['waiting','blocked'];
 const sceneLabels={working:()=>t('scene.au_travail'),busy:()=>t('scene.au_travail'),running:()=>t('scene.au_travail'),idle:()=>t('scene.disponible'),done:()=>t('scene.termine'),waiting:()=>t('scene.attend_reponse'),blocked:()=>t('scene.attend_reponse')};
-const glyphs={A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',M:'101111111101101',N:'110101101101101',O:'010101101101010',P:'110101110100100',Q:'010101101110011',R:'110101110101101',S:'011100010001110',T:'111010010010010',U:'101101101101111',V:'101101101101010',W:'101101111111101',X:'101101010101101',Y:'101101010010010',Z:'111001010100111',0:'111101101101111',1:'010110010010111',2:'110001010100111',3:'110001010001110',4:'101101111001001',5:'111100110001110',6:'011100111101111',7:'111001010010010',8:'111101111101111',9:'111101111001110','-':'000000111000000','+':'000010111010000','_':'000000000000111','.':'000000000000010',':':'000010000010000','?':'110001010000010','!':'010010010000010','/':'001001010100100',"'":'010010000000000',' ':'000000000000000'};
+const glyphs={'%':'101001010100101',A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',M:'101111111101101',N:'110101101101101',O:'010101101101010',P:'110101110100100',Q:'010101101110011',R:'110101110101101',S:'011100010001110',T:'111010010010010',U:'101101101101111',V:'101101101101010',W:'101101111111101',X:'101101010101101',Y:'101101010010010',Z:'111001010100111',0:'111101101101111',1:'010110010010111',2:'110001010100111',3:'110001010001110',4:'101101111001001',5:'111100110001110',6:'011100111101111',7:'111001010010010',8:'111101111101111',9:'111101111001110','-':'000000111000000','+':'000010111010000','_':'000000000000111','.':'000000000000010',':':'000010000010000','?':'110001010000010','!':'010010010000010','/':'001001010100100',"'":'010010000000000',' ':'000000000000000'};
 const off=document.createElement('canvas'), g=off.getContext('2d');
 let hovered=null, ariaText='', lastFrame=0, layoutKey='', boardBottom=0;
 const lastStatus=new Map(), changes=new Map();
@@ -903,7 +903,7 @@ function trackChanges(){
 const hash=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.codePointAt(0),16777619);return h>>>0;};
 const rng=seed=>()=>(seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
 function px(x,y,w,h,c,a=1){g.globalAlpha=a;g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));g.globalAlpha=1;}
-const pixelCase=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .:_\-+?!/']/g,'?');
+const pixelCase=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .:_\-+?!/'%]/g,'?');
 const textWidth=s=>Math.max(0,s.length*4-1);
 function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;while(s.length>1&&textWidth(s+'.')>max)s=s.slice(0,-1);return s.trimEnd()+'.';}
 function text(s,x,y,c,a=1){[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')px(x+i*4+b%3,y+Math.floor(b/3),1,1,c,a);});}
@@ -1015,13 +1015,46 @@ function clock(x,y){
 // les états étant déjà portés par les cartes et les postures. Une ligne s'allume quand son fait est observé.
 // Panneau de liège : ouvre le tableau de l'équipe. Ses notes reflètent le nombre réel de tâches ouvertes.
 let boardSpot=null,boardData=null;
-function cork(x,y){
-  px(x-1,y-1,36,28,'#3a2a20');px(x,y,34,26,'#9a6f45');for(let i=0;i<12;i++){const r=rng(31+i);px(x+2+Math.floor(r()*30),y+2+Math.floor(r()*22),1,1,'#7d5835');}
-  const open=boardData?.todo?Math.max(0,boardData.todo.total-boardData.todo.done):null,notes=open==null?3:Math.min(6,open);
-  const colorsN=['#f4d36b','#a0dfc4','#f2b0c9','#9dbbff'];
-  for(let k=0;k<notes;k++){const nx=x+3+(k%3)*10,ny=y+3+Math.floor(k/3)*11;px(nx,ny,8,8,colorsN[k%4]);px(nx+1,ny+3,6,1,'#5a4a3a',.5);px(nx+1,ny+5,4,1,'#5a4a3a',.5);px(nx+3,ny,2,1,'#c0392b');}
-  if(open!=null&&open>6)text('+',x+29,y+19,'#f2f4f7');
-  boardSpot={x:x-1,y:y-1,w:36,h:28};
+// Lettres agrandies (chaque pixel d'une lettre devient k x k) : gros pourcentage de l'écran de projection.
+function textBig(s,x,y,c,k){[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')px(x+i*4*k+(b%3)*k,y+Math.floor(b/3)*k,k,k,c);});}
+// Tableau de liège : la todo réelle du projet (cases de TODO.md et des plans), jamais une valeur inventée.
+// Les cases ouvertes d'abord ; quand tout est fait, les dernières cases réalisées.
+let screenSpot=null;
+function cork(x,y,grand){
+  const w=grand?66:34,h=grand?46:26;
+  px(x-1,y-1,w+2,h+2,'#3a2a20');px(x,y,w,h,'#9a6f45');for(let i=0;i<(grand?24:12);i++){const r=rng(31+i);px(x+2+Math.floor(r()*(w-4)),y+2+Math.floor(r()*(h-4)),1,1,'#7d5835');}
+  const tasks=Array.isArray(todosData?.project)?todosData.project:null;
+  if(grand&&tasks){
+    const done=tasks.filter(t=>t.done).length,open=tasks.filter(t=>!t.done);
+    px(x+2,y+2,w-4,9,'#f1e6c8');text(t('scene.todo')+' '+done+'/'+tasks.length,x+4,y+4,'#5a4a3a');px(x+w/2-1,y,2,2,'#c0392b');
+    const recents=tasks.filter(t=>t.done).slice(-4).reverse();
+    const lignes=[...open.slice(0,4).map(tk=>[tk,false]),...recents.slice(0,Math.max(0,4-open.length)).map(tk=>[tk,true])];
+    lignes.forEach(([tk,ok],i)=>{
+      const ly=y+13+i*8;px(x+2,ly-1,w-4,7,ok?'#c9d8b6':'#f4d36b');
+      if(ok){px(x+3,ly+2,1,1,'#2f6b5e');px(x+4,ly+3,1,1,'#2f6b5e');px(x+5,ly+1,1,2,'#2f6b5e');}else px(x+3,ly+1,3,3,'#8a6b2b');
+      text(fit(tk.text,w-14),x+8,ly,ok?'#4a5d3f':'#3a2f25');
+    });
+    if(open.length>4)text('+'+(open.length-4),x+w-13,y+4,'#8a3b2f');
+  }else{
+    const open=boardData?.todo?Math.max(0,boardData.todo.total-boardData.todo.done):null,notes=open==null?3:Math.min(6,open);
+    const colorsN=['#f4d36b','#a0dfc4','#f2b0c9','#9dbbff'];
+    for(let k=0;k<notes;k++){const nx=x+3+(k%3)*10,ny=y+3+Math.floor(k/3)*11;px(nx,ny,8,8,colorsN[k%4]);px(nx+1,ny+3,6,1,'#5a4a3a',.5);px(nx+1,ny+5,4,1,'#5a4a3a',.5);px(nx+3,ny,2,1,'#c0392b');}
+    if(open!=null&&open>6)text('+',x+29,y+19,'#f2f4f7');
+  }
+  boardSpot={x:x-1,y:y-1,w:w+2,h:h+2};
+}
+// Écran de projection : pourcentage d'exécution du travail réel = cases cochées sur cases totales (jamais une estimation).
+function ecran(x,y,w){
+  const tasks=Array.isArray(todosData?.project)?todosData.project:null,total=tasks?tasks.length:0,done=tasks?tasks.filter(tk=>tk.done).length:0,pct=total?Math.round(done/total*100):null;
+  const h=40;
+  px(x-2,y-2,w+4,h+4,'#1a2438');px(x-1,y-1,w+2,h+2,'#2c3d5a');px(x,y,w,h,'#0b1426');
+  const glow=pct==null?0:.05;px(x+1,y+1,w-2,h-2,'#9dbbff',glow);
+  const titre=t('scene.avancement');text(titre,x+Math.floor((w-textWidth(titre))/2),y+3,'#9dbbff');
+  const gros=pct==null?'..':pct+'%',gw=gros.length*8-2;
+  textBig(gros,x+Math.floor((w-gw)/2),y+11,pct===100?'#a0dfc4':'#f2f4f7',2);
+  const bw=w-8;px(x+4,y+h-12,bw,4,'#1d2b40');if(pct!=null)px(x+4,y+h-12,Math.round(bw*pct/100),4,'#a0dfc4');
+  if(pct!=null)text(done+'/'+total,x+4,y+h-6,'#c4d2e4');
+  screenSpot={x:x-2,y:y-2,w:w+4,h:h+4};
 }
 function board(x,y,w){
   const paused=state.agents.map(quotaPause).filter(Boolean),back=paused.map(q=>q.until).filter(Boolean).sort((a,b)=>a-b)[0];
@@ -1065,12 +1098,15 @@ function room(L,time){
   for(let y=wallH+3,i=0;y<H;y+=6,i++){px(0,y,W,1,plank);for(let x=i%2?7:27;x<W;x+=40)px(x,y-5,1,5,plank);}
   px(0,wallH,W,1,'#0f1a2c');
   const nightLight=Math.max(0,1-d*1.4);
-  if(narrow)boardSpot=null;
+  if(narrow){boardSpot=null;screenSpot=null;}
   if(narrow){cityWindow(6,10,58,44);sunbeam(L,6,58,10,44);board(70,10,68);clock(70,44);if(nightLight)glow(35,wallH+8,16,'#9dbbff',.7*nightLight);}
   else{
     cityWindow(8,10,112,50);sunbeam(L,8,112,10,50);if(nightLight)glow(64,wallH+9,26,'#9dbbff',.7*nightLight);
     board(128,12,64);clock(198,12);neon(t('scene.bureau'),128,Math.max(50,boardBottom+5),'#a0dfc4');
-    if(W>=352)cork(W-96,14);else boardSpot=null;
+    const bordX=W-100,libre=bordX-8-202;
+    if(W>=352)cork(bordX,10,true);else boardSpot=null;
+    // L'écran se range sous l'horloge, dans le mur resté libre ; plus large quand la scène l'est.
+    if(W>=352&&libre>=36)ecran(202,27,Math.min(72,libre));else screenSpot=null;
     plant(W-52,wallH+4);rack(W-26,16,wallH+6,time);plant(1,wallH+6);
   }
   const v=.12*(1-.6*d);
@@ -1498,6 +1534,7 @@ const spotAt=event=>{
 const onMail=event=>{if(!mailSpot)return false;const p=toLogical(event);return p.x>=mailSpot.x&&p.x<=mailSpot.x+mailSpot.w&&p.y>=mailSpot.y&&p.y<=mailSpot.y+mailSpot.h;};
 canvas.addEventListener('click',event=>{
   if(editLayout)return;
+  if(screenSpot){const p=toLogical(event);if(p.x>=screenSpot.x&&p.x<=screenSpot.x+screenSpot.w&&p.y>=screenSpot.y&&p.y<=screenSpot.y+screenSpot.h){showTab('taches');return;}}
   if(boardSpot){const p=toLogical(event);if(p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h){openBoard();return;}}
   if(onMail(event)){mailCount=0;draw(lastFrame);showTab('equipe');$('mailbox').scrollIntoView({block:'start'});$('mailbox').classList.remove('flash');void $('mailbox').offsetWidth;$('mailbox').classList.add('flash');return;}
   const spot=spotAt(event);if(spot)selectAgent(spot.id);

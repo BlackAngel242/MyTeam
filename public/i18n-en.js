@@ -16,6 +16,8 @@ window.DICTIONNAIRE_EN = {
   "aide.foot-notifs": "Notifications while the page is in the background: agent waiting for your reply, end of work, limit pause. Discreet 8-bit sounds for the same events and for delegations.",
   "aide.glisser": "+ drag",
   "aide.intro": "Local control tower for your Herdr agents. Everything shown comes from an observed fact: Herdr states, terminals, local journals, files, machine time. Nothing is invented.",
+  "scene.todo": "TODO",
+  "scene.avancement": "PROGRESS",
   "onglet.equipe.relais-desactive": "Relay off.",
   "onglet.equipe.relais-active": "Relay on: the lead will be notified at each observed finish.",
   "onglet.equipe.relais-label": "Notify the lead when an agent finishes",

@@ -23,6 +23,8 @@
   "aide.foot-notifs": "Notifications quand la page est en arrière-plan : agent qui attend ta réponse, fin de travail, pause de limite. Sons 8 bits discrets pour les mêmes événements et les délégations.",
   "aide.glisser": "+ glisser",
   "aide.intro": "Tour de contrôle locale de tes agents Herdr. Tout ce qui s’affiche vient d’un fait observé : états Herdr, terminaux, journaux locaux, fichiers, heure du poste. Rien n’est inventé.",
+  "scene.todo": "TODO",
+  "scene.avancement": "AVANCEMENT",
   "onglet.equipe.relais-desactive": "Relais désactivé.",
   "onglet.equipe.relais-active": "Relais activé : le chef sera prévenu à chaque fin observée.",
   "onglet.equipe.relais-label": "Prévenir le chef quand un agent termine",
