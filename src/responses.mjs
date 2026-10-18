@@ -12,13 +12,16 @@
 //   messages inter-agents. Secrets et chemins personnels sont masqués.
 // readAgentResponses(agent, agents) : même contrat pour Codex et OpenCode, avec
 // rattachement par dossier et activité récente, jamais si ce choix est ambigu.
-// Codex : textes output_text publics uniquement ; agent_message est toujours ignoré.
+// Codex : textes output_text publics uniquement, sur un canal public et sans
+// destinataire tiers explicite (liste documentée près de consumeCodexResponse) ;
+// agent_message est toujours ignoré.
 // OpenCode : parts text non synthétiques, colonnes précises, base en lecture seule.
 import { open, lstat, opendir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createAgentActivityReader, readOpenCodeTexts } from './agent-activity.mjs';
+import { masque } from './masque.mjs';
 
 const TAIL_BYTES = 8 * 1024 * 1024;
 const MAX_LINE = 4 * 1024 * 1024;
@@ -26,19 +29,12 @@ const MAX_RESPONSES = 30;
 const MAX_BLOCK = 20000;
 const paths = new Map();
 
-export function mask(value) {
-  return String(value)
-    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi, '[identifiant masqué]')
-    .replace(/\b(?:sk|pk|ghp|gho|ghu|ghs|xox[abprs])[-_][A-Za-z0-9_-]{16,}\b/g, '[secret masqué]')
-    .replace(/\b(?:github_pat_[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{30,})/g, '[secret masqué]')
-    .replace(/@[0-9a-f]{8,}\b/g, '@[empreinte masquée]')
-    .replace(/\b[0-9a-f]{32,}\b/gi, '[empreinte masquée]')
-    .replace(/\b(Bearer)\s+[A-Za-z0-9._~+/=-]{16,}/gi, '$1 [secret masqué]')
-    .replace(/\b((?:api[_-]?key|token|secret|password|passwd)\s*[:=]\s*)["']?[^\s"',;]{6,}/gi, '$1[secret masqué]')
-    .replace(/(?:[a-z]:[\\/]|\\\\)(?:[^\\/\n`"'<>),;:]+[\\/])*[^\s\\/`"'<>)]*/gi, '[chemin masqué]')
-    .replace(/(^|[\s`"'(])(~[\\/][^\s`"'<>)]*)/g, '$1[chemin masqué]')
-    .replace(/(^|[\s`"'(])(\/(?:home|Users|root|etc|usr|var|tmp|mnt|opt|proc|workspace|data|srv|app|work|code|projects?)(?:\/[^\s`"'<>)]*)?)/g, '$1[chemin masqué]');
-}
+// Masque public unique : une seule fonction pour toutes les sorties publiques,
+// définie dans src/masque.mjs (chemins avec espaces, secrets textuels ;
+// les adresses http(s) et les routes /api/... restent intactes).
+// Le masque s'applique AVANT la troncature : réduire d'abord laisse fuiter la
+// fin d'un chemin ou d'un secret coupé au milieu (constat C-CD-04).
+export { masque as mask };
 
 async function inside(path, root) {
   for (let directory = dirname(path); ; directory = dirname(directory)) {
@@ -107,7 +103,7 @@ export function parseClaudeResponses(lines, sessionId) {
       // Journal lu par la fin : le tour en cours peut avoir commencé avant la partie lue. Son début manque, mais ses textes existent.
       if (!turn) { turn = { id: `fin-${typeof entry.uuid === 'string' ? entry.uuid : turns.length}`, startedAt: at, endedAt: at, blocks: [], interrupted: false, ended: false }; turns.push(turn); }
       for (const block of content) {
-        if (block?.type === 'text' && typeof block.text === 'string' && block.text.trim()) turn.blocks.push({ text: mask(block.text.slice(0, MAX_BLOCK)) });
+        if (block?.type === 'text' && typeof block.text === 'string' && block.text.trim()) turn.blocks.push({ text: masque(block.text).slice(0, MAX_BLOCK) });
       }
       if (at) turn.endedAt = at;
       if (entry.message.stop_reason === 'end_turn') turn.ended = true;
@@ -145,6 +141,28 @@ const date = value => {
   return Number.isFinite(ms) && Math.abs(ms) <= 8640000000000000 ? new Date(ms).toISOString() : null;
 };
 
+// C-CD-08 : liste documentée des canaux et destinataires PUBLICS d'un message
+// assistant Codex. Inventaire réel des journaux locaux du 18 octobre 2026 :
+// aucun champ « channel » n'y figure sur les messages, et les seuls
+// « recipient » observés portent des appels d'outils (/root et /root/<nom>),
+// qui ne contiennent aucun texte public.
+//   Canaux admis : absent ou vide (format sans canal), « commentary » (le fil).
+//   Canaux refusés : « analysis » (raisonnement interne) et tout canal inconnu.
+//   Destinataires admis : absent ou vide (message adressé au fil), « user »
+//     (adressé à la personne).
+//   Destinataires refusés : tout tiers explicite (un autre agent, un panneau,
+//     un chemin tel que /root/...). En cas de doute, on n'affiche pas.
+const CANAUX_PUBLICS = new Set(['', 'commentary']);
+const DESTINATAIRES_PUBLICS = new Set(['', 'user']);
+function canalPublic(value) {
+  if (value === undefined || value === null) return true;
+  return typeof value === 'string' && CANAUX_PUBLICS.has(value.trim().toLowerCase());
+}
+function destinatairePublic(value) {
+  if (value === undefined || value === null) return true;
+  return typeof value === 'string' && DESTINATAIRES_PUBLICS.has(value.trim().toLowerCase());
+}
+
 function consumeCodexResponse(state, entry, path) {
   state.responseData ??= { turns: [], current: null, sequence: 0, complete: true };
   const data = state.responseData, payload = entry?.payload;
@@ -171,14 +189,16 @@ function consumeCodexResponse(state, entry, path) {
     return;
   }
   if (entry.type !== 'response_item' || payload.type !== 'message' || payload.role !== 'assistant' ||
-    payload.channel === 'analysis' || !Array.isArray(payload.content)) return;
+    !Array.isArray(payload.content)) return;
+  // Canal et destinataire : seuls les publics listés ci-dessus apparaissent.
+  if (!canalPublic(payload.channel) || !destinatairePublic(payload.recipient)) return;
   const texts = payload.content.filter(block => block?.type === 'output_text' && typeof block.text === 'string' && block.text.trim());
   if (!texts.length) return;
   const turn = data.current ?? start();
   for (const block of texts) {
     if (turn.blocks.length >= 10) { data.complete = false; break; }
     if (block.text.length > MAX_BLOCK) data.complete = false;
-    turn.blocks.push({ text: mask(block.text.slice(0,MAX_BLOCK)) });
+    turn.blocks.push({ text: masque(block.text).slice(0, MAX_BLOCK) });
   }
   if (at) turn.endedAt = at;
   while (data.turns.reduce((sum,t) => sum+t.blocks.reduce((n,b) => n+b.text.length,0),0) > 240000 && data.turns.length > 1) {
@@ -208,7 +228,7 @@ export function createAgentResponsesReader(options = {}) {
           if (typeof part.text !== 'string' || !part.text.trim()) continue;
           const length = Math.min(MAX_BLOCK,remaining);
           if (part.text.length > length) complete = false;
-          if (length > 0) blocks.push({ text: mask(part.text.slice(0,length)) });
+          if (length > 0) blocks.push({ text: masque(part.text).slice(0,length) });
           remaining -= Math.min(part.text.length,length);
         }
         if (blocks.length) turns.push({

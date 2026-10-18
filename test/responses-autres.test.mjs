@@ -41,6 +41,17 @@ test('Codex : textes publics du tour, fin observée, aucun message chiffré ni r
   assert.equal((await f.reader(codex)).responses[0].key, key);
 });
 
+test('Codex : un message adressé à un tiers explicite n\'apparaît pas, les autres restent (C-CD-08)', async t => {
+  const f = await fixture(t);
+  const tiers = { type: 'response_item', timestamp: at, payload: { type: 'message', role: 'assistant', channel: 'commentary', recipient: 'agent-confidentiel', content: [{ type: 'output_text', text: 'SECRET_TIERS' }] } };
+  const pourLaPersonne = { type: 'response_item', timestamp: at, payload: { type: 'message', role: 'assistant', channel: 'commentary', recipient: 'user', content: [{ type: 'output_text', text: 'Visible pour la personne' }] } };
+  await writeFile(f.file, line(meta, event('task_started'), message('Visible sans destinataire'), tiers, pourLaPersonne, event('task_complete')));
+  const result = await f.reader(codex, [codex]);
+  assert.equal(result.found, true);
+  assert.deepEqual(result.responses[0].blocks.map(b => b.text), ['Visible sans destinataire', 'Visible pour la personne']);
+  assert.doesNotMatch(JSON.stringify(result), /SECRET_TIERS|agent-confidentiel/, 'le message d\'un tiers ne doit jamais sortir');
+});
+
 test('Codex : lecture incrémentale UTF-8, ligne géante sautée et réécriture', async t => {
   const f = await fixture(t);
   await writeFile(f.file, line(meta, event('task_started'), message('Début')));

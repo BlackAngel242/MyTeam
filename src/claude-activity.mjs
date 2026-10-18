@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { Readable } from 'node:stream';
+import { masque } from './masque.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 // Chemin et etat partagent une seule politique d'eviction.
@@ -120,7 +121,9 @@ function consumeLine(state, line) {
     if (Array.isArray(message.content)) {
       for (const block of message.content) {
         if (block?.type !== 'tool_use' || !['Agent', 'Task'].includes(block.name) || typeof block.id !== 'string') continue;
-        const description = typeof block.input?.description === 'string' ? Array.from(block.input.description.slice(0, 160)).slice(0, 80).join('') : '';
+        // Masque public AVANT la troncature : une description de sous-agent ne
+        // doit jamais livrer un chemin ni un secret (constat C-CD-04).
+        const description = typeof block.input?.description === 'string' ? Array.from(masque(block.input.description).slice(0, 160)).slice(0, 80).join('') : '';
         const previous = state.active.get(block.id);
         const bytes = (block.id.length + description.length) * 2 + 128;
         if (state.retained - (previous?.bytes || 0) + bytes > MAX_RETAINED_BYTES) {

@@ -50,6 +50,20 @@ test('detecte Agent et Task puis retire seulement le sous-agent termine', async 
   assert.ok(!JSON.stringify(result).includes(root));
 });
 
+test('une description de sous-agent avec chemin et secret est masquee avant la sortie publique', async t => {
+  const bs = String.fromCharCode(92);
+  const description = 'Relire C:' + bs + 'Users' + bs + 'Personne' + bs + 'Dossier Prive' + bs + 'client.txt et token=abcdef123456';
+  const { root } = await fixture(t, [assistant('m1', {}, [
+    { type: 'tool_use', id: 'a1', name: 'Agent', input: { description } },
+  ])]);
+  const result = await readClaudeActivity(sessionId, { root });
+  const texte = JSON.stringify(result);
+  assert.doesNotMatch(texte, /Dossier Prive|client\.txt|abcdef123456/);
+  assert.match(result.subagents[0].description, /\[chemin masqué\]/);
+  assert.match(result.subagents[0].description, /\[secret masqué\]/);
+  assert.ok(Array.from(result.subagents[0].description).length <= 80);
+});
+
 test('refuse les identifiants invalides', async () => {
   for (const id of ['../secret', '', sessionId.toUpperCase(), null, 12]) {
     assert.deepEqual(await readClaudeActivity(id), { found: false });

@@ -18,6 +18,15 @@ test('le tableau retient la dernière section du relais, les cases ouvertes, les
   assert.deepEqual(board.lessons,{source:'LESSONS.md',total:6,latest:['L6','L5','L4','L3','L2']});
 });
 
+test('les trois défauts du masque relevés par la table ronde sont corrigés (C-CD-06, C-CD-12)', () => {
+  const entree='- Lire C:/Users/Personne/Projet Prive/client.txt et https://exemple.test/a et token=abcdef123456 puis route /api/tableau\n';
+  const texte=parseBlackboard({'LESSONS.md':entree}).lessons.latest[0];
+  assert.doesNotMatch(texte,/Prive|client\.txt/,'la fin du chemin à espaces ne doit plus rester visible');
+  assert.match(texte,/https:\/\/exemple\.test\/a/,'l adresse web ne doit pas être détruite');
+  assert.doesNotMatch(texte,/abcdef123456/,'le secret sous forme token= doit être masqué');
+  assert.match(texte,/\/api\/tableau/,'la route du bureau reste lisible');
+});
+
 test('chemins personnels et identifiants sont masqués', () => {
   const board=parseBlackboard({'LESSONS.md':'- Fichier C:\\Users\\Moi\\secret.txt et /Users/moi/x, session 12345678-1234-1234-1234-123456789abc\n'});
   const text=board.lessons.latest[0];

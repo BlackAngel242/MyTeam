@@ -100,6 +100,29 @@ test('un chemin Windows contenant une espace est masqué en entier, sans avaler 
   assert.match(mask('voir C:/a/b.txt, puis la suite'),/puis la suite/);
 });
 
+test('le masque découpe en trois règles : chemins entiers, secrets, adresses et routes intacts',()=>{
+  const bs=String.fromCharCode(92), dbl=bs+bs;
+  const entree='Lire C:/Users/Personne/Projet Prive/client.txt et C:'+bs+'Dossier Prive'+bs+'note.txt et '+dbl+'serveur'+bs+'partage'+bs+'d.txt et /home/moi/f.txt et ~/prive/x.md'
+    +' et https://exemple.test/a et http://127.0.0.1:4317/api/tableau et /api/todos'
+    +' et token=abcdef123456 et ghp_abcdefghijklmnopqrstuvwxyz et password: supersecret123';
+  const sortie=mask(entree);
+  assert.doesNotMatch(sortie,/Projet Prive|client\.txt|Dossier Prive|note\.txt|serveur|partage|d\.txt|\/home\/moi|prive\/x\.md|abcdef123456|ghp_|supersecret123/);
+  assert.match(sortie,/\[chemin masqué\]/,'chemins remplacés en entier');
+  assert.match(sortie,/\[secret masqué\]/,'secrets remplacés');
+  assert.match(sortie,/https:\/\/exemple\.test\/a/,'adresse intacte (contre-exemple obligatoire)');
+  assert.match(sortie,/http:\/\/127\.0\.0\.1:4317\/api\/tableau/,'adresse locale intacte');
+  assert.match(sortie,/\/api\/todos/,'route intacte (contre-exemple obligatoire)');
+  assert.equal(mask(sortie),sortie,'le masque se rappelle sans rien changer');
+});
+
+test('les trois défauts relevés : fin de chemin visible, adresse détruite, token en clair (C-CD-06, C-CD-12)',()=>{
+  const entree='Lire C:/Users/Personne/Projet Prive/client.txt et https://exemple.test/a et token=abcdef123456';
+  const sortie=mask(entree);
+  assert.doesNotMatch(sortie,/Prive|client\.txt/,'la fin du chemin ne doit plus rester visible');
+  assert.match(sortie,/https:\/\/exemple\.test\/a/,'l adresse web ne doit pas être détruite');
+  assert.doesNotMatch(sortie,/abcdef123456/,'le token doit être masqué');
+});
+
 test('un tour en cours dont le début est hors de la partie lue du journal garde ses textes', () => {
   const out = parseClaudeResponses([reply('Texte venu d\'un tour commencé plus haut', '2026-10-18T10:00:05Z', 'tool_use'), reply('Suite', '2026-10-18T10:00:09Z', 'end_turn')], SESSION);
   assert.equal(out.length, 1);

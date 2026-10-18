@@ -296,6 +296,18 @@ test('le titre n\'est jamais la consigne complète et masque les chemins', async
   assert.equal(delegations[3].title.length, 80);
 });
 
+test('le titre masque un chemin à espaces en entier, garde les adresses et masque les secrets', async t => {
+  const root = await journal(t, [
+    appel('t5', 'herdr agent prompt w5:p1 "Lire C:/Users/Personne/Projet Prive/client.txt et https://exemple.test/a et token=abcdef123456"'),
+  ]);
+  const { delegations } = await readDelegations(SESSION, { root });
+  const titre = delegations[0].title;
+  assert.doesNotMatch(titre, /Prive|client\.txt/, 'la fin du chemin à espaces ne doit plus rester visible');
+  assert.match(titre, /https:\/\/exemple\.test\/a/, 'l adresse web ne doit pas être détruite');
+  assert.doesNotMatch(titre, /abcdef123456/, 'le secret sous forme token= doit être masqué');
+  assert.ok(titre.length <= 80);
+});
+
 test('bossOf choisit le plus petit numéro de panneau de son espace', () => {
   const p1 = { id: 'w5:p1@aaaa', paneId: 'w5:p1', name: 'Claude' };
   const p4 = { id: 'w5:p4@bbbb', paneId: 'w5:p4', name: 'Codex' };

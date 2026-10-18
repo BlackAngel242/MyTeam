@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {createInterface} from 'node:readline';
 import {Readable} from 'node:stream';
 import {createAgentActivityReader,readAgentActivity} from './agent-activity.mjs';
+import {masque} from './masque.mjs';
 
 const STATUSES=new Set(['pending','in_progress','completed']);
 const MAX_BYTES=50*1024*1024,MAX_LINE=4*1024*1024;
@@ -13,11 +14,9 @@ const projectDirectory=fileURLToPath(new URL('../',import.meta.url));
 
 function textOf(value) {
   if(typeof value!=='string') return '';
-  return Array.from(value.slice(0,1024)
-    .replace(/\b(?:creator_user_id|creator_account_id|account_id|user_id|session_id)\s*[:=]\s*["']?[^\s,"']+/gi,'[identifiant masqué]')
-    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi,'[identifiant masqué]')
-    .replace(/(?:[a-z]:[\\/]|\\\\)[^\s`"'<>]+/gi,'[chemin masqué]')
-    .replace(/(^|\s|`)(\/[^\s`"'<>]+)/g,'$1[chemin masqué]')
+  // Masque public AVANT la troncature : réduire d'abord laisse fuiter la fin
+  // d'un chemin ou d'un secret coupé au milieu (constat C-CD-04).
+  return Array.from(masque(value.slice(0,1024))
     .replace(/[\u0000-\u001f\u007f]/g,' ').trim()).slice(0,160).join('');
 }
 

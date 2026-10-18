@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
-import { createAgentActivityReader } from '../src/agent-activity.mjs';
+import { createAgentActivityReader, normalizeActivity } from '../src/agent-activity.mjs';
 
 const cwd = 'C:/projet-factice';
 const codex = { kind: 'Codex', cwd };
@@ -239,6 +239,17 @@ test('Codex : un appel spawn_agent illisible n\'est pas une observation', async 
     { type: 'response_item', payload: { type: 'function_call', name: 'spawn_agent', call_id: 'call_casse', arguments: '{casse' } }));
   const result = await f.reader(codex);
   assert.equal('subagents' in result, false);
+});
+
+test('C-CD-04 : une description de sous-agent est masquée avant la projection publique', () => {
+  const bs = String.fromCharCode(92);
+  const description = 'Vérifier C:' + bs + 'Users' + bs + 'Personne' + bs + 'Projet Prive' + bs + 'f.txt et ghp_abcdefghijklmnopqrstuvwxyz';
+  const sortie = normalizeActivity({ subagents: [{ id: 'thread-1', description }] });
+  const texte = JSON.stringify(sortie);
+  assert.doesNotMatch(texte, /Projet Prive|f\.txt|ghp_abcdefghijklmnopqrstuvwxyz/);
+  assert.match(sortie.subagents[0].description, /\[chemin masqué\]/);
+  assert.match(sortie.subagents[0].description, /\[secret masqué\]/);
+  assert.ok(Array.from(sortie.subagents[0].description).length <= 80, 'le masque passe avant la troncature');
 });
 
 test('Codex : le fil racine n\'est jamais compté comme sous-agent', async t => {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, appendFile, rm, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createTodosReader } from '../src/todos.mjs';
+import { createTodosReader, normalizeTodos } from '../src/todos.mjs';
 
 const cwd = 'C:/projet-factice';
 const sid = '12345678-abcd-abcd-abcd-123456789abc';
@@ -21,6 +21,22 @@ async function fixture(t) {
   await Promise.all([mkdir(join(projectRoot, 'docs'), { recursive: true }), mkdir(join(claudeRoot, 'dossier'), { recursive: true }), mkdir(join(codexRoot, '2026'), { recursive: true })]);
   return { projectRoot, claudeRoot, codexRoot, claudeFile: join(claudeRoot, 'dossier', sid + '.jsonl'), codexFile: join(codexRoot, '2026', 'rollout-factice.jsonl'), reader: createTodosReader({ projectRoot, claudeRoot, codexRoot }) };
 }
+
+test('TODO projet : les trois défauts du masque relevés par la table ronde (C-CD-06, C-CD-12)', () => {
+  const entree='Lire C:/Users/Personne/Projet Prive/client.txt et https://exemple.test/a et token=abcdef123456';
+  const sortie=normalizeTodos({project:[{text:entree,done:false,source:'TODO.md'}]}).project[0].text;
+  assert.doesNotMatch(sortie,/Prive|client\.txt/,'la fin du chemin à espaces ne doit plus rester visible');
+  assert.match(sortie,/https:\/\/exemple\.test\/a/,'l adresse web ne doit pas être détruite');
+  assert.doesNotMatch(sortie,/abcdef123456/,'le secret sous forme token= doit être masqué');
+  assert.match(sortie,/\[chemin masqué\]/);
+  assert.match(sortie,/\[secret masqué\]/);
+});
+
+test('TODO projet : adresses et routes du bureau restent lisibles dans l\'onglet Tâches', () => {
+  const texte='Vérifier https://exemple.test/a puis http://127.0.0.1:4317/api/tableau et /api/todos';
+  const sortie=normalizeTodos({project:[{text:texte,done:false,source:'TODO.md'}]}).project[0].text;
+  assert.equal(sortie,texte);
+});
 
 test('TODO projet : cases réelles uniquement, sources sans chemins', async t => {
   const f = await fixture(t);

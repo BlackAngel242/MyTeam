@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { join, posix, win32 } from 'node:path';
 import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
+import { masque } from './masque.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 const MAX_LINE = 4 * 1024 * 1024;
@@ -48,7 +49,9 @@ export function normalizeActivity(value, { claude = false } = {}) {
   };
   if (claude || Array.isArray(value.subagents)) result.subagents = (Array.isArray(value.subagents) ? value.subagents : []).filter(agent =>
     agent && typeof agent.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(agent.id)
-  ).map(agent => ({ id: agent.id, description: typeof agent.description === 'string' ? Array.from(agent.description.slice(0, 160)).slice(0, 80).join('') : '' }));
+  // Masque public AVANT la troncature : une description de sous-agent ne doit
+  // jamais livrer un chemin ni un secret (constat C-CD-04).
+  ).map(agent => ({ id: agent.id, description: typeof agent.description === 'string' ? Array.from(masque(agent.description).slice(0, 160)).slice(0, 80).join('') : '' }));
   return result;
 }
 

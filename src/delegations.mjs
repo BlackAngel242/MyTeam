@@ -10,6 +10,7 @@ import { lstat, opendir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
+import { masque } from './masque.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;      // octets lus au plus par appel
 const MAX_LINE = 4 * 1024 * 1024;        // une ligne plus longue est ignorée
@@ -69,13 +70,11 @@ function readable(text) {
 }
 
 // Les plafonds de longueur ne sont pas une protection : un chemin court reste
-// lisible. On masque donc les chemins dans tout intitulé.
+// lisible. On applique donc le masque public unique (chemins avec espaces,
+// secrets, identifiants ; adresses web et routes /api intactes), puis on
+// réduit le marqueur de chemin à « … » pour garder un titre bref.
 function masquerChemins(texte) {
-  return texte
-    .replace(/[A-Za-z]:[\\/][^\s"']*/g, '…')
-    .replace(/\\\\[^\s"']*/g, '…')
-    .replace(/(?:^|[\s(])~?\/(?:home|Users|root|var|etc|tmp|mnt|opt|proc)\/[^\s"']*/g, suite => (suite.startsWith(' ') ? ' …' : '…'))
-    .replace(/~\/[^\s"']*/g, '…');
+  return masque(texte).replaceAll('[chemin masqué]', '…');
 }
 
 // Un titre n'est JAMAIS la consigne complète : même courte, elle est coupée d'au

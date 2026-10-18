@@ -1,6 +1,7 @@
 import {readFile,lstat} from 'node:fs/promises';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {masque} from './masque.mjs';
 
 // Tableau mural de mémoire partagée : lecture seule des fichiers piliers du projet.
 // Liste fermée de fichiers, jamais de chemin venant du navigateur ; rien n'est écrit.
@@ -9,13 +10,9 @@ const FILES=['HANDOFF.md','TODO.md','LESSONS.md','AGENTS.md'];
 const MAX_BYTES=512*1024;
 
 function clean(value) {
-  return Array.from(String(value)
-    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi,'[identifiant masqué]')
-    .replace(/@[0-9a-f]{8,}\b/gi,'@[identifiant masqué]')
-    .replace(/\b[0-9a-f]{32,}\b/gi,'[identifiant masqué]')
-    .replace(/(?:[a-z]:[\\/]|\\\\)[^\s`"'<>)]+/gi,'[chemin masqué]')
-    // Chemins relatifs au dossier personnel et racines système Unix. Les routes du bureau (`/api/...`) restent lisibles.
-    .replace(/(^|[\s`("'=])(~\/[^\s`"'<>)]*|\/(?:Users|home|root|etc|tmp|var|opt|mnt|srv|data|workspace|usr|private|Volumes)\/[^\s`"'<>)]*)/g,'$1[chemin masqué]')
+  // Masque public unique (chemins, secrets, identifiants) AVANT la troncature :
+  // les routes /api/... et les adresses web restent lisibles.
+  return Array.from(masque(String(value))
     .replace(/\*\*|__|`/g,'')
     .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
     .replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()).slice(0,240).join('');
