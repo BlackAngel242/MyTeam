@@ -55,7 +55,11 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     return etat?{limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null}:{limitReached:false,resetsAt:null};
   };
   // Sondage léger des terminaux : messages de limite observés dans le panneau.
-  const sonderEtats=async()=>{
+  // Un seul cycle à la fois : la cadence est de 20 secondes, mais une lecture
+  // lente de Herdr (jusqu'à 8 s par panneau) fait dépasser ce délai, et le tour
+  // suivant démarrait alors que le premier n'est pas fini, doublant les appels.
+  let sondageEnCours = null;
+  const executerSonderEtats=async()=>{
     const liste=await bridge.list();
     await relaisEcoute.observe(liste,equipe.effective(liste).boss?.id).catch(()=>{});
     await autonomie.verifier().catch(()=>{});
@@ -74,6 +78,10 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       } catch { /* Lecture impossible : on garde le dernier état connu. */ }
     }
     await reprendreApresPause(liste).catch(()=>{});
+  };
+  const sonderEtats=()=>{
+    if(!sondageEnCours) sondageEnCours=executerSonderEtats().finally(()=>{sondageEnCours=null;});
+    return sondageEnCours;
   };
   // Reprise après une pause de quota, pour tous les agents : une minute après l'heure de retour, une consigne
   // courte passe par la file (donc jamais en crise, jamais à un agent occupé) pour vérifier qu'il est de nouveau là.
