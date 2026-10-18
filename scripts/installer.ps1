@@ -454,12 +454,13 @@ if (-not $SansRaccourci) {
   # pour ce second cas : aucun doublon n'est cree.
   $choixLanceur = 'bureau'
   if ($DryRun) {
-    Simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur (defaut 2).'
+    Simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (defaut 2).'
   } elseif ($Oui) {
     Dire 'Raccourci : choix automatique « le bureau » (-Oui).'
   } else {
-    $saisie = Read-Host 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur (defaut 2)'
+    $saisie = Read-Host 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (defaut 2)'
     if ($saisie.Trim() -eq '1') { $choixLanceur = 'herdr' }
+    if ($saisie.Trim() -eq '3') { $choixLanceur = 'ensemble' }
   }
   if ($choixLanceur -eq 'herdr') {
     $cible = $herdrTrouve
@@ -479,7 +480,11 @@ if (-not $SansRaccourci) {
     } else { Noter 'Raccourci : non cree (refuse).' }
   } else {
     $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
-    if (-not (Test-Path $cible)) {
+    if ($choixLanceur -eq 'ensemble') {
+      $cible = Join-Path $PSHOME 'powershell.exe'
+      if (-not $herdrTrouve) { Dire 'Herdr absent : raccourci combine ignore.'; $cible = $null }
+    }
+    if (-not $cible -or -not (Test-Path -LiteralPath $cible)) {
       Dire "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignore."
       Noter 'Raccourci : lanceur absent.'
     } else {
@@ -490,6 +495,10 @@ if (-not $SansRaccourci) {
           $wsh = New-Object -ComObject WScript.Shell
           $raccourci = $wsh.CreateShortcut($lienRaccourci)
           $raccourci.TargetPath = $cible
+          if ($choixLanceur -eq 'ensemble') {
+            $lanceur = Join-Path $racine 'Ouvrir le bureau.ps1'
+            $raccourci.Arguments = '-NoProfile -File "' + $lanceur + '" -AvecHerdr'
+          }
           $raccourci.WorkingDirectory = $racine
           $raccourci.Save()
         } | Out-Null

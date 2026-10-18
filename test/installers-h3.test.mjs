@@ -135,3 +135,18 @@ printf 'START:%s\n' "$STARTED"`);
   assert.match(result.stdout,/START:agent start Chef --kind codex --pane w9:p1/);
   assert.equal((result.stdout.match(/START:/g)||[]).length,1);
 });
+
+test('H3 raccourci combiné bash : port et chemins littéraux, serveur avant Herdr',async t=>{
+  const result=await bash(t,['literal_shell','ecrire_lanceur'],`
+set -e
+work=$(mktemp -d);trap 'rm -rf "$work"' EXIT
+RACINE="/tmp/dossier '\\$(commande)";HERDR_LANCEUR="/tmp/herdr avec espaces";PORT_CHOISI=4321
+ecrire_lanceur "$work/bureau.command" ensemble
+cd(){ printf 'ROOT:%s\\n' "$2"; }
+command(){ printf 'fake_node\\n'; }
+fake_node(){ printf 'NODE:%s:%s\\n' "$BUREAU_PORT" "$*"; }
+exec(){ printf 'HERDR:%s\\n' "$1"; }
+. "$work/bureau.command"`);
+  assert.match(result.stdout,/ROOT:\/tmp\/dossier '\$\(commande\)/);
+  assert.match(result.stdout,/NODE:4321:scripts\/ouvrir-bureau.mjs\nHERDR:\/tmp\/herdr avec espaces/);
+});

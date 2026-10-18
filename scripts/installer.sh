@@ -101,9 +101,12 @@ ecrire_lanceur() {
       printf 'exec %s\n' "$(literal_shell "$HERDR_LANCEUR")"
     else
       printf 'cd -- %s || exit 1\n' "$(literal_shell "$RACINE")"
-      printf 'node server.mjs > bureau.log 2> bureau-erreurs.log &\nsleep 2\n'
-      printf 'if [ "$(uname)" = Darwin ]; then open %s; else xdg-open %s; fi\n' \
-        "$(literal_shell "http://127.0.0.1:$PORT_CHOISI")" "$(literal_shell "http://127.0.0.1:$PORT_CHOISI")"
+      printf 'export BUREAU_PORT=%s\n' "$(literal_shell "$PORT_CHOISI")"
+      printf 'bureau_node=$(command -v node || command -v node.exe) || exit 1\n'
+      printf '"$bureau_node" scripts/ouvrir-bureau.mjs || exit 1\n'
+      if [ "$choix" = "ensemble" ]; then
+        printf 'exec %s\n' "$(literal_shell "$HERDR_LANCEUR")"
+      fi
     fi
   } > "$fichier"
   chmod +x "$fichier"
@@ -546,13 +549,14 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
   # aucun doublon n'est créé.
   CHOIX_LANCEUR='bureau'
   if [ "$DRY_RUN" = "1" ]; then
-    simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur (défaut 2).'
+    simuler 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).'
   elif [ "$OUI" = "1" ]; then
     dire 'Raccourci : choix automatique « le bureau » (--oui).'
   else
-    printf 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur (défaut 2) : '
+    printf 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2) : '
     read -r choix_saisi
     [ "$choix_saisi" = "1" ] && CHOIX_LANCEUR='herdr'
+    [ "$choix_saisi" = "3" ] && CHOIX_LANCEUR='ensemble'
   fi
   if [ "$CHOIX_LANCEUR" = "herdr" ]; then
     HERDR_LANCEUR="$HERDR_TROUVE"
@@ -581,6 +585,19 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
       noter 'Raccourci : créé (lance Herdr).'
     else
       noter 'Raccourci : non créé (refus).'
+    fi
+  elif [ "$CHOIX_LANCEUR" = 'ensemble' ]; then
+    HERDR_LANCEUR="$HERDR_TROUVE"
+    if [ -z "$HERDR_LANCEUR" ]; then
+      dire 'Herdr absent : raccourci combiné ignoré.'
+    elif confirmer 'Créer le raccourci « Herdr et bureau » ?'; then
+      LANCEUR="$DOSSIER_BUREAU/Ouvrir le bureau.command"
+      if [ "$DRY_RUN" = 1 ]; then
+        simuler 'Création du raccourci combiné, dans un terminal visible.'
+      else
+        ecrire_lanceur "$LANCEUR" ensemble
+        if [ "$(uname)" != Darwin ]; then ecrire_desktop "$DOSSIER_BUREAU/ouvrir-le-bureau.desktop" "$LANCEUR" true || exit 1; fi
+      fi
     fi
   elif [ "$(uname)" = "Darwin" ]; then
     RACCOURCI="$DOSSIER_BUREAU/Ouvrir le bureau.command"

@@ -15,7 +15,7 @@ const ps1 = join(racine, 'scripts/installer.ps1');
 const ps = await readFile(ps1, 'utf8');
 const interdit = erreur => erreur.code === 'EPERM' || erreur.code === 'EACCES' ||
   /CreateFileMapping|WSL\/Service\/E_ACCESSDENIED/i.test(`${erreur.stderr} ${erreur.message}`);
-const options = { windowsHide: true, timeout: 30000 };
+const options = { windowsHide: true, timeout: 120000 };
 const psLiteral = valeur => `'${valeur.replaceAll("'", "''")}'`;
 
 // On ne charge que des fonctions : jamais le corps des installeurs.
