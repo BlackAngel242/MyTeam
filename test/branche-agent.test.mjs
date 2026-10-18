@@ -26,7 +26,7 @@ async function depotDeTest(t) {
 
 test('la branche d\'un agent vit dans son propre dossier de travail, depuis la base demandée', async t => {
   const depot = await depotDeTest(t);
-  const r = await brancheAgent('antigravity', 'L10', { depot });
+  const r = await brancheAgent('antigravity', 'L10', { depot, worktreeAutorise: true });
   assert.equal(r.branche, 'agent/antigravity/L10');
   assert.equal(basename(r.dossier), 'antigravity-L10');
   assert.ok((await stat(join(r.dossier, 'a.txt'))).isFile());
@@ -36,9 +36,15 @@ test('la branche d\'un agent vit dans son propre dossier de travail, depuis la b
 
 test('noms invalides et branche déjà existante refusés sans rien créer', async t => {
   const depot = await depotDeTest(t);
-  await assert.rejects(brancheAgent('Agent Un', 'L1', { depot }), /Nom d’agent invalide/);
-  await assert.rejects(brancheAgent('opencode', 'a b', { depot }), /Identifiant de tâche invalide/);
-  await assert.rejects(brancheAgent('opencode', 'x', { depot, base: '-D' }), /Base invalide/);
-  await brancheAgent('opencode', 'L2', { depot });
-  await assert.rejects(brancheAgent('opencode', 'L2', { depot }), /existe déjà/);
+  await assert.rejects(brancheAgent('Agent Un', 'L1', { depot, worktreeAutorise: true }), /Nom d’agent invalide/);
+  await assert.rejects(brancheAgent('opencode', 'a b', { depot, worktreeAutorise: true }), /Identifiant de tâche invalide/);
+  await assert.rejects(brancheAgent('opencode', 'x', { depot, base: '-D', worktreeAutorise: true }), /Base invalide/);
+  await brancheAgent('opencode', 'L2', { depot, worktreeAutorise: true });
+  await assert.rejects(brancheAgent('opencode', 'L2', { depot, worktreeAutorise: true }), /existe déjà/);
+});
+
+test('sans l\'accord explicite de DrSmoke, aucun worktree n\'est créé', async t => {
+  const depot = await depotDeTest(t);
+  await assert.rejects(brancheAgent('opencode', 'L3', { depot }), /worktrees sont interdits/);
+  assert.equal(await git(depot, 'branch', '--list', 'agent/opencode/L3'), '');
 });

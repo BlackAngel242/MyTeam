@@ -57,7 +57,7 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 Détail dans `docs/protocole-agents.md`. En bref :
 
 - Avant toute tâche, partir de l'existant validé (`git log -8`, `HANDOFF.md`, `LESSONS.md`, plan) : une option a peut-être déjà été adoptée ; jamais la seule mémoire de session.
-- Une branche nommée par tâche, dans un dossier à part : `node scripts/branche-agent.mjs <agent> <id-tâche>`.
+- Une tâche = un identifiant (plan) et des commits ciblés sur `main` qui le portent ; les worktrees restent interdits (règle de DrSmoke) et la branche nommée par agent attend son accord.
 - Fin de tâche : l'agent prévient le chef une fois (id de tâche, branche, hash, résumé en 3 lignes, tests, non vérifié), note ses leçons et informe les deux autres agents.
 - Le chef évalue, corrige, fusionne, dit ce qu'il a modifié et pourquoi, partage la leçon et tient `TODO.md` et le plan à jour.
 - Surveillance par inactivité des panneaux, pas de messages en boucle (relais d'écoute désactivé sauf demande).

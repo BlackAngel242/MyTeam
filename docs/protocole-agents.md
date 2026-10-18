@@ -8,10 +8,11 @@ Règles de DrSmoke du 18 octobre 2026. Elles valent pour le chef et pour chaque 
 - Une option a peut-être déjà été adoptée avant que tu penses à l'implémenter : chercher dans le code, dans l'historique (`git log -S`) et dans le plan avant d'écrire quoi que ce soit.
 - Partir de la dernière version commitée de `main`, jamais d'une copie gardée en mémoire de session.
 
-## 2. Une branche nommée par tâche
+## 2. Une tâche, un identifiant, des commits ciblés
 
-- `node scripts/branche-agent.mjs <agent> <id-tâche>` crée la branche `agent/<agent>/<id-tâche>` dans un dossier de travail à part (git worktree). Deux agents ne se marchent plus dessus.
-- Commits ciblés dans ce dossier, avec l'identifiant de tâche dans le message. Aucun push, aucune publication.
+- **Les worktrees sont interdits** (règle de DrSmoke du 18 octobre : chaque cycle bloquait OpenCode sur une fenêtre « Worktrees »). Le travail se fait donc dans le dossier du projet, sur `main`, avec des commits ciblés (`git commit -- <fichiers>`) qui portent l'identifiant de tâche dans leur message (ex. « N7 … »).
+- La branche nommée par agent et par tâche (`agent/<agent>/<id-tâche>`, via `scripts/branche-agent.mjs --worktree-autorise`) attend l'accord explicite de DrSmoke : elle exige un worktree. Tant que cet accord manque, ne pas l'utiliser.
+- Aucun push, aucune publication.
 
 ## 3. Fin de tâche : rapport bref, dans les deux sens
 
