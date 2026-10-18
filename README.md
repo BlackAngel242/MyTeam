@@ -4,7 +4,7 @@ Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et pilo
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
-[![Tests natifs](https://img.shields.io/badge/tests-200%20passants-success.svg)](test/)
+[![CI](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml)
 [![Dépendances](https://img.shields.io/badge/d%C3%A9pendances-0%20npm-informational.svg)](package.json)
 
 ![Scène et atelier de MyTeam](docs/captures/01-ordinateur-scene.png)

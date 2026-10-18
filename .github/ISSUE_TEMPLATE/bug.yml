@@ -1,0 +1,25 @@
+name: Signaler un défaut
+description: Quelque chose ne marche pas comme prévu.
+labels: [bug]
+body:
+  - type: textarea
+    id: constat
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous voyez, et ce que vous attendiez.
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Comment le reproduire
+    validations:
+      required: true
+  - type: input
+    id: environnement
+    attributes:
+      label: Environnement
+      description: Système, version de Node.js, version de Herdr, navigateur.
+  - type: markdown
+    attributes:
+      value: Ne collez ni jeton, ni clé, ni chemin personnel dans ce formulaire.

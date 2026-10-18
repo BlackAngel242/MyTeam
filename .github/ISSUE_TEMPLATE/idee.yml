@@ -1,0 +1,11 @@
+name: Proposer une idée
+description: Une fonction ou une amélioration.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: Votre idée
+      description: Quel besoin, et comment vous l'imaginez. Le bureau n'affiche que des faits observés : dites d'où viendrait la donnée.
+    validations:
+      required: true

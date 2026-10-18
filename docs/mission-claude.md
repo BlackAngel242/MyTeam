@@ -4,7 +4,7 @@ DrSmoke te demande d'améliorer le design de son bureau animé et de discuter av
 
 ## Projet réel
 
-Dossier : C:/Users/DrSmoke/Documents/ChatGPT/IA DESKTOP
+Dossier : le dossier du projet
 Application locale : http://127.0.0.1:4317/
 Branche : codex/bureau-agents. Première version sauvegardée au commit 3f5ff33.
 Lire les consignes de DrSmoke, PRODUCT.md, DESIGN.md, HANDOFF.md, TODO.md, JOURNAL.md, LESSONS.md et ERREURS.md avant de travailler. Les fichiers et l'état actuel font autorité.

@@ -9,7 +9,7 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 | Élément | Emplacement | Problème pour un utilisateur tiers | Correction proposée |
 | :--- | :--- | :--- | :--- |
 | Version Herdr en dur | `src/herdr.mjs` (ligne 17) | Recherche le chemin `0.9.5-x86_64-pc-windows-msvc`. Échoue sur Linux, macOS ou avec une autre version de Herdr si `BUREAU_HERDR_PATH` n'est pas défini. | Parcourir dynamiquement le dossier des versions `.herdr/packages/standalone/releases/*/herdr.exe`, ou documenter `BUREAU_HERDR_PATH`. |
-| Chemin absolu de test | `docs/mission-claude.md` (ligne 7) | Mentionne `C:/Users/DrSmoke/Documents/ChatGPT/IA DESKTOP`. | Document interne de coordination : à conserver dans l'historique ou à exclure de l'archive publique. |
+| Chemin absolu de test | `docs/mission-claude.md` (ligne 7) | Mentionnait un chemin local, remplacé par « le dossier du projet ». | Document interne de coordination : à conserver dans l'historique ou à exclure de l'archive publique. |
 | Identifiants de session Herdr | `HANDOFF.md`, `JOURNAL.md` | Mentionnent les panneaux de la session de développement (`w5:p1`, `w5:p4`, etc.). | Normal dans le journal de conception, mais à préciser comme exemples dans la documentation publique. L'application lit ces valeurs dynamiquement. |
 | Fichiers de journalisation locale | `bureau.log`, `bureau-erreurs.log` | Journaux locaux générés lors du lancement par le script PowerShell. | Déjà ignorés dans `.gitignore`. Vérifier qu'ils ne sont jamais ajoutés au suivi Git. |
 | Dossier de captures d'écran | `captures/` | Peut contenir des captures d'écrans avec des données de projets réels. | Déjà ignoré dans `.gitignore`. Captures d'illustration candidates prêtes dans le dossier public `docs/captures/`. |
