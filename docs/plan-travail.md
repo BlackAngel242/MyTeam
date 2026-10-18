@@ -59,6 +59,8 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [ ] H4 (Claude) Kit d'équipe : modèles de fichiers piliers (`kit/`), `scripts/init-kit.mjs` (jamais d'écrasement), auto-évaluation `scripts/evaluer.mjs`, partage des leçons entre agents, `docs/kit.md`
 - [ ] H5 (Claude) Visite guidée mise à jour (Mosaïque, Salle de crise, fichiers joints, réponses, kit) et récapitulatif guidé à la fin de l'installation
 - [ ] H6 (Claude) `docs/plugins-recommandes.md` : outils et extensions utilisés par DrSmoke, à installer au choix (aucune installation silencieuse)
+- [ ] H8 (Antigravity et Codex) Tous les outils compatibles avec Herdr (`--kind` : pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo, qodercli, qwen, letta, maki, muse) : emblème pixel 16×16 pour chacun dans `public/logos.js`, nom affiché dans `src/herdr.mjs`, détection dans les installeurs ; aucun outil à configurer à la main
+- [ ] H9 (Antigravity) Moyens de participation : `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` enrichi (ajouter un outil et son logo, ajouter une langue, proposer une leçon, signaler un défaut), modèles de signalement « nouvel outil » et « traduction », liste d'étiquettes `.github/labels.json`
 - [ ] H7 (Claude) Évaluation, vérification, fusion ; publication sur GitHub seulement avec l'accord de DrSmoke (fenêtre de pleins droits terminée)
 
 ## Lot F. Clôture
