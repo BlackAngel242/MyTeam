@@ -20,6 +20,7 @@ import {createCrise} from './src/crisis.mjs';
 import {createRelais,RelaisError} from './src/relais.mjs';
 import {createAutonomie,AutonomieError} from './src/autonomie.mjs';
 import {masque} from './src/masque.mjs';
+import {recapAutonomie} from './src/autonomie-recap.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
@@ -527,6 +528,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         catch(error) {
           return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La priorité n’a pas changé.'});
         }
+      }
+      if(url.pathname==='/api/autonomie/recap') {
+        if(req.method!=='GET') return json(404,{error:'Page introuvable.'});
+        if(!guard(req,{body:false})) return;
+        // Texte Markdown : le récapitulatif ne raconte que les faits du journal.
+        const corps=recapAutonomie(vueAutonomie());
+        res.writeHead(200,{...headers,'Content-Type':'text/markdown; charset=utf-8'});
+        return res.end(corps);
       }
       if(url.pathname==='/api/autonomie') {
         if(req.method==='GET') {
