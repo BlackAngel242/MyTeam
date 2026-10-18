@@ -3,7 +3,7 @@
 > 🌐 **Language / Langue** : [Français](README.md) | **English**  
 > 📚 **Complete Documentation** : [docs/index.en.md](docs/index.en.md) ([Français](docs/index.md)) | [Installation](docs/INSTALLATION.en.md) | [Help](docs/aide.en.md) | [GitHub Pages site](https://blackangel242.github.io/MyTeam/)
 
-MyTeam is a living pixel art workshop that turns your AI terminals running in [Herdr](https://github.com/herdrdev/herdr) (website [herdr.dev](https://herdr.dev)) into a visible, coordinated, and sovereign team on your machine. No more blind terminals: each agent has its own workstation, its real tools, and its folders right before your eyes, with zero npm dependencies and no outbound requests.
+MyTeam shows your AI agents running in [Herdr](https://github.com/herdrdev/herdr) (website [herdr.dev](https://herdr.dev)) at work in a pixel art office: follow their status, send them instructions and read their replies. Everything stays on your machine: no npm dependency, no outbound request.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -17,7 +17,7 @@ MyTeam is a living pixel art workshop that turns your AI terminals running in [H
 ## Three benefits for your AI teams
 
 - **Total and embodied visibility**: see who is typing, waiting, finishing, and taking a quota pause, with physical walking rounds by the chief during delegations.
-- **Supervised autonomy and guardrails**: launch an autonomous cycle bounded by an objective, with an immediate emergency stop, without ever pushing or deleting without agreement.
+- **Supervised autonomy and guardrails**: launch an autonomous cycle bounded by an objective, with an immediate emergency stop. The chief is told never to push, delete, install or publish without you.
 - **Local sovereignty and factual truth**: exclusive listening on `127.0.0.1`, zero npm dependencies, and no invented percentages (everything comes from measured facts).
 
 ---

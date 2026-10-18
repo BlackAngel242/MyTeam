@@ -3,7 +3,7 @@
 > 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
 > 📚 **Documentation complète** : [docs/index.md](docs/index.md) ([English](docs/index.en.md)) | [Installation](docs/INSTALLATION.md) | [Aide](docs/aide.md) | [Site GitHub Pages](https://blackangel242.github.io/MyTeam/)
 
-MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exécutés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) en une équipe visible, coordonnée et souveraine sur votre machine. Fini les terminaux aveugles : chaque agent a son poste de travail, ses outils réels et ses dossiers sous vos yeux, sans aucune dépendance npm ni appel sortant.
+MyTeam vous montre vos agents d'IA lancés dans [Herdr](https://github.com/herdrdev/herdr) (site [herdr.dev](https://herdr.dev)) au travail dans un bureau en pixel art : suivez leur état, envoyez-leur des consignes et lisez leurs réponses. Tout reste sur votre machine : aucune dépendance npm, aucun appel sortant.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -17,7 +17,7 @@ MyTeam est un atelier vivant en pixel art qui transforme vos terminaux d'IA exé
 ## Trois bénéfices pour vos équipes d'IA
 
 - **Visibilité totale et incarnée** : voyez qui tape, qui attend, qui termine et qui prend une pause de quota, avec tournée physique du chef lors des délégations.
-- **Autonomie supervisée et garde-fous** : lancez un cycle autonome cadré par un objectif, avec arrêt d'urgence immédiat, sans jamais de push ni de suppression sans accord.
+- **Autonomie supervisée et garde-fous** : lancez un cycle autonome cadré par un objectif, avec arrêt d'urgence immédiat. Le chef reçoit pour consigne de ne jamais pousser, supprimer, installer ni publier sans vous.
 - **Souveraineté locale et vérité des faits** : écoute exclusive sur `127.0.0.1`, zéro dépendance npm, et aucun pourcentage inventé (tout vient des faits mesurés).
 
 ---
