@@ -18,7 +18,7 @@ The interface is bilingual (French and English). An "FR / EN" button in the top 
 
 ## 2. 7-Step Guided Tour
 
-This quick walkthrough explains core office operations. You can skip this tour at any time by clicking "Skip tour".
+This quick walkthrough explains core office operations.
 
 ### Step 1: Observe the team in the pixel art scene
 The main window renders your team in an animated pixel art environment. The sky shifts continuously according to your computer's clock (6:30 AM sunrise, 7:30 PM sunset), and indoor lighting automatically turns on in the evening (pendant ceiling lights and desk lamps). The wall board summarizes key operational facts (BACK, QUEUED, MAIL, SUBAGENTS). The team lead sits at the Direction desk. Each character shows their real state through their pose, monitor glow, desk front emblem, and color-coded name underline.
@@ -36,7 +36,7 @@ The "Team" tab centralizes collective workflows. The "Chief’s mail" section al
 The "Files" tab lets you inspect recently modified files or browse project folders via safe copy or move without deletion. The "Tasks" tab tracks real checked boxes in project Markdown files (`TODO.md`) and action plans published by agents.
 
 ### Step 6: Mosaic (multi-terminal monitoring)
-The "Mosaic" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side, with highlighted text search, toggle between "2x2 Grid" or "Columns", and a quick prompt field (Ctrl+Enter). The "Scene view" button restores the office view at any time.
+The "Mosaic" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side, with highlighted text search, toggle between "2×2 grid" or "Columns", and a quick prompt field (Ctrl+Enter). The "Scene view" button restores the office view at any time.
 
 ### Step 7: Crisis room (emergency circuit breaker)
 The flip-covered "Crisis room" button (emergency shortcut: Ctrl+Shift+C) enables instant reaction if things drift: it locks all direct sends (HTTP 423), freezes the queue, and opens a calm diagnostic modal to request a polite interruption of an agent via the Escape key, without ever resorting to forced process kills.
@@ -132,7 +132,7 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - The local server schedules automatic retry of queued instructions 5 minutes after that time.
 
 #### Reflection Room for Subagents
-- Glass-walled dedicated room with fixed label "THINKING ROOM" ("SALLE DE REFLEXION" in French view, or "REFLEXION" on small screens), never truncated.
+- Glass-walled dedicated room with fixed label "THINKING" ("REFLEXION" in French view), never truncated.
 - When an agent delegates part of their workload to subagents, assistants leave their desk carrying a golden folder.
 - They cross the hallway into the glass room.
 - They work at laptops around the table or gather around the whiteboard.
@@ -152,7 +152,7 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular mosaic of 2 to 4 live terminals side by side.
 - Working agents appear at the top of the list for immediate visibility.
 - If more than 4 agents are connected, checkboxes allow choosing which 4 agents to display.
-- Layout toggle: "2x2 Grid" and "Columns" buttons (on mobile, tiles stack into a single comfortable column).
+- Layout toggle: "2×2 grid" and "Columns" buttons (on mobile, tiles stack into a single comfortable column).
 - Each tile features:
   - Compact header with name, tool emblem, status badge, and "Expand" button to open the full individual workstation view.
   - Clean terminal output stripped of ANSI escape sequences.
@@ -400,7 +400,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | **Desk** | Text selection in terminal | Pauses auto-refresh to allow easy copying. |
 | **Desk** | "Freeze" ("Figer") button | Freezes auto-scroll. |
 | **Desk** | "Copy" ("Copier") button | Copies full terminal content to clipboard. |
-| **Mosaic** | "2x2 Grid" / "Columns" button | Toggles mosaic tile layout. |
+| **Mosaic** | "2×2 grid" / "Columns" button | Toggles mosaic tile layout. |
 | **Mosaic** | `Ctrl + Enter` in a tile | Dispatches quick instruction to the agent in that tile. |
 | **Mosaic** | "Expand" ("Agrandir") button on a tile | Opens full individual workstation panel for that agent. |
 | **Mosaic** | "Scene view" ("Revenir à la scène") button | Closes mosaic and restores animated office scene. |

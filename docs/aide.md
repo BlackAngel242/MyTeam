@@ -18,7 +18,7 @@ L'application est bilingue (français et anglais). Un bouton « FR / EN » dans 
 
 ## 2. Visite guidée en 7 étapes
 
-Cette visite rapide présente le fonctionnement essentiel de votre bureau. Vous pouvez passer cette étape à tout moment avec le bouton « Passer la visite ».
+Cette visite rapide présente le fonctionnement essentiel de votre bureau.
 
 ### Étape 1 : Observer l'équipe dans la scène pixel art
 La fenêtre principale présente votre équipe dans un décor animé en pixel art. Le ciel change en continu selon l'heure de votre ordinateur (lever à 6 h 30, coucher à 19 h 30), et l'éclairage intérieur s'allume automatiquement en soirée (suspensions et lampes de bureau). Le tableau d'affichage mural résume les faits utiles (RETOUR, EN FILE, COURRIER, SOUS-AGENTS). Le chef de l'équipe occupe le bureau Direction. Chaque personnage montre son état réel par sa posture, son écran, son emblème d'outil en façade et le soulignement coloré de son nom.
