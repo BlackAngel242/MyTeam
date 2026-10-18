@@ -17,9 +17,9 @@ docs/idees-os.md export-ignore
 docs/github-pro.md export-ignore
 .githooks export-ignore
 # Historique et coordination internes du projet : hors du zip de release (le dépôt les garde)
-JOURNAL.md export-ignore
-HANDOFF.md export-ignore
-ERREURS.md export-ignore
+/JOURNAL.md export-ignore
+/HANDOFF.md export-ignore
+/ERREURS.md export-ignore
 docs/plan-travail.md export-ignore
 docs/publication-github.md export-ignore
 docs/contrat-*.md export-ignore
