@@ -92,3 +92,10 @@ test('le masque couvre aussi racines usuelles, clés Google, jetons fins, emprei
   assert.doesNotMatch(text,/workspace|\/srv|\/data|AIza|github_pat_|d234f567|e3b0c442/);
   assert.match(text,/\/api\/reponses/);
 });
+
+test('un chemin Windows contenant une espace est masqué en entier, sans avaler la phrase',()=>{
+  const text=mask('Revue écrite : [x](<C:/Users/Moi/Projet Exemple/IA DESKTOP/docs/revue.md>). Suite du texte.');
+  assert.doesNotMatch(text,/DESKTOP|revue\.md|Projet Exemple/);
+  assert.match(text,/Suite du texte/);
+  assert.match(mask('voir C:/a/b.txt, puis la suite'),/puis la suite/);
+});
