@@ -20,7 +20,7 @@ window.DICTIONNAIRE_EN = {
   "auto.pill_off": "OFF",
   "auto.bouton_title": "Supervised autonomy: the chief decides what comes next, within caps",
   "auto.titre": "Autonomy (NoBabysitter)",
-  "auto.intro": "Give an objective: the chief receives each finish from the other agents, decides the next step alone and delegates it. You stay in charge: capped time and exchanges, instant stop, and never a git push, deletion, install, publication or dialog answer without you.",
+  "auto.intro": "Give an objective: the chief receives each finish from the other agents, decides the next step alone and delegates it. You stay in charge: capped time and exchanges, instant stop, and the chief is told never to git push, delete, install, publish or answer a dialog without you.",
   "auto.objectif": "Objective",
   "auto.objectif_ph": "E.g. finish batch L and review the commits",
   "auto.duree": "Maximum duration",

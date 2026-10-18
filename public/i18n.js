@@ -27,7 +27,7 @@
   "auto.pill_off": "OFF",
   "auto.bouton_title": "Autonomie supervisée : le chef décide de la suite avec un plafond",
   "auto.titre": "Autonomie (NoBabysitter)",
-  "auto.intro": "Donne un objectif : le chef reçoit chaque fin de travail des autres agents, décide seul de la suite et la délègue. Tu restes maître : durée et échanges plafonnés, arrêt immédiat, et jamais de git push, de suppression, d’installation, de publication ni de réponse à une boîte de dialogue sans toi.",
+  "auto.intro": "Donne un objectif : le chef reçoit chaque fin de travail des autres agents, décide seul de la suite et la délègue. Tu restes maître : durée et échanges plafonnés, arrêt immédiat, et le chef reçoit pour consigne de ne jamais faire de git push, de suppression, d’installation, de publication ni de réponse à une boîte de dialogue sans toi.",
   "auto.objectif": "Objectif",
   "auto.objectif_ph": "Ex. : terminer le lot L et relire les commits",
   "auto.duree": "Durée maximale",
