@@ -57,6 +57,10 @@ export function createRelais({file,enqueue,now=()=>Date.now(),locked=()=>false}=
   }
   function observe(agents,bossId) {
     const snapshot=Array.isArray(agents)?agents.slice(0,MAX).map(a=>({...a})):[];
+    // Deux phases. Le calcul (états, transitions, clés opaques, sauvegarde) reste
+    // sous verrou. La mise en file sort du verrou : une autonomie qui s'arrête au
+    // milieu d'une observation appelle relais.set(), lequel attendait justement la
+    // fin de cette observation, et l'interblocage gelait le sondage de 20 s.
     return exclusive(async()=>{
       const current=new Set(),events=[];
       for(const agent of snapshot) {
@@ -68,9 +72,10 @@ export function createRelais({file,enqueue,now=()=>Date.now(),locked=()=>false}=
         if(before?.status==='working'&&['idle','done'].includes(agent.status)&&agent.id!==bossId)events.push({agent,counter});
       }
       for(const id of states.keys())if(!current.has(id))states.delete(id);
-      if(!actif||locked()||!current.has(bossId))return;
-      const time=now();if(!Number.isFinite(time)||time<0)return;
+      if(!actif||locked()||!current.has(bossId))return [];
+      const time=now();if(!Number.isFinite(time)||time<0)return [];
       for(const [id,at]of last)if(time-at>=MINUTE)last.delete(id);
+      const aAnnoncer=[];
       for(const {agent,counter}of events) {
         if(locked())break;
         const key=hash(agent.id);
@@ -81,7 +86,15 @@ export function createRelais({file,enqueue,now=()=>Date.now(),locked=()=>false}=
         if(locked())continue;
         const raw=typeof agent.name==='string'&&!/[\\/]/.test(agent.name)&&!/^\s*[a-z]:/i.test(agent.name)?agent.name:'Agent';
         const name=Array.from(raw.replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()).slice(0,80).join('')||'Agent';
-        await enqueue({id:bossId,message:`${name} vient de terminer. Lis son panneau avant de lui confier la suite.`,priority:'normale',requestKey:hash(`${epoch}:${agent.id}:${counter}`)},{agent:{id:agent.id,name}});
+        aAnnoncer.push({agent:{id:agent.id,name},message:`${name} vient de terminer. Lis son panneau avant de lui confier la suite.`,requestKey:hash(`${epoch}:${agent.id}:${counter}`)});
+      }
+      return aAnnoncer;
+    }).then(async aAnnoncer=>{
+      for(const {agent,message,requestKey}of aAnnoncer??[]) {
+        // Relais désactivé ou crise déclenchée pendant la mise en file : les fins
+        // restantes de cette observation ne partent pas, comme après un arrêt.
+        if(!actif||locked())break;
+        await enqueue({id:bossId,message,priority:'normale',requestKey},{agent});
       }
     });
   }
