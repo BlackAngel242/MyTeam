@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createQueue, QueueError } from '../src/queue.mjs';
@@ -305,4 +305,92 @@ test('file : crise active = rien ne part, la consigne reste récupérable, et le
   assert.deepEqual(envois.map(e => e.message), ['Consigne à garder']);
   assert.equal(reprise.sent.length, 1);
   assert.equal(queue.list().items[0].state, 'envoyee');
+});
+
+const BUDGET = 512 * 1024;
+const ciblesLongues = ['a', 'b', 'c', 'd'].map(id => ({ id, name: id, status: 'idle', ready: true }));
+const messageLong = i => String(i).padStart(2, '0') + '漢'.repeat(11998);
+
+test('file : une consigne qui ferait dépasser le budget de 512 Ko est refusée avant acceptation', async t => {
+  const { queue, file } = await montage(t, { agents: ciblesLongues });
+  let acceptees = 0;
+  let refus = null;
+  for (let i = 0; i < 20; i++) {
+    try {
+      await queue.enqueue({ id: ciblesLongues[i % 4].id, message: messageLong(i) });
+      acceptees++;
+    } catch (erreur) { refus = erreur; break; }
+  }
+  assert.ok(refus, 'une consigne est refusée : la sauvegarde ne dépassera pas le budget de lecture');
+  assert.ok(refus instanceof QueueError, 'le refus reste une erreur de file classique');
+  assert.match(refus.message, /dépasserait/);
+  assert.match(refus.message, /512 Ko/);
+  assert.ok(acceptees > 0 && acceptees < 20, `${acceptees} consignes acceptées avant le refus`);
+  assert.equal(queue.list().items.length, acceptees, 'la consigne refusée n’est pas acceptée à moitié');
+  const info = await stat(file);
+  assert.ok(info.size <= BUDGET, `écriture dans le budget : ${info.size} octets`);
+  const recharge = createQueue({
+    listAgents: async () => ciblesLongues,
+    prompt: async () => ({ ok: true }),
+    file,
+    now: () => Date.parse('2026-10-17T10:00:00.000Z'),
+  });
+  assert.equal(recharge.list().items.length, acceptees, 'après reprise, toutes les consignes acceptées sont là');
+  assert.equal(recharge.list().alerte, undefined, 'aucune alerte quand la sauvegarde tient dans le budget');
+});
+
+test('file : un fichier de persistance déjà trop gros déclenche une alerte de récupération visible', async t => {
+  const { file, dossier } = await montage(t, { agents: ciblesLongues });
+  const anciens = [];
+  for (let i = 0; i < 20; i++) anciens.push({
+    itemId: `q-anc-${i}`, id: ciblesLongues[i % 4].id, message: messageLong(i),
+    notBefore: null, priority: 'normale', state: 'attente',
+    createdAt: '2026-10-17T10:00:00.000Z', updatedAt: '2026-10-17T10:00:00.000Z',
+    sentAt: null, reason: null, holdUntil: null, requestKey: null, files: [], copiedFiles: [],
+  });
+  await writeFile(file, JSON.stringify({ version: 2, items: anciens, cles: [] }, null, 2), 'utf8');
+  const info = await stat(file);
+  assert.ok(info.size > BUDGET, 'le fichier dépasse le budget de lecture');
+  const recharge = createQueue({
+    listAgents: async () => ciblesLongues,
+    prompt: async () => ({ ok: true }),
+    file,
+    now: () => Date.parse('2026-10-17T10:00:00.000Z'),
+  });
+  const sortie = recharge.list();
+  assert.ok(sortie.alerte, 'l’état de récupération est visible dans la sortie publique de la file');
+  assert.equal(sortie.alerte.type, 'fichier-trop-gros');
+  assert.equal(sortie.alerte.taille, info.size);
+  assert.equal(sortie.alerte.budget, BUDGET);
+  assert.equal(sortie.alerte.relues, 20);
+  assert.ok(sortie.alerte.conservees >= 1, 'des consignes sont récupérées au lieu d’être perdues');
+  assert.equal(sortie.items.length, sortie.alerte.conservees);
+  assert.ok(sortie.items.some(item => item.message.startsWith('00漢')), 'le contenu des consignes est bien relu');
+  const texteAlerte = JSON.stringify(sortie.alerte);
+  assert.ok(!texteAlerte.includes('漢'), 'l’alerte ne contient aucun contenu de consigne');
+  assert.ok(!texteAlerte.includes(dossier) && !texteAlerte.includes('file-attente.json'), 'l’alerte ne contient aucun chemin');
+  assert.equal((await stat(file)).size, info.size, 'le fichier d’origine n’est pas réécrit au démarrage');
+});
+
+test('file : un fichier trop gros illisible signale l’alerte sans contenu ni chemin', async t => {
+  const { file, dossier } = await montage(t);
+  await writeFile(file, '{pas du json ' + 'x'.repeat(600000), 'utf8');
+  const info = await stat(file);
+  assert.ok(info.size > BUDGET);
+  const recharge = createQueue({ listAgents: async () => [], prompt: async () => ({ ok: true }), file, now: () => 0 });
+  const sortie = recharge.list();
+  assert.deepEqual(sortie.items, [], 'aucune consigne inventée');
+  assert.ok(sortie.alerte, 'le dépassement est signalé même quand rien n’est lisible');
+  assert.equal(sortie.alerte.type, 'fichier-trop-gros');
+  assert.equal(sortie.alerte.taille, info.size);
+  assert.equal(sortie.alerte.conservees, 0);
+  assert.match(sortie.alerte.message, /aucune consigne restaurée/);
+  const texteAlerte = JSON.stringify(sortie.alerte);
+  assert.ok(!texteAlerte.includes('xxxx'), 'aucun contenu du fichier dans l’alerte');
+  assert.ok(!texteAlerte.includes(dossier) && !texteAlerte.includes('file-attente.json'), 'aucun chemin dans l’alerte');
+  // Une nouvelle écriture dans le budget remet la file dans un état normal.
+  await recharge.enqueue({ id: 'a', message: 'Consigne suivante' });
+  assert.equal(recharge.list().alerte, undefined, 'l’alerte disparaît quand la sauvegarde redevient relisible');
+  const conserve = await readFile(`${file}.corrompu`, 'utf8');
+  assert.ok(conserve.startsWith('{pas du json'), 'le fichier d’origine est conservé pour diagnostic');
 });

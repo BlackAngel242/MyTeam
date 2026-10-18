@@ -22,7 +22,14 @@ export class QueueError extends Error {
 
 const ETATS = ['attente', 'envoi_en_cours', 'envoyee', 'annulee', 'a_revoir'];
 const DELAI_QUOTA = 5 * 60 * 1000;
-const MAX_FICHIER = 512 * 1024;  // fichier de persistance au plus grand que ça
+// Budget commun en octets UTF-8 de la sauvegarde, employé des deux côtés : la
+// lecture refuse d'aller au-delà, et l'ajout d'une consigne est refusé avant
+// acceptation s'il ferait dépasser ce budget. Un fichier écrit est donc
+// toujours relisible après un redémarrage.
+const MAX_FICHIER = 512 * 1024;
+// Limite de reprise : un fichier déjà trop gros n'est pas vidé en silence, il
+// est relu au-delà du budget pour récupérer ce qu'il contient, avec alerte.
+const MAX_REPRISE = 8 * MAX_FICHIER;
 const MAX_CLES = 200;            // clés de demande conservées (distinct des éléments)
 const PRIORITES = ['haute', 'normale'];
 const DELAI_PRIORITE = 30 * 60 * 1000;  // une normale attendue depuis 30 min rejoint le rang des hautes
@@ -153,6 +160,7 @@ export function createQueue({
   let items = [];
   const cles = new Map();
   let corruption = null;
+  let alerte = null;   // récupération visible : fichier devenu trop gros, rien n'est vidé en silence
   let compteur = 0;
   let ecriture = Promise.resolve();
   let tour = null;
@@ -177,6 +185,11 @@ export function createQueue({
     return rang(a) - rang(b) || a.createdAt.localeCompare(b.createdAt) || a.itemId.localeCompare(b.itemId);
   }
 
+  // Même texte pour mesurer et pour écrire : le budget est calculé sur
+  // exactement ce qui part sur le disque.
+  const texteSauvegarde = (listeItems, entrees) =>
+    JSON.stringify({ version: 2, items: listeItems, cles: [...entrees].map(([key, valeur]) => ({ key, ...valeur })) }, null, 2);
+
   // Écriture atomique : fichier temporaire puis remplacement. Une erreur de
   // sauvegarde est signalée à l'appelant, jamais avalée.
   function persister() {
@@ -188,9 +201,16 @@ export function createQueue({
         corruption = null;
       }
       const temporaire = `${file}.tmp`;
-      const forme = { version: 2, items, cles: [...cles.entries()].map(([key, valeur]) => ({ key, ...valeur })) };
-      await writeFile(temporaire, JSON.stringify(forme, null, 2), 'utf8');
+      const texte = texteSauvegarde(items, cles);
+      // Dernière barrière : on ne écrit jamais un fichier que la lecture ne
+      // pourrait pas reprendre. Aucun chemin de travail normal ne l'atteint.
+      if (Buffer.byteLength(texte, 'utf8') > MAX_REPRISE) {
+        throw new QueueError(`Sauvegarde impossible : la file dépasserait les ${MAX_REPRISE} octets que l’on sait relire.`, 500);
+      }
+      await writeFile(temporaire, texte, 'utf8');
       await rename(temporaire, file);
+      // Une sauvegarde revenue dans le budget résout l'alerte de récupération.
+      alerte = Buffer.byteLength(texte, 'utf8') > MAX_FICHIER ? alerte : null;
     };
     const suite = ecriture.then(operation, operation);
     ecriture = suite.catch(() => {});
@@ -201,13 +221,25 @@ export function createQueue({
   try {
     if (existsSync(file)) {
       const taille = statSync(file).size;
-      const brutTexte = taille > MAX_FICHIER ? null : readFileSync(file, 'utf8');
-      if (brutTexte === null) corruption = 'Fichier trop grand pour être lu.';
-      else {
+      // Un fichier au-delà du budget n'est pas abandonné : on le relit tant
+      // qu'il tient dans la limite de reprise, puis on signale ce qui reste.
+      const tropGros = taille > MAX_FICHIER;
+      const brutTexte = taille > MAX_REPRISE ? null : readFileSync(file, 'utf8');
+      if (brutTexte === null) {
+        corruption = 'Fichier trop grand pour être lu.';
+        alerte = {
+          type: 'fichier-trop-gros', taille, budget: MAX_FICHIER, relues: 0, conservees: 0,
+          message: `Le fichier de la file d’attente fait ${taille} octets, au-delà des ${MAX_REPRISE} que l’on sait relire : aucune consigne restaurée.`,
+        };
+      } else {
         let forme = null;
         try { forme = JSON.parse(brutTexte); } catch { forme = null; }
         if (!forme || (forme.version !== 1 && forme.version !== 2) || !Array.isArray(forme.items)) {
           corruption = brutTexte;
+          if (tropGros) alerte = {
+            type: 'fichier-trop-gros', taille, budget: MAX_FICHIER, relues: 0, conservees: 0,
+            message: `Le fichier de la file d’attente fait ${taille} octets, au-dessus des ${MAX_FICHIER} prévus, et son contenu n’est pas lisible : aucune consigne restaurée.`,
+          };
         } else {
           const problemes = [];
           for (const brut of forme.items.slice(-maxItems)) {
@@ -236,6 +268,11 @@ export function createQueue({
             }
           }
           if (problemes.length) corruption = brutTexte;
+          if (tropGros) alerte = {
+            type: 'fichier-trop-gros', taille, budget: MAX_FICHIER,
+            relues: forme.items.length, conservees: items.length,
+            message: `Le fichier de la file d’attente fait ${taille} octets, au-dessus des ${MAX_FICHIER} prévus : ${items.length} consignes gardées sur ${forme.items.length} relues.`,
+          };
         }
       }
     }
@@ -278,6 +315,14 @@ export function createQueue({
     }
     if (items.length >= maxItems) throw new QueueError(`La file d'attente est pleine (${maxItems} éléments au maximum).`);
     const element = nouveau(valide);
+    // Refus avant acceptation : rien n'est mis en file à moitié. La mesure se
+    // fait sur le texte qui serait réellement écrit, message et fichiers joints
+    // compris, et sans l'éviction des clés (mesure à la hausse).
+    const futuresCles = new Map(cles);
+    if (valide.requestKey) futuresCles.set(valide.requestKey, { itemId: element.itemId, state: element.state, at: element.updatedAt });
+    if (Buffer.byteLength(texteSauvegarde([...items, element], futuresCles), 'utf8') > MAX_FICHIER) {
+      throw new QueueError(`La file d’attente ne peut pas garder cette consigne : la sauvegarde dépasserait ${MAX_FICHIER} octets (512 Ko) et ne pourrait plus être relue après un redémarrage. Raccourcissez le message ou libérez de la place en annulant des consignes.`);
+    }
     items.push(element);
     if (valide.requestKey) {
       cles.set(valide.requestKey, { itemId: element.itemId, state: element.state, at: element.updatedAt });
@@ -331,7 +376,11 @@ export function createQueue({
   }
 
   function list({fileFacts=false}={}) {
-    return { items: [...items].sort(ordreEnvoi).map(element=>fileFacts?structuredClone(element):publique(element)) };
+    const sortie = { items: [...items].sort(ordreEnvoi).map(element=>fileFacts?structuredClone(element):publique(element)) };
+    // Fait observé au démarrage : un fichier devenu trop gros est signalé
+    // (taille et compteurs seuls, jamais le contenu ni le chemin).
+    if (alerte) sortie.alerte = structuredClone(alerte);
+    return sortie;
   }
 
   async function tick() {
