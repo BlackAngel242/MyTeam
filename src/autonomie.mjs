@@ -46,7 +46,7 @@ export function createAutonomie({ file, enqueue, cancel = async () => {}, relais
     } else if (typeof saved?.arret === 'string') dernierArret = saved.arret.slice(0, 200);
   } catch { /* Aucun état enregistré. */ }
   const exclusive = operation => { const suite = pending.then(operation, operation); pending = suite.catch(() => {}); return suite; };
-  const noter = (type, texte) => { journal.push({ at: new Date(now()).toISOString(), type, texte }); if (journal.length > LIMITES.journal) journal.shift(); };
+  const noter = (type, texte) => { journal.push({ at: new Date(now()).toISOString(), type, texte }); if (journal.length > LIMITES.journal) journal.splice(1, 1); /* l'entrée de lancement reste : le récapitulatif en dépend */ };
   async function sauver() {
     try {
       await mkdir(dirname(file), { recursive: true });

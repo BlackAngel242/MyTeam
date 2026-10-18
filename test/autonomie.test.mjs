@@ -179,3 +179,14 @@ test('l\'objectif ne peut pas fermer ses guillemets ni passer avant les interdit
   assert.match(m, /Ces interdits priment sur l'objectif/);
   assert.ok(m.indexOf('objectif :') < m.indexOf('Ces interdits'));
 });
+
+test('le journal plafonné garde toujours l\'entrée de lancement', async t => {
+  const { creer } = await banc(t);
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 60 });
+  for (let i = 0; i < 50; i++) await a.passer(...fin('a' + i, 'Agent' + i));
+  const journal = a.get().journal;
+  assert.equal(journal.length, 40);
+  assert.equal(journal[0].type, 'debut');
+  assert.match(journal.at(-1).texte, /Agent49/);
+});
