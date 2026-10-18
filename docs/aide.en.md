@@ -36,7 +36,7 @@ The "Team" tab centralizes collective workflows. The "Chief’s mail" section al
 The "Files" tab lets you inspect recently modified files or browse project folders via safe copy or move without deletion. The "Tasks" tab tracks real checked boxes in project Markdown files (`TODO.md`) and action plans published by agents.
 
 ### Step 6: Mosaic (multi-terminal monitoring)
-The "Mosaic" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side, with highlighted text search, toggle between "2×2 grid" or "Columns", and a quick prompt field (Ctrl+Enter). The "Scene view" button restores the office view at any time.
+The "Mosaic" button on the canvas frame replaces the office decor with a view of 2 to 4 terminals side by side (up to 10 agents tested, 12 in group broadcast, mosaic 4), with highlighted text search, toggle between "2×2 grid" or "Columns", and a quick prompt field (Ctrl+Enter). The "Scene view" button restores the office view at any time.
 
 ### Step 7: Crisis room (emergency circuit breaker)
 The flip-covered "Crisis room" button (emergency shortcut: Ctrl+Shift+C) enables instant reaction if things drift: it locks all direct sends (HTTP 423), freezes the queue, and opens a calm diagnostic modal to request a polite interruption of an agent via the Escape key, without ever resorting to forced process kills.
@@ -150,7 +150,7 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - Press Escape or click "Done" ("Terminer") to save and lock your layout.
 
 #### Mosaic Mode (Multi-Terminal Surveillance)
-- The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular Mosaic of 2 to 4 live terminals side by side.
+- The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular Mosaic of 2 to 4 live terminals side by side (up to 10 agents tested, 12 in group broadcast, mosaic 4).
 - Working agents appear at the top of the list for immediate visibility.
 - If more than 4 agents are connected, checkboxes allow choosing which 4 agents to display.
 - Layout toggle: "2×2 grid" and "Columns" buttons (on mobile, tiles stack into a single comfortable column).
@@ -245,7 +245,7 @@ This tab coordinates multiple agents, the queue, direction, and task completion 
 - Idempotence protection: atomic disk writes, idempotence keys, and frozen dispatch on uncertainty.
 
 #### Multi-Agent Broadcast (2-Click Armed Dispatch)
-- Check the agents you wish to instruct (only available agents can be checked).
+- Check the agents you wish to instruct (only available agents can be checked, up to 10 agents tested, 12 in group broadcast, mosaic 4).
 - "Tick all available" ("Cocher tous les disponibles") selects all ready agents in one click.
 - Type your shared instruction in the text area.
 - First click on "Send the instruction" ("Envoyer", or `Ctrl+Enter`): arms dispatch and displays all recipient names clearly.

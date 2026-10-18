@@ -67,3 +67,11 @@ Commits : b56585c, 825fa11 (rangs 1 et 6), 9560c5a, f01f10f, af523d9 (rangs 7 et
 
 
 - 18 octobre, soir : banc de mesure à dix agents documenté dans docs/performance.md (commande de reproduction, plafonds, limites connues). Durées mesurées : GET /api/state 9,7 ms, GET /api/discussion 7,7 ms, GET /api/todos 45,8 ms, cycle de sondage des pauses 5,1 ms avec 11 appels Herdr (1 liste + 10 panneaux). Rafale de 9 fins simultanées : 5 consignes créées (plafond de 5 par agent), 4 fins sans consigne. Trois correctifs vérifiés par le banc : cycle de sondage unique (e572828), une seule lecture de liste après la copie (20c7c68), relais hors verrou (96d7201). Suite complète : 433 tests, 427 réussis, 0 échec, 6 ignorés. Leçons ajoutées à LESSONS.md.
+
+## 18 octobre 2026, régénération des captures sans pied de page et plafonds à 10 agents (part Antigravity)
+
+- Régénération complète des 22 captures de `docs/captures/` et 12 images de `site/assets/` avec un pied de page vide (`{ gauche: "", droite: "", enseigne: "" }`) : pied de page masqué (`page-footer` caché), enseigne du bureau Direction neutre, purge intégrale de toute information personnelle.
+- Ajout des captures de charge à 10 agents : `docs/captures/20-ordinateur-10-agents.png` (1440x900), `docs/captures/21-telephone-10-agents.png` (390x844 avec disposition en 3 colonnes) et `site/assets/10-agents.png`.
+- Documentation factuelle des plafonds d'équipe : mention « jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4 » (et son pendant anglais « up to 10 agents tested, 12 in group broadcast, mosaic 4 ») dans `README.md`, `README.en.md`, `docs/aide.md`, `docs/aide.en.md`, et sur le site (`site/index.html` et `site/site.js`).
+- Ajout de la carte galerie pour l'équipe de 10 agents dans `site/index.html` et traductions associées dans `site/site.js`.
+- Validation : 433 tests exécutés par `npm test` (427 réussis, 0 échec, 6 ignorés), 6 tests du site réussis, vérification visuelle Playwright sur ordinateur et mobile.

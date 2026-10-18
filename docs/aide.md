@@ -36,7 +36,7 @@ L'onglet « Équipe » centralise la gestion collective. La section « Courrier 
 L'onglet « Fichiers » vous permet de voir les fichiers récemment modifiés par l'agent ou de naviguer dans les dossiers de votre projet par copie ou déplacement sans suppression. L'onglet « Tâches » affiche l'avancement des cases réellement cochées dans les fichiers du projet (`TODO.md`) et les plans d'action publiés par les agents.
 
 ### Étape 6 : Mosaïque (surveillance multi-terminaux)
-Le bouton « Mosaïque » dans le cadre de la scène remplace le décor par une vue de 2 à 4 terminaux côte à côte, avec recherche textuelle surlignée, bascule entre grille 2×2 ou colonnes, et champ de consigne rapide (Ctrl+Entrée). Le bouton « Revenir à la scène » rétablit la vue atelier à tout moment.
+Le bouton « Mosaïque » dans le cadre de la scène remplace le décor par une vue de 2 à 4 terminaux côte à côte (jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4), avec recherche textuelle surlignée, bascule entre grille 2×2 ou colonnes, et champ de consigne rapide (Ctrl+Entrée). Le bouton « Revenir à la scène » rétablit la vue atelier à tout moment.
 
 ### Étape 7 : Salle de crise (disjoncteur d'urgence)
 Le bouton sous clapet « Salle de crise » (raccourci d'urgence Ctrl+Maj+C) permet de réagir immédiatement en cas de dérive : il verrouille tous les envois directs (code HTTP 423), gèle la file d'attente et offre une modale de diagnostic calme pour ordonner une interruption polie d'un agent par la touche Échap, sans jamais recourir à un arrêt forcé (aucun kill).
@@ -150,7 +150,7 @@ Tous les outils pris en charge par Herdr bénéficient du socle universel de sur
 - Appuyez sur la touche Échap ou cliquez sur « Terminer » pour valider et enregistrer vos réglages.
 
 #### Mode Mosaïque (Surveillance multi-terminaux)
-- Le bouton « Mosaïque » dans le cadre de la scène (ou la commande « Mode mosaïque » de la palette Ctrl+K) remplace le décor en pixel art par une mosaïque modulaire de 2 à 4 terminaux côte à côte.
+- Le bouton « Mosaïque » dans le cadre de la scène (ou la commande « Mode mosaïque » de la palette Ctrl+K) remplace le décor en pixel art par une mosaïque modulaire de 2 à 4 terminaux côte à côte (jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4).
 - Les collaborateurs au travail apparaissent automatiquement en tête de liste pour suivre leurs progrès sans délai.
 - Si l'équipe compte plus de 4 agents, une barre de sélection propose des cases à cocher pour choisir les agents à afficher (4 tuiles au maximum).
 - Bascule de disposition : boutons « Grille 2×2 » et « Colonnes » (sur smartphone, les tuiles se disposent en colonne unique adaptée à l'écran).
@@ -245,7 +245,7 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 - Protection anti-double envoi : persistance atomique sur disque, clé d'idempotence et gel d'envoi en cas de doute.
 
 #### Message à plusieurs agents (Envoi groupé en deux clics)
-- Cochez les agents à qui vous souhaitez vous adresser (seuls les agents disponibles peuvent être sélectionnés).
+- Cochez les agents à qui vous souhaitez vous adresser (seuls les agents disponibles peuvent être sélectionnés, jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4).
 - Le bouton « Cocher tous les disponibles » permet de sélectionner l'ensemble des agents libres en un seul clic.
 - Saisissez votre consigne commune dans la zone de texte.
 - Premier clic sur « Envoyer » (ou Ctrl+Entrée) : arme l'envoi et affiche clairement les noms de tous les destinataires.

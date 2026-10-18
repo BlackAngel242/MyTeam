@@ -22,4 +22,6 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `17-telephone-autonomie.png` : Mode Autonomie (NoBabysitter) adapté sur écran de téléphone (390x844).
 - `18-ordinateur-autonomie-en.png` : Fenêtre du mode Autonomie supervisée (NoBabysitter) sur ordinateur en anglais.
 - `19-telephone-autonomie-en.png` : Mode Autonomie supervisée sur téléphone en anglais.
+- `20-ordinateur-10-agents.png` : Vue d'ensemble sur ordinateur (1440x900) avec dix agents connectés aux états variés (travail, attente, pause de quota, disponible, chef en Direction).
+- `21-telephone-10-agents.png` : Scène adaptée sur téléphone (390x844) avec disposition en 3 colonnes pour 10 agents.
 

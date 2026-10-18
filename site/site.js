@@ -57,7 +57,7 @@ const I18N = {
     'feat.relais.desc': 'Alerte discrète et neutre mise en file pour le chef dès qu\'un collaborateur termine sa tâche, l\'invitant à relire son panneau avant de lui confier la suite.',
 
     'feat.mosaique.title': 'Mosaïque multi-terminaux',
-    'feat.mosaique.desc': 'Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande.',
+    'feat.mosaique.desc': 'Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande (jusqu\'à 10 agents testés, 12 en envoi groupé, mosaïque 4).',
 
     'feat.reponses.title': 'Réponses lisibles en Markdown',
     'feat.reponses.desc': 'Extraction des réponses réelles de l\'agent, filtrées de tout contenu privé ou raisonnement brut, avec copie en un clic et fil de discussion complet.',
@@ -103,6 +103,8 @@ const I18N = {
     'gallery.emblemes.desc': 'Représentations pixel art 16x16 pour identifier chaque IA compatible Herdr.',
     'gallery.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'gallery.autonomie.desc': 'Dialogue cadré par durée et plafond d\'échanges, arrêt d\'urgence et coordination par le chef.',
+    'gallery.10agents.title': 'Équipe de 10 agents',
+    'gallery.10agents.desc': 'Atelier à pleine charge avec 10 collaborateurs aux statuts variés (jusqu\'à 10 agents testés, 12 en envoi groupé, mosaïque 4).',
 
     // Installation
     'install.badge': 'Démarrage immédiat',
@@ -231,7 +233,7 @@ const I18N = {
     'feat.relais.desc': 'A discreet and neutral queued reminder for the lead whenever a teammate finishes work, prompting them to review the terminal before delegating next.',
 
     'feat.mosaique.title': 'Multi-terminal mosaic mode',
-    'feat.mosaique.desc': 'Switch from the scene to a live grid of 2 to 4 terminal tiles with unified text search, quick prompt dispatch, and single-tile expansion.',
+    'feat.mosaique.desc': 'Switch from the scene to a live grid of 2 to 4 terminal tiles with unified text search, quick prompt dispatch, and single-tile expansion (up to 10 agents tested, 12 in group broadcast, mosaic 4).',
 
     'feat.reponses.title': 'Readable Markdown answers',
     'feat.reponses.desc': 'Extraction of clean final responses, filtered from internal reasoning or private paths, with one-click copy and full thread history.',
@@ -277,6 +279,8 @@ const I18N = {
     'gallery.emblemes.desc': 'Dedicated 16x16 pixel art emblems to distinguish each supported AI tool.',
     'gallery.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'gallery.autonomie.desc': 'Objective-driven cycle with duration and exchange caps, emergency stop, and coordination through the lead.',
+    'gallery.10agents.title': '10-Agent Team',
+    'gallery.10agents.desc': 'Full capacity workshop with 10 collaborators across varied statuses (up to 10 agents tested, 12 in group broadcast, mosaic 4).',
 
     // Installation
     'install.badge': 'Quick Start',

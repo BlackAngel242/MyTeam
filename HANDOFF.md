@@ -33,6 +33,7 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - TODO du bureau : le groupe « Demandes en cours » suit les consignes envoyées aux agents ; une demande n'est cochée qu'après une réponse terminée de l'agent.
 - Bouton « Autonomie » (NoBabysitter supervisé) : `src/autonomie.mjs`, `/api/autonomie`. Plafonds de durée et d'échanges, arrêt sur échéance, plafond, boucle, salle de crise ou redémarrage ; jamais de push, suppression, installation, publication ni réponse à une boîte de dialogue ; le chef décide, aucun agent n'écrit à un autre directement.
 - Reste : validation du chef pour le tag et la release 0.4.1. Entrée 0.4.1 prête dans CHANGELOG.md (FR et EN), site GitHub Pages vérifié en local avec Playwright, documentation d'aide (docs/aide.en.md) et README.en.md relus et harmonisés (parité stricte et vocabulaire chief/Mosaic unifié).
+- Captures et plafonds : l'ensemble des 22 captures de docs/captures/ et 12 de site/assets/ ont été régénérées avec un pied de page vide (garantissant l'absence de données personnelles) ; ajout des captures à 10 agents (20 et 21) ; plafonds factuels « jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4 » documentés dans README FR/EN, docs/aide*.md et le site. Suite complète : 433 tests passés (427 réussis, 6 ignorés).
 
 ## État d'avancement au 17 octobre 2026 (Version 0.3.0 livrée et stabilisée)
 
