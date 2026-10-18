@@ -9,10 +9,10 @@ $env:BUREAU_PORT = $bureauPort
 if ($AvecHerdr) {
     $herdr = [Environment]::GetEnvironmentVariable('BUREAU_HERDR_PATH', 'User')
     if (-not $herdr) { $herdr = $env:BUREAU_HERDR_PATH }
-    if (-not $herdr) { $herdr = (Get-Command herdr -CommandType Application -ErrorAction SilentlyContinue).Source }
+    if (-not $herdr) { $herdr = (@(Get-Command herdr -CommandType Application -ErrorAction SilentlyContinue)[0]).Source }
     if (-not $herdr -or [IO.Path]::GetExtension($herdr) -ne '.exe' -or -not (Test-Path -LiteralPath $herdr -PathType Leaf)) { throw 'Executable Herdr introuvable.' }
     Start-Process -FilePath $herdr -WorkingDirectory $bureauRoot -WindowStyle Normal
 }
-$bureauNode = (Get-Command node -CommandType Application -ErrorAction Stop).Source
+$bureauNode = (@(Get-Command node -CommandType Application -ErrorAction Stop)[0]).Source
 & $bureauNode (Join-Path $bureauRoot 'scripts/ouvrir-bureau.mjs')
 if ($LASTEXITCODE -ne 0) { throw 'Le bureau ne demarre pas.' }

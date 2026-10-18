@@ -60,6 +60,8 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Installeurs
 
+- Tests PowerShell : un faux appelé depuis un autre script peut modifier la portée `$script:` de ce script au lieu de celle du scénario. Partager une table mutable pour compter les appels, sinon un test de lanceur échoue alors que la bonne commande a été choisie.
+
 - Une étape initialisée comme ignorée doit passer à « réussi » quand le contrôle confirme que le prérequis existe déjà, même en simulation. Son résumé décrit le fait observé (version, présence, nombre créé), jamais une simple « étape terminée » ; un refus reste ignoré et une erreur reste en échec.
 
 - Bash : un état modifié dans `(cd ... && executer ...)` reste dans le sous-shell. Remonter aussi son code de retour au parent, sinon l'interface peut afficher une réussite après l'échec des tests. Vérifier `@@DONE fail` et `@@END fail` avec une commande factice en échec.
