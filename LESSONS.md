@@ -35,6 +35,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Deux revérifications successives du même contrôle (quota puis cible) font un appel Herdr de trop : une seule lecture de liste sert aux deux, le dernier contrôle juste avant l'envoi reste (src/queue.mjs, 18 octobre).
 - Un calcul sous verrou d'observation ne doit jamais appeler un relais qui attend la fin de cette même observation : l'arrêt du mode autonomie gelait le sondage de 20 secondes puis tous les suivants (interblocage). Calculer sous verrou, mettre en file après (src/relais.mjs, 18 octobre).
 - Un chiffre de performance n'est un fait qu'avec sa date, sa machine et la commande du banc. Les durées varient d'un passage à l'autre, seuls les budgets d'appels (inégalités du test) sont reproductibles : publier les deux et distinguer budget et durée (docs/performance.md, banc `node --test test/budget-10-agents.test.mjs test/relais-10-agents.test.mjs`).
+- Un fichier partagé peut changer entre la relecture du diff et le commit : le 18 octobre, la leçon « Pi 1.3.0 » d'un autre agent est partie dans mon commit de docs/performance.md. Relire `git show <hash> -- fichier` après le commit, signaler au chef toute ligne étrangère, ne jamais réécrire l'historique pour ça.
 
 ## Interface et Playwright
 
