@@ -1,5 +1,8 @@
 # Leçons
 
+- Autonomie : fermer le mode ne retire pas ses consignes déjà en file. Associer les messages à un lancement et contrôler leur validité juste avant l'envoi, sinon une consigne ancienne part après l'arrêt ou la levée d'une crise.
+- État asynchrone : un arrêt peut mettre un état partagé à null pendant un await. Vérifier l'identité du lancement après l'attente avant d'écrire ses compteurs et traiter la consigne éventuellement acceptée entre-temps.
+
 Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur réelle déjà commise et explique la règle pour ne jamais la répéter.
 
 ## Herdr et agents

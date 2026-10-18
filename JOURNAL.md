@@ -1,5 +1,9 @@
 # Journal
 
+## 18 octobre 2026, revue de sécurité de l'autonomie
+
+Rapport dans `docs/revue-autonomie-codex.md` : une consigne déjà en file peut survivre à l'arrêt du mode et un arrêt concurrent à sa mise en file provoque une erreur interne. Trois scénarios isolés exécutés, 49 tests ciblés réussis. Deux leçons ajoutées à `LESSONS.md`. Aucun code modifié, aucun envoi réel ; correctifs à évaluer par le chef.
+
 ## 17 octobre 2026
 
 DrSmoke autorise la construction d'un bureau animé local et souhaite la coopération avec les agents Herdr. Apparence choisie : pixels et bleu nuit. Outils laissés au choix de Codex. Node.js et Herdr 0.9.5 sont présents. Aucun fichier de projet initial ni dépôt distant configuré.
