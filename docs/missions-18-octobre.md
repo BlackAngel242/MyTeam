@@ -174,3 +174,27 @@ Demande de DrSmoke : une page `github.io` pour le projet (https://blackangel242.
 - Style : le langage du bureau (bleu nuit, pixel art, mêmes couleurs que `public/style.css`), responsive 360 à 1440 px, accessible (repères, alt sur chaque image, contraste, focus visible, `prefers-reduced-motion`), aucune requête externe (pas de CDN, pas de police distante, aucun traceur), aucune information personnelle (pas de numéro, pas de société).
 - Test `test/site.test.mjs` : tous les fichiers locaux référencés existent, les clés FR et EN sont identiques, aucune URL externe sauf github.com, pas de numéro de téléphone.
 - Vérifie avec Playwright (1440, 390, 360 px, FR puis EN, ouverture du fichier en `file://` et via un petit serveur statique temporaire). Commit avec chemins, pas de nom d'IA dans le message, pas de push, compte rendu court avec hash. (Le chef ajoute le workflow de déploiement et active Pages.)
+
+# Lot L : corrections issues de la table ronde (DrSmoke a coché les quatre lots)
+
+Sources locales (non commitées) : `docs/table-ronde/consensus.md` (classement), `rapport-*.md` (preuves et lignes), `avis-*.md`. Lis `consensus.md` puis les constats cités pour ta part. Pour chaque correction : reproduire d'abord (le constat donne les étapes), corriger, ajouter le test qui échouait avant, `npm run check` et `npm test` verts, commit avec chemins (`git add <chemins> && git commit -m "..." -- <chemins>`), pas de nom d'IA dans le message, pas de push, compte rendu court avec hash après chaque rang. Un constat que tu ne parviens pas à reproduire : ne le « corrige » pas, dis-le.
+
+## OpenCode : rangs 1, 6, 7, 5 (dans cet ordre)
+
+Fichiers à toi : `src/crisis.mjs`, `src/queue.mjs`, `src/claude-activity.mjs`, `src/todos.mjs`, `src/blackboard.mjs`, `src/delegations.mjs`, `src/agent-activity.mjs`, `src/responses.mjs`, `server.mjs`, tests associés.
+1. **C-CD-01 et 02** : une levée de crise n'est effective qu'après sa persistance réussie (un échec garde le verrou et permet de réessayer) ; contrôle de la crise après la lecture du corps de `POST /api/prompt` et `/api/broadcast`, et juste avant l'appel à Herdr pour chaque destinataire ; la file revérifie aussi.
+6. **C-CD-03** : budget d'écriture de la file égal à celui de la lecture (octets UTF-8), refus clair avant acceptation, alerte de récupération si un ancien fichier dépasse.
+7. **C-CD-07** : continuité des octets (taille et début inchangés) avant de reprendre un offset, dans la lecture d'activité Claude et dans `todos`.
+5. **Masque public unique** (C-CD-04, 06, 12, 08) : un module commun (`src/masque.mjs`) utilisé par `responses`, `todos`, `blackboard`, `delegations` et les descriptions de sous-agents : chemins Windows et Unix avec espaces, UNC, secrets, jetons ; les adresses `http(s)://` et les routes `/api/...` restent intactes ; rejeter dans les réponses Codex les messages dont le destinataire est un tiers explicite (liste documentée de canaux publics). Les tests existants de masquage restent verts.
+
+## Claude : rangs 2 (partie installeur animé et .bat), 3, 4, 8, 9
+
+(Fichiers : `scripts/installateur-anime.mjs`, `Installer MyTeam.bat`, `src/files.mjs`, `scripts/evaluer.mjs`, `scripts/partager-lecons.mjs`, `public/*`.)
+
+## Codex : petits correctifs seulement (quota bas), dans cet ordre
+
+Fichiers à toi : `scripts/installer.sh`, `scripts/installer.ps1`, `Ouvrir le bureau.ps1`, `scripts/empaqueter-release.mjs`, tests. **C-CD-12** (Bash masque `https://` : borner la règle du lecteur Windows) ; **C-CD-16** (port Bash : longueur et plage validées, message précis, code d'erreur) ; **C-CD-14** (`@(Get-Command ... -CommandType Application)[0]` dans le raccourci, pour Node et Herdr) ; **C-CD-13** (`empaqueter` : révision résolue vers un identifiant de commit vérifié, options refusées, structure du zip contrôlée avant d'annoncer la réussite). Si ton quota est presque épuisé, arrête-toi après le dernier point terminé et dis-le.
+
+## Antigravity : rang 10 (documents, NOTICE, site, captures)
+
+Fichiers à toi : `README*.md`, `docs/*.md` publics, `NOTICE*.md`, `PRODUCT.md`, `docs/exigences.md`, `site/`, `docs/captures/`. Nom du produit en anglais : « MyTeam · Agent desk », en français « MyTeam · Bureau des agents ». À faire : C-AG-01 (dépannage : plus de journaux inexistants, la vraie commande), C-AG-02 (plus de nombre de tests figé : la commande de vérification), C-AG-03 et exigences (la tournée du chef qui porte le dossier), C-AG-08 (matrice honnête des 24 outils : état et fonctions communes pour tous, journaux lisibles seulement pour Claude, Codex et OpenCode), C-AG-10 (`NOTICE.md` cite toutes les marques de `public/logos.js`, aucune affiliation), C-AG-11 (README : modules et fonctions manquants), C-AG-13 (boutons anglais cités avec leurs vrais noms). Pas de `public/i18n*.js` : le vocabulaire de l'interface est fait par le chef après l'accessibilité. Une fois les corrections d'interface faites (le chef te prévient), régénère les captures de `docs/captures/` et de `site/assets/` avec l'état actuel de l'interface (sans enseigne ni nom d'auteur), et vérifie le site.
