@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { empaqueter } from '../scripts/empaqueter-release.mjs';
+import { empaqueter, verifierZip } from '../scripts/empaqueter-release.mjs';
 
 const executer = promisify(execFile);
 // Le crochet de commit exporte GIT_INDEX_FILE : les dépôts temporaires des tests doivent l'ignorer.
@@ -48,9 +48,26 @@ test('l\'archive contient les fichiers suivis dans MyTeam-<version>/, sans les e
   assert.ok(!noms.some(n => n.includes('revue-interne')));
   assert.ok(!noms.some(n => n.includes('non-suivi')));
   assert.ok(!noms.some(n => !n.startsWith('MyTeam-1.2.3')));
+  const avant=await readFile(r.fichier);
+  assert.doesNotThrow(()=>verifierZip(avant,'MyTeam-1.2.3/'));
+  for(const mauvais of [Buffer.from('tar\ntgz\ntar.gz\nzip\n'),avant.subarray(0,-1),Buffer.alloc(64)]) {
+    assert.throws(()=>verifierZip(mauvais,'MyTeam-1.2.3/'),/Archive ZIP invalide/);
+  }
+  assert.throws(()=>verifierZip(avant,'Autre-projet/'),/Archive ZIP invalide/);
+  const corrompu=Buffer.from(avant);corrompu.writeUInt32LE(0,0);
+  assert.throws(()=>verifierZip(corrompu,'MyTeam-1.2.3/'),/Archive ZIP invalide/);
+  await assert.rejects(empaqueter('1.2.3',{depot,rev:'--list'}),/Révision invalide/);
+  assert.deepEqual(await readFile(r.fichier),avant,'une option refusée ne remplace pas le ZIP existant');
+  await git('tag','-a','version-test','-m','version de test');
+  const tag=await empaqueter('1.2.4',{depot,rev:'version-test'});
+  verifierZip(await readFile(tag.fichier),'MyTeam-1.2.4/');
+  const blob=(await git('rev-parse','HEAD:README.md')).stdout.trim();
+  await git('tag','fichier-seul',blob);
+  await assert.rejects(empaqueter('1.2.5',{depot,rev:'fichier-seul'}),/Révision invalide/);
 });
 
 test('une version ou une révision invalide est refusée', async () => {
   await assert.rejects(empaqueter('v1'), /Version attendue/);
   await assert.rejects(empaqueter('1.0.0', { rev: 'HEAD; rm -rf /' }), /Révision invalide/);
+  for(const rev of ['--list','--help','-o',null,{},''])await assert.rejects(empaqueter('1.0.0',{rev}),/Révision invalide/);
 });

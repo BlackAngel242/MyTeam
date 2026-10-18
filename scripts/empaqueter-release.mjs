@@ -14,14 +14,44 @@ const executer = promisify(execFile);
 const envGit = Object.fromEntries(Object.entries(process.env).filter(([cle]) => !cle.startsWith('GIT_')));
 const racine = fileURLToPath(new URL('../', import.meta.url));
 
+export function verifierZip(octets, prefixe) {
+  const invalide = () => { throw new Error('Archive ZIP invalide.'); };
+  if (!Buffer.isBuffer(octets) || octets.length < 22) invalide();
+  let fin = octets.length - 22;
+  const minimum = Math.max(0, fin - 65535);
+  while (fin >= minimum && !(octets.readUInt32LE(fin) === 0x06054b50 && fin + 22 + octets.readUInt16LE(fin + 20) === octets.length)) fin--;
+  if (fin < minimum) invalide();
+  const total = octets.readUInt16LE(fin + 10), debut = octets.readUInt32LE(fin + 16);
+  if (!total || octets.readUInt16LE(fin + 4) || octets.readUInt16LE(fin + 6) || octets.readUInt16LE(fin + 8) !== total || debut + octets.readUInt32LE(fin + 12) !== fin) invalide();
+  let p = debut;
+  for (let i = 0; i < total; i++) {
+    if (p + 46 > fin || octets.readUInt32LE(p) !== 0x02014b50) invalide();
+    const nom = octets.readUInt16LE(p + 28), extra = octets.readUInt16LE(p + 30), commentaire = octets.readUInt16LE(p + 32);
+    const suivant = p + 46 + nom + extra + commentaire, local = octets.readUInt32LE(p + 42);
+    if (suivant > fin || !octets.toString('utf8', p + 46, p + 46 + nom).startsWith(prefixe) || local + 30 > debut || octets.readUInt32LE(local) !== 0x04034b50) invalide();
+    const debutNom = local + 30, finNom = debutNom + octets.readUInt16LE(local + 26);
+    if (finNom + octets.readUInt16LE(local + 28) + octets.readUInt32LE(p + 20) > debut || !octets.subarray(debutNom, finNom).equals(octets.subarray(p + 46, p + 46 + nom))) invalide();
+    p = suivant;
+  }
+  if (p !== fin) invalide();
+}
+
 export async function empaqueter(version, { rev = 'HEAD', sortie = 'dist', depot = racine } = {}) {
   if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? '')) throw new Error('Version attendue : 1.2.3');
-  if (!/^[0-9A-Za-z._\/-]{1,100}$/.test(rev)) throw new Error('Révision invalide.');
+  if (typeof rev !== 'string' || rev.startsWith('-') || !/^[0-9A-Za-z._\/-]{1,100}$/.test(rev)) throw new Error('Révision invalide.');
+  let commit;
+  try {
+    commit = (await executer('git', ['-C', depot, 'rev-parse', '--verify', '--end-of-options', `${rev}^{commit}`], { windowsHide: true, env: envGit })).stdout.trim();
+  } catch { throw new Error('Révision invalide : indiquez un commit ou une étiquette existante.'); }
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(commit)) throw new Error('Révision invalide.');
   const dossier = resolve(depot, sortie);
   await mkdir(dossier, { recursive: true });
   const fichier = join(dossier, `MyTeam-${version}.zip`);
-  await executer('git', ['-C', depot, 'archive', '--format=zip', `--prefix=MyTeam-${version}/`, '-o', fichier, rev], { windowsHide: true, env: envGit });
-  const sha = createHash('sha256').update(await readFile(fichier)).digest('hex');
+  const prefixe = `MyTeam-${version}/`;
+  await executer('git', ['-C', depot, 'archive', '--format=zip', `--prefix=${prefixe}`, '-o', fichier, commit], { windowsHide: true, env: envGit });
+  const octets = await readFile(fichier);
+  verifierZip(octets, prefixe);
+  const sha = createHash('sha256').update(octets).digest('hex');
   return { fichier, sha256: sha };
 }
 
