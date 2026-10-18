@@ -396,6 +396,49 @@ else
 fi
 dire ''
 
+installer_competence_chef() {
+  local dossier="$1/.claude/skills/herdr" cible="$1/.claude/skills/herdr/SKILL.md" parent contenu
+  if [ -e "$cible" ] || [ -L "$cible" ]; then dire "$(texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.')"; return 0; fi
+  parent="$dossier"
+  while [ "$parent" != / ] && [ -n "$parent" ]; do
+    [ ! -L "$parent" ] || return 1
+    parent=$(dirname "$parent")
+  done
+  confirmer "$(texte 'Ajouter les commandes Herdr au chef, sans remplacer de fichier ?' 'Add Herdr commands to the chief without replacing any file?')" individuel || return 0
+  if [ "$DRY_RUN" = 1 ]; then simuler "$(texte 'Ajout de la compétence Herdr dans le dossier connu.' 'Add the Herdr skill to its known directory.')"; return 0; fi
+  contenu=$("$HERDR_TROUVE" --skill) || return 1
+  [ -n "$contenu" ] && [ "${#contenu}" -le 524288 ] || return 1
+  mkdir -p "$dossier" || return 1
+  (set -C; printf '%s' "$contenu" > "$cible") || return 1
+}
+
+proposer_chef() {
+  [ "$OUI" = 1 ] && return 0
+  [ -n "$HERDR_TROUVE" ] || return 0
+  local personnel="${1:-$HOME}" outils=() liste type integration orientation
+  liste=$(detecter_outils)
+  if [ -n "$liste" ]; then while read -r type; do outils+=("$type"); done <<< "$liste"; fi
+  for type in "${outils[@]}"; do
+    integration="$type";[ "$type" = agy ] && integration=antigravity-cli
+    case "$integration" in pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|qwen|letta|cursor|mastracode|antigravity-cli|grok) ;; *) continue ;; esac
+    if confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then
+      if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
+      elif ! "$HERDR_TROUVE" integration install "$integration"; then dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
+    fi
+  done
+  [ -n "${CHEF_PANE:-}" ] || return 0
+  if [ "$CHEF_TYPE" = claude ]; then
+    installer_competence_chef "$personnel" || dire "$(texte 'Compétence non ajoutée : CHEF.md du kit suffit.' 'Skill not added: the kit CHEF.md is sufficient.')"
+  else dire "$(texte 'Chemin de compétence non vérifié pour cet outil : CHEF.md du kit suffit.' 'Skill location not verified for this tool: the kit CHEF.md is sufficient.')"; fi
+  orientation=$(texte "Tu es le chef de l'équipe. Lis AGENTS.md et CHEF.md, liste les agents avec \`herdr agent list\`, puis attends les instructions de DrSmoke." 'You are the team chief. Read AGENTS.md and CHEF.md, list agents with `herdr agent list`, then wait for instructions from DrSmoke.')
+  dire "$orientation"
+  if confirmer "$(texte 'Envoyer cette orientation au chef ?' 'Send this orientation to the chief?')" individuel; then
+    if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Orientation du chef dans $CHEF_PANE." "Chief orientation in $CHEF_PANE.")"
+    elif ! "$HERDR_TROUVE" agent prompt "$CHEF_PANE" "$orientation"; then dire "$(texte 'Envoi non confirmé : consultez le panneau avant de réessayer.' 'Send not confirmed: check the pane before trying again.')"; fi
+  fi
+}
+proposer_chef
+
 # --- 4. IA en ligne de commande (optionnelles) ---------------------------
 dire "$(texte "--- 4. Outils d'IA en ligne de commande (entierement optionnels) ---" "--- 4. Command-line AI tools (entirely optional) ---")"
 dire "$(texte "Aucune cle ni aucun jeton n'est demande ici. Si un outil vous demande de vous" "No key or token is requested here. If a tool asks you to sign in,")"

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, symlink, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,7 @@ async function temporary(t){const path=await mkdtemp(join(tmpdir(),'installer-h3
 async function ps(t,names,body){
   if(process.platform!=='win32')return t.skip('PowerShell Windows absent');
   const path=await temporary(t),script=join(path,'test.ps1');
-  await writeFile(script,`$ErrorActionPreference='Stop'
+  await writeFile(script,`\ufeff$ErrorActionPreference='Stop'
 $ast=[System.Management.Automation.Language.Parser]::ParseFile(${literal(join(root,'scripts/installer.ps1'))},[ref]$null,[ref]$null)
 foreach($nom in @(${['Texte',...names].map(literal).join(',')})) {
  $f=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $nom},$true)
@@ -207,4 +207,76 @@ function Confirmer($question,[switch]$Individuel){if(-not $Individuel){throw 'ac
 Proposer-Kit
 $Oui=$false;Proposer-Kit`);
   if(win)assert.deepEqual(JSON.parse(win.stdout.trim()),[join(project,"dossier $(commande) ' avec espaces"),'--lang','en']);
+});
+
+test('H3 chef bash : accords individuels, alias agy, compétence sans écrasement et orientation ciblée',async t=>{
+  const result=await bash(t,['installer_competence_chef','proposer_chef'],`
+set -e
+work=$(mktemp -d);trap 'rm -rf "$work"' EXIT
+DRY_RUN=0;OUI=1;LANGUE=fr;CHEF_TYPE=claude;CHEF_PANE=w9:p2
+dire(){ :; };noter(){ :; };simuler(){ :; }
+detecter_outils(){ printf 'claude\\ncodex\\nagy\\ngemini\\n'; }
+confirmer(){ [ "$2" = individuel ] || exit 7;case "$1" in *codex*) return 1;;esac;return 0; }
+fake_herdr(){ if [ "$1" = --skill ];then printf 'competence factice';else printf '%s\\n' "$*" >> "$work/calls";fi; }
+HERDR_TROUVE=fake_herdr
+proposer_chef "$work"
+[ ! -e "$work/calls" ]
+OUI=0;proposer_chef "$work"
+[ "$(cat "$work/.claude/skills/herdr/SKILL.md")" = 'competence factice' ]
+printf 'conserver' > "$work/.claude/skills/herdr/SKILL.md"
+installer_competence_chef "$work"
+[ "$(cat "$work/.claude/skills/herdr/SKILL.md")" = conserver ]
+cat "$work/calls"`);
+  assert.match(result.stdout,/integration install claude\nintegration install antigravity-cli/);
+  assert.doesNotMatch(result.stdout,/integration install (codex|gemini)/);
+  assert.match(result.stdout,/agent prompt w9:p2 Tu es le chef de l'équipe\. Lis AGENTS.md et CHEF.md/);
+  assert.equal((result.stdout.match(/agent prompt/g)||[]).length,1);
+});
+
+test('H3 chef PowerShell : Oui sans action, refus par outil, fichier conservé et orientation du chef',async t=>{
+  const personal=await temporary(t);
+  const result=await ps(t,['Installer-CompetenceChef','Proposer-Chef'],`
+$Oui=$true;$DryRun=$false;$Lang='fr';$chefOutil='claude';$chefPane='w9:p2'
+$script:calls=@();$script:reads=0
+function Dire($texte) {};function Noter($texte) {};function Simuler($texte) {}
+function Detecter-Outils {return @('claude','codex','agy','gemini')}
+function Confirmer($question,[switch]$Individuel){$script:reads++;if(-not $Individuel){throw 'accord manquant'};return $question -notmatch 'codex'}
+function FakeHerdr {if($args[0] -ne '--skill'){throw 'commande inattendue'};$global:LASTEXITCODE=0;return 'competence factice'}
+function Appeler-Herdr($Arguments){$script:calls+=,@($Arguments);return @{result=@{}}}
+$herdrTrouve='FakeHerdr'
+Proposer-Chef ${literal(personal)}
+if($reads -ne 0 -or $calls.Count -ne 0){throw 'Oui a autorise une action'}
+$Oui=$false;Proposer-Chef ${literal(personal)}
+$path=Join-Path ${literal(personal)} '.claude/skills/herdr/SKILL.md'
+if([IO.File]::ReadAllText($path) -ne 'competence factice'){throw 'competence absente'}
+[IO.File]::WriteAllText($path,'conserver')
+Installer-CompetenceChef ${literal(personal)}
+if([IO.File]::ReadAllText($path) -ne 'conserver'){throw 'ecrasement'}
+if(($calls|ForEach-Object {$_ -join ' '}) -join ';' -notmatch '^integration install claude;integration install antigravity-cli;agent prompt w9:p2 Tu es le chef'){throw 'mauvaise cible ou integration'}
+'ok'`);
+  if(result)assert.equal(result.stdout.trim(),'ok');
+});
+
+test('H3 compétence : dossier lié refusé avant écriture',async t=>{
+  const personal=await temporary(t),outside=await temporary(t);
+  try {await symlink(outside,join(personal,'.claude'),process.platform==='win32'?'junction':'dir');}
+  catch(error){if(['EPERM','EACCES'].includes(error.code))return t.skip('Création de liens interdite');throw error;}
+  if(process.platform==='win32') {
+    const result=await ps(t,['Installer-CompetenceChef'],`
+$Oui=$false;$DryRun=$false
+function Confirmer {throw 'confirmation avant controle du chemin'}
+$refus=$false
+try {Installer-CompetenceChef ${literal(personal)}}catch{$refus=$_.Exception.Message -match 'Chemin lié'}
+if(-not $refus){throw 'lien accepte'}
+'ok'`);
+    assert.equal(result.stdout.trim(),'ok');
+  } else {
+    const result=await bash(t,['installer_competence_chef'],`
+DRY_RUN=0
+confirmer(){ exit 7; }
+if installer_competence_chef '${personal}';then exit 1;fi
+printf 'ok'`);
+    assert.equal(result.stdout,'ok');
+  }
+  await assert.rejects(readFile(join(outside,'skills/herdr/SKILL.md')),{code:'ENOENT'});
 });

@@ -223,9 +223,10 @@ if ($herdrTrouve) {
 Dire ''
 
 # --- 3. Panneaux Herdr --------------------------------------------------
-function Appeler-Herdr([string[]]$Arguments) {
+function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   $texte = & $herdrTrouve @Arguments
   if ($LASTEXITCODE -ne 0) { throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($SansJson) { return $texte }
   $resultat = ($texte -join "`n") | ConvertFrom-Json
   if ($resultat.error) { throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
   return $resultat
@@ -339,6 +340,56 @@ if ($herdrTrouve) {
   Noter (Texte 'Panneaux Herdr : ignores (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
 }
 Dire ''
+
+function Installer-CompetenceChef([string]$DossierPersonnel) {
+  $dossier = Join-Path $DossierPersonnel '.claude/skills/herdr'
+  $cible = Join-Path $dossier 'SKILL.md'
+  if (Test-Path -LiteralPath $cible) { Dire (Texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.'); return }
+  $parent = $dossier
+  while ($parent) {
+    $item = Get-Item -LiteralPath $parent -Force -ErrorAction SilentlyContinue
+    if ($item -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw (Texte 'Chemin lié refusé pour la compétence.' 'Linked skill path rejected.') }
+    $parent = Split-Path -Parent $parent
+  }
+  if (-not (Confirmer (Texte 'Ajouter les commandes Herdr au chef, sans remplacer de fichier ?' 'Add Herdr commands to the chief without replacing any file?') -Individuel)) { return }
+  if ($DryRun) { Simuler (Texte 'Ajout de la compétence Herdr dans le dossier connu.' 'Add the Herdr skill to its known directory.'); return }
+  $contenu = (& $herdrTrouve --skill) -join "`n"
+  if ($LASTEXITCODE -ne 0 -or -not $contenu -or $contenu.Length -gt 524288) { throw (Texte 'Compétence Herdr illisible.' 'Cannot read the Herdr skill.') }
+  [void][IO.Directory]::CreateDirectory($dossier)
+  $flux = [IO.File]::Open($cible, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+  try { $octets = [Text.Encoding]::UTF8.GetBytes($contenu); $flux.Write($octets,0,$octets.Length) } finally { $flux.Dispose() }
+}
+
+function Proposer-Chef([string]$DossierPersonnel = $HOME) {
+  if ($Oui -or -not $herdrTrouve) { return }
+  $integrations = @('pi','omp','claude','codex','copilot','devin','droid','kimi','opencode','kilo','hermes','qodercli','qwen','letta','cursor','mastracode','antigravity-cli','grok')
+  foreach ($type in @(Detecter-Outils)) {
+    $integration = if ($type -eq 'agy') { 'antigravity-cli' } else { $type }
+    if ($integration -notin $integrations) { continue }
+    if (Confirmer (Texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.") -Individuel) {
+      if ($DryRun) { Simuler "herdr integration install $integration" }
+      else {
+        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson }
+        catch { Dire (Texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.") }
+      }
+    }
+  }
+  if (-not $chefPane) { return }
+  if ($chefOutil -eq 'claude') {
+    try { Installer-CompetenceChef $DossierPersonnel }
+    catch { Dire (Texte 'Compétence non ajoutée : le fichier est conservé. CHEF.md du kit suffit.' 'Skill not added: existing files are kept. The kit CHEF.md is sufficient.') }
+  } else { Dire (Texte 'Chemin de compétence non vérifié pour cet outil : CHEF.md du kit suffit.' 'Skill location not verified for this tool: the kit CHEF.md is sufficient.') }
+  $orientation = Texte "Tu es le chef de l'équipe. Lis AGENTS.md et CHEF.md, liste les agents avec ``herdr agent list``, puis attends les instructions de DrSmoke." 'You are the team chief. Read AGENTS.md and CHEF.md, list agents with `herdr agent list`, then wait for instructions from DrSmoke.'
+  Dire $orientation
+  if (Confirmer (Texte 'Envoyer cette orientation au chef ?' 'Send this orientation to the chief?') -Individuel) {
+    if ($DryRun) { Simuler (Texte "Orientation du chef dans $chefPane." "Chief orientation in $chefPane.") }
+    else {
+      try { $null = Appeler-Herdr @('agent','prompt',$chefPane,$orientation) -SansJson }
+      catch { Dire (Texte "Envoi non confirmé : consultez le panneau avant de réessayer." 'Send not confirmed: check the pane before trying again.') }
+    }
+  }
+}
+Proposer-Chef
 
 # --- 4. IA en ligne de commande (optionnelles) ---------------------------
 Dire (Texte '--- 4. Outils d''IA en ligne de commande (entierement optionnels) ---' '--- 4. Command-line AI tools (entirely optional) ---')
