@@ -80,6 +80,7 @@
           </div>
           <p class="files-result" id="direction-result" role="status" hidden></p>
         </section>
+        <section class="relais" aria-labelledby="relais-title"><h2 id="relais-title" data-i18n="onglet.equipe.relais-titre">Relais d’écoute du chef</h2><p class="panel-intro" data-i18n="onglet.equipe.relais-intro">Facultatif, désactivé par défaut.</p><label class="priority-check"><input type="checkbox" id="relais-actif"> <span data-i18n="onglet.equipe.relais-label">Prévenir le chef quand un agent termine</span></label><p class="files-result" id="relais-result" role="status" hidden></p></section>
         <section class="mailbox" id="mailbox" aria-labelledby="mailbox-title"><h2 id="mailbox-title"><span data-i18n="onglet.equipe.courrier-titre">Courrier du chef</span> <span class="count" id="mail-count"></span></h2><p class="panel-intro" data-i18n="onglet.equipe.courrier-intro">Fins de travail observées ; le résultat reste à vérifier dans les sorties.</p><ol class="mail-list" id="mail-list"><li class="list-placeholder" data-i18n="onglet.equipe.courrier-vide">Aucun courrier depuis l’ouverture du bureau.</li></ol></section>
         <section class="queue" aria-labelledby="queue-title"><h2 id="queue-title"><span data-i18n="onglet.equipe.file-titre">File d’attente</span> <span class="count" id="queue-count"></span></h2><p class="panel-intro" data-i18n="onglet.equipe.file-intro">Part seule quand l’agent redevient disponible ; jamais vers un agent bloqué.</p><ol class="queue-list" id="queue-list"><li class="list-placeholder" data-i18n="onglet.equipe.file-vide">Aucune consigne en attente.</li></ol></section>
         <section class="discussion" aria-labelledby="disc-title"><h2 id="disc-title" data-i18n="onglet.equipe.fil-titre">Fil de la salle de contrôle</h2><p class="panel-intro" data-i18n="onglet.equipe.fil-intro">Dernières réponses écrites par les agents, lues dans leurs journaux locaux. Les messages chiffrés entre agents ne sont jamais affichés.</p><div id="disc-list"></div></section>
@@ -112,13 +113,15 @@
     <div class="help-head"><h2 id="help-title" data-i18n="aide.titre">Aide du bureau</h2><button type="button" class="icon-button" id="help-close" data-i18n-attr="aria-label:bouton.fermer-aide.aria" aria-label="Fermer l’aide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <div class="help-body">
       <p data-i18n="aide.intro">Tour de contrôle locale de tes agents Herdr. Tout ce qui s’affiche vient d’un fait observé : états Herdr, terminaux, journaux locaux, fichiers, heure du poste. Rien n’est inventé.</p>
-      <h3 data-i18n="aide.etapes-titre">En 5 étapes</h3>
+      <h3 data-i18n="aide.etapes-titre">En 7 étapes</h3>
       <ol class="help-steps">
         <li><b data-i18n="aide.etape1-titre">Observe la scène.</b> <span data-i18n="aide.etape1-texte">Le chef occupe le bureau Direction ; chaque agent montre son état par sa posture, sa bulle et sa couleur.</span></li>
         <li><b data-i18n="aide.etape2-titre">Choisis un poste.</b> <span data-i18n="aide.etape2-texte">Clique un personnage ou sa carte sous la scène.</span></li>
         <li><b data-i18n="aide.etape3-titre">Onglet Poste.</b> <span data-i18n="aide.etape3-texte">Barre d’état de l’outil, sorties du terminal, consigne (Ctrl+Entrée). Agent occupé : « Mettre en file ».</span></li>
         <li><b data-i18n="aide.etape4-titre">Onglet Équipe.</b> <span data-i18n="aide.etape4-texte">Courrier du chef, file d’attente, message à plusieurs agents en deux clics, journal des envois.</span></li>
         <li><b data-i18n="aide.etape5-titre">Onglets Fichiers et Tâches.</b> <span data-i18n="aide.etape5-texte">Fichiers récents, copie ou déplacement sans suppression ; cases du projet et plans des agents.</span></li>
+        <li><b data-i18n="aide.etape6-titre">Mosaïque.</b> <span data-i18n="aide.etape6-texte"></span></li>
+        <li><b data-i18n="aide.etape7-titre">Salle de crise.</b> <span data-i18n="aide.etape7-texte"></span></li>
       </ol>
       <h3 data-i18n="aide.scene-titre">Lire la scène</h3>
       <dl class="help-legend">
@@ -135,6 +138,7 @@
         <tr><td><kbd>?</kbd></td><td data-i18n="aide.racc-aide">Ouvrir ou fermer cette aide</td></tr>
         <tr><td><kbd>Ctrl</kbd> <kbd data-i18n="aide.kbd-entree">Entrée</kbd></td><td data-i18n="aide.racc-envoyer">Envoyer la consigne ou l’envoi groupé</td></tr>
         <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td data-i18n="aide.racc-onglet">Changer d’onglet</td></tr>
+        <tr><td><kbd>Ctrl</kbd> <kbd data-i18n="aide.kbd-maj">Maj</kbd> <kbd>C</kbd></td><td data-i18n="aide.racc-crise">Ouvrir la salle de crise</td></tr>
         <tr><td><kbd data-i18n="aide.kbd-echap">Échap</kbd></td><td data-i18n="aide.racc-fermer">Fermer l’aide, la palette ou le mode Disposer</td></tr>
         <tr><td><kbd data-i18n="aide.kbd-maj">Maj</kbd> <span data-i18n="aide.glisser">+ glisser</span></td><td data-i18n="aide.racc-deplacer">Déplacer un fichier (confirmation demandée)</td></tr>
       </tbody></table>

@@ -108,7 +108,7 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe'){loadQueue();loadTreatments();loadDiscussion();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
+  if(name==='equipe'){loadRelais();loadQueue();loadTreatments();loadDiscussion();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
@@ -737,6 +737,19 @@ function setTiles(on){
   });
 }
 $('tiles-open').addEventListener('click',()=>setTiles(!tilesOn));
+// Relais d'écoute : option du serveur, désactivée par défaut ; le chef est prévenu quand un agent termine.
+let relaisBusy=false;
+async function loadRelais(){
+  if(!state.connected||!state.token||relaisBusy)return;
+  try{const r=await request('/api/relais',{headers:{'X-Bureau-Token':state.token}});$('relais-actif').checked=r.actif===true;}
+  catch{ /* Lecture facultative : la case garde son dernier état. */ }
+}
+$('relais-actif').addEventListener('change',async()=>{
+  const box=$('relais-actif'),actif=box.checked,out=$('relais-result');relaisBusy=true;
+  try{await request('/api/relais',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({actif})});out.className='files-result';out.textContent=t(actif?'onglet.equipe.relais-active':'onglet.equipe.relais-desactive');out.hidden=false;}
+  catch(error){box.checked=!actif;out.className='files-result error';out.textContent=errorText(error,'envoi');out.hidden=false;}
+  finally{relaisBusy=false;}
+});
 // Salle de crise : verrou général des envois, diagnostic calme, interruption polie par agent (jamais un arrêt brutal).
 let criseArmed=null,criseStopArmed=null,criseBusy=false,criseTrigger=null;
 const criseTails=new Map();

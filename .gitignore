@@ -7,3 +7,4 @@ node_modules/
 .impeccable/*.local.json
 captures/
 .impeccable/hook.cache.json
+.playwright-mcp/
