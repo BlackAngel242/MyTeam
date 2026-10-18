@@ -865,8 +865,8 @@ async function loadAuto(){
 }
 function syncAuto(){
   const on=autoState.actif===true,btn=$('auto-open');
-  btn.dataset.actif=String(on);
-  $('auto-label').textContent=on?t('auto.bouton_actif',{reste:resteLabel(autoState.finAt),n:autoState.echanges,max:autoState.maxEchanges}):t('auto.bouton');
+  btn.dataset.actif=String(on);btn.setAttribute('aria-checked',String(on));
+  $('auto-label').textContent=on?t('auto.pill_on',{reste:resteLabel(autoState.finAt),n:autoState.echanges,max:autoState.maxEchanges}):t('auto.pill_off');
   if(!$('auto').hidden)renderAuto();
 }
 function renderAuto(){
