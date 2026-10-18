@@ -101,4 +101,4 @@ Empreintes SHA-256 des fichiers examinés :
 | `public/app.js` | `5bc2bce74d705570da0faee6b72ccc7bfbc0a99a3006baec9172a5908918db0d` |
 | `public/style.css` | `31b5cd148b1a8e456208c658fc58550c4a79387d7671d3c339afc6ded6ba533a` |
 
-Signature : DrSmoke « Un Mbokatié engagé ».
+Signature : DrSmoke.

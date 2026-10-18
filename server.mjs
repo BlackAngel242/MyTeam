@@ -23,7 +23,7 @@ const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),piedFile=fileURLToPath(new URL('./.bureau/pied.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -261,6 +261,15 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         if(!guard(req,{body:false})) return;
         try {return json(200,normalizeTodos(await getTodos(await bridge.list())));}
         catch(error) {return json(errorStatus(error),{error:'Impossible de lire les listes de tâches pour le moment.'});}
+      }
+      // Pied de page facultatif : chacun met ses propres informations dans .bureau/pied.json ; rien n'est imposé.
+      if(req.method==='GET'&&url.pathname==='/api/pied') {
+        if(!guard(req,{body:false})) return;
+        const net=valeur=>typeof valeur==='string'?Array.from(valeur.replace(/[\u0000-\u001f\u007f-\u009f]/g,' ').trim()).slice(0,120).join(''):'';
+        try {
+          const brut=JSON.parse(await readFile(piedFile,'utf8'));
+          return json(200,{gauche:net(brut?.gauche),droite:net(brut?.droite)});
+        } catch {return json(200,{gauche:'DrSmoke « Un Mbokatié engagé »',droite:''});}
       }
       // Tableau mural : fichiers piliers du projet, en lecture seule, protégés comme les tâches.
       if(req.method==='GET'&&url.pathname==='/api/tableau') {

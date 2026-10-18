@@ -1032,3 +1032,4 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 }
 
 .tiles-wrap:not([hidden]){position:relative;background:#101c2d;aspect-ratio:1000/620;overflow:auto;padding:10px}
+.page-footer[hidden]{display:none}

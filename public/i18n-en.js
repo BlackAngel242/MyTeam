@@ -446,8 +446,6 @@ window.DICTIONNAIRE_EN = {
   "pause.retour": "Paused · back at {heure}",
   "pause.source.journal": "log",
   "pause.source.terminal": "terminal",
-  "pied.signature": "DrSmoke « Un Mbokatié engagé »",
-  "pied.whatsapp": "",
   "poste.activite.chargement": "Loading",
   "poste.activite.execution": "Running",
   "poste.activite.reflexion": "Thinking",

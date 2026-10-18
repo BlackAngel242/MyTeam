@@ -737,6 +737,15 @@ function setTiles(on){
   });
 }
 $('tiles-open').addEventListener('click',()=>setTiles(!tilesOn));
+// Pied de page facultatif : le texte vient de .bureau/pied.json (local, jamais imposé).
+async function loadFooter(){
+  if(!state.connected||!state.token)return;
+  try{
+    const p=await request('/api/pied',{headers:{'X-Bureau-Token':state.token}});
+    $('footer-left').textContent=p.gauche||'';$('footer-right').textContent=p.droite||'';
+    $('page-footer').hidden=!(p.gauche||p.droite);
+  }catch{ /* Pied facultatif : sans réponse, il reste masqué. */ }
+}
 // Relais d'écoute : option du serveur, désactivée par défaut ; le chef est prévenu quand un agent termine.
 let relaisBusy=false;
 async function loadRelais(){
@@ -1747,7 +1756,7 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(currentTab()==='equipe'){loadTreatments();loadDiscussion();}},5000);
-setTimeout(loadTodos,1500);setTimeout(loadCrisis,1500);
+setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});requestAnimationFrame(frame);

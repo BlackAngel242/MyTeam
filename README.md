@@ -233,3 +233,5 @@ Le code de MyTeam est distribué sous **licence MIT** (consultez le fichier [LIC
 Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md) ([English](NOTICE.en.md)).
 
 DrSmoke « Un Mbokatié engagé »
+
+**Pied de page facultatif.** Pour afficher vos propres informations en bas du bureau, créez le fichier `.bureau/pied.json` (local, jamais publié) : `{"gauche": "votre texte", "droite": "un contact"}`. Sans ce fichier, seul « DrSmoke « Un Mbokatié engagé » » est affiché.

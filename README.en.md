@@ -233,3 +233,5 @@ MyTeam source code is released under the **MIT License** (see [LICENSE](LICENSE)
 Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) remain the property of their respective owners. Pixel art representations in `public/logos.js` are used solely to visually distinguish tools occupying each workstation, without commercial affiliation or endorsement: see [NOTICE.en.md](NOTICE.en.md) ([Français](NOTICE.md)).
 
 DrSmoke « Un Mbokatié engagé »
+
+**Optional footer.** To show your own information at the bottom of the desk, create the file `.bureau/pied.json` (local, never published): `{"gauche": "your text", "droite": "a contact"}` (`gauche` = left, `droite` = right). Without this file only DrSmoke « Un Mbokatié engagé » is shown.

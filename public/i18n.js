@@ -453,8 +453,6 @@
   "pause.retour": "En pause · retour {heure}",
   "pause.source.journal": "journal",
   "pause.source.terminal": "terminal",
-  "pied.signature": "DrSmoke « Un Mbokatié engagé »",
-  "pied.whatsapp": "",
   "poste.activite.chargement": "Chargement",
   "poste.activite.execution": "Exécution",
   "poste.activite.reflexion": "Réflexion",

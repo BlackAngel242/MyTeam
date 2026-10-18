@@ -13,7 +13,7 @@ Cet audit recense les données propres à l'ordinateur de travail ou à la sessi
 | Identifiants de session Herdr | `HANDOFF.md`, `JOURNAL.md` | Mentionnent les panneaux de la session de développement (`w5:p1`, `w5:p4`, etc.). | Normal dans le journal de conception, mais à préciser comme exemples dans la documentation publique. L'application lit ces valeurs dynamiquement. |
 | Fichiers de journalisation locale | `bureau.log`, `bureau-erreurs.log` | Journaux locaux générés lors du lancement par le script PowerShell. | Déjà ignorés dans `.gitignore`. Vérifier qu'ils ne sont jamais ajoutés au suivi Git. |
 | Dossier de captures d'écran | `captures/` | Peut contenir des captures d'écrans avec des données de projets réels. | Déjà ignoré dans `.gitignore`. Captures d'illustration candidates prêtes dans le dossier public `docs/captures/`. |
-| Données d'identité de l'auteur | `public/index.html`, `README.md` | Mentionne DrSmoke, l'auteur et le numéro WhatsApp. | Choix explicite de DrSmoke : ces mentions sont conservées comme signature et crédit d'auteur. |
+| Données d'identité de l'auteur | `public/index.html`, `README.md` | Une société et un numéro de téléphone personnels y figuraient. | Retirés du dépôt et du code (18 octobre) : le pied de page est facultatif et se règle dans `.bureau/pied.json`, local et non publié. |
 
 ### Vérification des secrets et données sensibles
 

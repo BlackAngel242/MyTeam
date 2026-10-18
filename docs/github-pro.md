@@ -119,7 +119,7 @@ jobs:
 - **Plateformes supportées par GitHub** :
   - GitHub Sponsors (compte personnel ou organisation).
   - Plateformes tierces reconnues : Ko-fi, Buy Me a Coffee, Patreon, Liberapay.
-  - Lien personnalisé : renvoi vers une page de contact officielle ou l'auteur.
+  - Lien personnalisé : renvoi vers une page de contact officielle.
 - **Effort estimé** : Très faible (quelques lignes de texte).
 - **Validation requise de DrSmoke** : **Indispensable**. DrSmoke doit décider s'il souhaite activer cette fonction, choisir les canaux de paiement ou conserver uniquement sa signature actuelle (contact WhatsApp).
 
@@ -154,6 +154,6 @@ En complément des fichiers sur le disque, quelques réglages dans l'interface d
 | **Badge de statut CI** | `README.md` | Montre l'état passant des tests en temps réel aux visiteurs. | Négligeable (~2 min) | **Oui** (confirmation de l'URL du dépôt). |
 | **Modèles d'Issues** | `.github/ISSUE_TEMPLATE/*` | Structure les rapports de bugs, exclut les secrets, cadre les demandes. | Faible (~20 min) | **Oui** (validation des questions posées). |
 | **Modèle de Pull Request** | `.github/PULL_REQUEST_TEMPLATE.md` | Checklist avant fusion (tests, zéro dépendance, pas de secrets). | Faible (~10 min) | **Oui** (validation des règles de la checklist). |
-| **Bouton de soutien** | `.github/FUNDING.yml` | Propose le mécénat (GitHub Sponsors, Ko-fi ou l'auteur). | Faible (~5 min) | **Indispensable** (choix des canaux financiers). |
+| **Bouton de soutien** | `.github/FUNDING.yml` | Propose le mécénat (GitHub Sponsors, Ko-fi ou une page de contact). | Faible (~5 min) | **Indispensable** (choix des canaux financiers). |
 | **Protection de branche** | Réglages GitHub (`Settings > Branches`) | Empêche les pushs forcés et impose la réussite de la CI avant fusion. | Très faible (~3 min) | **Oui** (décision de gouvernance). |
 | **GitHub Discussions** | Réglages GitHub (`Settings > General`) | Sépare les discussions d'atelier du suivi technique des bugs. | Très faible (~1 min) | **Oui** (accord sur l'ouverture d'un forum). |
