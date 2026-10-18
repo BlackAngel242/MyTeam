@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1423">
+  
+  <title>MyTeam · Le Bureau des agents</title>
+  <meta name="description" content="Un tableau de bord immersif en pixel art pour surveiller, lire et diriger vos équipes d'agents d'intelligence artificielle autonomes exécutés dans Herdr. 100% local, zéro dépendance npm.">
+
+  <!-- Open Graph / Réseaux sociaux -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://blackangel242.github.io/MyTeam/">
+  <meta property="og:title" content="MyTeam · Le Bureau des agents">
+  <meta property="og:description" content="Surveillez, lisez et dirigez vos agents d'IA dans un atelier vivant en pixel art. 100% local, zéro dépendance npm.">
+  <meta property="og:image" content="assets/social.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MyTeam · Le Bureau des agents">
+  <meta name="twitter:description" content="Surveillez, lisez et dirigez vos agents d'IA dans un atelier vivant en pixel art. 100% local, zéro dépendance npm.">
+  <meta name="twitter:image" content="assets/social.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+
+  <!-- Styles et scripts locaux (aucun CDN ni police externe) -->
+  <link rel="stylesheet" href="style.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+
+  <!-- Navigation principale -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="#presentation">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="brand-text">
+          <span class="brand-title" data-i18n="nav.marque">MyTeam</span>
+          <span class="brand-sub" data-i18n="nav.sous-titre">Le Bureau des agents</span>
+        </span>
+      </a>
+
+      <nav aria-label="Navigation principale">
+        <ul class="nav-menu" id="nav-menu">
+          <li><a class="nav-link" href="#presentation" data-i18n="nav.presentation">Présentation</a></li>
+          <li><a class="nav-link" href="#fonctions" data-i18n="nav.fonctions">Fonctionnalités</a></li>
+          <li><a class="nav-link" href="#captures" data-i18n="nav.captures">Captures</a></li>
+          <li><a class="nav-link" href="#installation" data-i18n="nav.installation">Installation</a></li>
+          <li><a class="nav-link" href="#compatibilite" data-i18n="nav.compatibilite">Compatibilité</a></li>
+          <li><a class="nav-link" href="#contribuer" data-i18n="nav.contribuer">Participer</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="btn-lang" class="lang-btn" type="button" aria-pressed="false" data-i18n-attr="aria-label:nav.langue.aria" aria-label="Changer la langue (FR / EN)">EN</button>
+        <a class="btn-github" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer">
+          <span data-i18n="nav.code">Code source</span>
+        </a>
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-label="Ouvrir le menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Hero Section -->
+    <section id="presentation" class="hero">
+      <div class="container">
+        <span class="hero-pill" data-i18n="hero.badge">100% Local · Zéro Dépendance npm · Vérité des faits</span>
+        <h1 class="hero-title" data-i18n="hero.titre">Surveillez, lisez et dirigez vos agents d'IA dans un atelier vivant en pixel art</h1>
+        <p class="hero-tagline" data-i18n="hero.description">Un tableau de bord local immersif pour orchestrer vos équipes d'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.</p>
+        
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la release v0.4.0</a>
+          <a class="btn btn-secondary" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-github">Voir le projet sur GitHub</a>
+        </div>
+
+        <div class="hero-preview">
+          <div class="preview-bar">
+            <div class="preview-dots"><span></span><span></span><span></span></div>
+            <span data-i18n="hero.preview-caption">Scène vivante de l'atelier : chef au bureau Direction, tableau mural, collaborateurs à leurs postes et salle de réflexion.</span>
+            <span>127.0.0.1:4317</span>
+          </div>
+          <img src="assets/scene.png" alt="Aperçu de la scène MyTeam en journée avec le chef et les collaborateurs">
+        </div>
+      </div>
+    </section>
+
+    <!-- Piliers (3 idées) -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="pillars.badge">Philosophie</span>
+          <h2 class="section-title" data-i18n="pillars.titre">Ce que c'est en trois idées</h2>
+          <p class="section-desc" data-i18n="pillars.desc">Conçu pour reprendre le contrôle visuel sur l'activité des agents sans artifice ni mensonge.</p>
+        </div>
+
+        <div class="pillars-grid">
+          <article class="pillar-card">
+            <span class="pillar-num" data-i18n="pillar1.num">01. Observer</span>
+            <h3 class="pillar-title" data-i18n="pillar1.titre">Voir qui fait quoi en direct</h3>
+            <p class="pillar-text" data-i18n="pillar1.text">Chaque collaborateur a son poste de travail identifié par l'emblème pixel art de son outil. Voyez en un coup d'œil qui tape, qui attend une confirmation, qui prend une pause de quota ou qui prépare son dossier.</p>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-num" data-i18n="pillar2.num">02. Coordonner</span>
+            <h3 class="pillar-title" data-i18n="pillar2.titre">Diriger avec méthode et calme</h3>
+            <p class="pillar-text" data-i18n="pillar2.text">Le chef d'équipe s'assoit au bureau Direction. Dès qu'une délégation intervient dans son journal, il se lève pour apporter le dossier au collaborateur. Une file d'attente intelligente et une salle de crise sécurisent chaque envoi.</p>
+          </article>
+
+          <article class="pillar-card">
+            <span class="pillar-num" data-i18n="pillar3.num">03. Vérité</span>
+            <h3 class="pillar-title" data-i18n="pillar3.titre">Ne rien inventer, tout prouver</h3>
+            <p class="pillar-text" data-i18n="pillar3.text">Zéro pourcentage inventé, zéro humeur fictive. Tout provient exclusivement des faits mesurés : processus Herdr réels, fichiers sur votre disque, journaux locaux et horloge de votre machine.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grille des fonctionnalités -->
+    <section id="fonctions" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="features.badge">Capacités réelles</span>
+          <h2 class="section-title" data-i18n="features.titre">Un bureau complet, sans compromis</h2>
+          <p class="section-desc" data-i18n="features.desc">Chaque fonction est testée et s'appuie exclusivement sur des faits observés sur votre machine.</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">☀</div>
+            <h3 class="feature-title" data-i18n="feat.scene.title">Scène vivante et ambiance lumineuse</h3>
+            <p class="feature-desc" data-i18n="feat.scene.desc">Vue panoramique calée sur votre horloge système : lever de soleil à 6 h 30, coucher à 19 h 30, éclairage chaleureux des lampes de bureau en soirée.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">⌨</div>
+            <h3 class="feature-title" data-i18n="feat.postes.title">Poste individuel et terminal en direct</h3>
+            <p class="feature-desc" data-i18n="feat.postes.desc">Lecture du terminal sans pollution : surlignage des erreurs et des succès, défilement fluide, recherche textuelle instantanée et saut aux résultats.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">★</div>
+            <h3 class="feature-title" data-i18n="feat.direction.title">Bureau Direction et délégations</h3>
+            <p class="feature-desc" data-i18n="feat.direction.desc">Le chef d'équipe coordonne les agents. Sur chaque délégation observée, il quitte son bureau pour remettre physiquement le dossier à son collègue.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">✉</div>
+            <h3 class="feature-title" data-i18n="feat.relais.title">Relais d'écoute du chef</h3>
+            <p class="feature-desc" data-i18n="feat.relais.desc">Alerte discrète et neutre mise en file pour le chef dès qu'un collaborateur termine sa tâche, l'invitant à relire son panneau avant de lui confier la suite.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">☷</div>
+            <h3 class="feature-title" data-i18n="feat.mosaique.title">Mosaïque multi-terminaux</h3>
+            <p class="feature-desc" data-i18n="feat.mosaique.desc">Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <h3 class="feature-title" data-i18n="feat.reponses.title">Réponses lisibles en Markdown</h3>
+            <p class="feature-desc" data-i18n="feat.reponses.desc">Extraction des réponses réelles de l'agent, filtrées de tout contenu privé ou raisonnement brut, avec copie en un clic et fil de discussion complet.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">📎</div>
+            <h3 class="feature-title" data-i18n="feat.fichiers.title">Fichiers joints et suivi des faits</h3>
+            <p class="feature-desc" data-i18n="feat.fichiers.desc">Associez des documents de travail en toute sécurité. Le bureau observe les créations et modifications réelles sur disque sans jamais rien écraser.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">✔</div>
+            <h3 class="feature-title" data-i18n="feat.taches.title">Suivi factuel des tâches</h3>
+            <p class="feature-desc" data-i18n="feat.taches.desc">Centralisation en temps réel des cases cochées dans TODO.md et des plans d'action publiés par les agents eux-mêmes, sans pourcentage artificiel.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3 class="feature-title" data-i18n="feat.crise.title">Salle de crise sous clapet</h3>
+            <p class="feature-desc" data-i18n="feat.crise.desc">Bouton protégé (Ctrl+Maj+C) pour geler immédiatement les départs de consignes en cas d'urgence et demander un arrêt poli par la touche Échap.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <h3 class="feature-title" data-i18n="feat.kit.title">Kit d'équipe et collaboration</h3>
+            <p class="feature-desc" data-i18n="feat.kit.desc">Règles communes (AGENTS.md), consignes du chef (CHEF.md) et mémoire collective des leçons (LESSONS.md) prêtes à être déployées dans vos projets.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3 class="feature-title" data-i18n="feat.bilingue.title">Interface 100% bilingue FR / EN</h3>
+            <p class="feature-desc" data-i18n="feat.bilingue.desc">Basculez à tout moment entre le français et l'anglais d'un simple clic, avec détection de la langue du navigateur et mémorisation locale.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">🛡</div>
+            <h3 class="feature-title" data-i18n="feat.securite.title">Sécurité et souveraineté locale</h3>
+            <p class="feature-desc" data-i18n="feat.securite.desc">Écoute strictement restreinte à 127.0.0.1, jeton aléatoire de session, zéro appel sortant, zéro dépendance npm, zéro secret intercepté.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Galerie des captures d'écran -->
+    <section id="captures" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="gallery.badge">Interface</span>
+          <h2 class="section-title" data-i18n="gallery.titre">L'atelier sous tous les angles</h2>
+          <p class="section-desc" data-i18n="gallery.desc">Cliquez sur une capture pour l'agrandir en haute définition.</p>
+        </div>
+
+        <div class="gallery-grid">
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/scene.png">
+            <img class="gallery-thumb" src="assets/scene.png" alt="Scène principale de jour dans MyTeam">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.scene.title">Scène principale de jour</h3>
+              <p class="gallery-desc" data-i18n="gallery.scene.desc">Le chef au bureau Direction, les postes de travail et la salle de réflexion vitrée.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/scene-soir.png">
+            <img class="gallery-thumb" src="assets/scene-soir.png" alt="Ambiance de soirée dans l'atelier MyTeam">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.soir.title">Ambiance de soirée</h3>
+              <p class="gallery-desc" data-i18n="gallery.soir.desc">Éclairage tamisé automatique dès 19 h 00 avec suspensions et lampes de bureau allumées.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/poste.png">
+            <img class="gallery-thumb" src="assets/poste.png" alt="Onglet Poste de travail avec terminal en direct">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.poste.title">Onglet Poste de travail</h3>
+              <p class="gallery-desc" data-i18n="gallery.poste.desc">Terminal interactif en direct avec filtres de couleurs et zone de consigne rapide.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/equipe.png">
+            <img class="gallery-thumb" src="assets/equipe.png" alt="Onglet Équipe et gestion de la file d'attente">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.equipe.title">Onglet Équipe et file d'attente</h3>
+              <p class="gallery-desc" data-i18n="gallery.equipe.desc">Supervision de l'effectif, attribution du rôle de chef et file d'attente prioritaire.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/mosaique.png">
+            <img class="gallery-thumb" src="assets/mosaique.png" alt="Mode Mosaïque multi-terminaux dans MyTeam">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.mosaique.title">Mode Mosaïque multi-terminaux</h3>
+              <p class="gallery-desc" data-i18n="gallery.mosaique.desc">Surveillance simultanée de plusieurs agents au travail avec recherche réactive.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/crise.png">
+            <img class="gallery-thumb" src="assets/crise.png" alt="Salle de crise active avec bouton sous clapet">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.crise.title">Salle de crise active</h3>
+              <p class="gallery-desc" data-i18n="gallery.crise.desc">Verrouillage de sécurité des envois et interruption polie sans destruction de processus.</p>
+            </div>
+          </div>
+
+          <div class="gallery-item" tabindex="0" data-lightbox="assets/emblemes.png">
+            <img class="gallery-thumb" src="assets/emblemes.png" alt="Planche des 24 emblèmes d'outils compatibles Herdr">
+            <div class="gallery-caption">
+              <h3 class="gallery-title" data-i18n="gallery.emblemes.title">Planche des 24 emblèmes d'outils</h3>
+              <p class="gallery-desc" data-i18n="gallery.emblemes.desc">Représentations pixel art 16x16 pour identifier chaque IA compatible Herdr.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Installation en trois gestes -->
+    <section id="installation" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="install.badge">Démarrage immédiat</span>
+          <h2 class="section-title" data-i18n="install.titre">Installation en trois gestes</h2>
+          <p class="section-desc" data-i18n="install.desc">Aucun outil de compilation requis. Node.js (>= 22) et Herdr suffisent.</p>
+        </div>
+
+        <div class="install-steps">
+          <div class="step-card">
+            <span class="step-badge" data-i18n="step1.badge">Geste 1</span>
+            <h3 class="step-title" data-i18n="step1.title">Télécharger l'archive</h3>
+            <p class="step-desc" data-i18n="step1.desc">Récupérez le fichier ZIP de la dernière version stable sur GitHub et décompressez-le dans le dossier de votre choix.</p>
+            <div class="step-snippet" data-i18n="step1.snippet">MyTeam-v0.4.0.zip (sans dépendance externe)</div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-badge" data-i18n="step2.badge">Geste 2</span>
+            <h3 class="step-title" data-i18n="step2.title">Lancer l'installation</h3>
+            <p class="step-desc" data-i18n="step2.desc">Sous Windows, double-cliquez sur Installer MyTeam.bat. L'installeur animé démarre directement, vérifie les prérequis et prépare la grille Herdr 2x2.</p>
+            <div class="step-snippet" data-i18n="step2.snippet">Installer MyTeam.bat (ou bash scripts/installer.sh)</div>
+          </div>
+
+          <div class="step-card">
+            <span class="step-badge" data-i18n="step3.badge">Geste 3</span>
+            <h3 class="step-title" data-i18n="step3.title">Ouvrir le bureau</h3>
+            <p class="step-desc" data-i18n="step3.desc">Double-cliquez sur le raccourci « Herdr et bureau » créé sur votre Bureau, ou lancez node server.mjs et ouvrez votre navigateur.</p>
+            <div class="step-snippet" data-i18n="step3.snippet">http://127.0.0.1:4317</div>
+          </div>
+        </div>
+
+        <!-- Alerte SmartScreen rassurante -->
+        <div class="smartscreen-alert">
+          <div class="alert-icon">ℹ</div>
+          <div class="alert-body">
+            <h4 data-i18n="smartscreen.title">Note de confiance sur l'avertissement Windows SmartScreen</h4>
+            <p data-i18n="smartscreen.desc">Comme tout script .bat téléchargé depuis Internet sans certificat commercial payant, Windows SmartScreen peut afficher un écran bleu préventif (« Windows a protégé votre ordinateur »). Le projet est entièrement auditable et à code ouvert : cliquez sur Informations complémentaires puis Exécuter quand même, ou faites un clic droit sur le fichier .bat > Propriétés > Débloquer.</p>
+          </div>
+        </div>
+
+        <div class="alt-install">
+          <div class="alt-box">
+            <h4 data-i18n="alt.macos.title">Sous macOS et Linux</h4>
+            <p data-i18n="alt.macos.desc">Ouvrez un terminal dans le dossier et lancez le script bash interactif :</p>
+            <pre><code>bash scripts/installer.sh</code></pre>
+          </div>
+
+          <div class="alt-box">
+            <h4 data-i18n="alt.git.title">Pour les développeurs (via Git)</h4>
+            <p data-i18n="alt.git.desc">Clonez directement le dépôt public et démarrez :</p>
+            <pre><code>git clone https://github.com/BlackAngel242/MyTeam.git
+cd MyTeam && powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compatibilité 24 outils Herdr -->
+    <section id="compatibilite" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="tools.badge">Écosystème</span>
+          <h2 class="section-title" data-i18n="tools.titre">Compatible avec les 24 outils Herdr</h2>
+          <p class="section-desc" data-i18n="tools.desc">MyTeam reconnaît automatiquement l'ensemble des 24 outils d'IA gérés par Herdr.</p>
+        </div>
+
+        <div class="tools-showcase">
+          <div class="tools-img-wrap">
+            <img src="assets/emblemes.png" alt="Planche complète des 24 emblèmes d'outils Herdr en pixel art 16x16">
+          </div>
+
+          <div class="tools-info">
+            <h3 data-i18n="tools.info.title">Détection automatique et emblèmes dédiés</h3>
+            <p data-i18n="tools.info.p1">Lors de la préparation de votre grille Herdr 2x2, l'installeur teste dans votre environnement la présence de chacun des 24 outils compatibles et vous propose de les lancer panneau par panneau.</p>
+            <p data-i18n="tools.info.p2">Chaque outil possède son propre emblème 16x16 sur le bureau. Claude, Codex et OpenCode bénéficient en plus d'un lecteur de journaux locaux extrayant les réponses réelles, les jetons consommés et l'historique.</p>
+            
+            <p><strong data-i18n="tools.list.legend">Outils à télémétrie enrichie :</strong></p>
+            <div class="tools-tags">
+              <span class="tool-tag featured">Claude Code</span>
+              <span class="tool-tag featured">Codex (OpenAI)</span>
+              <span class="tool-tag featured">OpenCode</span>
+              <span class="tool-tag">Gemini CLI</span>
+              <span class="tool-tag">Antigravity CLI</span>
+              <span class="tool-tag">Cursor</span>
+              <span class="tool-tag">Devin</span>
+              <span class="tool-tag">Copilot</span>
+              <span class="tool-tag">Kimi</span>
+              <span class="tool-tag">Grok</span>
+              <span class="tool-tag">Cline</span>
+              <span class="tool-tag">OMP</span>
+              <span class="tool-tag">Mastra Code</span>
+              <span class="tool-tag">Kiro</span>
+              <span class="tool-tag">Droid</span>
+              <span class="tool-tag">Amp</span>
+              <span class="tool-tag">Hermes</span>
+              <span class="tool-tag">Kilo</span>
+              <span class="tool-tag">Qoder</span>
+              <span class="tool-tag">Qwen</span>
+              <span class="tool-tag">Letta</span>
+              <span class="tool-tag">Maki</span>
+              <span class="tool-tag">Muse</span>
+              <span class="tool-tag">Pi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contribuer -->
+    <section id="contribuer" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-pill" data-i18n="contrib.badge">Communauté</span>
+          <h2 class="section-title" data-i18n="contrib.titre">Participer au projet</h2>
+          <p class="section-desc" data-i18n="contrib.desc">MyTeam est un projet libre et indépendant sous licence MIT. Les contributions sont les bienvenues.</p>
+        </div>
+
+        <div class="contrib-grid">
+          <article class="contrib-card">
+            <div>
+              <h3 data-i18n="contrib.card1.title">Signaler un défaut</h3>
+              <p data-i18n="contrib.card1.desc">Vous avez constaté un écart avec la vérité des faits ou une anomalie d'affichage ? Ouvrez un rapport précis.</p>
+            </div>
+            <a class="contrib-btn" href="https://github.com/BlackAngel242/MyTeam/issues/new/choose" target="_blank" rel="noopener noreferrer">
+              <span data-i18n="contrib.card1.link">Créer une issue sur GitHub</span> →
+            </a>
+          </article>
+
+          <article class="contrib-card">
+            <div>
+              <h3 data-i18n="contrib.card2.title">Proposer un outil ou une idée</h3>
+              <p data-i18n="contrib.card2.desc">Vous souhaitez intégrer un nouvel outil dans Herdr ou proposer une amélioration ergonomique ?</p>
+            </div>
+            <a class="contrib-btn" href="https://github.com/BlackAngel242/MyTeam/discussions" target="_blank" rel="noopener noreferrer">
+              <span data-i18n="contrib.card2.link">Rejoindre les discussions</span> →
+            </a>
+          </article>
+
+          <article class="contrib-card">
+            <div>
+              <h3 data-i18n="contrib.card3.title">Consulter le guide de contribution</h3>
+              <p data-i18n="contrib.card3.desc">Architecture du code, zéro dépendance, validation par tests : découvrez nos règles de développement.</p>
+            </div>
+            <a class="contrib-btn" href="https://github.com/BlackAngel242/MyTeam/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">
+              <span data-i18n="contrib.card3.link">Lire CONTRIBUTING.md</span> →
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pied de page -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h3>MyTeam - Le Bureau des agents</h3>
+          <p data-i18n="footer.brand-desc">Le tableau de bord vivant en pixel art pour superviser vos équipes d'agents d'intelligence artificielle autonomes.</p>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4 data-i18n="footer.col-doc">Documentation</h4>
+            <ul>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/docs/INSTALLATION.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-install">Guide d'installation</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/docs/aide.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-aide">Mode d'emploi</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/docs/kit.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-kit">Kit d'équipe</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4 data-i18n="footer.col-repo">Dépôt GitHub</h4>
+            <ul>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/releases" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-releases">Dernières releases</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/issues" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-issues">Tickets & bogues</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/discussions" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-discussions">Espace discussions</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-col">
+            <h4 data-i18n="footer.col-legal">Projet</h4>
+            <ul>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-conduct">Code de conduite</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-security">Sécurité</a></li>
+              <li><a href="https://github.com/BlackAngel242/MyTeam/blob/main/NOTICE.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.link-notice">Marques tierces</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p data-i18n="footer.credit">Réalisé avec l'aide de l'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).</p>
+        <p><span data-i18n="footer.license">Distribué sous licence libre MIT.</span> · <a href="#presentation" data-i18n="footer.top">Haut de page</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modale Lightbox pour agrandir les captures d'écran -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Agrandissement de capture d'écran">
+    <div class="lightbox-content">
+      <button id="lightbox-close" class="lightbox-close" type="button" aria-label="Fermer la vue agrandie">✕</button>
+      <img id="lightbox-img" class="lightbox-img" src="" alt="Capture agrandie">
+      <p id="lightbox-caption" class="lightbox-caption"></p>
+    </div>
+  </div>
+
+</body>
+</html>
