@@ -604,7 +604,7 @@ function Proposer-Kit {
   $dossier = Read-Host (Texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')
   if ([string]::IsNullOrWhiteSpace($dossier)) { return }
   $dossier = [IO.Path]::GetFullPath($dossier)
-  $nodeKit = Get-Command node -CommandType Application -ErrorAction Stop
+  $nodeKit = @(Get-Command node -CommandType Application -ErrorAction Stop)[0]
   & $nodeKit.Source $scriptKit $dossier --lang $Lang
   if ($LASTEXITCODE -ne 0) { Dire (Texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.'); return }
   Noter (Texte "Kit d'équipe : initialisé." 'Team kit: initialized.')
