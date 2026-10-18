@@ -62,6 +62,7 @@ Détail dans `docs/protocole-agents.md`. En bref :
 - Le chef évalue, corrige, fusionne, dit ce qu'il a modifié et pourquoi, partage la leçon et tient `TODO.md` et le plan à jour.
 - Surveillance par inactivité des panneaux, pas de messages en boucle (relais d'écoute désactivé sauf demande).
 - Tout agent peut demander conseil ou suggérer une amélioration hors de son domaine : une ligne au chef.
+- Revue en famille (Fixit d'équipe, `docs/fixit-equipe.md`) avant toute livraison importante : 2 à 4 profils adaptés au contexte (expert, senior, junior, lambda), auto-critique, consensus, correction puis réexamen ; inspiration possible sur Mobbin, Dribbble, Pinterest sans copier.
 
 ## Après chaque tâche terminée (consigne de DrSmoke, 18 octobre 2026)
 

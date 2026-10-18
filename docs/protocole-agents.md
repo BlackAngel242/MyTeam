@@ -35,7 +35,11 @@ Chaque agent fait de même quand un autre lui signale une découverte utile.
 - Pas de messages automatiques en boucle : le relais d'écoute reste désactivé sauf demande de DrSmoke, et personne ne se relance à chaque pause.
 - Un agent qui termine signale lui-même sa fin, une seule fois, avec le rapport du point 3.
 
-## 6. Initiative et regard extérieur
+## 6. Revue en famille avant livraison
+
+Avant de signaler une tâche importante terminée, l'agent applique le Fixit d'équipe (`docs/fixit-equipe.md`) : un panel de 2 à 4 profils adaptés au contexte relit le résultat réel, s'auto-critique, propose des améliorations et corrige ce qui fait consensus. Le chef l'applique aussi à l'évaluation.
+
+## 7. Initiative et regard extérieur
 
 - Tout agent peut demander conseil ou suggérer une amélioration (qualité, innovation, nouveauté) hors de son domaine : un regard différent apporte souvent plus.
 - Une ligne au chef, avec l'idée, la raison et le coût estimé. Le chef tranche et consigne la décision dans le plan (adoptée, reportée ou écartée, avec la raison).
