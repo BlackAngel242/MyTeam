@@ -19,6 +19,11 @@
 (() => {
   'use strict';
 
+  // Passerelle vers le runtime i18n du bureau : public/i18n.js expose
+  // window.t(clé, valeurs) et window.getLangue().
+  const t = (cle, valeurs) =>
+    typeof window !== 'undefined' && typeof window.t === 'function' ? window.t(cle, valeurs) : cle;
+
   function formatTime(isoString) {
     if (!isoString) return '';
     try {
@@ -46,8 +51,25 @@
     return 'disc-status disc-status-unknown';
   }
 
+  // Libellé d'état traduit ; si le serveur envoie un état inconnu, il reste affiché tel quel.
+  function statusLabel(status) {
+    const norm = String(status || '').toLowerCase().trim();
+    if (norm === 'terminee' || norm === 'terminée' || norm === 'done') return t('discussion.etat-terminee');
+    if (norm === 'en cours' || norm === 'running' || norm === 'travail') return t('discussion.etat-en-cours');
+    if (norm === 'interrompue' || norm === 'interrupted' || norm === 'erreur') return t('discussion.etat-interrompue');
+    if (norm === 'fin non determinee' || norm === 'fin non déterminée') return t('discussion.etat-fin-indeterminee');
+    return String(status ?? '');
+  }
+
   function escapeAttr(val) {
     return String(val ?? '').replace(/["\\]/g, '\\$&');
+  }
+
+  // La langue fait partie de l'empreinte : un changement de langue rafraîchit les textes.
+  function langueCourante() {
+    return typeof window !== 'undefined' && typeof window.getLangue === 'function'
+      ? String(window.getLangue())
+      : '';
   }
 
   function computeSignature(bulle) {
@@ -56,7 +78,7 @@
     const state = bulle.state || '';
     const at = bulle.at || '';
     const text = bulle.extrait || '';
-    return `${key}|${state}|${at}|${text}`;
+    return `${langueCourante()}|${key}|${state}|${at}|${text}`;
   }
 
   function buildBubbleElement(bulle, doc) {
@@ -84,7 +106,7 @@
     const statusStr = bulle.state || 'terminée';
     const statusBadge = doc.createElement('span');
     statusBadge.className = getStatusClass(statusStr);
-    statusBadge.textContent = statusStr;
+    statusBadge.textContent = statusLabel(statusStr);
     head.appendChild(statusBadge);
 
     card.appendChild(head);
@@ -111,7 +133,7 @@
     if (statusBadge) {
       const statusStr = bulle.state || 'terminée';
       statusBadge.className = getStatusClass(statusStr);
-      statusBadge.textContent = statusStr;
+      statusBadge.textContent = statusLabel(statusStr);
     }
 
     const body = card.querySelector('.disc-body');
@@ -123,12 +145,12 @@
   function formatSourceReason(source) {
     const name = source.agent || 'Agent';
     if (source.etat === 'non exposé') {
-      return `${name} : non exposé par cet outil`;
+      return t('discussion.source-non-expose', { agent: name });
     }
     if (source.etat === 'non rattaché') {
-      return `${name} : non rattaché avec certitude`;
+      return t('discussion.source-non-rattache', { agent: name });
     }
-    return `${name} : ${source.etat}`;
+    return t('discussion.source-etat', { agent: name, etat: source.etat });
   }
 
   function render(container, data = {}) {
@@ -151,7 +173,7 @@
       root.replaceChildren();
       const empty = doc.createElement('div');
       empty.className = 'disc-empty';
-      empty.textContent = 'Aucun message dans le fil de discussion.';
+      empty.textContent = t('discussion.aucun-message');
       root.appendChild(empty);
 
       // Affichage des sources non lues même si le fil est vide
@@ -170,7 +192,8 @@
 
       const title = doc.createElement('span');
       title.className = 'disc-title';
-      title.textContent = 'Fil de discussion ';
+      // Le libellé se termine par un espace qui sépare le compteur.
+      title.textContent = t('discussion.titre');
 
       const count = doc.createElement('span');
       count.className = 'disc-count';
@@ -257,7 +280,7 @@
 
     const title = doc.createElement('div');
     title.className = 'disc-sources-title';
-    title.textContent = 'Autres agents';
+    title.textContent = t('discussion.autres-agents');
     sourcesBox.appendChild(title);
 
     for (const source of nonLus) {

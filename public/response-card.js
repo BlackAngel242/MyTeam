@@ -59,6 +59,13 @@
 (() => {
   'use strict';
 
+  // Passerelle vers le runtime i18n du bureau : public/i18n.js expose
+  // window.t(clé, valeurs) et window.tServeur(message).
+  const t = (cle, valeurs) =>
+    typeof window !== 'undefined' && typeof window.t === 'function' ? window.t(cle, valeurs) : cle;
+  const tServeur = (message) =>
+    typeof window !== 'undefined' && typeof window.tServeur === 'function' ? window.tServeur(message) : message;
+
   function getText(resp) {
     if (!resp) return '';
     if (typeof resp.text === 'string') return resp.text;
@@ -138,6 +145,16 @@
     return 'rc-status rc-status-unknown';
   }
 
+  // Libellé d'état traduit ; si le serveur envoie un état inconnu, il reste affiché tel quel.
+  function statusLabel(status) {
+    const norm = String(status || '').toLowerCase().trim();
+    if (norm === 'terminee' || norm === 'terminée' || norm === 'done') return t('carte.etat-terminee');
+    if (norm === 'en cours' || norm === 'running' || norm === 'travail') return t('carte.etat-en-cours');
+    if (norm === 'interrompue' || norm === 'interrupted' || norm === 'erreur') return t('carte.etat-interrompue');
+    if (norm === 'fin non determinee' || norm === 'fin non déterminée') return t('carte.etat-fin-indeterminee');
+    return String(status ?? '');
+  }
+
   function parseInlineToFragment(text, doc) {
     const fragment = doc.createDocumentFragment();
     if (!text) return fragment;
@@ -210,15 +227,15 @@
     const copyBtn = doc.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'rc-btn rc-btn-code-copy';
-    copyBtn.textContent = 'Copier le code';
-    copyBtn.setAttribute('aria-label', `Copier le code ${lang || ''}`.trim());
+    copyBtn.textContent = t('carte.copier-le-code');
+    copyBtn.setAttribute('aria-label', lang ? t('carte.copier-le-code-langue', { langue: lang }) : t('carte.copier-le-code'));
 
     copyBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const ok = await copyFn(codeText, block);
       if (ok) {
         const prev = copyBtn.textContent;
-        copyBtn.textContent = 'Copié !';
+        copyBtn.textContent = t('carte.copie');
         copyBtn.classList.add('rc-copied');
         setTimeout(() => {
           copyBtn.textContent = prev;
@@ -393,16 +410,16 @@
     const status = getStatus(response);
     const isPartial = status === 'en cours' || status === 'fin non déterminée' || status === 'fin non determinee' || Boolean(response.partial);
     const dateStr = formatIsoDate(getTimestamp(response) || new Date().toISOString());
-    const statusStr = status || (isPartial ? 'en cours' : 'terminée');
+    const statusStr = statusLabel(status) || (isPartial ? t('carte.etat-en-cours') : t('carte.etat-terminee'));
     const text = getText(response);
 
     let markdown = '';
     if (isPartial) {
-      markdown += `# Réponse partielle de ${agent}\n\n`;
-      markdown += `> *Instantané partiel enregistré le ${dateStr}. Statut : ${statusStr}.*\n\n`;
+      markdown += t('carte.export-titre-partiel', { agent }) + '\n\n';
+      markdown += t('carte.export-ligne-partielle', { date: dateStr, statut: statusStr }) + '\n\n';
     } else {
-      markdown += `# Réponse de ${agent}\n\n`;
-      markdown += `> *Horodatage : ${dateStr} · Statut : ${statusStr} · Source : ${response.source || 'journal'}.*\n\n`;
+      markdown += t('carte.export-titre', { agent }) + '\n\n';
+      markdown += t('carte.export-ligne', { date: dateStr, statut: statusStr, source: response.source || 'journal' }) + '\n\n';
     }
     markdown += text.trim() + '\n';
 
@@ -416,11 +433,11 @@
     const list = Array.isArray(responses) ? responses : [];
     const nowStr = new Date().toLocaleString('fr-FR');
 
-    let markdown = `# Session de ${agent}\n\n`;
-    markdown += `> *Export de la session affichée le ${nowStr}. Total des réponses : ${list.length}.*\n\n`;
+    let markdown = t('carte.export-session-titre', { agent }) + '\n\n';
+    markdown += t('carte.export-session-ligne', { date: nowStr, n: list.length }) + '\n\n';
 
     if (list.length === 0) {
-      markdown += `*Aucune réponse enregistrée pour cette session.*\n`;
+      markdown += t('carte.export-aucune-reponse') + '\n';
     } else {
       list.forEach((resp, idx) => {
         const num = idx + 1;
@@ -428,9 +445,9 @@
         const isPartial = status === 'en cours' || status === 'fin non déterminée' || status === 'fin non determinee' || Boolean(resp.partial);
         const dateStr = formatIsoDate(getTimestamp(resp));
         const text = getText(resp);
-        markdown += `---\n\n## Réponse ${num} (${status} - ${dateStr})\n\n`;
+        markdown += '---\n\n' + t('carte.export-reponse-num', { num, statut: statusLabel(status), date: dateStr }) + '\n\n';
         if (isPartial) {
-          markdown += `> *Note : Réponse en cours (instantané partiel).*\n\n`;
+          markdown += t('carte.export-note-cours') + '\n\n';
         }
         markdown += text.trim() + '\n\n';
       });
@@ -460,27 +477,27 @@
 
     const title = doc.createElement('h3');
     title.id = 'rc-fallback-title';
-    title.textContent = 'Copier le texte';
+    title.textContent = t('carte.copier-le-texte');
     head.appendChild(title);
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'rc-btn rc-fallback-close';
-    closeBtn.textContent = 'Fermer';
-    closeBtn.setAttribute('aria-label', 'Fermer la boîte de copie');
+    closeBtn.textContent = t('carte.fermer');
+    closeBtn.setAttribute('aria-label', t('carte.fermer-boite-copie'));
     head.appendChild(closeBtn);
     box.appendChild(head);
 
     const intro = doc.createElement('p');
     intro.className = 'rc-fallback-intro';
-    intro.textContent = 'Le presse-papiers direct n’est pas disponible. Cliquez sur « Tout sélectionner » puis faites Ctrl+C (ou Cmd+C) pour copier.';
+    intro.textContent = t('carte.repli-intro');
     box.appendChild(intro);
 
     const textarea = doc.createElement('textarea');
     textarea.readOnly = true;
     textarea.className = 'rc-fallback-textarea';
     textarea.value = text;
-    textarea.setAttribute('aria-label', 'Texte à copier');
+    textarea.setAttribute('aria-label', t('carte.texte-a-copier'));
     box.appendChild(textarea);
 
     const actions = doc.createElement('div');
@@ -489,7 +506,7 @@
     const selectBtn = doc.createElement('button');
     selectBtn.type = 'button';
     selectBtn.className = 'rc-btn rc-fallback-select';
-    selectBtn.textContent = 'Tout sélectionner';
+    selectBtn.textContent = t('carte.tout-selectionner');
     selectBtn.addEventListener('click', () => {
       textarea.focus();
       textarea.select();
@@ -499,7 +516,7 @@
     const doneBtn = doc.createElement('button');
     doneBtn.type = 'button';
     doneBtn.className = 'rc-btn';
-    doneBtn.textContent = 'Terminé';
+    doneBtn.textContent = t('carte.termine');
     actions.appendChild(doneBtn);
 
     box.appendChild(actions);
@@ -559,13 +576,20 @@
     }
   }
 
+  // La langue fait partie de l'empreinte : un changement de langue rafraîchit les textes.
+  function langueCourante() {
+    return typeof window !== 'undefined' && typeof window.getLangue === 'function'
+      ? String(window.getLangue())
+      : '';
+  }
+
   function computeSignature(resp) {
     if (!resp) return '';
     const text = getText(resp);
     const key = resp.key || resp.id || '';
     const status = getStatus(resp);
     const time = getTimestamp(resp);
-    return `${key}|${status}|${time}|${text.length}|${text.slice(0, 32)}|${text.slice(-32)}`;
+    return `${langueCourante()}|${key}|${status}|${time}|${text.length}|${text.slice(0, 32)}|${text.slice(-32)}`;
   }
 
   function buildCardElement(resp, defaultAgent, doc, copyFn) {
@@ -598,7 +622,7 @@
     const statusStr = getStatus(resp);
     const statusBadge = doc.createElement('span');
     statusBadge.className = getStatusClass(statusStr);
-    statusBadge.textContent = statusStr;
+    statusBadge.textContent = statusLabel(statusStr);
     meta.appendChild(statusBadge);
 
     header.appendChild(meta);
@@ -609,8 +633,8 @@
     const copyBtn = doc.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'rc-btn rc-btn-copy';
-    copyBtn.textContent = 'Copier la réponse';
-    copyBtn.setAttribute('aria-label', `Copier la réponse de ${agentSpan.textContent}`);
+    copyBtn.textContent = t('carte.copier-reponse');
+    copyBtn.setAttribute('aria-label', t('carte.copier-reponse-de', { agent: agentSpan.textContent }));
 
     copyBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -618,7 +642,7 @@
       const ok = await copyFn(textToCopy);
       if (ok) {
         const prev = copyBtn.textContent;
-        copyBtn.textContent = 'Copié !';
+        copyBtn.textContent = t('carte.copie');
         copyBtn.classList.add('rc-copied');
         setTimeout(() => {
           copyBtn.textContent = prev;
@@ -631,8 +655,8 @@
     const exportBtn = doc.createElement('button');
     exportBtn.type = 'button';
     exportBtn.className = 'rc-btn rc-btn-export';
-    exportBtn.textContent = 'Exporter (.md)';
-    exportBtn.setAttribute('aria-label', `Exporter la réponse de ${agentSpan.textContent} en Markdown`);
+    exportBtn.textContent = t('carte.exporter');
+    exportBtn.setAttribute('aria-label', t('carte.exporter-reponse-de', { agent: agentSpan.textContent }));
     exportBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       exportResponse(resp);
@@ -663,7 +687,7 @@
       if (statusBadge) {
         const statusStr = getStatus(resp);
         statusBadge.className = getStatusClass(statusStr);
-        statusBadge.textContent = statusStr;
+        statusBadge.textContent = statusLabel(statusStr);
       }
     }
 
@@ -695,7 +719,7 @@
       root.replaceChildren();
       const empty = doc.createElement('div');
       empty.className = 'rc-empty';
-      empty.textContent = state.reason || 'Les réponses de cet outil ne sont pas exposées pour le moment.';
+      empty.textContent = state.reason ? tServeur(state.reason) : t('carte.raison-non-soutenu');
       root.appendChild(empty);
       return root;
     }
@@ -705,7 +729,7 @@
       root.replaceChildren();
       const empty = doc.createElement('div');
       empty.className = 'rc-empty';
-      empty.textContent = 'Aucun journal de réponses trouvé pour cet agent.';
+      empty.textContent = t('carte.aucun-journal');
       root.appendChild(empty);
       return root;
     }
@@ -717,7 +741,7 @@
       root.replaceChildren();
       const empty = doc.createElement('div');
       empty.className = 'rc-empty';
-      empty.textContent = 'Aucune réponse structurée disponible pour cet agent.';
+      empty.textContent = t('carte.aucune-reponse');
       root.appendChild(empty);
       return root;
     }
@@ -747,19 +771,20 @@
       const exportSessionBtn = doc.createElement('button');
       exportSessionBtn.type = 'button';
       exportSessionBtn.className = 'rc-btn rc-btn-export-session';
-      exportSessionBtn.textContent = 'Exporter la session (.md)';
+      exportSessionBtn.textContent = t('carte.exporter-session');
       sessionBar.appendChild(exportSessionBtn);
 
       root.prepend(sessionBar);
     }
 
+    // Le libellé se termine par un espace qui sépare le compteur.
     const labelSpan = sessionBar.querySelector('.rc-session-label');
-    if (labelSpan) labelSpan.textContent = `Réponses de ${agent} `;
+    if (labelSpan) labelSpan.textContent = t('carte.reponses-de', { agent });
 
     const countSpan = sessionBar.querySelector('.rc-session-count');
     if (countSpan) {
       countSpan.textContent = state.complete === false
-        ? `${responses.length} · 30 plus récentes`
+        ? t('carte.compte-recents', { n: responses.length })
         : String(responses.length);
     }
 

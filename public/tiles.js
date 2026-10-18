@@ -37,6 +37,13 @@
 (() => {
   'use strict';
 
+  // Passerelle vers le runtime i18n du bureau : public/i18n.js expose
+  // window.t(clé, valeurs) et window.tServeur(message).
+  const t = (cle, valeurs) =>
+    typeof window !== 'undefined' && typeof window.t === 'function' ? window.t(cle, valeurs) : cle;
+  const tServeur = (message) =>
+    typeof window !== 'undefined' && typeof window.tServeur === 'function' ? window.tServeur(message) : message;
+
   let isMounted = false;
   let currentContainer = null;
   let currentApi = null;
@@ -60,29 +67,29 @@
 
   function getStatusInfo(agent) {
     if (agent?.paused) {
-      return { label: 'Pause quota', className: 'tl-status tl-status-paused' };
+      return { label: t('tuile.etat-pause-quota'), className: 'tl-status tl-status-paused' };
     }
     const s = String(agent?.status || 'unknown').toLowerCase().trim();
     switch (s) {
       case 'working':
-        return { label: 'Au travail', className: 'tl-status tl-status-working' };
+        return { label: t('tuile.etat-au-travail'), className: 'tl-status tl-status-working' };
       case 'blocked':
-        return { label: 'En attente', className: 'tl-status tl-status-blocked' };
+        return { label: t('tuile.etat-en-attente'), className: 'tl-status tl-status-blocked' };
       case 'idle':
-        return { label: 'Disponible', className: 'tl-status tl-status-idle' };
+        return { label: t('tuile.etat-disponible'), className: 'tl-status tl-status-idle' };
       case 'done':
-        return { label: 'Terminé', className: 'tl-status tl-status-done' };
+        return { label: t('tuile.etat-termine'), className: 'tl-status tl-status-done' };
       default:
-        return { label: 'Inconnu', className: 'tl-status tl-status-unknown' };
+        return { label: t('tuile.etat-inconnu'), className: 'tl-status tl-status-unknown' };
     }
   }
 
   function getCantSendReason(agent) {
-    if (!agent) return 'Consigne indisponible.';
-    if (agent.paused) return 'Agent en pause de limite de quota.';
-    if (agent.status === 'working') return 'Agent au travail.';
-    if (agent.status === 'blocked') return 'Agent en attente de réponse dans Herdr.';
-    return 'Consigne non disponible pour cet agent.';
+    if (!agent) return t('tuile.non-envoi-indisponible');
+    if (agent.paused) return t('tuile.non-envoi-quota');
+    if (agent.status === 'working') return t('tuile.non-envoi-travail');
+    if (agent.status === 'blocked') return t('tuile.non-envoi-attente');
+    return t('tuile.non-envoi-inconnu');
   }
 
   function isSelectionInside(element) {
@@ -108,6 +115,13 @@
     return sorted.slice(0, 4).map(a => a.id);
   }
 
+  // Compteur de correspondances : zéro, une seule ou plusieurs, trois libellés distincts.
+  function compteRecherches(n) {
+    if (n === 0) return t('tuile.recherche-zero');
+    if (n === 1) return t('tuile.recherche-un', { n });
+    return t('tuile.recherche-autres', { n });
+  }
+
   function renderTerminal(pre, text, query, card) {
     const doc = pre.ownerDocument || document;
     const hitsSpan = card.querySelector('.tl-search-hits');
@@ -115,7 +129,7 @@
     if (typeof window !== 'undefined' && window.TerminalView && typeof window.TerminalView.render === 'function') {
       const res = window.TerminalView.render(pre, text, { query, frozen: false });
       if (hitsSpan) {
-        hitsSpan.textContent = query ? (res?.matches > 0 ? `${res.matches} trouvée(s)` : '0 résultat') : '';
+        hitsSpan.textContent = query ? compteRecherches(res?.matches || 0) : '';
       }
       return;
     }
@@ -154,7 +168,7 @@
 
     pre.replaceChildren(fragment);
     if (hitsSpan) {
-      hitsSpan.textContent = matches > 0 ? `${matches} trouvée(s)` : '0 résultat';
+      hitsSpan.textContent = compteRecherches(matches);
     }
   }
 
@@ -207,7 +221,7 @@
     card.className = 'tl-card';
     card.dataset.agentId = agent.id;
     card.setAttribute('role', 'region');
-    card.setAttribute('aria-label', `Poste de ${agent.name || 'l\'agent'}`);
+    card.setAttribute('aria-label', t('tuile.poste-de', { agent: agent.name || t('tuile.l-agent') }));
 
     // En-tête compact
     const header = doc.createElement('header');
@@ -239,8 +253,8 @@
     const expandBtn = doc.createElement('button');
     expandBtn.type = 'button';
     expandBtn.className = 'tl-btn tl-btn-expand';
-    expandBtn.textContent = 'Agrandir';
-    expandBtn.setAttribute('aria-label', `Agrandir le poste de ${agent.name || 'l\'agent'}`);
+    expandBtn.textContent = t('tuile.agrandir');
+    expandBtn.setAttribute('aria-label', t('tuile.agrandir-poste-de', { agent: agent.name || t('tuile.l-agent') }));
     expandBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (typeof api.onExpand === 'function') {
@@ -257,8 +271,8 @@
     const searchInput = doc.createElement('input');
     searchInput.type = 'search';
     searchInput.className = 'tl-search-input';
-    searchInput.placeholder = 'Filtrer les sorties…';
-    searchInput.setAttribute('aria-label', `Rechercher dans les sorties de ${agent.name || 'l\'agent'}`);
+    searchInput.placeholder = t('tuile.filtrer');
+    searchInput.setAttribute('aria-label', t('tuile.rechercher-dans', { agent: agent.name || t('tuile.l-agent') }));
     searchInput.autocomplete = 'off';
 
     const hitsSpan = doc.createElement('span');
@@ -277,8 +291,8 @@
     pre.className = 'tl-terminal-pre';
     pre.tabIndex = 0;
     pre.setAttribute('role', 'region');
-    pre.setAttribute('aria-label', `Sorties du terminal de ${agent.name || 'l\'agent'}`);
-    pre.textContent = 'Chargement des sorties…';
+    pre.setAttribute('aria-label', t('tuile.sorties-terminal-de', { agent: agent.name || t('tuile.l-agent') }));
+    pre.textContent = t('tuile.chargement');
     termWrap.appendChild(pre);
     card.appendChild(termWrap);
 
@@ -298,8 +312,8 @@
     textarea.className = 'tl-prompt-input';
     textarea.rows = 2;
     textarea.maxLength = 12000;
-    textarea.placeholder = `Consigne rapide à ${agent.name || 'cet agent'}… (Ctrl+Entrée)`;
-    textarea.setAttribute('aria-label', `Consigne rapide à ${agent.name || 'cet agent'}`);
+    textarea.placeholder = t('tuile.consigne-placeholder', { agent: agent.name || t('tuile.cet-agent') });
+    textarea.setAttribute('aria-label', t('tuile.consigne-rapide-a', { agent: agent.name || t('tuile.cet-agent') }));
     form.appendChild(textarea);
 
     const footerRow = doc.createElement('div');
@@ -324,8 +338,8 @@
     const submitBtn = doc.createElement('button');
     submitBtn.type = 'submit';
     submitBtn.className = 'tl-btn tl-btn-send';
-    submitBtn.textContent = 'Envoyer';
-    submitBtn.setAttribute('aria-label', `Envoyer la consigne à ${agent.name || 'l\'agent'}`);
+    submitBtn.textContent = t('tuile.envoyer');
+    submitBtn.setAttribute('aria-label', t('tuile.envoyer-a', { agent: agent.name || t('tuile.l-agent') }));
     footerRow.appendChild(submitBtn);
 
     form.appendChild(footerRow);
@@ -341,21 +355,22 @@
       card._isSubmitting = true;
       textarea.disabled = true;
       submitBtn.disabled = true;
-      feedback.textContent = 'Envoi en cours…';
+      const succesTexte = t('tuile.consigne-envoyee');
+      feedback.textContent = t('tuile.envoi-en-cours');
       feedback.className = 'tl-prompt-feedback tl-feedback-pending';
 
       try {
         await api.send(agent.id, msg);
         textarea.value = '';
-        feedback.textContent = 'Consigne envoyée.';
+        feedback.textContent = succesTexte;
         feedback.className = 'tl-prompt-feedback tl-feedback-ok';
         setTimeout(() => {
-          if (feedback.textContent === 'Consigne envoyée.') {
+          if (feedback.textContent === succesTexte) {
             feedback.textContent = '';
           }
         }, 3000);
       } catch (err) {
-        feedback.textContent = (err && err.message) ? err.message : 'Échec de l\'envoi.';
+        feedback.textContent = (err && err.message) ? tServeur(err.message) : t('tuile.echec-envoi');
         feedback.className = 'tl-prompt-feedback tl-feedback-err';
       } finally {
         card._isSubmitting = false;
@@ -441,7 +456,7 @@
 
     const title = doc.createElement('span');
     title.className = 'tl-picker-title';
-    title.textContent = 'Tuiles affichées :';
+    title.textContent = t('tuile.affichees');
     pickerEl.appendChild(title);
 
     const itemsWrap = doc.createElement('div');
@@ -461,14 +476,14 @@
         if (cb.checked) {
           if (selectedAgentIds.length >= 4) {
             cb.checked = false;
-            showPickerWarning(pickerEl, '4 tuiles au maximum.');
+            showPickerWarning(pickerEl, t('tuile.maximum-quatre'));
             return;
           }
           selectedAgentIds.push(agent.id);
         } else {
           if (selectedAgentIds.length <= 1) {
             cb.checked = true;
-            showPickerWarning(pickerEl, 'Conservez au moins une tuile.');
+            showPickerWarning(pickerEl, t('tuile.au-moins-une'));
             return;
           }
           const idx = selectedAgentIds.indexOf(agent.id);
@@ -562,33 +577,33 @@
     const toolbar = doc.createElement('div');
     toolbar.className = 'tl-toolbar';
     toolbar.setAttribute('role', 'toolbar');
-    toolbar.setAttribute('aria-label', 'Commandes de la mosaïque');
+    toolbar.setAttribute('aria-label', t('tuile.commandes'));
 
     const left = doc.createElement('div');
     left.className = 'tl-toolbar-left';
 
     const title = doc.createElement('h2');
     title.className = 'tl-title';
-    title.textContent = 'Mosaïque des agents';
+    title.textContent = t('tuile.titre');
     left.appendChild(title);
 
     const layoutGroup = doc.createElement('div');
     layoutGroup.className = 'tl-layout-toggles';
     layoutGroup.setAttribute('role', 'group');
-    layoutGroup.setAttribute('aria-label', 'Disposition des tuiles');
+    layoutGroup.setAttribute('aria-label', t('tuile.disposition'));
 
     const btnGrid = doc.createElement('button');
     btnGrid.type = 'button';
     btnGrid.className = 'tl-btn tl-btn-layout';
     btnGrid.dataset.layout = 'grid';
-    btnGrid.textContent = 'Grille 2×2';
+    btnGrid.textContent = t('tuile.grille');
     btnGrid.setAttribute('aria-pressed', currentLayout === 'grid' ? 'true' : 'false');
 
     const btnCols = doc.createElement('button');
     btnCols.type = 'button';
     btnCols.className = 'tl-btn tl-btn-layout';
     btnCols.dataset.layout = 'cols';
-    btnCols.textContent = 'Colonnes';
+    btnCols.textContent = t('tuile.colonnes');
     btnCols.setAttribute('aria-pressed', currentLayout === 'cols' ? 'true' : 'false');
 
     layoutGroup.appendChild(btnGrid);
@@ -602,15 +617,15 @@
     const pickerEl = doc.createElement('div');
     pickerEl.className = 'tl-picker';
     pickerEl.setAttribute('role', 'group');
-    pickerEl.setAttribute('aria-label', 'Choisir les agents affichés');
+    pickerEl.setAttribute('aria-label', t('tuile.choisir-agents'));
     pickerEl.hidden = true;
     right.appendChild(pickerEl);
 
     const closeBtn = doc.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tl-btn tl-btn-close';
-    closeBtn.textContent = 'Revenir à la scène';
-    closeBtn.setAttribute('aria-label', 'Revenir à la vue de la scène');
+    closeBtn.textContent = t('tuile.revenir-scene');
+    closeBtn.setAttribute('aria-label', t('tuile.revenir-vue-scene'));
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (typeof api.onClose === 'function') {
@@ -626,7 +641,7 @@
     const grid = doc.createElement('div');
     grid.className = 'tl-grid tl-grid-2x2';
     grid.setAttribute('role', 'group');
-    grid.setAttribute('aria-label', 'Mosaïque des postes');
+    grid.setAttribute('aria-label', t('tuile.postes'));
     root.appendChild(grid);
 
     container.replaceChildren(root);
@@ -649,7 +664,7 @@
     if (allAgents.length === 0) {
       const empty = doc.createElement('p');
       empty.className = 'tl-empty';
-      empty.textContent = 'Aucun agent disponible dans Herdr.';
+      empty.textContent = t('tuile.aucun-agent');
       grid.appendChild(empty);
       return;
     }
