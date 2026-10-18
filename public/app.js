@@ -1007,11 +1007,12 @@ function layout(){
   // Deux dispositions : le bureau du chef au-dessus des agents, ou à leur droite (écran large).
   const shape=(W,side)=>{
     const bossH=boss&&!side?88:0,top=wallH+12+bossH,areaW=side?W-160:W;
-    const cols=Math.min(narrow?2:Math.max(1,Math.floor((areaW-8)/62)),n),rows=Math.ceil(n/cols),roomY=top+Math.max(rows*rowH,side?92:0)+4;
+    const cols=Math.min(narrow?(n>=5?3:2):Math.max(1,Math.floor((areaW-8)/62)),n),rows=Math.ceil(n/cols),roomY=top+Math.max(rows*rowH,side?92:0)+4;
     return {W,cols,rows,roomY,H:roomY+(roomOpen()?60:16),top,bossH,areaW,side};
   };
   // En vue globale, la largeur logique suit la forme de la fenêtre : la scène la remplit au lieu de flotter entre deux bandes vides.
-  let best=shape(narrow?144:256,false);
+  // Téléphone : jusqu'à 4 collaborateurs sur 2 colonnes, au-delà 3 colonnes, sinon la scène devient bien plus haute que l'écran (10 agents).
+  let best=shape(narrow?(n>=5?216:144):256,false);
   // On retient la disposition qui donne les plus gros pixels (personnages les plus lisibles) ; à égalité, celle qui remplit le mieux le cadre.
   if(fitMode.matches&&!narrow){
     const score=s=>{const k=Math.min(cssW/s.W,cssH/s.H);return k*1000+(s.W*s.H*k*k)/(cssW*cssH);};
