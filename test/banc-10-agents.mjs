@@ -11,6 +11,12 @@
 // Les lectures de journaux sont branchées sur les VRAIS lecteurs du projet,
 // mais sur des racines temporaires vides : la mesure ne dépend pas des journaux
 // de ce poste et reste la même ailleurs.
+//
+// Deux options pour les scénarios d'intégration :
+//   - panneaux : la liste exacte d'agents à garder (défaut : les 10) ;
+//   - rouvrir() : referme le serveur courant et en ouvre un second sur les
+//     MÊMES fichiers, pour observer un redémarrage du bureau.
+// appel() renvoie {status, type, data} : type est l'en-tête Content-Type.
 import { createHash } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
@@ -64,7 +70,7 @@ export const appelsHerdr = n => n.list + n.prompt + n.read + n.broadcast + n.ter
 const plus1 = (carte, cle) => carte.set(cle, (carte.get(cle) ?? 0) + 1);
 
 export async function creerBanc(t, options = {}) {
-  const { delaiTerminal = 0, maintenant = () => Date.now() } = options;
+  const { delaiTerminal = 0, maintenant = () => Date.now(), panneaux = PANNEAUX } = options;
   const racine = await mkdtemp(join(tmpdir(), 'banc-10-'));
   t.after(() => rm(racine, { recursive: true, force: true }));
   const chemins = {
@@ -78,7 +84,7 @@ export async function creerBanc(t, options = {}) {
   await Promise.all(Object.values(chemins).map(d => mkdir(d, { recursive: true })));
   // Dossier de travail réel de chaque agent : les routes de fichiers et la
   // copie des pièces jointes exigent un dossier qui existe.
-  await Promise.all(PANNEAUX.map(p => mkdir(join(chemins.agents, p.paneId.replace(':', '-')), { recursive: true })));
+  await Promise.all(panneaux.map(p => mkdir(join(chemins.agents, p.paneId.replace(':', '-')), { recursive: true })));
   await mkdir(join(chemins.projet, 'docs'), { recursive: true });
   // Vrai fichier de tâches : /api/todos passe par le vrai lecteur de src/todos.mjs.
   await writeFile(join(chemins.projet, 'TODO.md'), [
@@ -88,7 +94,7 @@ export async function creerBanc(t, options = {}) {
   await writeFile(join(chemins.projet, 'docs', 'plan-travail.md'), ['- [ ] Étape une', '- [x] Étape deux', ''].join('\n'));
   await writeFile(join(chemins.pieces, 'rapport.txt'), 'Contenu du rapport à joindre.\n');
 
-  const etats = new Map(PANNEAUX.map(p => [p.paneId, { ...p }]));
+  const etats = new Map(panneaux.map(p => [p.paneId, { ...p }]));
   let texteTerminal = panneau => (panneau === PANNEAU_EN_PAUSE ? TEXTE_PAUSE : TEXTE_NEUTRE);
   const agents = () => [...etats.values()].map(p => ({
     id: `${p.paneId}@${empreinte(p.paneId)}`,
@@ -130,7 +136,7 @@ export async function creerBanc(t, options = {}) {
     async interrupt(id) { return { requested: true, id }; },
   };
 
-  const serveur = createBureauServer({
+  const optionsServeur = {
     bridge,
     now: maintenant,
     lireEtat: createTerminalStatusReader({
@@ -152,12 +158,13 @@ export async function creerBanc(t, options = {}) {
     directionFile: join(racine, 'direction.json'),
     piedFile: join(racine, 'pied.json'),
     getPlaces: () => ({ documents: { path: chemins.pieces } }),
-  });
+  };
+  let serveur = createBureauServer(optionsServeur);
   await new Promise(resolve => serveur.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => { serveur.close(resolve); serveur.closeAllConnections?.(); }));
 
-  const port = serveur.address().port;
-  const origine = `http://127.0.0.1:${port}`;
+  let port = serveur.address().port;
+  let origine = `http://127.0.0.1:${port}`;
   let jeton = null;
   const appel = async (chemin, { methode = 'GET', corps, entetes = {} } = {}) => {
     const reponse = await fetch(origine + chemin, {
@@ -173,15 +180,35 @@ export async function creerBanc(t, options = {}) {
     const texte = await reponse.text();
     let data = texte;
     try { data = JSON.parse(texte); } catch { /* réponse non JSON */ }
-    return { status: reponse.status, data };
+    return { status: reponse.status, type: reponse.headers.get('content-type'), data };
+  };
+  // Redémarrage sur les MÊMES fichiers : le serveur courant est refermé, le
+  // suivant se reconstruit avec le même pont, les mêmes lecteurs et les mêmes
+  // chemins (file-attente.json, crise.json, relais.json, autonomie.json, …).
+  // Le jeton change à chaque écoute : appel() le reprend auprès de /api/state.
+  const rouvrir = async () => {
+    const ancien = serveur;
+    await new Promise(resolve => { ancien.close(resolve); ancien.closeAllConnections?.(); });
+    serveur = createBureauServer(optionsServeur);
+    await new Promise(resolve => serveur.listen(0, '127.0.0.1', resolve));
+    port = serveur.address().port;
+    origine = `http://127.0.0.1:${port}`;
+    const etatInitial = await appel('/api/state');
+    jeton = etatInitial.data.token;
+    return etatInitial;
   };
   const etat = await appel('/api/state');
   jeton = etat.data.token;
   raz();
 
   return {
-    racine, chemins, serveur, bridge, n, raz, appelsHerdr: () => appelsHerdr(n),
-    agents, envois, appel, jeton, origine,
+    racine, chemins,
+    get serveur() { return serveur; },
+    get jeton() { return jeton; },
+    get origine() { return origine; },
+    rouvrir,
+    bridge, n, raz, appelsHerdr: () => appelsHerdr(n),
+    agents, envois, appel,
     // État d'un panneau, pour faire évoluer l'équipe entre deux cycles.
     statut(paneId, status, ready = ['idle', 'done'].includes(status)) {
       const panneau = etats.get(paneId);
