@@ -143,3 +143,20 @@ test('aucun tiret cadratin dans les fichiers de site/', () => {
     assert.ok(!content.includes('\u2013'), `Tiret demi-cadratin (–) détecté dans site/${file}`);
   }
 });
+
+test('l\'aperçu de partage (Open Graph) : image en URL absolue, existante, 1200×630 et légère', async () => {
+  const { readFile, stat } = await import('node:fs/promises');
+  const html = await readFile(new URL('../site/index.html', import.meta.url), 'utf8');
+  for (const nom of ['og:image', 'twitter:image']) {
+    const m = new RegExp(`(?:property|name)="${nom}" content="([^"]+)"`).exec(html);
+    assert.ok(m, nom);
+    assert.match(m[1], /^https:\/\/blackangel242\.github\.io\/MyTeam\/assets\/[\w-]+\.png$/, `${nom} doit être une URL absolue`);
+  }
+  assert.match(html, /property="og:image:width" content="1200"/);
+  assert.match(html, /property="og:image:height" content="630"/);
+  const fichier = new URL('../site/assets/social-og.png', import.meta.url);
+  const octets = await readFile(fichier);
+  assert.equal(octets.readUInt32BE(16), 1200);
+  assert.equal(octets.readUInt32BE(20), 630);
+  assert.ok((await stat(fichier)).size < 300 * 1024, 'moins de 300 Ko pour WhatsApp');
+});
