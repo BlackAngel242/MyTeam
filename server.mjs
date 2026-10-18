@@ -506,7 +506,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           }
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;
