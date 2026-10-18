@@ -8,6 +8,66 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 _Rien pour l’instant._
 
+## [0.4.1] - 18 octobre 2026
+
+### Ajouté
+
+- Mode Autonomie supervisée (NoBabysitter) :
+  - Bouton « Autonomie » dans la barre d'outils et route serveur `/api/autonomie` pour lancer un cycle de travail autonome supervisé.
+  - Architecture en étoile autour du chef d'équipe : le chef reçoit chaque fin de travail d'un collaborateur, décide seul de la suite et la délègue ; aucun agent n'écrit à un autre directement.
+  - Paramétrage borné : objectif précis (5 à 300 caractères), durée maximale (5 à 120 minutes, 30 min par défaut) et plafond d'échanges (3 à 60, 20 par défaut).
+  - Arrêts automatiques et immédiats : échéance atteinte, plafond d'échanges, boucle détectée (terminaisons répétées sur 10 minutes), déclenchement de la salle de crise, redémarrage du serveur ou bouton d'arrêt manuel.
+  - Suivi en direct dans la barre d'outils (temps restant et ratio d'échanges) et journal factuel des événements réels.
+- Pause de quota avec compte à rebours et reprise automatique :
+  - Détection fiable des horaires de remise à zéro dans le terminal, y compris lorsque l'heure est coupée sur la ligne suivante.
+  - Mémorisation de l'échéance dès la première détection pour éviter le maintien indu en pause après remise à zéro.
+  - Compte à rebours en direct dans la liste des postes, la barre d'état et le chevalet de la scène, avec alerte au retour.
+  - Reprise automatique : envoi d'une consigne courte par la file d'attente à l'agent une minute après la fin de la pause pour relancer le travail sans refaire ce qui est déjà commité.
+- TODO des demandes en cours et panneau de liège :
+  - Suivi des demandes transmises aux agents dans l'onglet Tâches (« Demandes en cours »), cochées uniquement quand l'agent a rendu une réponse terminée après l'envoi.
+  - Tableau de liège en pixel art sur le mur du fond affichant le nombre de tâches ouvertes dans `TODO.md` avec punaises colorées.
+  - Découverte exacte de la session Claude active par son identifiant de processus (`~/.claude/sessions/<pid>.json`), restaurant l'historique d'activité, les sous-agents, les délégations et les réponses du chef.
+- Site statique GitHub Pages (`site/`) :
+  - Présentation bilingue (français et anglais) du Bureau des agents, responsive sur ordinateur et mobile, mettant en valeur l'atelier en pixel art, la mosaïque, la salle de crise et l'autonomie supervisée, sans dépendance externe.
+- Outils de maintenance CI :
+  - Script de rétention des versions (`scripts/garder-releases.mjs`) conservant au plus les 2 releases les plus récentes.
+  - Vérification de la révision et de la structure du fichier ZIP lors de l'empaquetage de publication.
+
+### Sécurité
+
+- Masque public unique (`src/masque.mjs`) :
+  - Unification du masquage selon trois règles strictes pour masquer les chemins locaux (`C:\...`, `/home/...`) et les jetons ou identifiants sensibles.
+  - Préservation explicite des URL Web (`http://`, `https://`).
+  - Masquage étendu aux descriptions de sous-agents, à l'objectif et au journal du mode autonomie, et exclusion des destinataires tiers dans les réponses Codex.
+- Salle de crise durcie :
+  - Verrou de crise conservé même en cas d'échec d'écriture sur le disque.
+  - Contrôle d'état de crise répété après lecture du corps de requête et immédiatement avant chaque expédition.
+- Sécurisation de l'autonomie et de la file d'attente :
+  - Arrêt de l'autonomie sérialisé avec l'envoi en cours et retrait immédiat de la file des consignes du mode à l'arrêt ou après redémarrage.
+  - Re-vérification stricte de l'état, du répertoire de travail et de la disponibilité de la cible juste avant chaque départ de la file d'attente.
+  - Budget d'écriture de la file aligné sur le budget de lecture avec rejet explicite avant acceptation.
+- Installation sécurisée :
+  - Rejet immédiat de tout numéro de port invalide avant toute modification.
+  - Déplacement exclusif de fichiers sans écrasement avec consentement interactif.
+
+### Modifié
+
+- Accessibilité et ergonomie (lot L) :
+  - Modale de repli accessible : fond inerte, piège du focus et aide automatique sans vol de focus.
+  - Bascules à libellé dynamique utilisant `data-actif` au lieu de `aria-pressed`.
+  - Désactivation de l'ouverture de la palette `Ctrl+K` pendant l'activation de la salle de crise.
+  - Rendu économique et optimisé : liste d'agents redessinée uniquement sur changement, suspension du dessin de la scène sous la mosaïque, et relevé des traitements et du fil toutes les 15 secondes.
+  - Unification du vocabulaire : tutoiement harmonisé dans l'ensemble de l'interface et des messages serveur, et harmonisation des termes anglais (`chief` au lieu de `lead`, majuscule à `Mosaic`).
+  - Alerte de récupération de la file affichée visiblement dans l'onglet Équipe.
+- Personnalisation du décor :
+  - Pied de page et enseigne murale rendus facultatifs et configurables via `.bureau/pied.json`, sans mention obligatoire d'auteur ou de coordonnées.
+
+### Corrigé
+
+- Contrôle de continuité des octets : vérification de l'intégrité avant de reprendre un décalage de lecture incrémentale dans l'activité Claude et les tâches.
+- Compatibilité Windows : détection et exécution des scripts d'installation fiabilisées en présence de chemins courts 8.3 (`PROGRA~1`).
+- Aide : suppression de la mention du bouton « Passer la visite » inexistant dans l'interface et alignement des libellés anglais sur les textes réels.
+
 ## [0.4.0] - 18 octobre 2026
 
 ### Ajouté (installation et release)

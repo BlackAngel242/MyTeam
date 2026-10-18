@@ -8,6 +8,66 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 _Nothing yet._
 
+## [0.4.1] - October 18, 2026
+
+### Added
+
+- Supervised Autonomy mode (NoBabysitter):
+  - "Autonomy" button in the top toolbar and `/api/autonomie` server endpoint to run a scoped, supervised autonomous work cycle.
+  - Star-shaped topology around the team chief: the chief receives task completion notices from teammates, decides the next step alone, and delegates it; no agent communicates directly with another.
+  - Strict caps: clear objective (5 to 300 characters), maximum duration (5 to 120 minutes, 30 min default), and exchange cap (3 to 60, 20 default).
+  - Automatic and safe stops: expiration of time limit, exchange cap reached, loop detected (repeated finishes within 10 minutes), crisis room activation, server restart, or manual stop button.
+  - Live toolbar status (remaining time and exchange ratio) and factual event log tracking observable facts.
+- Quota pause with countdown and automatic resumption:
+  - Robust extraction of resume times from terminal outputs, including times wrapped onto the following line.
+  - Resume deadline remembered upon first detection to prevent lingering terminal messages from keeping an agent paused past reset.
+  - Live countdown on workstation list, status bar, and scene desk easel, with completion notification.
+  - Automatic resumption: one minute after a quota pause lifts, the server enqueues a short prompt reminding the agent to reply "dispo" and resume in-progress work without redoing already committed work.
+- In-progress request tracking in TODO and wall corkboard:
+  - Factual tracking in Tasks tab of ongoing requests sent to agents (chief mail, queue), checked only once the agent returns a completed response after dispatch.
+  - Pixel art corkboard on the back wall showing open task counts from `TODO.md` with color-coded pins.
+  - Claude session discovery via process PID (`~/.claude/sessions/<pid>.json`), restoring activity log, subagents, delegations, and chief responses.
+- Static GitHub Pages site (`site/`):
+  - Bilingual static website presenting MyTeam on desktop and mobile, showcasing the pixel art scene, Mosaic mode, Crisis Room, and supervised autonomy, with zero external dependencies.
+- CI and release maintenance:
+  - Release retention script (`scripts/garder-releases.mjs`) retaining at most the 2 most recent releases.
+  - Archive verification checking git revision and zip structure during packaging.
+
+### Security
+
+- Unified public mask (`src/masque.mjs`):
+  - Single module applying three strict masking rules for local file paths (`C:\...`, `/home/...`) and sensitive credentials or tokens.
+  - Explicit preservation of Web URLs (`http://`, `https://`).
+  - Extended masking to subagent descriptions, autonomy objective and log, and exclusion of third-party recipients in Codex responses.
+- Hardened Crisis Room:
+  - Crisis lock maintained even if writing state to disk fails.
+  - State re-verified after parsing request body and immediately before prompt dispatches.
+- Autonomy and queue safety:
+  - Autonomy stop serialized with active dispatch, and pending autonomy prompts purged upon stop or server restart.
+  - Strict re-verification of target readiness, working directory, and availability right before queue dispatch.
+  - Queue write budget aligned with read budget, with explicit rejection before acceptance.
+- Hardened installer security:
+  - Immediate rejection of invalid port numbers before any change.
+  - Exclusive file move preventing overwrites, requiring interactive confirmation.
+
+### Changed
+
+- Accessibility and UI ergonomics (lot L):
+  - Accessible fallback modal: inert backdrop, trapped focus, and automatic help without focus theft.
+  - Dynamic toggles using `data-actif` instead of `aria-pressed`.
+  - Command palette (`Ctrl+K`) disabled while Crisis Room is active.
+  - Resource-conscious rendering: agent list redrawn only on data changes, scene drawing suspended under Mosaic view, and background polling spaced to 15 seconds.
+  - Unified vocabulary: consistent informal address ("tutoiement") in French UI and server notices, unified English terms (`chief` instead of `lead`, capitalized `Mosaic`).
+  - Queue recovery warning prominently displayed in the Team tab.
+- Office decor customization:
+  - Scene wall neon sign and footer made optional and customizable via `.bureau/pied.json`, without forced author or contact details.
+
+### Fixed
+
+- Byte continuity verification: byte checks ensure file integrity before resuming incremental read offsets in Claude activity and tasks.
+- Windows compatibility: reliable detection and execution of setup scripts in the presence of 8.3 short paths (`PROGRA~1`).
+- Help documentation: removed obsolete reference to non-existent "Skip tour" button, and aligned English labels with live UI strings.
+
 ## [0.4.0] - October 18, 2026
 
 ### Added (installation and release)

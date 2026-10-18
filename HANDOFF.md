@@ -32,7 +32,7 @@ Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux
 - Pause de quota : l'heure annoncée est retrouvée même coupée par le terminal, compte à rebours dans la liste, la barre d'état et la scène, notification au retour, reprise automatique de tout agent une minute après (consigne par la file, une fois par pause).
 - TODO du bureau : le groupe « Demandes en cours » suit les consignes envoyées aux agents ; une demande n'est cochée qu'après une réponse terminée de l'agent.
 - Bouton « Autonomie » (NoBabysitter supervisé) : `src/autonomie.mjs`, `/api/autonomie`. Plafonds de durée et d'échanges, arrêt sur échéance, plafond, boucle, salle de crise ou redémarrage ; jamais de push, suppression, installation, publication ni réponse à une boîte de dialogue ; le chef décide, aucun agent n'écrit à un autre directement.
-- Reste : vocabulaire de l'interface (noms de l'outil, rang 5 de la table ronde), pilote NoBabysitter au-delà du bouton (contrat d'objectif, relecture), release 0.4.1. Documentation FR et EN et captures Playwright livrées par Antigravity.
+- Reste : validation du chef pour le tag et la release 0.4.1. Entrée 0.4.1 prête dans CHANGELOG.md (FR et EN), site GitHub Pages vérifié en local avec Playwright, documentation d'aide (docs/aide.en.md) et README.en.md relus et harmonisés (parité stricte et vocabulaire chief/Mosaic unifié).
 
 ## État d'avancement au 17 octobre 2026 (Version 0.3.0 livrée et stabilisée)
 

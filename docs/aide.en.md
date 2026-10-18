@@ -21,7 +21,7 @@ The interface is bilingual (French and English). An "FR / EN" button in the top 
 This quick walkthrough explains core office operations.
 
 ### Step 1: Observe the team in the pixel art scene
-The main window renders your team in an animated pixel art environment. The sky shifts continuously according to your computer's clock (6:30 AM sunrise, 7:30 PM sunset), and indoor lighting automatically turns on in the evening (pendant ceiling lights and desk lamps). The wall board summarizes key operational facts (BACK, QUEUED, MAIL, SUBAGENTS). The team lead sits at the Direction desk. Each character shows their real state through their pose, monitor glow, desk front emblem, and color-coded name underline.
+The main window renders your team in an animated pixel art environment. The sky shifts continuously according to your computer's clock (6:30 AM sunrise, 7:30 PM sunset), and indoor lighting automatically turns on in the evening (pendant ceiling lights and desk lamps). The wall board summarizes key operational facts (BACK, QUEUED, MAIL, SUBAGENTS). The team chief sits at the Direction desk. Each character shows their real state through their pose, monitor glow, desk front emblem, and color-coded name underline.
 
 ### Step 2: Select a workstation
 Click any character in the scene (or tap on a touchscreen), click their name in the desk list below the canvas, or click directly in the landing view of the station. On mobile or narrow screens, the view automatically scrolls down to the control panel.
@@ -30,7 +30,7 @@ Click any character in the scene (or tap on a touchscreen), click their name in 
 The "Desk" tab displays detailed agent metrics: model, activity, token usage, and live terminal output. You can freeze scrolling ("Freeze"), expand the terminal to full height ("Expand"), search for text, read formatted markdown in the "Readable replies" drawer, and send prompts using `Ctrl+Enter` (or click "Queue prompt" if busy, with optional local file attachments).
 
 ### Step 4: Coordinate in the "Team" tab
-The "Team" tab centralizes collective workflows. The "Chief’s mail" section alerts you whenever an agent finishes work. The "Lead listening relay" section allows automatically notifying the lead via the instruction queue when a teammate completes a task. The "Queue" section lists queued instructions with automatic retry. You can also check multiple available agents to send a common instruction with a 2-click armed dispatch.
+The "Team" tab centralizes collective workflows. The "Chief’s mail" section alerts you whenever an agent finishes work. The "Chief listening relay" section allows automatically notifying the chief via the instruction queue when a teammate completes a task. The "Queue" section lists queued instructions with automatic retry. You can also check multiple available agents to send a common instruction with a 2-click armed dispatch.
 
 ### Step 5: Manage documents and track tasks
 The "Files" tab lets you inspect recently modified files or browse project folders via safe copy or move without deletion. The "Tasks" tab tracks real checked boxes in project Markdown files (`TODO.md`) and action plans published by agents.
@@ -52,7 +52,7 @@ The canvas provides an immediate overview of your entire agent team.
 #### What it is for
 - Monitor the status of each connected Herdr agent at a glance.
 - Spot roadblocks, task completions, and quota breaks immediately.
-- Observe physical interactions between the lead, agents, and their subagents.
+- Observe physical interactions between the chief, agents, and their subagents.
 - Follow live indicators on the wall-mounted scoreboard.
 
 #### Wall Scoreboard
@@ -75,11 +75,11 @@ The canvas provides an immediate overview of your entire agent team.
 - Security and integrity: token-protected `/api/tableau` route, strict allowlist of files, sensitive paths and private IDs masked.
 - Easy closing: Escape key, close button, or clicking the dark backdrop. Focus returns to the trigger button.
 
-#### Direction Desk and the Lead's Rounds
-- Assigned to the first agent started in Herdr (the team lead).
+#### Direction Desk and the Chief's Rounds
+- Assigned to the first agent started in Herdr (the team chief).
 - Distinct purple carpet, wood paneling, and panoramic window view.
 - Completed task mail stacks on the desk. Clicking the stack navigates directly to the Team tab.
-- Lead's rounds on delegation: when a delegation is observed in their log (`herdr agent prompt`), the lead stands up, exits Direction, crosses the floor to place the titled gold folder on the collaborator's desk, and walks back. Only one round takes place at a time to ensure readable visual progression.
+- Chief's rounds on delegation: when a delegation is observed in its log (`herdr agent prompt`), the chief stands up, exits Direction, crosses the floor to place the titled gold folder on the collaborator's desk, and walks back. Only one round takes place at a time to ensure readable visual progression.
 
 #### Continuous Day-Night Cycle and Evening Ambiance
 - Sky through the window evolves continuously following your local computer clock (night, dawn, day, dusk).
@@ -92,7 +92,7 @@ The canvas provides an immediate overview of your entire agent team.
 
 #### Workstation Identification and the 24 Herdr Tool Emblems
 - On the front of each desk, a 16×16 pixel art emblem identifies the tool among all 24 types supported by Herdr: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`, or a fallback generic agent emblem if unspecified.
-- These emblems also appear on agent cards and in mosaic tiles.
+- These emblems also appear on agent cards and in Mosaic tiles.
 - Below each desk, the agent's name is underlined with a thin status bar (blue for working, mint for available, amber for awaiting input, purple for quota break).
 - If connection with Herdr is lost, `OFFLINE` (`HORS LIGNE`) is displayed.
 - Status is clearly communicated through character pose, screen glow, bubble, tool emblem, and underline without redundant textual clutter.
@@ -130,7 +130,7 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - Their screen turns off, desk lamp turns off, and a subtle purple standby light blinks.
 - A white desktop easel with "BACK" ("RETOUR") displays the exact resume time reported by the tool.
 - The local server schedules automatic retry of queued instructions 5 minutes after that time.
-- Automatic resumption: one minute after the pause ends (reported resume time), the server automatically enqueues a short instruction reminding the agent to reply "dispo" and resume its in-progress mission (`git status`, then lead instruction) without re-doing already committed work, preserving its quota. Sent once per break, in-memory only (server restarts never replay old reminders).
+- Automatic resumption: one minute after the pause ends (reported resume time), the server automatically enqueues a short instruction reminding the agent to reply "dispo" and resume its in-progress mission (`git status`, then chief instruction) without re-doing already committed work, preserving its quota. Sent once per break, in-memory only (server restarts never replay old reminders).
 
 #### Reflection Room for Subagents
 - Glass-walled dedicated room with fixed label "THINKING" ("REFLEXION" in French view), never truncated.
@@ -145,12 +145,12 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - Click the "Arrange" button in the upper right corner of the scene frame.
 - A dedicated helper bar appears under the toolbar to remind you of controls.
 - Drag any workstation across the floor (or move it with keyboard arrow keys).
-- Move the lead's Direction desk or resize it by dragging its gold corner.
+- Move the chief's Direction desk or resize it by dragging its gold corner.
 - Click "Reset" ("Réinitialiser") to restore default auto-layout.
 - Press Escape or click "Done" ("Terminer") to save and lock your layout.
 
 #### Mosaic Mode (Multi-Terminal Surveillance)
-- The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular mosaic of 2 to 4 live terminals side by side.
+- The "Mosaic" button (or "Tile mode" in Ctrl+K) replaces pixel art with a modular Mosaic of 2 to 4 live terminals side by side.
 - Working agents appear at the top of the list for immediate visibility.
 - If more than 4 agents are connected, checkboxes allow choosing which 4 agents to display.
 - Layout toggle: "2×2 grid" and "Columns" buttons (on mobile, tiles stack into a single comfortable column).
@@ -205,22 +205,22 @@ This tab lets you inspect and interact with the selected agent.
 
 ### Zone 3: "Team" Tab (Collective Coordination)
 
-This tab coordinates multiple agents, the queue, leadership, and task completion reports.
+This tab coordinates multiple agents, the queue, direction, and task completion reports.
 
 #### What it is for
-- Review completed missions through lead mail.
+- Review completed missions through chief mail.
 - Monitor and manage queued instructions with priority controls.
-- Designate the team lead and handle quota handover suggestions.
-- Configure the lead listening relay to alert the lead upon task completion.
+- Designate the team chief and handle quota handover suggestions.
+- Configure the chief listening relay to alert the chief upon task completion.
 - Broadcast an instruction to multiple agents in a single action.
 - Inspect the session transmission journal.
 
-#### Leadership and Handover
-- Active lead: the Direction desk hosts the team lead (default: first agent started in Herdr).
-- User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as lead or revert to default. Choice is persisted in `.bureau/direction.json`. If the assigned lead disappears from Herdr, default rule applies gracefully.
-- Handover proposal banner: if the lead hits their quota limit, a banner proactively suggests passing leadership to an available deputy.
+#### Direction and Chief Handover
+- Active chief: the Direction desk hosts the team chief (default: first agent started in Herdr).
+- User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as chief or revert to default. Choice is persisted in `.bureau/direction.json`. If the assigned chief disappears from Herdr, default rule applies gracefully.
+- Handover proposal banner: if the chief hits its quota limit, a banner proactively suggests passing the chief role to an available deputy.
 - Human confirmation and review: handover is never automatic. The user confirms, reviews the handover message, and sends it directly or via queue.
-- Delegation tracking: delegations (`herdr agent prompt`) and lead rounds are monitored in the active lead's local log.
+- Delegation tracking: delegations (`herdr agent prompt`) and chief rounds are monitored in the active chief's local log.
 
 #### Chief’s Mail ("Courrier du chef")
 - Whenever an agent shifts from "working" to "available" or "done", completion mail is logged with a counter in the section title.
@@ -228,12 +228,12 @@ This tab coordinates multiple agents, the queue, leadership, and task completion
 - Clicking a mail item or "Open their desk" ("Ouvrir son poste") opens the agent's workstation terminal to verify results.
 - Caution reminder: mail confirms the process stopped, not that the goal succeeded. Always verify actual outputs.
 
-#### Lead Listening Relay
-- Dedicated section in the Team tab: "Notify the lead when an agent finishes" ("Prévenir le chef quand un agent termine") checkbox.
+#### Chief Listening Relay
+- Dedicated section in the Team tab: "Notify the chief when an agent finishes" ("Prévenir le chef quand un agent termine") checkbox.
 - Optional feature, off by default, persisted on disk in `.bureau/relais.json`.
-- Operation: whenever an agent transitions from "working" to "available" or "done", the server inserts a normal-priority instruction into the queue for the active lead: *"[Name] vient de terminer. Lis son panneau avant de lui confier la suite."*
+- Operation: whenever an agent transitions from "working" to "available" or "done", the server inserts a normal-priority instruction into the queue for the active chief: *"[Name] vient de terminer. Lis son panneau avant de lui confier la suite."*
 - Safety and throttling: only one notification per observed finish, at least 1 minute interval between alerts for the same agent, state persisted before enqueueing to prevent duplicates on dropped responses.
-- Never during crisis: if the Crisis Room is active, the relay is completely disabled; no message is generated or dispatched to the lead.
+- Never during crisis: if the Crisis Room is active, the relay is completely disabled; no message is generated or dispatched to the chief.
 
 #### Instruction Queue and Priorities
 - Displays queued instructions with target, timestamp, status, and priority level ("haute" or "normale"), sorted by scheduled dispatch order.
@@ -329,7 +329,7 @@ This tab monitors concrete work progress without artificial metrics.
 #### Supervised Autonomy Mode (NoBabysitter)
 - Accessible via the "Autonomy" button in the top header toolbar (tooltip: "Supervised autonomy: the chief decides what comes next, within caps").
 - "Autonomy (NoBabysitter)" modal: launch a supervised autonomous cycle by setting a clear objective (5 to 300 characters), a maximum duration (5 to 120 minutes, default 30 min), and a cap on exchanges (3 to 60, default 20).
-- Star-shaped architecture: the team lead coordinates everything. Upon each observed task completion from a teammate, the listening relay enqueues a prompt for the lead reminding it of the objective, exchange count (`{n}/{max}`), and deadline. The lead alone decides the next step and delegates it. No agent writes directly to another without passing through the lead.
+- Star-shaped architecture: the team chief coordinates everything. Upon each observed task completion from a teammate, the listening relay enqueues a prompt for the chief reminding it of the objective, exchange count (`{n}/{max}`), and deadline. The chief alone decides the next step and delegates it. No agent writes directly to another without passing through the chief.
 - Absolute safety guardrails:
   - Never any Git push, file deletion, package installation, publication, or answering dialog prompts without explicit consent from DrSmoke.
   - No claim of full autonomy: autonomy is strictly supervised, bounded, and measurable.
@@ -340,7 +340,7 @@ This tab monitors concrete work progress without artificial metrics.
   - Crisis room activation (`salle de crise enclenchée`).
   - Server restart (`redémarrage du serveur`: never resumes silently without human re-engagement).
   - Instant manual stop: "Stop now" button available at any time.
-- Factual event log: lists only real events as they occur (session launch, messages enqueued to the lead, stop causes).
+- Factual event log: lists only real events as they occur (session launch, messages enqueued to the chief, stop causes).
 - Live toolbar indicator: when active, the button displays remaining time and exchange progress (`Autonomy · {reste} · {n}/{max}`).
 
 ---
@@ -357,7 +357,7 @@ The Crisis Room is a safety mechanism designed to regain control during loops or
 #### Immediate Circuit Breaker Effects
 - **Absolute direct send lock**: `/api/prompt` and `/api/broadcast` return HTTP 423 ("Crisis room active: sends are locked").
 - **Queue freeze**: instructions are received and stored safely, but no automatic dispatches occur while crisis is active.
-- **Handover and listening relay suspension**: leadership handover dispatches and the lead listening relay are fully suspended.
+- **Handover and listening relay suspension**: chief handover dispatches and the chief listening relay are fully suspended.
 - **Atomic state**: saved in `.bureau/crise.json` outside Git. Defaults to active if file is corrupted.
 
 #### Calm Diagnostics and Polite Interruption
@@ -374,7 +374,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 
 ### Pillar Files
 - `AGENTS.md`: Universal rules for all AI agents (roles, file ownership, truth of facts, definition of done, security).
-- `CHEF.md`: Guide for the team lead on listening, delegating, evaluating, correcting, and merging.
+- `CHEF.md`: Guide for the team chief on listening, delegating, evaluating, correcting, and merging.
 - `LESSONS.md`: Shared memory of mistakes never to repeat.
 - `TODO.md` and `HANDOFF.md`: Open tasks and status summaries to pass context without loss.
 
@@ -393,12 +393,12 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | **General** | `FR / EN` Button | Instantly toggles interface language between French and English. |
 | **General** | "Autonomy" Button | Opens configuration modal for supervised autonomy (NoBabysitter). |
 | **General** | Palette Ctrl+K: "Team board" ("Tableau de l'équipe") | Opens read-only team board modal (pillar files). |
-| **General** | Palette Ctrl+K: "Tile mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal mosaic. |
+| **General** | Palette Ctrl+K: "Tile mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal Mosaic. |
 | **General** | Palette Ctrl+K: "Crisis room" ("Salle de crise") | Opens crisis room diagnostic and control modal. |
 | **General** | `Ctrl + Shift + C` | Immediately opens crisis room modal (emergency breaker). |
 | **General** | `?` Key | Opens or closes this help drawer. |
 | **Scene** | Click corkboard or "Board" ("Tableau") button | Opens team board modal (pillar files). |
-| **Scene** | "Mosaic" / "Scene view" button | Toggles display between animated scene and 2 to 4 terminal mosaic. |
+| **Scene** | "Mosaic" / "Scene view" button | Toggles display between animated scene and 2 to 4 terminal Mosaic. |
 | **Scene** | Click character (or tap on screen) | Opens workstation panel (scrolls on mobile). |
 | **Scene** | Click mail stack | Opens Team tab and Chief’s mail section. |
 | **Scene** | "Arrange" ("Disposer") button | Enables manual desk arrangement mode. |
@@ -417,12 +417,12 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | **Mosaic** | "2×2 grid" / "Columns" button | Toggles mosaic tile layout. |
 | **Mosaic** | `Ctrl + Enter` in a tile | Dispatches quick instruction to the agent in that tile. |
 | **Mosaic** | "Expand" ("Agrandir") button on a tile | Opens full individual workstation panel for that agent. |
-| **Mosaic** | "Scene view" ("Revenir à la scène") button | Closes mosaic and restores animated office scene. |
+| **Mosaic** | "Scene view" ("Revenir à la scène") button | Closes Mosaic and restores animated office scene. |
 | **Crisis** | "Crisis room" ("Salle de crise") button | Opens crisis room diagnostic panel. |
 | **Crisis** | "Stop this agent" ("Arrêter cet agent") button | Requests polite interruption (Escape) for an agent after confirmation. |
 | **Crisis** | "Lift the crisis" ("Lever la crise") button | Unlocks direct sends and resumes queue processing. |
-| **Team** | "Team direction" ("Direction de l'équipe") section | Sets lead agent, restores default rule, or confirms handover. |
-| **Team** | "Lead listening relay" ("Relais d'écoute du chef") checkbox | Toggles automatic neutral notification to lead upon task completion. |
+| **Team** | "Team direction" ("Direction de l'équipe") section | Sets chief agent, restores default rule, or confirms handover. |
+| **Team** | "Chief listening relay" ("Relais d'écoute du chef") checkbox | Toggles automatic neutral notification to chief upon task completion. |
 | **Team** | "Move to the front" ("Passer en tête") button | Promotes queued instruction to high priority. |
 | **Team** | "Remove" ("Retirer") button | Removes an instruction from the queue. |
 | **Team** | `Ctrl + Enter` (or `Cmd + Enter`) | Triggers armed broadcast dispatch. |

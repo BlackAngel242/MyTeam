@@ -58,3 +58,11 @@ Commits : b56585c, 825fa11 (rangs 1 et 6), 9560c5a, f01f10f, af523d9 (rangs 7 et
 - Génération complète des captures d'écran en états simulés avec Playwright (Edge) à 1440x900 et 390x844 en FR et EN : fenêtre Autonomie ouverte (docs/captures/16, 17, 18, 19 et site/assets/autonomie*), mise à jour du catalogue LISEZMOI.md et rafraîchissement des scènes du bureau intégrant le bouton Autonomie dans l'en-tête.
 - Validation : npm run check vert, 397 tests exécutés par npm test (394 réussis, 0 échec, 3 ignorés).
 
+## 18 octobre 2026, préparation de la version 0.4.1 et alignement anglais (part Antigravity)
+
+- Préparation de l'entrée `[0.4.1] - 18 octobre 2026` dans `CHANGELOG.md` et `CHANGELOG.en.md` regroupant l'ensemble des livraisons réelles depuis la 0.4.0 : mode Autonomie supervisée (NoBabysitter), pause de quota avec compte à rebours et reprise automatique, TODO des demandes en cours, masque public unique en trois règles, accessibilité et ergonomie de l'interface (lot L), kit CI (rétention des releases, vérification des archives) et sécurisation de l'installation.
+- Vérification du site statique GitHub Pages (`site/`) : affichage de la section Autonomie supervisée validé sur ordinateur (1440x900) et mobile (390x844) en français et en anglais avec Playwright en local (via serveur HTTP local évitant les restrictions CORS sur modules ES).
+- Relecture et parité stricte de `docs/aide.en.md` et `README.en.md` avec leurs équivalents français : harmonisation terminologique complète (`chief` au lieu de `lead`, majuscule systématique pour `Mosaic`), suppression des occurrences résiduelles de `lead`, et conformité de la structure bilingue.
+- Nouvelle leçon consignée dans `LESSONS.md` sur l'exécution Playwright de pages statiques avec modules ES.
+
+

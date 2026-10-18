@@ -11,7 +11,7 @@ An immersive and living pixel art dashboard to monitor, inspect, and direct your
 [![Dependencies](https://img.shields.io/badge/dependencies-0%20npm-informational.svg)](package.json)
 
 ![MyTeam scene and workshop](docs/captures/01-ordinateur-scene.png)
-> *Overview of the daytime scene: lead agent at the Direction desk, wall board with live indicators, team members at their dedicated workstations, and glass reflection room.*
+> *Overview of the daytime scene: chief at the Direction desk, wall board with live indicators, team members at their dedicated workstations, and glass reflection room.*
 
 ---
 
@@ -24,7 +24,7 @@ An immersive and living pixel art dashboard to monitor, inspect, and direct your
 - [Features](#features)
   - [Animated scene and Direction desk](#animated-scene-and-direction-desk)
   - [Workstation tab and live terminal](#workstation-tab-and-live-terminal)
-  - [Team tab, leadership, and priority queue](#team-tab-leadership-and-priority-queue)
+  - [Team tab, direction, and priority queue](#team-tab-direction-and-priority-queue)
   - [Files and Tasks tabs](#files-and-tasks-tabs)
   - [Command palette, help, and audio-visual cues](#command-palette-help-and-audio-visual-cues)
   - [Fullscreen mode](#fullscreen-mode)
@@ -39,10 +39,10 @@ An immersive and living pixel art dashboard to monitor, inspect, and direct your
 
 MyTeam · Agent desk is built for developers, researchers, and orchestrators running multiple AI agents in parallel (Claude Code, Codex, Antigravity, OpenCode, and others) managed by [Herdr](https://github.com/atoll92/herdr). It transforms a dry grid of terminal windows into a lively graphical workshop where every observable action counts.
 
-- **Clear team hierarchy**: The Direction desk hosts the team lead, surrounded by collaborators at their dedicated desks.
-- **Embodied task delegation**: When the lead delegates a prompt (`herdr agent prompt`), they walk across the room to place the golden folder directly on the collaborator's desk.
+- **Clear team hierarchy**: The Direction desk hosts the team chief, surrounded by collaborators at their dedicated desks.
+- **Embodied task delegation**: When the chief delegates a prompt (`herdr agent prompt`), they walk across the room to place the golden folder directly on the collaborator's desk.
 - **Priority queue and quota management**: Safely queue instructions for busy agents or those on quota breaks, with high-priority flagging, a "Move to the front" button, 1-minute automatic resumption via a short prompt after a quota pause lifts, and deferred dispatch.
-- **Supervised autonomy (NoBabysitter)**: Start a scoped autonomous cycle defined by an objective (duration from 5 to 120 min, 3 to 60 exchanges at most). The lead coordinates in a star topology and delegates each step; the mode stops automatically on expiration, exchange cap, loop detection, crisis room, or server restart, and never runs a git push, deletion, installation, publication, or dialog response without DrSmoke.
+- **Supervised autonomy (NoBabysitter)**: Start a scoped autonomous cycle defined by an objective (duration from 5 to 120 min, 3 to 60 exchanges at most). The chief coordinates in a star topology and delegates each step; the mode stops automatically on expiration, exchange cap, loop detection, crisis room, or server restart, and never runs a git push, deletion, installation, publication, or dialog response without DrSmoke.
 - **Glass reflection room**: Subagents step away from their desk to deliberate together in a dedicated area before reporting back.
 - **Factual task progress**: Direct aggregation of checked boxes in project Markdown files (`TODO.md`) and action plans published by agents, with zero invented percentages.
 - **100% local with zero npm dependencies**: Standalone local server bound to `127.0.0.1`, no external npm packages, no outbound network requests, and no stored API keys.
@@ -94,7 +94,7 @@ Clone the repository and run the setup script for your platform:
   ```
 
 > [!TIP]
-> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer Clink on Windows (cmd.exe comfort via winget), official `herdr integration install` integrations, lead skill (`herdr --skill` or `CHEF.md`), orientation prompt, 3 desktop shortcuts (including combined "Herdr and desktop"), and team kit initialization (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) ([Français](docs/INSTALLATION.md)) for the complete guide.
+> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer Clink on Windows (cmd.exe comfort via winget), official `herdr integration install` integrations, chief skill (`herdr --skill` or `CHEF.md`), orientation prompt, 3 desktop shortcuts (including combined "Herdr and desktop"), and team kit initialization (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) ([Français](docs/INSTALLATION.md)) for the complete guide.
 
 ### 2. Starting the office
 
@@ -115,8 +115,8 @@ http://127.0.0.1:4317
 
 1. **Open the shortcut**: Double-click the "Herdr and desktop" shortcut (or start Herdr and run `node server.mjs`).
 2. **See the 4 panes and animated office**: Check the 4 panes in your 2×2 Herdr grid and explore the live office scene at `http://127.0.0.1:4317`.
-3. **The lead reads CHEF.md**: In the Chef pane, the team lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by.
-4. **First delegation**: Send an initial prompt to the lead from the web office; watch their physical round across the office scene to deliver the folder to their teammate.
+3. **The chief reads CHEF.md**: In the Chef pane, the team chief reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by.
+4. **First delegation**: Send an initial prompt to the chief from the web office; watch their physical round across the office scene to deliver the folder to their teammate.
 5. **Tasks tab**: Open the Tasks tab to monitor real-time factual progress of checked boxes in `TODO.md` and action plans published by agents, with zero invented percentages.
 6. **Crisis room**: Locate the flip-covered "Salle de crise" (Crisis Room) button (`Ctrl+Shift+C`) to instantly freeze outgoing instructions and request a polite interruption via the Escape key.
 
@@ -126,7 +126,7 @@ http://127.0.0.1:4317
 
 ### Animated scene and Direction desk
 
-- **Lead at the Direction desk, transfer, and rounds**: The Direction desk hosts the team lead (default: first panel started in Herdr, or explicitly chosen by the user). Mail builds up on the desk as agents finish tasks; clicking the stack opens the Team tab. On every delegation observed in their local logs, the lead physically steps out, crosses the office to hand over the titled folder to the recipient, and returns to their desk. Leadership can be reassigned at any time, and the UI proactively proposes handover if the lead enters a quota limit break.
+- **Chief at the Direction desk, transfer, and rounds**: The Direction desk hosts the team chief (default: first panel started in Herdr, or explicitly chosen by the user). Mail builds up on the desk as agents finish tasks; clicking the stack opens the Team tab. On every delegation observed in their local logs, the chief physically steps out, crosses the office to hand over the titled folder to the recipient, and returns to their desk. Leadership can be reassigned at any time, and the UI proactively proposes handover if the chief enters a quota limit break.
 - **Continuous day-night cycle and evening ambiance**: The sky through the panoramic window follows your local system clock (6:30 AM sunrise, 7:30 PM sunset, season-neutral). Starting at 5:30 PM (and reaching full strength from 7:00 PM until morning), ceiling pendant lights and desk lamps automatically illuminate the workshop. Individual desk lamps turn off when an agent leaves on a quota break.
 - **Wall-mounted dashboard**: Live scoreboard displaying key information not repeated on desks: quota recovery time (`RETOUR`), pending queued prompts (`EN FILE`), unread completion letters (`COURRIER`), and active subagents (`SOUS-AGENTS`).
 - **Team board (corkboard modal)**: A corkboard with colored pins tracking open tasks and the "Tableau" button opens a read-only modal viewing the project's pillar files (`HANDOFF.md`, `TODO.md`, `AGENTS.md`, `LESSONS.md`), with timestamps and masked private paths.
@@ -149,16 +149,16 @@ http://127.0.0.1:4317
 - **Prompt form, queuing, and priority**: If the agent is available, prompts are dispatched immediately (`Ctrl+Enter` or `Cmd+Enter`). If the agent is busy or on quota break, the button becomes "Queue prompt" to safely queue the message. A "Priority" checkbox tags urgent instructions (`priority: "haute"`) to jump ahead of regular instructions for that agent.
 - **Draft preservation**: Switching agents while typing preserves unsent drafts individually.
 
-### Team tab, leadership, and priority queue
+### Team tab, direction, and priority queue
 
-- **Team leadership and handoff**: Displays the active team lead and allows appointing any connected agent as lead or resetting to default (first panel). Changes persist in `.bureau/direction.json`. If the lead enters a quota break, a banner proposes handing leadership over to an available substitute. The handover instruction is reviewed before sending.
+- **Team direction and handoff**: Displays the active team chief and allows appointing any connected agent as chief or resetting to default (first panel). Changes persist in `.bureau/direction.json`. If the chief enters a quota break, a banner proposes handing the chief role over to an available substitute. The handover instruction is reviewed before sending.
 - **Chief's mail**: Logs completed tasks with counter in the section title; the list resets when viewing the Team tab. Clicking a mail item navigates directly to that agent's terminal.
 - **Collective queue and priority management**: Lists all deferred instructions with targets, statuses, and priority levels ("haute" or "normale"). A "Move to front" button promotes regular instructions. High-priority items are sent first as soon as the agent becomes free. An automatic anti-starvation guard promotes normal instructions waiting over 30 minutes to high priority. Any queued item can be cancelled with one click.
 - **Attached files and entrusted files**: Attach local files to queued instructions (up to 2 files of 20 MB). Files are copied without overwriting into the agent's workspace before dispatch, and observed processing facts are logged in the "Entrusted files" section.
 - **Control room discussion feed**: Aggregates excerpts of the latest responses from the entire team sorted newest to oldest. Agents that could not be read are reported at the bottom with reason.
 - **"Crisis Room" emergency circuit breaker**: An emergency safety button behind a protective flip cover (`Ctrl+Shift+C` or command palette) immediately blocks all prompt dispatches (HTTP 423) and freezes the queue without data loss. An amber security glow frames the scene, and a diagnostic modal shows live statuses and recent terminal lines for each agent. The user can request a polite stop (`POST /api/crise/arret`) sending the canonical Escape key (`esc` in Herdr) after double confirmation, never using a hard kill. Persisted atomically in `.bureau/crise.json`.
 - **Broadcast message**: Select available agents or click "Check all available". First click arms the dispatch showing recipient list; second click confirms individual dispatch via Herdr.
-- **Lead listening relay**: Subtle option persisted in `.bureau/relais.json` (disabled by default) queuing a neutral notification to the lead when a teammate completes a task ("{name} just finished. Review its pane before delegating the next step."). Never triggered during a crisis or for the lead itself.
+- **Chief listening relay**: Subtle option persisted in `.bureau/relais.json` (disabled by default) queuing a neutral notification to the chief when a teammate completes a task ("{name} just finished. Review its pane before delegating the next step."). Never triggered during a crisis or for the chief itself.
 - **Dispatch log**: Logs full session dispatch history with timestamps, recipients, text, and status returned by Herdr.
 
 ### Herdr 24 Tools Compatibility Matrix
@@ -224,12 +224,12 @@ Contributions that align with the project's philosophy (technical independence, 
   - `src/claude-activity.mjs` and `src/agent-activity.mjs`: Non-destructive extraction of live tool activity.
   - `src/files.mjs`: Secure file explorer backend.
   - `src/queue.mjs`: Atomic priority queue with disk persistence.
-  - `src/direction.mjs`: Team lead tracking and persistence.
+  - `src/direction.mjs`: Team chief tracking and persistence.
   - `src/todos.mjs`: Factual extraction of task plans.
   - `src/blackboard.mjs`: Extraction and structured parsing of the corkboard from project Markdown sections.
   - `src/crisis.mjs`: Crisis room handling, HTTP 423 dispatch locking, and atomic persistence.
-  - `src/delegations.mjs`: Detection and tracking of delegations in the lead's log over a rolling 12-hour window.
-  - `src/relais.mjs`: Neutral listening relay notifying the lead when an agent completes a task.
+  - `src/delegations.mjs`: Detection and tracking of delegations in the chief's log over a rolling 12-hour window.
+  - `src/relais.mjs`: Neutral listening relay notifying the chief when an agent completes a task.
   - `src/responses.mjs`: Turn-by-turn parsing and extraction of readable assistant responses.
   - `src/terminal-status.mjs`: Live detection of quota pauses and session limits in terminal streams.
   - `src/autonomie.mjs`: Supervised star autonomy engine (NoBabysitter), exchange and duration caps, loop detection, and safety stops.

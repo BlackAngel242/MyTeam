@@ -112,3 +112,10 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Un recapitulatif construit depuis du texte libre doit lire d'abord des champs structures et n'accepter la prose qu'en repli. Sinon un simple changement de formulation du journal casse le recapitulatif sans erreur visible, et personne ne s'en apercoit.
 - Une route qui renvoie du texte ne passe pas par le helper json() du serveur : penser au Content-Type. Du Markdown envoye en application/json est illisible pour un client qui croit avoir du JSON.
 - Quand un module interdit d'edition porte les faits necessaires, ecrire le lecteur pour les deux formes (champ structure, puis texte) et demander l'enrichissement au proprietaire : le livrable marche le jour meme et se simplifie ensuite.
+
+- Verification Playwright de fichiers HTML statiques avec modules ES : l'ouverture directe via file:/// bloque les scripts modulaires (type=module) en raison de la politique CORS locale du navigateur. Demarrer un serveur HTTP local temporaire pour servir la page sur 127.0.0.1 afin de charger et tester reellement les scripts et leurs traductions.
+
+- Auditer un paquet avec le masque public donne beaucoup de faux positifs : masque() est fait pour les sorties texte d'ex?cution, pas pour le code source, o? les motifs de chemins (regex) et les jetons factices des tests sonnent tout le temps. Trier les signalements avant de conclure a une fuite, et dire dans le rapport combien de signalements etaient des faux positifs.
+- Un rapport d'audit range dans docs/ se retrouve lui-meme dans le paquet suivant. Prevoir en meme temps que le rapport la liste d'exclusion qui le concerne, sinon on publie la liste des endroits ou chercher.
+- ? Deja public par le depot ? et ? livre dans l'archive que quelqu'un dezippe ? ne sont pas la meme question. Un audit de paquet doit distinguer ce qui est publie de ce qui est remis en main propre, et nuancer son constat en consequence.
+- Un garde-fou qui ne devrait jamais sonner doit etre evalue aussi sur ses faux positifs : un outil qui crie 48 fois pour rien finit ignore, et c'est la vraie fuite qui passe ensuite.
