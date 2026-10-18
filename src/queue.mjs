@@ -46,6 +46,10 @@ function validerFichiers(files = []) {
 
 const nomCopie = name => typeof name === 'string' && name.length > 0 && name.length <= 255 &&
   name !== '.' && name !== '..' && !/[\u0000-\u001f]/.test(name) && posix.basename(name) === name && win32.basename(name) === name && !/^[a-z]:/i.test(name);
+const copieObservee = file => ({name:file.name,
+  ...(dateLisible(file.at)?{at:dateLisible(file.at)}:{}),
+  ...(typeof file.cwdTag==='string'&&/^[0-9a-f]{64}$/.test(file.cwdTag)?{cwdTag:file.cwdTag}:{}),
+});
 
 function valider({ id, message, notBefore, requestKey, priority, files }) {
   if (typeof id !== 'string' || !id.trim() || id.length > 200) throw new QueueError('Sélectionnez un agent.');
@@ -102,7 +106,7 @@ function restaurer(brut) {
     element.files = validerFichiers(brut.files);
     if (brut.copiedFiles !== undefined) {
       if (!Array.isArray(brut.copiedFiles) || brut.copiedFiles.length > 2 || brut.copiedFiles.some(file => !nomCopie(file?.name))) throw new Error();
-      element.copiedFiles = brut.copiedFiles.map(file => ({name:file.name}));
+      element.copiedFiles = brut.copiedFiles.map(copieObservee);
     }
     if (state === 'attente' && element.copiedFiles.length) throw new Error();
   } catch {
@@ -159,7 +163,9 @@ export function createQueue({
   }
 
   function publique(element) {
-    return structuredClone(element);
+    const result = structuredClone(element);
+    result.copiedFiles = (result.copiedFiles??[]).map(file => ({name:file.name}));
+    return result;
   }
 
   // Ordre réel d'envoi : priorité haute d'abord (et une normale en attente
@@ -320,8 +326,8 @@ export function createQueue({
     return publique(element);
   }
 
-  function list() {
-    return { items: [...items].sort(ordreEnvoi).map(publique) };
+  function list({fileFacts=false}={}) {
+    return { items: [...items].sort(ordreEnvoi).map(element=>fileFacts?structuredClone(element):publique(element)) };
   }
 
   async function tick() {
@@ -402,7 +408,7 @@ export function createQueue({
               if (!Array.isArray(copies) || copies.length !== element.files.length || copies.some(file => !nomCopie(file?.name))) {
                 throw new QueueError('La copie des fichiers n’a pas été confirmée.');
               }
-              element.copiedFiles = copies.map(file => ({name:file.name}));
+              element.copiedFiles = copies.map(copieObservee);
               message += '\n\nFichiers copiés dans ton dossier de travail :\n' + element.copiedFiles.map(file => '- '+JSON.stringify(file.name)).join('\n');
               if (message.length > 12000) throw new QueueError('La consigne avec les noms de fichiers dépasse 12 000 caractères.');
               await persister();

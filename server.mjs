@@ -4,7 +4,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {join,posix,win32} from 'node:path';
-import {randomBytes,timingSafeEqual} from 'node:crypto';
+import {randomBytes,timingSafeEqual,createHash} from 'node:crypto';
 import {createHerdr} from './src/herdr.mjs';
 import {readClaudeActivity} from './src/claude-activity.mjs';
 import {readAgentActivity,normalizeActivity} from './src/agent-activity.mjs';
@@ -20,6 +20,7 @@ import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
+const empreinte=value=>createHash('sha256').update(value).digest('hex');
 export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
@@ -127,7 +128,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           if(!info.isFile()) throw new FileError('Seuls les fichiers peuvent être joints.');
           if(info.size>20*1024*1024) throw new FileError('Chaque fichier joint est limité à 20 Mo.');
           const copied=await transfer({fromRoot,fromPath,toRoot,toPath:'',mode:'copy'});
-          element.copiedFiles.push({name:copied.name});
+          element.copiedFiles.push({name:copied.name,at:new Date(now()).toISOString(),cwdTag:empreinte(toRoot)});
           const destination=await resolveInside(toRoot,copied.path);
           if((await lstat(destination.real)).size>20*1024*1024) throw new FileError('Un fichier a grandi pendant la copie et dépasse 20 Mo.');
         }
@@ -140,6 +141,59 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const pending=transferPending.then(operation);
     transferPending=pending.catch(()=>{});
     return pending;
+  }
+  async function traitementsDe(agent,agents) {
+    const observedAt=new Date(now()).toISOString(),observedMs=Date.parse(observedAt);
+    const items=(fileAttente.list({fileFacts:true}).items??[]).filter(item=>item.id===agent.id).slice(0,20);
+    if(!items.some(item=>item.files?.length)) return {dossiers:[]};
+    const roots=await allowedRoots(),root=roots.get('agent:'+agent.id)?.path;
+    let responses=[];
+    if(['Claude','Codex','OpenCode'].includes(agent.kind)&&items.some(item=>item.sentAt)) {
+      try {const read=await reponsesDe(agent,agents);if(read?.found===true&&Array.isArray(read.responses)) responses=read.responses;}
+      catch { /* Une source facultative indisponible ne retire pas les faits de la file. */ }
+    }
+    const etats={idle:'disponible',done:'terminé',working:'au travail',blocked:'en attente de réponse',unknown:'inconnu'};
+    const dossiers=[];
+    const nomValide=name=>typeof name==='string'&&name.length>0&&name.length<=255&&name!=='.'&&name!=='..'&&
+      !/[\u0000-\u001f]/.test(name)&&posix.basename(name)===name&&win32.basename(name)===name&&!/^[a-z]:/i.test(name);
+    for(const item of items) {
+      const sent=typeof item.sentAt==='string'?Date.parse(item.sentAt):NaN;
+      const next=items.map(other=>Date.parse(other.sentAt)).filter(at=>at>sent).sort((a,b)=>a-b)[0]??Infinity;
+      for(const [index,file] of (Array.isArray(item.files)?item.files.slice(0,2):[]).entries()) {
+        const copied=item.copiedFiles?.[index];
+        const original=typeof file?.path==='string'?posix.basename(file.path.replaceAll('\\','/')):'';
+        const name=nomValide(copied?.name)?copied.name:original;
+        if(!nomValide(name)) continue;
+        const faits=[];
+        const fact=(at,fait,source)=>{
+          const ms=typeof at==='string'?Date.parse(at):NaN;
+          if(Number.isFinite(ms)) faits.push({at:new Date(ms).toISOString(),fait,source});
+        };
+        fact(item.createdAt,'Consigne mise en file.','file');
+        if(nomValide(copied?.name)) fact(copied.at??observedAt,copied.at?'Copie faite dans le dossier de l’agent.':'Copie constatée dans la file ; heure de copie non conservée.','file');
+        fact(item.sentAt,'Consigne envoyée à Herdr.','file');
+        fact(observedAt,'État de la cible observé : '+(etats[agent.status]??'inconnu')+'.','herdr');
+        // L'empreinte de destination empêche de lire un fichier homonyme dans un
+        // nouveau dossier de l'agent. Les anciennes copies sans empreinte restent inconnues.
+        if(root&&nomValide(copied?.name)&&copied.cwdTag===empreinte(root)) {
+          try {
+            const relative=await relativeFile(root,copied.name),{real}=await resolveInside(root,relative),info=await lstat(real);
+            if(info.isFile()) {
+              const changed=Number.isFinite(sent)&&info.mtimeMs>sent&&info.mtimeMs<=observedMs;
+              fact(info.mtime.toISOString(),changed?'Le fichier a changé pendant le traitement.':'Date de modification du fichier observée.','disque');
+            }
+          } catch { /* Fichier disparu ou lien symbolique : aucun fait de disque fabriqué. */ }
+        }
+        const reply=responses.filter(response=>['terminée','interrompue'].includes(response?.state)&&
+          Date.parse(response.startedAt)>=sent&&Date.parse(response.endedAt)>=Date.parse(response.startedAt)&&
+          Date.parse(response.endedAt)<=observedMs&&Date.parse(response.endedAt)<next)
+          .sort((a,b)=>Date.parse(a.endedAt)-Date.parse(b.endedAt))[0];
+        if(reply) fact(reply.endedAt,'Une réponse de l’agent '+(reply.state==='terminée'?'s’est terminée':'a été interrompue')+' après l’envoi ; lien avec ce fichier non établi.','journal');
+        faits.sort((a,b)=>a.at.localeCompare(b.at));
+        dossiers.push({id:empreinte(`${item.itemId}\0${index}`).slice(0,16),fichierConfie:name,cible:agent.id,faits});
+      }
+    }
+    return {dossiers};
   }
   const server=createServer(async(req,res)=> {
     const port=server.address()?.port;
@@ -296,6 +350,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           const lu=await reponsesDe(agent,agents);
           return json(200,{supported:true,found:lu.found===true,complete:lu.complete===true,responses:Array.isArray(lu.responses)?lu.responses:[]});
         } catch(error) {return json(errorStatus(error),{error:'Impossible de lire les réponses pour le moment.'});}
+      }
+      if(req.method==='GET'&&url.pathname==='/api/traitement') {
+        if(!guard(req,{body:false})) return;
+        try {
+          const agents=await bridge.list(),agent=agents.find(item=>item.id===url.searchParams.get('id'));
+          if(!agent) return json(400,{error:'Agent introuvable.'});
+          return json(200,await traitementsDe(agent,agents));
+        } catch(error) {return json(errorStatus(error),{error:'Impossible de lire le suivi des fichiers pour le moment.'});}
       }
       // Fil de la salle de contrôle : dernières réponses de tous les agents lisibles, extraits courts, du plus récent au plus ancien.
       // Jamais les messages inter-agents chiffrés ni ce que « pense » un agent : seulement des textes déjà masqués par les lecteurs.

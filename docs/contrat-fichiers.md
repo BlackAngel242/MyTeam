@@ -47,3 +47,26 @@ Aucune suppression, aucun écrasement, aucun dossier copié pour le moment, aucu
 La copie a lieu au départ effectif, après les contrôles de disponibilité et de quota, vers la racine actuelle de l'agent. Les racines autorisées sont relues à cet instant. `transfer` copie sans écrasement et ajoute un suffixe si nécessaire, par exemple `rapport (2).txt`. `copiedFiles` contient uniquement les noms effectivement copiés. Ils sont ajoutés à la consigne transmise, sous la mention « Fichiers copiés dans ton dossier de travail », comme des noms entre guillemets. Cela ne prouve aucune lecture du fichier par l'agent.
 
 Avant toute copie, l'état `envoi_en_cours` est enregistré sur disque. Avant l'envoi, les noms copiés sont enregistrés, puis le quota, la disponibilité et l'identité de la cible sont revérifiés. Une copie impossible, un fichier trop grand, une cible modifiée ou un envoi non confirmé donne `state:'a_revoir'`, avec `reason` lisible. Aucun envoi ne suit une copie en échec et aucun nouvel essai automatique n'est fait. Les copies déjà réalisées restent sur disque et dans `copiedFiles` ; aucun fichier n'est supprimé pour annuler une copie partielle. Un redémarrage pendant la copie ou l'envoi restaure également « à revoir ».
+
+## E6 : suivi d'un fichier confié
+
+**Réponse exacte de `GET /api/traitement?id=<agent>` (HTTP 200)** :
+
+```js
+{
+  dossiers: [{
+    id,                  // clé publique opaque, stable pour la pièce jointe
+    fichierConfie,       // nom seul, suffixe de copie compris
+    cible,               // identifiant public de l'agent Herdr
+    faits: [{ at, fait, source }]
+  }]
+}
+```
+
+`at` est une date ISO ; `source` vaut `file`, `disque`, `herdr` ou `journal`. Les faits sont triés de la date la plus ancienne à la plus récente. La route exige le jeton et la même preuve de provenance que les autres lectures protégées. Agent inconnu ou absent : HTTP 400. Aucun fichier joint dans l'historique conservé : `{dossiers:[]}`. Au plus 40 dossiers, correspondant aux deux pièces jointes des 20 éléments conservés dans la file. Aucun contenu de consigne, de réponse ou de fichier, aucun chemin ni identifiant de session ne sort.
+
+Un dossier regroupe les faits disponibles : mise en file et envoi à Herdr (`file`), copie enregistrée (`file`), état actuel observé de l'agent (`herdr`), date de modification du fichier (`disque`). Une date de modification postérieure à l'envoi, sans être future au moment de la lecture, donne « Le fichier a changé pendant le traitement. ». Aucun auteur de cette modification n'est affirmé.
+
+L'heure de copie et une empreinte du dossier de destination sont désormais conservées en interne dans la file et restaurées au redémarrage. L'empreinte ne sort pas dans les réponses publiques. Si le dossier de l'agent a changé, aucun fichier homonyme n'est inspecté. Pour les anciennes copies sans ces observations, le suivi indique « Copie constatée dans la file ; heure de copie non conservée. » à l'heure de consultation et ne fabrique aucun fait du disque. Un fichier disparu, un lien symbolique ou un journal indisponible laisse les autres faits consultables.
+
+Une réponse terminée ou interrompue peut ajouter un fait `journal` si son début et sa fin ne précèdent pas l'envoi, et sa fin reste antérieure à l'envoi suivant à cet agent. Le texte précise toujours « lien avec ce fichier non établi ». Cette observation ne prouve ni lecture du fichier, ni réussite, ni traitement achevé. La route n'envoie rien et ne modifie aucun fichier.

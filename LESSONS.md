@@ -18,6 +18,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Serveur et données
 
+- Une fonction passée à `map` reçoit l'index en deuxième argument : une option de confidentialité placée là peut exposer les métadonnées dès le second élément. Garder la projection publique à un seul argument et demander la lecture interne explicitement.
 - Filtrer le schéma local avant de l'afficher : sa sortie complète est volumineuse.
 - Ne pas convertir séparément chaque morceau d'une requête réseau : conserver les octets jusqu'à la fin pour préserver les accents et emojis.
 - Activité Claude : chemin et état partagent un cache de 32 sessions. Une ligne de plus de 4 Mo est sautée jusqu'au prochain retour à la ligne. La déduplication conserve au maximum 50 000 identifiants et un budget d'état de 4 Mo ; au-delà, la session est mémorisée comme épuisée et l'activité n'est plus exposée plutôt que de donner des totaux approximatifs. Les sondages suivants ne relisent rien, même si le fichier grandit. Une troncature ou un remplacement du fichier permet une nouvelle lecture. Les erreurs de flux sont également mémorisées pour éviter les boucles.
