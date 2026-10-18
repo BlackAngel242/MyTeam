@@ -59,6 +59,8 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Installeurs
 
+- Une étape initialisée comme ignorée doit passer à « réussi » quand le contrôle confirme que le prérequis existe déjà, même en simulation. Son résumé décrit le fait observé (version, présence, nombre créé), jamais une simple « étape terminée » ; un refus reste ignoré et une erreur reste en échec.
+
 - Bash : un état modifié dans `(cd ... && executer ...)` reste dans le sous-shell. Remonter aussi son code de retour au parent, sinon l'interface peut afficher une réussite après l'échec des tests. Vérifier `@@DONE fail` et `@@END fail` avec une commande factice en échec.
 - Une entrée fermée ne doit pas seulement refuser la question en cours : mémoriser aussi sa fermeture pour ignorer les écritures de configuration qui suivent, sans demander de confirmation. Tester que le profil existant reste intact après EOF.
 

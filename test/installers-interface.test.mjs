@@ -50,16 +50,20 @@ async function run(t,platform,options={}) {
       if($Name -eq 'winget'){return @{Source='FakeWinget'}}
       if($Name -eq 'herdr'){return @{Source=${literal(join(path,'herdr.exe'))}}}
       if($Name -eq 'code'){return @{Source='FakeCode'}}
+      if($Name -eq 'node' -and ${options.present?'$true':'$false'}){return @{Source='FakeNode'}}
+      if($Name -in @('claude','codex','opencode','gemini') -and ${options.present?'$true':'$false'}){return @{Source='FakeTool'}}
     }
+    function node {return 'v24.22.0'}
     function FakeWinget {throw 'winget exécuté pendant la simulation'}
     & ${literal(join(path,'scripts/installer.ps1'))} -DryRun -Lang ${options.lang??'fr'} -Port 4317 ${options.classic?'':'-Interface'} ${options.yes?'-Oui':''} -HerdrChemin ${literal(join(path,options.badHerdr?'scripts/installer.ps1':'herdr.exe'))}
     exit $LASTEXITCODE`);
     return {...await dialogue(t,ps,['-NoProfile','-File',script],options),path};
   }
   await writeFile(script,`command() {
-    if [ "$1" = -v ];then case "$2" in herdr) printf '%s\\n' '${path.replaceAll('\\','/')}/herdr';return 0;;code) printf 'fake_code\\n';return 0;;*)return 1;;esac;fi
+    if [ "$1" = -v ];then case "$2" in herdr) printf '%s\\n' '${path.replaceAll('\\','/')}/herdr';return 0;;code) printf 'fake_code\\n';return 0;;node|claude|codex|opencode|gemini) [ '${options.present?'1':'0'}' = 1 ];return $?;;*)return 1;;esac;fi
     builtin command "$@"
   }
+  node(){ printf 'v24.22.0\\n'; }
   . '${join(path,'scripts/installer.sh').replaceAll('\\','/')}' --dry-run --lang ${options.lang??'fr'} --port 4317 ${options.classic?'':'--interface'} ${options.yes?'--oui':''} --herdr-chemin '${path.replaceAll('\\','/')}/herdr'
   `);
   return {...await dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options),path};
@@ -94,7 +98,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     checkProtocol(result,platform==='ps');
     assert.ok(result.records.some(x=>/^@@CONFIRM .*Install .*\?/.test(x)));
     assert.ok(result.records.some(x=>x.startsWith('@@PLAN tests\tChecks')));
-    assert.ok(!result.records.some(x=>/^@@DONE [a-z]+\tok\t/.test(x)),'aucun succès inventé en simulation');
+    assert.deepEqual(result.records.filter(x=>/^@@DONE [a-z]+\tok\t/.test(x)).map(x=>x.split(' ')[1].split('\t')[0]),['herdr'],'seul le prérequis réellement présent est satisfait');
   });
   test(`J1 ${platform} : sans drapeau, aucune ligne du protocole`,async t=>{
     const result=await run(t,platform,{classic:true,eof:true});
@@ -113,6 +117,7 @@ async function functions(t,platform,names,body,options={}) {
   const path=await fixture(t),script=join(path,'isolated.'+(platform==='ps'?'ps1':'sh'));
   if(platform==='ps') {
     await writeFile(script,`\ufeff$ErrorActionPreference='Stop'
+    [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
     $ast=[System.Management.Automation.Language.Parser]::ParseFile(${literal(join(root,'scripts/installer.ps1'))},[ref]$null,[ref]$null)
     foreach($name in @(${names.map(literal).join(',')})) {
       $f=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true)
@@ -149,7 +154,10 @@ if(process.platform==='win32') {
     assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
     if(['ok','fail'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
     else assert.doesNotMatch(data.output,/CALL:/);
-    assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+(['ok','fail'].includes(result)?result:'skip')+'\t')));
+    const expected=result==='present'?'ok':['ok','fail'].includes(result)?result:'skip';
+    assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+expected+'\t')));
+    if(result==='present')assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
+    if(result==='refus')assert.ok(data.records.includes('@@DONE clink\tskip\tRefusé.'));
     if(result==='refus')assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   });
 }
@@ -181,6 +189,20 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J
   assert.doesNotMatch(data.records.join('\n'),/\/home\/exemple|sk-x{24}/);
 });
 
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 retouche ${platform} : prérequis présents réussis et résumés factuels dans les deux langues`,async t=>{
+  for(const lang of ['fr','en']) {
+    const result=await run(t,platform,{present:true,eof:true,lang});
+    checkProtocol(result,platform==='ps');
+    assert.ok(result.records.includes('@@DONE node\tok\tVersion 24.'));
+    assert.ok(result.records.includes('@@DONE herdr\tok\t'+(lang==='fr'?'Déjà présent.':'Already available.')));
+    assert.ok(result.records.includes('@@DONE outils\tok\t'+(lang==='fr'?'Outils disponibles : 4.':'Available tools: 4.')));
+    assert.ok(result.records.includes('@@PLAN node\t'+(lang==='fr'?'Node.js 22 ou plus':'Node.js 22 or later')));
+    assert.ok(result.records.includes('@@PLAN panneaux\t'+(lang==='fr'?'Espace Herdr en grille 2×2':'Herdr workspace in a 2×2 grid')));
+    assert.ok(result.records.includes('@@PLAN config\t'+(lang==='fr'?'Configuration et raccourci':'Configuration and shortcut')));
+    assert.ok(result.records.filter(x=>x.startsWith('@@DONE ')).every(x=>!x.includes('Étape terminée')&&!x.includes('Step finished')));
+  }
+});
+
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : choix d’un outil et confirmation avant l’appel au faux Herdr`,async t=>{
   const body=platform==='ps'?`
     $Interface=$true;$Lang='fr';$Oui=$false;$DryRun=$false;$script:questionNumero=0;$script:interfaceFinie=$false;$script:echecInterface=$false;$script:rapport=@()
@@ -190,13 +212,14 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J
     }
     function FakeHerdr { [Console]::WriteLine('CALL:'+($args -join '|'));$global:LASTEXITCODE=0;return '{"result":{}}' }
     $herdrTrouve='FakeHerdr'
-    Etape panneaux;Proposer-Agents @('w9:p1');Terminer-Interface
+    Etape panneaux;Proposer-Agents @('w9:p1','w9:p2');Terminer-Interface
     `:`
     INTERFACE=1;LANGUE=fr;OUI=0;DRY_RUN=0;QUESTION_NUMERO=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0
     command(){ if [ "$1" = -v ];then [ "$2" = codex ];return $?;fi;builtin command "$@"; }
-    fake_herdr(){ CALLED="$*";printf '{"result":{}}'; }
+    fake_herdr(){ CALLED="$CALLED$*|";printf '{"result":{}}'; }
     HERDR_TROUVE=fake_herdr
-    etape panneaux;proposer_agents 'w9:p1';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
+    etape panneaux;proposer_agents 'w9:p1
+w9:p2';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
     `;
   const names=platform==='ps'?[...psFunctions,'Choisir','Detecter-Outils','Proposer-Agents','Appeler-Herdr','Noter']:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','choisir','dire','simuler','noter','confirmer','detecter_outils','proposer_agents'];
   const data=await functions(t,platform,names,body,{answer:line=>line.startsWith('@@CHOICE')?'2':'o'});
@@ -205,6 +228,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J
   assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
   assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));
+  assert.ok(data.records.includes('@@DONE panneaux\tok\tOutils lancés : 2.'));
 });
 
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : entrée fermée, aucune configuration écrite ensuite`,async t=>{

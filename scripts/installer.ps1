@@ -104,14 +104,20 @@ function Emettre-Interface([string]$type, [string[]]$champs) {
   $propres = @($champs | ForEach-Object { Champ-Interface $_ })
   [Console]::WriteLine('@@' + $type + ' ' + ($propres -join "`t"))
 }
-function Etat-Etape([string]$etat) {
+function Etat-Etape([string]$etat, [string]$texte = '') {
   if (-not $Interface) { return }
-  if ($etat -eq 'fail') { $script:etatEtape = 'fail'; $script:echecInterface = $true }
-  elseif ($etat -eq 'ok' -and $script:etatEtape -ne 'fail') { $script:etatEtape = 'ok' }
+  if ($etat -eq 'fail') { $script:echecInterface = $true }
+  $rangs = @{ skip = 0; ok = 1; fail = 2 }
+  if ($rangs[$etat] -lt $rangs[$script:etatEtape]) { return }
+  if (-not $texte -and $etat -ne $script:etatEtape) {
+    $texte = switch ($etat) { 'ok' { Texte 'Effectué.' 'Done.' }; 'fail' { Texte 'Erreur.' 'Error.' } }
+  }
+  $script:etatEtape = $etat
+  if ($texte) { $script:texteEtape = $texte }
 }
 function Fin-Etape {
   if ($Interface -and $script:etape) {
-    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,(Texte 'Étape terminée.' 'Step finished.'))
+    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,$script:texteEtape)
     $script:etape = ''
   }
 }
@@ -119,6 +125,8 @@ function Etape([string]$id) {
   if (-not $Interface) { return }
   Fin-Etape
   $script:etape = $id; $script:etatEtape = 'skip'
+  $script:texteEtape = Texte 'Non applicable.' 'Not applicable.'
+  $script:totalEtape = 0
   Emettre-Interface 'STEP' @($id)
 }
 function Terminer-Interface {
@@ -150,14 +158,16 @@ function Dire([string]$texte) {
   if ($Interface) { Emettre-Interface 'INFO' @($texte) } else { Write-Host $texte }
 }
 function Simuler([string]$texte) {
-  if ($Interface) { Dire "[simulation] $texte" } else { Write-Host "[simulation] $texte" -ForegroundColor Yellow }
+  if ($Interface) { Etat-Etape 'skip' (Texte 'Simulation.' 'Preview.'); Dire "[simulation] $texte" } else { Write-Host "[simulation] $texte" -ForegroundColor Yellow }
 }
 function Noter([string]$texte) { $script:rapport += $texte }
 
 function Confirmer([string]$question, [switch]$Individuel) {
   if ($Interface) {
     $saisie = Lire-Interface 'CONFIRM' $question @()
-    return $null -ne $saisie -and $saisie.Trim().ToLowerInvariant() -eq 'o'
+    $accord = $null -ne $saisie -and $saisie.Trim().ToLowerInvariant() -eq 'o'
+    if (-not $accord) { Etat-Etape 'skip' (Texte 'Refusé.' 'Declined.') }
+    return $accord
   }
   if ($DryRun) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
   if ($Oui -and -not $Individuel) { Dire (Texte "$question o/n : o (accepte automatiquement)" "$question y/n : y (automatic)"); return $true }
@@ -172,15 +182,22 @@ function Confirmer([string]$question, [switch]$Individuel) {
 }
 
 function Executer([string]$description, [scriptblock]$action) {
-  if ($Interface -and $script:entreeFermee) { Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
+  if ($Interface -and $script:entreeFermee) { Etat-Etape 'skip' (Texte 'Entrée fermée.' 'Input closed.'); Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
   if ($Interface) { $global:LASTEXITCODE = 0 }
   try {
     & $action
     if ($Interface -and $LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
-    if ($Interface) { Etat-Etape 'ok' }
-  } catch { if ($Interface) { Etat-Etape 'fail' }; throw }
+    if ($Interface) {
+      $fait = switch ($script:etape) {
+        'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
+        'tests' { Texte 'Vérifications réussies.' 'Checks passed.' }
+        default { Texte 'Installation confirmée.' 'Installation confirmed.' }
+      }
+      Etat-Etape 'ok' $fait
+    }
+  } catch { if ($Interface) { Etat-Etape 'fail' (Texte 'Commande en échec.' 'Command failed.') }; throw }
   return $true
 }
 
@@ -200,11 +217,11 @@ function Rafraichir-Path {
 
 if ($Interface) {
   $plans = @(
-    @('node','Node.js','Node.js'), @('clink','Confort du terminal','Terminal comfort'),
-    @('herdr','Terminaux','Terminals'), @('panneaux','Quatre panneaux','Four panes'),
-    @('outils','Outils disponibles','Available tools'), @('chef','Commandes du chef','Chief commands'),
-    @('extensions','Extensions','Extensions'), @('config','Configuration','Configuration'),
-    @('kit',"Kit d'équipe",'Team kit'), @('tests','Vérifications','Checks')
+    @('node','Node.js 22 ou plus','Node.js 22 or later'), @('clink','Clink (confort de cmd)','Clink (cmd comfort)'),
+    @('herdr','Herdr','Herdr'), @('panneaux','Espace Herdr en grille 2×2','Herdr workspace in a 2×2 grid'),
+    @('outils',"Outils d'IA",'AI tools'), @('chef','Commandes du chef','Chief commands'),
+    @('extensions','Extensions','Extensions'), @('config','Configuration et raccourci','Configuration and shortcut'),
+    @('kit',"Kit d'équipe",'Team kit'), @('tests','Vérification','Checks')
   )
   foreach ($plan in $plans) { Emettre-Interface 'PLAN' @($plan[0],(Texte $plan[1] $plan[2])) }
 }
@@ -220,6 +237,7 @@ Etape 'node'
 Dire (Texte '--- 1. Node.js (version 22 ou plus) ---' '--- 1. Node.js (version 22 or later) ---')
 $majeur = Lire-VersionNode
 if ($null -ne $majeur -and $majeur -ge 22) {
+  Etat-Etape 'ok' "Version $majeur."
   Dire (Texte "Node.js est deja present (version majeure $majeur). Rien a faire." "Node.js is already available (major version $majeur). No action needed.")
   Noter (Texte 'Node.js : deja present.' 'Node.js: already available.')
 } else {
@@ -249,15 +267,20 @@ if ($null -ne $majeur -and $majeur -ge 22) {
 $nodeOk = $false
 $majeur = Lire-VersionNode
 if ($DryRun) { $nodeOk = $true } elseif ($null -ne $majeur -and $majeur -ge 22) { $nodeOk = $true }
+if ($Interface -and $script:etatEtape -eq 'ok') {
+  if ($null -ne $majeur -and $majeur -ge 22) { Etat-Etape 'ok' "Version $majeur." }
+  else { Etat-Etape 'fail' (Texte 'Version 22 ou plus non confirmée.' 'Version 22 or later not confirmed.') }
+}
 Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
 function Proposer-Clink {
   if (@(Get-Command clink -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) {
+    Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
     Dire (Texte 'Clink est déjà présent.' 'Clink is already available.'); return
   }
   $wingetClink = @(Get-Command winget -CommandType Application -ErrorAction SilentlyContinue)[0]
-  if (-not $wingetClink) { Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
+  if (-not $wingetClink) { Etat-Etape 'skip' (Texte 'Winget absent.' 'Winget missing.'); Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
   Dire (Texte 'Clink ajoute couleurs, complétion et historique à cmd.exe.' 'Clink adds colors, completion and history to cmd.exe.')
   if (Confirmer (Texte 'Installer Clink ?' 'Install Clink?') -Individuel) {
     try {
@@ -293,6 +316,7 @@ function Chercher-Herdr {
 }
 $herdrTrouve = Chercher-Herdr
 if ($herdrTrouve) {
+  Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
   Dire (Texte "Herdr est present : $herdrTrouve" "Herdr is available: $herdrTrouve")
   Noter (Texte 'Herdr : deja present.' 'Herdr: already available.')
   $dansPath = [bool](Get-Command herdr -ErrorAction SilentlyContinue)
@@ -339,7 +363,15 @@ Dire ''
 function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   $texte = & $herdrTrouve @Arguments
   if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
-  if ($Interface -and $Arguments[1] -in @('create','split','rename','start','prompt','install')) { Etat-Etape 'ok' }
+  if ($Interface -and $Arguments[1] -in @('create','split','rename','start','prompt','install')) {
+    $fait = switch ($Arguments[1]) {
+      'install' { Texte 'Intégration installée.' 'Integration installed.' }
+      'prompt' { Texte 'Orientation envoyée.' 'Orientation sent.' }
+      'start' { Texte 'Lancement confirmé.' 'Launch confirmed.' }
+      default { Texte 'Panneaux préparés.' 'Panes prepared.' }
+    }
+    Etat-Etape 'ok' $fait
+  }
   if ($SansJson) { return $texte }
   $resultat = ($texte -join "`n") | ConvertFrom-Json
   if ($resultat.error) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
@@ -407,6 +439,7 @@ function Proposer-Agents([string[]]$Panneaux) {
       try {
         Appeler-Herdr @('agent','start',$noms[$i],'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
         if (-not $script:chefPane) { $script:chefPane=$Panneaux[$i]; $script:chefOutil=$type }
+        if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils lancés : $($script:totalEtape)." "Tools started: $($script:totalEtape).") }
         Noter (Texte "$type : lancement confirme par Herdr." "${type}: launch confirmed by Herdr.")
       } catch { Dire (Texte "Le lancement de $type n’a pas ete confirme. Consultez le panneau avant de reessayer." "Launch of $type was not confirmed. Check the pane before trying again.") }
     }
@@ -434,6 +467,7 @@ if ($herdrTrouve) {
         $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
         Dire (Texte "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))." "Panes created and named: $($noms -join ', ') (identifiers $($ids[0..3] -join ', ')).")
         Noter (Texte 'Panneaux Herdr : 4 panneaux crees et nommes.' 'Herdr panes: 4 panes created and named.')
+        Etat-Etape 'ok' (Texte '4 panneaux créés.' '4 panes created.')
         Proposer-Agents $ids
       } catch {
         if ($Interface) { Etat-Etape 'fail' }
@@ -455,13 +489,14 @@ if ($herdrTrouve) {
 } else {
   Dire (Texte 'Herdr absent : l''espace de panneaux est ignore. Installez Herdr puis relancez ce script.' 'Herdr is missing: workspace skipped. Install Herdr and run this script again.')
   Noter (Texte 'Panneaux Herdr : ignores (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
+  Etat-Etape 'skip' (Texte 'Herdr absent.' 'Herdr missing.')
 }
 Dire ''
 
 function Installer-CompetenceChef([string]$DossierPersonnel) {
   $dossier = Join-Path $DossierPersonnel '.claude/skills/herdr'
   $cible = Join-Path $dossier 'SKILL.md'
-  if (Test-Path -LiteralPath $cible) { Dire (Texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.'); return }
+  if (Test-Path -LiteralPath $cible) { if ($Interface) { Etat-Etape 'ok' (Texte 'Compétence déjà présente.' 'Skill already available.') }; Dire (Texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.'); return }
   $parent = $dossier
   while ($parent) {
     $item = Get-Item -LiteralPath $parent -Force -ErrorAction SilentlyContinue
@@ -475,11 +510,11 @@ function Installer-CompetenceChef([string]$DossierPersonnel) {
   [void][IO.Directory]::CreateDirectory($dossier)
   $flux = [IO.File]::Open($cible, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
   try { $octets = [Text.Encoding]::UTF8.GetBytes($contenu); $flux.Write($octets,0,$octets.Length) } finally { $flux.Dispose() }
-  if ($Interface) { Etat-Etape 'ok' }
+  if ($Interface) { Etat-Etape 'ok' (Texte 'Compétence ajoutée.' 'Skill added.') }
 }
 
 function Proposer-Chef([string]$DossierPersonnel = $HOME) {
-  if ($Oui -or -not $herdrTrouve) { return }
+  if ($Oui -or -not $herdrTrouve) { if ($Interface) { Etat-Etape 'skip' (Texte 'Non applicable dans ce mode.' 'Not applicable in this mode.') }; return }
   $integrations = @('pi','omp','claude','codex','copilot','devin','droid','kimi','opencode','kilo','hermes','qodercli','qwen','letta','cursor','mastracode','antigravity-cli','grok')
   foreach ($type in @(Detecter-Outils)) {
     $integration = if ($type -eq 'agy') { 'antigravity-cli' } else { $type }
@@ -492,7 +527,7 @@ function Proposer-Chef([string]$DossierPersonnel = $HOME) {
       }
     }
   }
-  if (-not $chefPane) { return }
+  if (-not $chefPane) { if ($Interface) { Etat-Etape 'skip' (Texte 'Aucun chef lancé.' 'No chief started.') }; return }
   if ($chefOutil -eq 'claude') {
     try { Installer-CompetenceChef $DossierPersonnel }
     catch { Dire (Texte 'Compétence non ajoutée : le fichier est conservé. CHEF.md du kit suffit.' 'Skill not added: existing files are kept. The kit CHEF.md is sufficient.') }
@@ -519,6 +554,7 @@ Dire ''
 function Proposer-Outil([string]$nom, [string]$commande, [string]$detection, [string]$installation, [string]$lien) {
   Dire "### $nom"
   if (Get-Command $detection -ErrorAction SilentlyContinue) {
+    if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils disponibles : $($script:totalEtape)." "Available tools: $($script:totalEtape).") }
     Dire (Texte "$nom est deja installe (commande '$detection')." "$nom is already installed (command $detection).")
     Noter (Texte "$nom : deja installe." "${nom}: already installed.")
     Dire ''
@@ -531,7 +567,10 @@ function Proposer-Outil([string]$nom, [string]$commande, [string]$detection, [st
       Executer (Texte "Installation de $nom." "Installing $nom..") ([scriptblock]::Create($installation)) | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
-        if (Get-Command $detection -ErrorAction SilentlyContinue) { Dire (Texte "$nom est installe." "$nom is installed."); Noter (Texte "$nom : installe." "${nom}: installed.") }
+        if (Get-Command $detection -ErrorAction SilentlyContinue) {
+          if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils disponibles : $($script:totalEtape)." "Available tools: $($script:totalEtape).") }
+          Dire (Texte "$nom est installe." "$nom is installed."); Noter (Texte "$nom : installe." "${nom}: installed.")
+        }
         else { Dire (Texte "$nom n'a pas ete detecte tout de suite. Ouvrez un nouveau terminal pour verifier." "$nom was not detected yet. Open a new terminal to check."); Noter (Texte "$nom : a verifier." "${nom}: check required.") }
       } else { Noter (Texte "$nom : simulation de l'installation." "${nom}: preview of installation.") }
     } catch {
@@ -578,6 +617,7 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
   )
   $vscode = Get-Command code -ErrorAction SilentlyContinue
   if (-not $vscode) {
+    Etat-Etape 'skip' (Texte 'VS Code absent.' 'VS Code missing.')
     Dire (Texte 'VS Code n''est pas detecte sur cet ordinateur : l''installation des extensions est ignoree.' 'VS Code was not detected: extension installation skipped.')
     Noter (Texte 'Extensions : ignorees (VS Code absent).' 'Extensions: skipped (VS Code missing).')
   } else {
@@ -585,6 +625,7 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
       if (Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel) {
         try {
           Executer (Texte "Installation de $($ext.id) avec code --install-extension." "Installing $($ext.id) with code --install-extension.") { & $vscode.Source --install-extension $ext.id }
+          if ($Interface -and -not $DryRun) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Extensions installées : $($script:totalEtape)." "Extensions installed: $($script:totalEtape).") }
           Noter (Texte "Extension $($ext.id) : installee." "Extension $($ext.id): installed.")
         } catch {
           Dire (Texte "L'installation de $($ext.id) a echoue : $($_.Exception.Message)" "Installation of $($ext.id) failed: $($_.Exception.Message)")
@@ -628,6 +669,7 @@ if ("$portActuel" -ne "$portChoisi") {
 } else {
   Dire (Texte "BUREAU_PORT deja enregistre ($portChoisi). Rien a faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
   Noter (Texte "BUREAU_PORT : deja a $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
+  Etat-Etape 'ok' (Texte "Port $portChoisi déjà enregistré." "Port $portChoisi already saved.")
 }
 
 if (-not $SansRaccourci) {
@@ -698,19 +740,19 @@ if (-not $SansRaccourci) {
 Dire ''
 
 function Proposer-Kit {
-  if ($Oui) { Dire (Texte 'Le mode -Oui ne crée aucun kit.' 'The -Oui option never creates a kit.'); return }
+  if ($Oui) { if ($Interface) { Etat-Etape 'skip' (Texte 'Ignoré avec -Oui.' 'Skipped with -Oui.') }; Dire (Texte 'Le mode -Oui ne crée aucun kit.' 'The -Oui option never creates a kit.'); return }
   $scriptKit = Join-Path $racine 'scripts/init-kit.mjs'
-  if (-not (Test-Path -LiteralPath $scriptKit -PathType Leaf)) { Dire (Texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.'); return }
+  if (-not (Test-Path -LiteralPath $scriptKit -PathType Leaf)) { if ($Interface) { Etat-Etape 'skip' (Texte 'Script du kit absent.' 'Kit script missing.') }; Dire (Texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.'); return }
   if (-not (Confirmer (Texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?') -Individuel)) { return }
   if ($DryRun -and -not $Interface) { Simuler (Texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.'); return }
   $dossier = Lire-Saisie (Texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')
-  if ([string]::IsNullOrWhiteSpace($dossier)) { return }
+  if ([string]::IsNullOrWhiteSpace($dossier)) { if ($Interface) { Etat-Etape 'skip' (Texte 'Aucun dossier choisi.' 'No folder selected.') }; return }
   if ($DryRun) { Simuler (Texte 'Initialisation du kit dans le dossier choisi.' 'Initialize the kit in the chosen folder.'); return }
   $dossier = [IO.Path]::GetFullPath($dossier)
   $nodeKit = @(Get-Command node -CommandType Application -ErrorAction Stop)[0]
   & $nodeKit.Source $scriptKit $dossier --lang $Lang
   if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; Dire (Texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.'); return }
-  if ($Interface) { Etat-Etape 'ok' }
+  if ($Interface) { Etat-Etape 'ok' (Texte 'Kit initialisé.' 'Kit initialized.') }
   Noter (Texte "Kit d'équipe : initialisé." 'Team kit: initialized.')
 }
 
@@ -720,6 +762,7 @@ Etape 'tests'
 # --- 7. Tests -----------------------------------------------------------
 Dire (Texte '--- 7. Tests du projet ---' '--- 7. Project tests ---')
 if (-not $nodeOk) {
+  Etat-Etape 'skip' (Texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')
   Dire (Texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
   Noter (Texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')
 } else {

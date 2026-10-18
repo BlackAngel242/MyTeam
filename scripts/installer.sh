@@ -77,20 +77,27 @@ emettre_interface() {
 
 etat_etape() {
   [ "${INTERFACE:-0}" = 1 ] || return 0
-  if [ "$1" = fail ]; then ETAT_ETAPE=fail;ECHEC_INTERFACE=1
-  elif [ "$1" = ok ] && [ "$ETAT_ETAPE" != fail ]; then ETAT_ETAPE=ok;fi
+  local message="${2:-}"
+  [ "$1" != fail ] || ECHEC_INTERFACE=1
+  case "$ETAT_ETAPE:$1" in fail:ok|fail:skip|ok:skip) return 0 ;; esac
+  if [ -z "$message" ] && [ "$ETAT_ETAPE" != "$1" ]; then
+    case "$1" in ok) message=$(texte 'Effectué.' 'Done.');;fail) message=$(texte 'Erreur.' 'Error.');;esac
+  fi
+  ETAT_ETAPE="$1"
+  [ -z "$message" ] || TEXTE_ETAPE="$message"
+  return 0
 }
 
 fin_etape() {
   if [ "${INTERFACE:-0}" = 1 ] && [ -n "${ETAPE:-}" ]; then
-    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$(texte 'Étape terminée.' 'Step finished.')"
+    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$TEXTE_ETAPE"
     ETAPE=''
   fi
 }
 
 etape() {
   [ "${INTERFACE:-0}" = 1 ] || return 0
-  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;emettre_interface STEP "$ETAPE"
+  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;TEXTE_ETAPE=$(texte 'Non applicable.' 'Not applicable.');TOTAL_ETAPE=0;emettre_interface STEP "$ETAPE"
 }
 
 terminer_interface() {
@@ -127,15 +134,15 @@ dire() {
   if [ "${INTERFACE:-0}" = 1 ];then emettre_interface INFO "$1";else echo "$1";fi
 }
 simuler() {
-  if [ "${INTERFACE:-0}" = 1 ];then dire "[simulation] $1";else echo "[simulation] $1";fi
+  if [ "${INTERFACE:-0}" = 1 ];then etat_etape skip "$(texte Simulation. Preview.)";dire "[simulation] $1";else echo "[simulation] $1";fi
 }
 noter() { RAPPORT="$RAPPORT
  - $1"; }
 
 confirmer() {
   if [ "${INTERFACE:-0}" = 1 ]; then
-    lire_interface CONFIRM "$1" || return 1
-    [ "$REPONSE_INTERFACE" = o ];return $?
+    if lire_interface CONFIRM "$1" && [ "$REPONSE_INTERFACE" = o ];then return 0;fi
+    etat_etape skip "$(texte Refusé. Declined.)";return 1
   fi
   if [ "$DRY_RUN" = "1" ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
   if [ "$OUI" = "1" ] && [ "${2:-}" != "individuel" ]; then dire "$(texte "$1 o/n : o (accepte automatiquement)" "$1 y/n : y (automatic)")"; return 0; fi
@@ -153,12 +160,14 @@ confirmer() {
 }
 
 executer() {
-  if [ "${INTERFACE:-0}" = 1 ] && [ "${ENTREE_FERMEE:-0}" = 1 ];then dire "$(texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.')";return 0;fi
+  if [ "${INTERFACE:-0}" = 1 ] && [ "${ENTREE_FERMEE:-0}" = 1 ];then etat_etape skip "$(texte 'Entrée fermée.' 'Input closed.')";dire "$(texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.')";return 0;fi
   if [ "$DRY_RUN" = "1" ]; then simuler "$1"; return 0; fi
   dire "$1"
   shift
   if [ "${INTERFACE:-0}" != 1 ];then "$@";return $?;fi
-  if "$@";then etat_etape ok;else etat_etape fail;return 1;fi
+  if "$@";then
+    case "$ETAPE" in config) etat_etape ok "$(texte 'Configuration enregistrée.' 'Configuration saved.')";;tests) etat_etape ok "$(texte 'Vérifications réussies.' 'Checks passed.')";;*) etat_etape ok "$(texte 'Installation confirmée.' 'Installation confirmed.')";;esac
+  else etat_etape fail "$(texte 'Commande en échec.' 'Command failed.')";return 1;fi
 }
 
 # Les valeurs deviennent des donnees, jamais du code shell reinterprete.
@@ -198,7 +207,7 @@ ecrire_lanceur() {
     fi
   } > "$fichier" || return 1
   chmod +x "$fichier" || return 1
-  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok "$(texte 'Raccourci créé.' 'Shortcut created.')"
 }
 
 ecrire_desktop() {
@@ -207,7 +216,7 @@ ecrire_desktop() {
   printf '[Desktop Entry]\nType=Application\nName=Ouvrir le bureau\nExec=%s\nTerminal=%s\nCategories=Utility;\n' \
     "$argument" "$terminal" > "$fichier" || return 1
   chmod +x "$fichier" || return 1
-  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok "$(texte 'Raccourci créé.' 'Shortcut created.')"
 }
 
 installer_node() {
@@ -261,9 +270,9 @@ if [ "$INTERFACE" = 1 ]; then
   QUESTION_NUMERO=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0;ENTREE_FERMEE=0
   for id in node herdr panneaux outils chef extensions config kit tests; do
     case "$id" in
-      node) libelle=Node.js;;herdr) libelle=$(texte Terminaux Terminals);;panneaux) libelle=$(texte 'Quatre panneaux' 'Four panes');;
-      outils) libelle=$(texte 'Outils disponibles' 'Available tools');;chef) libelle=$(texte 'Commandes du chef' 'Chief commands');;
-      extensions) libelle=Extensions;;config) libelle=Configuration;;kit) libelle=$(texte "Kit d'équipe" 'Team kit');;tests) libelle=$(texte Vérifications Checks);;
+      node) libelle=$(texte 'Node.js 22 ou plus' 'Node.js 22 or later');;herdr) libelle=Herdr;;panneaux) libelle=$(texte 'Espace Herdr en grille 2×2' 'Herdr workspace in a 2×2 grid');;
+      outils) libelle=$(texte "Outils d'IA" 'AI tools');;chef) libelle=$(texte 'Commandes du chef' 'Chief commands');;
+      extensions) libelle=Extensions;;config) libelle=$(texte 'Configuration et raccourci' 'Configuration and shortcut');;kit) libelle=$(texte "Kit d'équipe" 'Team kit');;tests) libelle=$(texte Vérification Checks);;
     esac
     emettre_interface PLAN "$id" "$libelle"
   done
@@ -279,6 +288,7 @@ etape node
 dire "$(texte '--- 1. Node.js (version 22 ou plus) ---' '--- 1. Node.js (version 22 or later) ---')"
 MAJEURE=$(version_node_majeure || true)
 if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then
+  etat_etape ok "Version $MAJEURE."
   dire "$(texte "Node.js est deja present (version majeure $MAJEURE). Rien a faire." "Node.js is already available (major version $MAJEURE). No action needed.")"
   noter "$(texte 'Node.js : deja present.' 'Node.js: already available.')"
 else
@@ -311,6 +321,10 @@ else
   MAJEURE=$(version_node_majeure || true)
   if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then NODE_OK=1; fi
 fi
+if [ "$INTERFACE" = 1 ] && [ "$ETAT_ETAPE" = ok ];then
+  if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ];then etat_etape ok "Version $MAJEURE."
+  else etat_etape fail "$(texte 'Version 22 ou plus non confirmée.' 'Version 22 or later not confirmed.')";fi
+fi
 dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
@@ -331,6 +345,7 @@ chercher_herdr() {
 }
 HERDR_TROUVE=$(chercher_herdr || true)
 if [ -n "$HERDR_TROUVE" ]; then
+  etat_etape ok "$(texte 'Déjà présent.' 'Already available.')"
   dire "$(texte "Herdr est present : $HERDR_TROUVE" "Herdr is available: $HERDR_TROUVE")"
   noter "$(texte 'Herdr : deja present.' 'Herdr: already available.')"
   if ! command -v herdr >/dev/null 2>&1; then
@@ -439,6 +454,7 @@ proposer_agents() {
         if "$HERDR_TROUVE" agent start "${noms[$i]}" --kind "$type" --pane "$pane" >/dev/null; then
           [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
           if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
+          if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils lancés : $TOTAL_ETAPE." "Tools started: $TOTAL_ETAPE.")";fi
           noter "$(texte "$type : lancement confirmé par Herdr." "$type: launch confirmed by Herdr.")"
         else [ "${INTERFACE:-0}" != 1 ] || etat_etape fail;dire "$(texte "Le lancement de $type n’a pas été confirmé. Consultez le panneau avant de réessayer." "Launch of $type was not confirmed. Check the pane before trying again.")"; fi
       fi
@@ -465,7 +481,7 @@ if [ -n "$HERDR_TROUVE" ]; then
       panneaux_ok=0
       ids=$(creer_grille_herdr) && panneaux_ok=1
       if [ "$panneaux_ok" = "1" ]; then
-        [ "$INTERFACE" != 1 ] || etat_etape ok
+        [ "$INTERFACE" != 1 ] || etat_etape ok "$(texte '4 panneaux créés.' '4 panes created.')"
         dire "$(texte 'Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4.' 'Panes created and named: Chef, Agent 2, Agent 3, Agent 4.')"
         noter "$(texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')"
         proposer_agents "$ids"
@@ -492,12 +508,13 @@ if [ -n "$HERDR_TROUVE" ]; then
 else
   dire "$(texte "Herdr absent : l'espace de panneaux est ignoré. Installez Herdr puis relancez ce script." "Herdr is missing: workspace skipped. Install Herdr and run this script again.")"
   noter "$(texte 'Panneaux Herdr : ignorés (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')"
+  etat_etape skip "$(texte 'Herdr absent.' 'Herdr missing.')"
 fi
 dire ''
 
 installer_competence_chef() {
   local dossier="$1/.claude/skills/herdr" cible="$1/.claude/skills/herdr/SKILL.md" parent contenu
-  if [ -e "$cible" ] || [ -L "$cible" ]; then dire "$(texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.')"; return 0; fi
+  if [ -e "$cible" ] || [ -L "$cible" ]; then etat_etape ok "$(texte 'Compétence déjà présente.' 'Skill already available.')";dire "$(texte 'Compétence déjà présente : conservée.' 'Skill already exists: kept.')"; return 0; fi
   parent="$dossier"
   while [ "$parent" != / ] && [ -n "$parent" ]; do
     [ ! -L "$parent" ] || return 1
@@ -509,12 +526,12 @@ installer_competence_chef() {
   [ -n "$contenu" ] && [ "${#contenu}" -le 524288 ] || return 1
   mkdir -p "$dossier" || return 1
   (set -C; printf '%s' "$contenu" > "$cible") || return 1
-  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok "$(texte 'Compétence ajoutée.' 'Skill added.')"
 }
 
 proposer_chef() {
-  [ "$OUI" = 1 ] && return 0
-  [ -n "$HERDR_TROUVE" ] || return 0
+  [ "$OUI" = 1 ] && { etat_etape skip "$(texte 'Ignoré avec --oui.' 'Skipped with --oui.')";return 0; }
+  [ -n "$HERDR_TROUVE" ] || { etat_etape skip "$(texte 'Herdr absent.' 'Herdr missing.')";return 0; }
   local personnel="${1:-$HOME}" outils=() liste type integration orientation
   liste=$(detecter_outils)
   if [ -n "$liste" ]; then while read -r type; do outils+=("$type"); done <<< "$liste"; fi
@@ -523,11 +540,11 @@ proposer_chef() {
     case "$integration" in pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|qwen|letta|cursor|mastracode|antigravity-cli|grok) ;; *) continue ;; esac
     if confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then
       if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
-      elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok
+      elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
       else etat_etape fail;dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
     fi
   done
-  [ -n "${CHEF_PANE:-}" ] || return 0
+  [ -n "${CHEF_PANE:-}" ] || { etat_etape skip "$(texte 'Aucun chef lancé.' 'No chief started.')";return 0; }
   if [ "$CHEF_TYPE" = claude ]; then
     installer_competence_chef "$personnel" || dire "$(texte 'Compétence non ajoutée : CHEF.md du kit suffit.' 'Skill not added: the kit CHEF.md is sufficient.')"
   else dire "$(texte 'Chemin de compétence non vérifié pour cet outil : CHEF.md du kit suffit.' 'Skill location not verified for this tool: the kit CHEF.md is sufficient.')"; fi
@@ -535,7 +552,7 @@ proposer_chef() {
   dire "$orientation"
   if confirmer "$(texte 'Envoyer cette orientation au chef ?' 'Send this orientation to the chief?')" individuel; then
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Orientation du chef dans $CHEF_PANE." "Chief orientation in $CHEF_PANE.")"
-    elif "$HERDR_TROUVE" agent prompt "$CHEF_PANE" "$orientation"; then etat_etape ok
+    elif "$HERDR_TROUVE" agent prompt "$CHEF_PANE" "$orientation"; then etat_etape ok "$(texte 'Orientation envoyée.' 'Orientation sent.')"
     else etat_etape fail;dire "$(texte 'Envoi non confirmé : consultez le panneau avant de réessayer.' 'Send not confirmed: check the pane before trying again.')"; fi
   fi
 }
@@ -552,6 +569,7 @@ proposer_outil() {
   nom="$1"; detection="$2"; installation="$3"; lien="$4"; lien2="${5:-}"
   dire "### $nom"
   if command -v "$detection" >/dev/null 2>&1; then
+    if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils disponibles : $TOTAL_ETAPE." "Available tools: $TOTAL_ETAPE.")";fi
     dire "$(texte "$nom est deja installe (commande '$detection')." "$nom is already installed (command $detection).")"
     noter "$(texte "$nom : deja installe." "$nom: already installed.")"
     dire ''
@@ -564,6 +582,7 @@ proposer_outil() {
     executer "$(texte "Installation de $nom : $installation" "Installing $nom: $installation")" installer_outil "$detection"
     if [ "$DRY_RUN" != "1" ]; then
       if command -v "$detection" >/dev/null 2>&1; then
+        if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils disponibles : $TOTAL_ETAPE." "Available tools: $TOTAL_ETAPE.")";fi
         dire "$(texte "$nom est installe." "$nom is installed.")"
         noter "$(texte "$nom : installe." "$nom: installed.")"
       else
@@ -608,6 +627,7 @@ if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce p
   dire "$(texte '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : contrôle du JavaScript et du TypeScript.' '  2. ESLint: dbaeumer.vscode-eslint (Microsoft): JavaScript and TypeScript checks.')"
   dire "$(texte '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme cohérente du code.' '  3. Prettier - Code formatter: esbenp.prettier-vscode (Prettier): consistent code formatting.')"
   if ! command -v code >/dev/null 2>&1; then
+    etat_etape skip "$(texte 'VS Code absent.' 'VS Code missing.')"
     dire "$(texte "VS Code n'est pas détecté sur cet ordinateur : l'installation des extensions est ignorée." "VS Code was not detected: extension installation skipped.")"
     noter "$(texte 'Extensions : ignorées (VS Code absent).' 'Extensions: skipped (VS Code missing).')"
   else
@@ -615,6 +635,7 @@ if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce p
       nom="${ext%%|*}"; id="${ext##*|}"
       if confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; then
         executer "$(texte "Installation de $id avec code --install-extension." "Installing $id with code --install-extension.")" code --install-extension "$id"
+        if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ] && [ "$ETAT_ETAPE" != fail ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Extensions installées : $TOTAL_ETAPE." "Extensions installed: $TOTAL_ETAPE.")";fi
         noter "$(texte "Extension $id : proposée à l'installation." "Extension $id: installation offered.")"
       else
         noter "$(texte "Extension $id : refusée." "Extension $id: declined.")"
@@ -687,7 +708,7 @@ export BUREAU_HERDR_PATH=$(literal_shell "$HERDR_A_ENREGISTRER")"
     fi
     printf '%s\n' "$bloc" >> "$tmp" || return 1
     mv "$tmp" "$fichier" || return 1
-    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok "$(texte 'Configuration enregistrée.' 'Configuration saved.')"
     dire "$(texte "Configuration ecrite dans $fichier." "Configuration written to $fichier.")"
   done
 }
@@ -803,19 +824,19 @@ fi
 dire ''
 
 proposer_kit() {
-  [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne crée aucun kit.' 'The --oui option never creates a kit.')"; return 0; }
+  [ "$OUI" = 1 ] && { etat_etape skip "$(texte 'Ignoré avec --oui.' 'Skipped with --oui.')";dire "$(texte 'Le mode --oui ne crée aucun kit.' 'The --oui option never creates a kit.')"; return 0; }
   local script_kit="$RACINE/scripts/init-kit.mjs" dossier node_kit
-  [ -f "$script_kit" ] || { dire "$(texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.')"; return 0; }
+  [ -f "$script_kit" ] || { etat_etape skip "$(texte 'Script du kit absent.' 'Kit script missing.')";dire "$(texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.')"; return 0; }
   confirmer "$(texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?')" individuel || return 0
   if [ "$DRY_RUN" = 1 ] && [ "${INTERFACE:-0}" != 1 ]; then simuler "$(texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.')"; return 0; fi
   lire_saisie "$(texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')" || return 0
   dossier="$REPONSE_INTERFACE"
-  [ -n "$dossier" ] || return 0
+  [ -n "$dossier" ] || { etat_etape skip "$(texte 'Aucun dossier choisi.' 'No folder selected.')";return 0; }
   if [ "$DRY_RUN" = 1 ]; then simuler "$(texte 'Initialisation du kit dans le dossier choisi.' 'Initialize the kit in the chosen folder.')";return 0;fi
   case "$dossier" in --*) dossier="./$dossier" ;; esac
   node_kit=$(command -v node || command -v node.exe) || return 1
   if "$node_kit" "$script_kit" "$dossier" --lang "${LANGUE:-fr}"; then
-    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok "$(texte 'Kit initialisé.' 'Kit initialized.')"
     noter "$(texte "Kit d'équipe : initialisé." 'Team kit: initialized.')"
   else [ "${INTERFACE:-0}" != 1 ] || etat_etape fail;dire "$(texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.')"; fi
 }
@@ -826,12 +847,13 @@ etape tests
 # --- 7. Tests -----------------------------------------------------------
 dire "$(texte '--- 7. Tests du projet ---' '--- 7. Project tests ---')"
 if [ "$NODE_OK" != "1" ]; then
+  etat_etape skip "$(texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')"
   dire "$(texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
   noter "$(texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')"
 elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')"; then
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail
-  if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ]; then etat_etape ok;fi
+  if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ]; then etat_etape ok "$(texte 'Vérifications réussies.' 'Checks passed.')";fi
   noter "$(texte 'Tests : executes.' 'Tests: completed.')"
 else
   noter "$(texte 'Tests : non executes (refuse).' 'Tests: not run (declined).')"
