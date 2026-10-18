@@ -63,8 +63,8 @@ champ_interface() {
   valeur=${valeur//$'\r'/ };valeur=${valeur//$'\n'/ };valeur=${valeur//$'\t'/ }
   [ -z "${RACINE:-}" ] || valeur=${valeur//"$RACINE"/[dossier]}
   [ -z "${HOME:-}" ] || valeur=${valeur//"$HOME"/[dossier]}
-  if [[ "$valeur" =~ [[:cntrl:]]|[A-Za-z]:[\\/]|\~/|/(home|Users|root|tmp|private|mnt|media|Volumes)/|sk-|gh[pousr]_|github_pat_|Bearer ]]; then
-    printf '%s' "$valeur" | sed -E 's@[[:cntrl:]]@ @g; s@[A-Za-z]:[\\/][^"<>|?*]+@[dossier]@g; s@(~[\\/]|/(home|Users|root|tmp|private|mnt|media|Volumes)/)[^"<>|?*]+@[dossier]@g; s@(sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{12,}|Bearer[[:space:]]+[A-Za-z0-9_.-]+@[masqué]@g'
+  if [[ "$valeur" =~ [[:cntrl:]]|(^|[^[:alnum:]_])[A-Za-z]:[\\/]|\~/|/(home|Users|root|tmp|private|mnt|media|Volumes)/|sk-|gh[pousr]_|github_pat_|Bearer ]]; then
+    printf '%s' "$valeur" | sed -E 's@[[:cntrl:]]@ @g; s@(^|[^[:alnum:]_])[A-Za-z]:[\\/][^"<>|?*]+@\1[dossier]@g; s@(~[\\/]|/(home|Users|root|tmp|private|mnt|media|Volumes)/)[^"<>|?*]+@[dossier]@g; s@(sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{12,}|Bearer[[:space:]]+[A-Za-z0-9_.-]+@[masqué]@g'
   else printf '%s' "$valeur";fi
 }
 

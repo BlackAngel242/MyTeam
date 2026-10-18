@@ -136,6 +136,19 @@ async function functions(t,platform,names,body,options={}) {
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
 const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Executer','Proposer-Clink'];
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L C-CD-12 ${platform} : adresses Web intactes et chemins Windows masqués`,async t=>{
+  const urls=['https://antigravity.google/download','http://127.0.0.1:4317/api/state'];
+  const samples=[...urls,'Lire C:/Users/Personne/Projet Prive/client.txt'];
+  const body=platform==='ps'?
+    `$Interface=$true;$racine='dossier-factice';${samples.map(s=>`[Console]::WriteLine((Champ-Interface ${literal(s)}))`).join('\n')}`:
+    `INTERFACE=1;RACINE='dossier-factice'\n${samples.map(s=>`champ_interface '${s}';printf '\\n'`).join('\n')}`;
+  const data=await functions(t,platform,platform==='ps'?['Champ-Interface']:['champ_interface'],body,{eof:true});
+  assert.equal(data.code,0,data.errors);
+  const lines=data.output.trim().split(/\r?\n/);
+  assert.deepEqual(lines.slice(0,2),urls);
+  assert.match(lines[2],/\[dossier\]/);
+  assert.doesNotMatch(lines[2],/Personne|Prive|client\.txt/);
+});
 if(process.platform==='win32') {
   for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, faux winget et accord individuel avec Oui`,async t=>{
     const data=await functions(t,'ps',psFunctions,`
