@@ -52,7 +52,13 @@ function updateForm() {
   const pause = queue && quotaPause(a);
   $('send-help').textContent = crisisOn() ? t('consigne.aide_crise') : !a ? t('consigne.aide_choisir') : !state.connected ? t('consigne.herdr_off') : queue ? (pause ? (pause.until ? t('consigne.aide_pause_jusqu_a',{nom:a.name,heure:hhmm(pause.until)}) : t('consigne.aide_pause',{nom:a.name})) : t('consigne.aide_indisponible',{nom:a.name})) : t('consigne.aide_directe',{nom:a.name});
 }
+let agentsKey='';
 function renderAgents() {
+  const key=JSON.stringify([state.connected,selected,state.agents.map(a=>[a.id,a.name,a.kind,a.status,label(a),a.paneId||'',quotaPause(a)?.until||0])]);
+  if(key!==agentsKey||!$('agents-list').children.length){agentsKey=key;buildAgentList();}
+  renderDetail();
+}
+function buildAgentList() {
   const list = $('agents-list'), focused = document.activeElement?.dataset?.agentId;
   list.replaceChildren();
   if (!state.agents.length) {
@@ -67,6 +73,8 @@ function renderAgents() {
     if(a.paneId){const pane=document.createElement('span');pane.className='pane-badge';pane.textContent=a.paneId;pane.title=t('poste.panneau_herdr');button.append(pane);}button.addEventListener('click',()=>selectAgent(a.id));list.append(button);
   });
   if(focused){const again=[...list.children].find(e=>e.dataset.agentId===focused);(again||list.querySelector('.agent-button')||$('refresh')).focus({preventScroll:true});}
+}
+function renderDetail() {
   const a=activeAgent();
   $('detail-title').textContent=a?a.name:t('poste.choisis');
   $('detail-status').textContent=a?(state.connected?label(a):t('etat.connexion_perdue')):t('poste.poste_ouvrira');
@@ -431,12 +439,12 @@ function renderOutput(){
   return true;
 }
 $('term-search').addEventListener('input',renderOutput);
-$('term-expand').addEventListener('click',()=>{const on=!document.body.classList.contains('term-expanded');document.body.classList.toggle('term-expanded',on);$('term-expand').setAttribute('aria-pressed',String(on));$('term-expand').textContent=on?t('commandes.reduire'):t('commandes.agrandir');if(on)$('output').scrollIntoView({block:'nearest'});});
+$('term-expand').addEventListener('click',()=>{const on=!document.body.classList.contains('term-expanded');document.body.classList.toggle('term-expanded',on);$('term-expand').dataset.actif=String(on);$('term-expand').textContent=on?t('commandes.reduire'):t('commandes.agrandir');if(on)$('output').scrollIntoView({block:'nearest'});});
 // Ctrl+Entrée (ou Cmd+Entrée) envoie, sans contourner les vérifications des boutons.
 $('message').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&!$('send').disabled){e.preventDefault();$('prompt-form').requestSubmit();}});
 $('broadcast-message').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&!$('broadcast-send').disabled){e.preventDefault();$('broadcast-send').click();}});
 $('broadcast-all').addEventListener('click',()=>{for(const a of state.agents)if(canSend(a))broadcastTargets.add(a.id);broadcastArmed=null;renderBroadcast();});
-$('term-freeze').addEventListener('click',()=>{frozen=!frozen;$('term-freeze').setAttribute('aria-pressed',String(frozen));$('term-freeze').textContent=frozen?t('commandes.reprendre'):t('commandes.figer');$('read-state').textContent=frozen?t('sorties.defilement_fige'):t('sorties.lecture_actualisee');});
+$('term-freeze').addEventListener('click',()=>{frozen=!frozen;$('term-freeze').dataset.actif=String(frozen);$('term-freeze').textContent=frozen?t('commandes.reprendre'):t('commandes.figer');$('read-state').textContent=frozen?t('sorties.defilement_fige'):t('sorties.lecture_actualisee');});
 $('term-copy').addEventListener('click',async()=>{if(!termData.valid||termData.id!==selected)return;try{await navigator.clipboard.writeText(termData.text);$('term-copy').textContent=t('sorties.copie');}catch{$('term-copy').textContent=t('sorties.copie_refusee');}setTimeout(()=>{$('term-copy').textContent=t('sorties.copier');},1600);});
 // Journal des envois : trois issues seulement, jamais de faux « non transmise » quand on ne sait pas.
 // sent = Herdr a confirmé ; refused = refus avant tout envoi ; unknown = coupure, délai ou erreur après la transmission.
@@ -717,7 +725,7 @@ $('attach').addEventListener('toggle',loadAttach);
 let tilesOn=false;
 function setTiles(on){
   if(on&&!window.Tiles)return;
-  tilesOn=on;$('tiles-open').setAttribute('aria-pressed',String(on));$('tiles-open').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
+  tilesOn=on;$('tiles-open').dataset.actif=String(on);$('tiles-open').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
   document.querySelector('.scene-wrap').hidden=on;$('tiles').hidden=!on;
   if(!on){if(window.Tiles)Tiles.unmount();return;}
   Tiles.mount($('tiles'),{
@@ -773,7 +781,7 @@ async function loadCrisis(){
 }
 function syncCrisis(){
   const on=crisisOn();document.body.classList.toggle('crise',on);
-  $('crise-open').setAttribute('aria-pressed',String(on));$('crise-open').querySelector('span').textContent=on?t('equipe.crise.en_cours'):t('equipe.crise.titre');
+  $('crise-open').dataset.actif=String(on);$('crise-open').querySelector('span').textContent=on?t('equipe.crise.en_cours'):t('equipe.crise.titre');
   $('crise-banner').hidden=!on;
   if(on)$('crise-banner-text').textContent=crisisState.reason?(crisisState.since?t('equipe.crise.banniere_depuis_raison',{heure:hhmm(new Date(crisisState.since)),raison:tServeur(crisisState.reason)}):t('equipe.crise.banniere_raison',{raison:tServeur(crisisState.reason)})):(crisisState.since?t('equipe.crise.banniere_depuis',{heure:hhmm(new Date(crisisState.since))}):t('equipe.crise.banniere'));
   if(!$('crise').hidden)renderCrisis();
@@ -878,7 +886,7 @@ $('prompt-form').addEventListener('submit',async event=>{
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
-function syncMotion(){ $('motion').setAttribute('aria-pressed',String(paused));$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
+function syncMotion(){ $('motion').dataset.actif=String(paused);$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
 motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
@@ -1361,7 +1369,7 @@ function drawActors(L,G,time,now,layer){
 }
 // Vie de bureau entre le chef et ses agents, pilotée par deux faits :
 // une délégation observée dans le journal du chef (`herdr agent prompt`), et la fin réelle d'un travail (état Herdr).
-const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null,mailTotal=0,mailShown='';
+const awayAgents=new Set(),officeActors=new Map(),seenDelegations=new Set(),mailLog=[];let officeBooted=false,mailCount=0,mailSpot=null,mailTotal=0,mailShown='',mailVus=new Set();
 // Mémoire bornée : on oublie les plus anciens identifiants vus, que le journal du chef (12 h) ne renverra plus.
 function remember(key){seenDelegations.add(key);if(seenDelegations.size>500)seenDelegations.delete(seenDelegations.values().next().value);}
 // Courrier du chef : les délégations réellement observées dans son journal (12 h),
@@ -1380,6 +1388,10 @@ function renderMail(){
   // Même affichage, même dessin : la liste n'est pas rebâtie pour rien.
   const signature=JSON.stringify([delegs.map(({d})=>[d.id,d.at,d.target,d.title,d.result]),state.agents.map(a=>a.id+a.name)]);
   if(signature===mailShown)return;mailShown=signature;
+  // Annonce discrète aux lecteurs d'écran : seulement les envois apparus après le premier affichage.
+  const nouveaux=delegs.filter(({d})=>!mailVus.has(d.id));
+  if(mailVus.size&&nouveaux.length){const c=agentByTarget(nouveaux[0].d.target);$('mail-live').textContent=t('equipe.courrier_annonce',{nom:c?c.name:String(nouveaux[0].d.target)});}
+  for(const {d} of delegs)mailVus.add(d.id);
   $('mail-count').textContent=delegs.length?t('equipe.dernier_envoi',{heure:hhmm(new Date(delegs[0].d.at))}):'';
   if(!delegs.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent=t('equipe.aucune_delegation');list.replaceChildren(li);return;}
   list.replaceChildren(...delegs.slice(0,30).map(({d})=>{
@@ -1567,7 +1579,7 @@ canvas.addEventListener('pointermove',event=>{
 });
 canvas.addEventListener('pointerup',()=>{if(dragging){dragging=null;saveLayout();}});
 function syncLayoutEdit(){
-  $('layout-edit').setAttribute('aria-pressed',String(editLayout));$('layout-edit').querySelector('span').textContent=editLayout?t('commandes.terminer'):t('commandes.disposer');
+  $('layout-edit').dataset.actif=String(editLayout);$('layout-edit').querySelector('span').textContent=editLayout?t('commandes.terminer'):t('commandes.disposer');
   $('layout-reset').hidden=!editLayout;$('layout-hint').hidden=!editLayout;canvas.classList.toggle('editing',editLayout);draw(lastFrame);
 }
 $('layout-edit').addEventListener('click',()=>{editLayout=!editLayout;syncLayoutEdit();});
@@ -1589,11 +1601,11 @@ canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFram
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
 $('fullscreen').hidden=!document.fullscreenEnabled;
 $('fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen();else document.querySelector('main').requestFullscreen().catch(()=>{});});
-document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.fullscreenElement);$('fullscreen').setAttribute('aria-pressed',String(on));$('fullscreen').querySelector('span').textContent=on?t('commandes.quitter_plein_ecran'):t('commandes.plein_ecran');draw(lastFrame);});
+document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.fullscreenElement);$('fullscreen').dataset.actif=String(on);$('fullscreen').querySelector('span').textContent=on?t('commandes.quitter_plein_ecran'):t('commandes.plein_ecran');draw(lastFrame);});
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+t('etat.titre_document');if(document.title!==title)document.title=title;}
 // Figée, la scène se redessine encore chaque minute pour suivre l'heure et la lumière.
-function frame(time){if(time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+function frame(time){if(!tilesOn&&time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1603,8 +1615,8 @@ function signal(kind,title,body){
 }
 function syncSignals(){
   const notif=prefs.get('bureau.notifs')==='on'&&typeof Notification!=='undefined'&&Notification.permission==='granted';
-  $('notif-toggle').setAttribute('aria-pressed',String(notif));$('notif-toggle').textContent=notif?t('commandes.notifs.actives'):typeof Notification!=='undefined'&&Notification.permission==='denied'?t('commandes.notifs.refusees'):t('commandes.notifs.desactivees');
-  const snd=Boolean(window.BureauSounds?.enabled);$('sound-toggle').setAttribute('aria-pressed',String(snd));$('sound-toggle').textContent=window.BureauSounds?(snd?t('commandes.sons.actifs'):t('commandes.sons.inactifs')):t('commandes.sons.absent');$('sound-toggle').disabled=!window.BureauSounds;
+  $('notif-toggle').dataset.actif=String(notif);$('notif-toggle').textContent=notif?t('commandes.notifs.actives'):typeof Notification!=='undefined'&&Notification.permission==='denied'?t('commandes.notifs.refusees'):t('commandes.notifs.desactivees');
+  const snd=Boolean(window.BureauSounds?.enabled);$('sound-toggle').dataset.actif=String(snd);$('sound-toggle').textContent=window.BureauSounds?(snd?t('commandes.sons.actifs'):t('commandes.sons.inactifs')):t('commandes.sons.absent');$('sound-toggle').disabled=!window.BureauSounds;
 }
 $('notif-toggle').addEventListener('click',async()=>{
   if(typeof Notification==='undefined')return;
@@ -1615,15 +1627,16 @@ $('notif-toggle').addEventListener('click',async()=>{
 $('sound-toggle').addEventListener('click',()=>{if(!window.BureauSounds)return;window.BureauSounds.setEnabled(!window.BureauSounds.enabled);if(window.BureauSounds.enabled)window.BureauSounds.play('mail');syncSignals();});
 syncSignals();
 // Aide : panneau latéral, ouvert seul à la première visite, puis par le bouton ou la touche « ? ».
-function toggleHelp(open=$('help').hidden){
+function toggleHelp(open=$('help').hidden,{auto=false}={}){
   $('help').hidden=!open;$('help-open').setAttribute('aria-expanded',String(open));
-  if(open){$('help-close').focus();try{localStorage.setItem('bureau.aideVue','1');}catch{}}else $('help-open').focus();
+  // Ouverture automatique de la première visite : l'aide s'affiche sans voler le focus ni interrompre un lecteur d'écran.
+  if(open){if(!auto)$('help-close').focus();try{localStorage.setItem('bureau.aideVue','1');}catch{}}else $('help-open').focus();
 }
 $('help-open').addEventListener('click',()=>toggleHelp());
 $('help-close').addEventListener('click',()=>toggleHelp(false));
 // Première visite : l'aide ne s'ouvre pas si DrSmoke a déjà commencé une action (clic, touche, palette).
 let acted=false;for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{acted=true;},{once:true,capture:true});
-try{if(!localStorage.getItem('bureau.aideVue'))setTimeout(()=>{if(!acted&&$('palette').hidden)toggleHelp(true);},900);}catch{}
+try{if(!localStorage.getItem('bureau.aideVue'))setTimeout(()=>{if(!acted&&$('palette').hidden)toggleHelp(true,{auto:true});},900);}catch{}
 // Palette de commandes (Ctrl+K) : toutes les actions du bureau au clavier, construites à partir des agents réels.
 let paletteIndex=0,paletteItems=[];
 function commands(){
@@ -1786,6 +1799,7 @@ addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&$('board').hidden){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
   if(!$('crise').hidden){if(e.key==='Escape'){e.preventDefault();closeCrisis();}return;}
   if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='c'&&$('palette').hidden&&$('board').hidden){e.preventDefault();openCrisis();return;}
+  if(e.ctrlKey&&!e.shiftKey&&e.key.toLowerCase()==='k'&&!$('crise').hidden){e.preventDefault();return;}
   if(!$('palette').hidden){if(e.key==='Escape'){e.preventDefault();closePalette();}return;}
   if(!$('board').hidden){if(e.key==='Escape'){e.preventDefault();closeBoard();}return;}
   if(e.key==='Escape'&&editLayout){editLayout=false;syncLayoutEdit();return;}
@@ -1793,7 +1807,8 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(currentTab()==='equipe'){loadTreatments();loadDiscussion();}},5000);
+let cycleLent=0;
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(currentTab()==='equipe'&&cycleLent++%3===0){loadTreatments();loadDiscussion();}},5000);
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}

@@ -460,7 +460,7 @@
   function showFallbackModal(text, rootElement) {
     const doc = rootElement.ownerDocument || document;
     const existing = doc.getElementById('rc-fallback-modal');
-    if (existing) existing.remove();
+    if (existing) { if (existing.__close) existing.__close(); else existing.remove(); }
 
     const backdrop = doc.createElement('div');
     backdrop.id = 'rc-fallback-modal';
@@ -523,7 +523,10 @@
     backdrop.appendChild(box);
 
     const previousActive = doc.activeElement;
+    // Fond inerte : ni focus, ni clic, ni lecteur d'écran derrière la boîte (comme la palette et la salle de crise).
+    const fond = [...doc.body.children].filter(el => el !== backdrop && el.tagName !== 'SCRIPT' && !el.inert);
     const close = () => {
+      for (const el of fond) el.inert = false;
       backdrop.remove();
       doc.removeEventListener('keydown', onKeyDown);
       if (previousActive && typeof previousActive.focus === 'function') {
@@ -535,6 +538,14 @@
       if (e.key === 'Escape') {
         e.stopPropagation();
         close();
+        return;
+      }
+      if (e.key === 'Tab') {
+        // Le focus reste dans la boîte : Tab et Maj+Tab bouclent entre ses commandes.
+        const cibles = [closeBtn, textarea, selectBtn, doneBtn];
+        const i = cibles.indexOf(doc.activeElement);
+        e.preventDefault();
+        cibles[(i + (e.shiftKey ? cibles.length - 1 : 1)) % cibles.length].focus();
       }
     };
 
@@ -545,7 +556,9 @@
     });
     doc.addEventListener('keydown', onKeyDown);
 
+    backdrop.__close = close;
     doc.body.appendChild(backdrop);
+    for (const el of fond) el.inert = true;
     textarea.focus();
     textarea.select();
   }

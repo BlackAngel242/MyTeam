@@ -23,6 +23,7 @@
   "aide.foot-notifs": "Notifications quand la page est en arrière-plan : agent qui attend ta réponse, fin de travail, pause de limite. Sons 8 bits discrets pour les mêmes événements et les délégations.",
   "aide.glisser": "+ glisser",
   "aide.intro": "Tour de contrôle locale de tes agents Herdr. Tout ce qui s’affiche vient d’un fait observé : états Herdr, terminaux, journaux locaux, fichiers, heure du poste. Rien n’est inventé.",
+  "equipe.courrier_annonce": "Nouveau courrier du chef envoyé à {nom}.",
   "scene.todo": "TODO",
   "scene.avancement": "AVANCEMENT",
   "onglet.equipe.relais-desactive": "Relais désactivé.",
@@ -58,7 +59,7 @@
   "aide.scene-titre": "Lire la scène",
   "aide.signaux-titre": "Signaux",
   "aide.titre": "Aide du bureau",
-  "bascule.langue.aria": "Passer en anglais",
+  "bascule.langue.aria": "FR / EN : passer en anglais",
   "bouton.actualiser": "Actualiser",
   "bouton.agrandir": "Agrandir",
   "bouton.aide": "Aide",
@@ -691,7 +692,6 @@
     // Bascule FR / EN : câblée ici, un script en ligne serait bloqué par la CSP.
     const bascule = document.getElementById('lang-toggle');
     if (bascule) {
-      bascule.setAttribute('aria-pressed', langue === 'en' ? 'true' : 'false');
       bascule.addEventListener('click', () => window.setLangue(langue === 'en' ? 'fr' : 'en'));
     }
   };
