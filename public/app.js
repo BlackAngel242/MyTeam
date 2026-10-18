@@ -704,6 +704,30 @@ async function loadAttach(){
   }catch(error){if(a.id===selected)note(errorText(error));}
 }
 $('attach').addEventListener('toggle',loadAttach);
+// Mosaïque : 2 à 4 terminaux côte à côte à la place de la scène (public/tiles.js).
+let tilesOn=false;
+function setTiles(on){
+  if(on&&!window.Tiles)return;
+  tilesOn=on;$('tiles-open').setAttribute('aria-pressed',String(on));$('tiles-open').textContent=on?'Vue scène':'Mosaïque';
+  document.querySelector('.scene-wrap').hidden=on;$('tiles').hidden=!on;
+  if(!on){if(window.Tiles)Tiles.unmount();return;}
+  Tiles.mount($('tiles'),{
+    agents:()=>state.agents.map(a=>({id:a.id,name:a.name,kind:a.kind,status:a.status,paneId:a.paneId,paused:Boolean(quotaPause(a))})),
+    read:id=>request('/api/read?id='+encodeURIComponent(id),{headers:{'X-Bureau-Token':state.token||''}}).then(d=>({text:splitChrome(d.text||'').body})),
+    send:async(id,message)=>{
+      const a=state.agents.find(x=>x.id===id);
+      if(!canSend(a))throw new Error(crisisOn()?'Salle de crise active : envois verrouillés.':'Cet agent n’est pas disponible.');
+      try{
+        const data=await request('/api/prompt',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id,message})});
+        logSend([a.name],message,'sent',data.message||'Consigne transmise à Herdr.');refreshState();
+      }catch(error){logSend([a.name],message,outcomeOf(error),errorText(error,'envoi'));throw new Error(errorText(error,'envoi'));}
+    },
+    canSend:a=>canSend(state.agents.find(x=>x.id===a.id)),
+    onExpand:id=>{setTiles(false);selectAgent(id);},
+    onClose:()=>setTiles(false),
+  });
+}
+$('tiles-open').addEventListener('click',()=>setTiles(!tilesOn));
 // Salle de crise : verrou général des envois, diagnostic calme, interruption polie par agent (jamais un arrêt brutal).
 let criseArmed=null,criseStopArmed=null,criseBusy=false,criseTrigger=null;
 const criseTails=new Map();
@@ -1548,6 +1572,7 @@ function commands(){
   list.push({label:editLayout?'Terminer la disposition':'Disposer les postes',hint:'Scène',run:()=>{editLayout=!editLayout;syncLayoutEdit();}});
   list.push({label:paused?'Animer le bureau':'Mettre le bureau en pause',hint:'Scène',run:()=>$('motion').click()});
   list.push({label:'Salle de crise',hint:'Urgence',run:openCrisis});
+  list.push({label:tilesOn?'Revenir à la vue scène':'Mode mosaïque (terminaux côte à côte)',hint:'Scène',run:()=>setTiles(!tilesOn)});
   if(document.fullscreenEnabled)list.push({label:'Plein écran',hint:'Scène',run:()=>$('fullscreen').click()});
   list.push({label:'Actualiser les agents',hint:'Herdr',run:()=>$('refresh').click()});
   list.push({label:'Aide',hint:'?',run:()=>toggleHelp(true)});

@@ -45,10 +45,10 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 
 ## Lot G. Salle de crise et mosaïque (accordées par DrSmoke le 18 octobre)
 
-- [ ] G1 (OpenCode) Salle de crise côté serveur : `src/crisis.mjs`, `GET/POST /api/crise`, envois verrouillés (423), file suspendue, `POST /api/crise/arret` (interruption polie par Échap, jamais un arrêt brutal), tests, contrat `docs/contrat-crise.md`
-- [ ] G2 (Antigravity) Mosaïque : `public/tiles.js`, 2 à 4 terminaux côte à côte, consigne rapide, rafraîchissement borné aux tuiles visibles
-- [ ] G3 (Claude) Salle de crise dans l'interface : bouton sous clapet, `Ctrl+Maj+C`, lumière ambrée, fenêtre de diagnostic, « Arrêter cet agent » (double confirmation), « Lever la crise »
-- [ ] G4 (Claude) Intégration de la mosaïque : bouton « Mosaïque », « Vue scène », entrée dans la palette `Ctrl+K`
+- [x] G1 (OpenCode) Salle de crise côté serveur : `src/crisis.mjs`, `GET/POST /api/crise`, envois verrouillés (423), file suspendue, `POST /api/crise/arret` (interruption polie par Échap, jamais un arrêt brutal), tests, contrat `docs/contrat-crise.md`
+- [x] G2 (Antigravity) Mosaïque : `public/tiles.js`, 2 à 4 terminaux côte à côte, consigne rapide, rafraîchissement borné aux tuiles visibles
+- [x] G3 (Claude) Salle de crise dans l'interface : bouton sous clapet, `Ctrl+Maj+C`, lumière ambrée, fenêtre de diagnostic, « Arrêter cet agent » (double confirmation), « Lever la crise »
+- [x] G4 (Claude) Intégration de la mosaïque : bouton « Mosaïque », « Vue scène », entrée dans la palette `Ctrl+K`
 - [ ] G5 (Claude) Évaluation, vérification Playwright (1440, 390, 360 px), documentation et mise à jour de `docs/aide.md` par Antigravity, fusion et push
 
 ## Lot F. Clôture
