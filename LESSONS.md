@@ -36,6 +36,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Un calcul sous verrou d'observation ne doit jamais appeler un relais qui attend la fin de cette même observation : l'arrêt du mode autonomie gelait le sondage de 20 secondes puis tous les suivants (interblocage). Calculer sous verrou, mettre en file après (src/relais.mjs, 18 octobre).
 - Un chiffre de performance n'est un fait qu'avec sa date, sa machine et la commande du banc. Les durées varient d'un passage à l'autre, seuls les budgets d'appels (inégalités du test) sont reproductibles : publier les deux et distinguer budget et durée (docs/performance.md, banc `node --test test/budget-10-agents.test.mjs test/relais-10-agents.test.mjs`).
 - Un fichier partagé peut changer entre la relecture du diff et le commit : le 18 octobre, la leçon d'un autre agent est partie dans mon commit de docs/performance.md. Relire `git show <hash> -- fichier` après le commit, signaler au chef toute ligne étrangère, ne jamais réécrire l'historique pour ça.
+- Ce que le serveur accepte n'est pas ce que l'écran propose : avant d'écrire une procédure d'essai, vérifier les valeurs réellement choisissables dans l'interface (public/app.js). Le mode autonomie accepte 5 minutes et 3 échanges, mais le panneau ne propose que 15 min et 10 échanges au plus court (demande de DrSmoke du 18 octobre : lancer à 5 min / 3 échanges).
 
 ## Interface et Playwright
 
