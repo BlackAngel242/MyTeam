@@ -92,6 +92,6 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] L4 (Antigravity) Rang 10 : noms, notices de marques, matrice des 24 outils, aide anglaise (`61cbf08`, `a57aa31`)
 - [x] L5 (Claude) Pause de quota : heure retrouvée, compte à rebours, reprise automatique ; demandes dans la TODO ; alerte de la file affichée
 - [x] L6 (Claude) Bouton Autonomie (NoBabysitter supervisé), `982c936`
-- [ ] L7 (Claude) Vocabulaire unifié de l'interface (C-OC-01 à C-OC-04)
-- [ ] L8 (Antigravity) Documentation du bouton Autonomie et de la reprise automatique, captures régénérées, site vérifié
-- [ ] L9 (Claude) Pilote NoBabysitter au-delà du bouton, puis release 0.4.1
+- [x] L7 (Claude) Vocabulaire unifié de l'interface (tutoiement, anglais « chief » et « Mosaic »), `a09fddc`
+- [x] L8 (Antigravity) Documentation du bouton Autonomie et de la reprise automatique, captures régénérées, site vérifié
+- [x] L9 (Claude, OpenCode) Pilote NoBabysitter : interrupteur, récapitulatif, test de bout en bout et procédure d'essai (`docs/pilote-autonomie.md`), release 0.4.1 publiée
