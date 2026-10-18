@@ -132,3 +132,26 @@ test('un fichier d\'état illisible n\'active rien', async t => {
   await writeFile(file, '{pas du json');
   assert.equal(creer().get().actif, false);
 });
+
+test('un arrêt demandé pendant la mise en file attend la fin de l\'envoi, sans erreur, et retire la consigne encore en attente', async t => {
+  const dossier = await mkdtemp(join(tmpdir(), 'autonomie-'));
+  t.after(() => rm(dossier, { recursive: true, force: true }));
+  const annulees = [];
+  let liberer;
+  const relais = { get: () => ({ actif: false }), set: async v => ({ actif: v }) };
+  const a = createAutonomie({
+    file: join(dossier, 'autonomie.json'),
+    enqueue: () => new Promise(resolve => { liberer = () => resolve({ itemId: 'q-1' }); }),
+    cancel: async id => { annulees.push(id); },
+    relais, now: () => Date.parse('2026-10-18T10:00:00.000Z'), locked: () => false,
+  });
+  await a.demarrer({ objectif: 'Finir le lot L' });
+  const envoi = a.passer(...fin('x', 'Codex'));
+  const arret = a.arreter();
+  await new Promise(r => setTimeout(r, 20));
+  liberer();
+  await envoi;
+  const etat = await arret;
+  assert.equal(etat.actif, false);
+  assert.deepEqual(annulees, ['q-1']);
+});

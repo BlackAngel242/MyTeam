@@ -24,7 +24,7 @@ const entier = (valeur, { min, defaut, max }) => {
 };
 const heure = ms => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-export function createAutonomie({ file, enqueue, relais, now = () => Date.now(), locked = () => false } = {}) {
+export function createAutonomie({ file, enqueue, cancel = async () => {}, relais, now = () => Date.now(), locked = () => false } = {}) {
   if (typeof file !== 'string' || !file || typeof enqueue !== 'function' || !relais) throw new AutonomieError('Autonomie mal configurée.', 500);
   let etat = null; // null : inactif ; sinon {objectif, debut, finAt, maxEchanges, echanges, relaisAvant}
   let dernierArret = null, journal = [], pending = Promise.resolve();
@@ -58,10 +58,13 @@ export function createAutonomie({ file, enqueue, relais, now = () => Date.now(),
 
   async function arreter(motif) {
     if (!etat) return;
-    const avant = etat.relaisAvant;
+    const avant = etat.relaisAvant, enFile = etat.enFile;
     etat = null; dernierArret = motif; fins.clear();
     noter('arret', `Autonomie arrêtée : ${motif}.`);
     await sauver().catch(() => {});
+    // Une consigne d'autonomie encore en attente ne doit pas partir après l'arrêt : retirée de la file
+    // (sans effet sur une consigne déjà partie, que la file refuse d'annuler).
+    for (const itemId of enFile) await cancel(itemId).catch(() => {});
     if (avant === false) await relais.set(false).catch(() => {});
   }
   function demarrer({ objectif, minutes, echanges } = {}) {
@@ -73,7 +76,7 @@ export function createAutonomie({ file, enqueue, relais, now = () => Date.now(),
       const duree = entier(minutes, LIMITES.minutes), plafond = entier(echanges, LIMITES.echanges);
       const debut = now();
       const relaisAvant = relais.get().actif;
-      etat = { objectif: texte, debut, finAt: debut + duree * MINUTE, maxEchanges: plafond, echanges: 0, relaisAvant };
+      etat = { objectif: texte, debut, finAt: debut + duree * MINUTE, maxEchanges: plafond, echanges: 0, relaisAvant, enFile: [] };
       dernierArret = null; journal = []; fins.clear();
       try { await relais.set(true); await sauver(); }
       catch (erreur) { etat = null; await relais.set(relaisAvant).catch(() => {}); throw erreur instanceof AutonomieError ? erreur : new AutonomieError("Le relais d'écoute n'a pas pu être activé.", 500); }
@@ -84,7 +87,8 @@ export function createAutonomie({ file, enqueue, relais, now = () => Date.now(),
   const arretManuel = () => exclusive(async () => { await arreter('arrêt demandé par DrSmoke'); return get(); });
 
   // Appelé par le relais à la place de la file : sans autonomie active, la consigne passe telle quelle.
-  async function passer(item, meta = {}) {
+  // Sérialisé avec l'arrêt et le contrôle périodique : un arrêt demandé pendant la mise en file attend sa fin.
+  const passer = (item, meta = {}) => exclusive(async () => {
     if (!etat) return enqueue(item);
     const t = now();
     if (t >= etat.finAt) { await arreter('durée écoulée'); return undefined; }
@@ -95,12 +99,13 @@ export function createAutonomie({ file, enqueue, relais, now = () => Date.now(),
     const numero = etat.echanges + 1, nom = meta.agent?.name ?? 'Un agent';
     const message = `Mode autonomie (objectif : « ${etat.objectif} », échange ${numero}/${etat.maxEchanges}, fin à ${heure(etat.finAt)}). ${nom} vient de terminer. Lis son panneau, vérifie le résultat, puis décide seul de la suite et délègue-la ; si l'objectif est atteint, dis-le et arrête de déléguer. Sans DrSmoke, jamais de git push, de suppression, d'installation, de publication ni de réponse à une boîte de dialogue. Si tu te répètes, arrête-toi.`;
     const resultat = await enqueue({ ...item, message });
+    if (typeof resultat?.itemId === 'string') etat.enFile.push(resultat.itemId);
     etat.echanges = numero;
     noter('message', `${nom} a terminé : le chef est prévenu (échange ${numero}/${etat.maxEchanges}).`);
     if (numero >= etat.maxEchanges) await arreter('plafond d\'échanges atteint');
     else await sauver().catch(() => {});
     return resultat;
-  }
+  });
   // Contrôle périodique : échéance et salle de crise.
   const verifier = () => exclusive(async () => {
     if (!etat) return;

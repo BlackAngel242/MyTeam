@@ -135,7 +135,19 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   const equipe=direction??createDirection({file:directionFile,now});
   // Le relais d'écoute passe par l'autonomie : sans mode actif, la consigne part telle quelle ; sinon elle rappelle l'objectif.
   const relaisEcoute=relais??createRelais({file:relaisFile,enqueue:(item,meta)=>autonomie.passer(item,meta),now,locked:()=>salleDeCrise.isActive()});
-  const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive()});
+  const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),cancel:itemId=>fileAttente.cancel(itemId),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive()});
+  // L'autonomie expose son objectif et son journal : ce sont des textes libres,
+  // qui peuvent citer un chemin ou un secret. Ils passent par le masque public
+  // avant de sortir du serveur, comme les autres sorties de texte.
+  const vueAutonomie=brut=>{
+    const etat=brut??autonomie.get();
+    return {
+      ...etat,
+      objectif:typeof etat?.objectif==='string'?masque(etat.objectif):etat?.objectif??null,
+      arret:typeof etat?.arret==='string'?masque(etat.arret):etat?.arret??null,
+      journal:Array.isArray(etat?.journal)?etat.journal.map(entree=>({...entree,texte:typeof entree?.texte==='string'?masque(entree.texte):entree?.texte})):(etat?.journal??[]),
+    };
+  };
   async function allowedRoots() {
     const roots=new Map();
     const add=async(key,label,kind,path)=>{
