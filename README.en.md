@@ -41,7 +41,8 @@ MyTeam · Agent desk is built for developers, researchers, and orchestrators run
 
 - **Clear team hierarchy**: The Direction desk hosts the team lead, surrounded by collaborators at their dedicated desks.
 - **Embodied task delegation**: When the lead delegates a prompt (`herdr agent prompt`), they walk across the room to place the golden folder directly on the collaborator's desk.
-- **Priority queue**: Safely queue instructions for busy agents or those on quota breaks, with high-priority flagging, a "Move to the front" button, and automated dispatch.
+- **Priority queue and quota management**: Safely queue instructions for busy agents or those on quota breaks, with high-priority flagging, a "Move to the front" button, 1-minute automatic resumption via a short prompt after a quota pause lifts, and deferred dispatch.
+- **Supervised autonomy (NoBabysitter)**: Start a scoped autonomous cycle defined by an objective (duration from 5 to 120 min, 3 to 60 exchanges at most). The lead coordinates in a star topology and delegates each step; the mode stops automatically on expiration, exchange cap, loop detection, crisis room, or server restart, and never runs a git push, deletion, installation, publication, or dialog response without DrSmoke.
 - **Glass reflection room**: Subagents step away from their desk to deliberate together in a dedicated area before reporting back.
 - **Factual task progress**: Direct aggregation of checked boxes in project Markdown files (`TODO.md`) and action plans published by agents, with zero invented percentages.
 - **100% local with zero npm dependencies**: Standalone local server bound to `127.0.0.1`, no external npm packages, no outbound network requests, and no stored API keys.
@@ -231,6 +232,7 @@ Contributions that align with the project's philosophy (technical independence, 
   - `src/relais.mjs`: Neutral listening relay notifying the lead when an agent completes a task.
   - `src/responses.mjs`: Turn-by-turn parsing and extraction of readable assistant responses.
   - `src/terminal-status.mjs`: Live detection of quota pauses and session limits in terminal streams.
+  - `src/autonomie.mjs`: Supervised star autonomy engine (NoBabysitter), exchange and duration caps, loop detection, and safety stops.
   - `server.mjs`: Hardened native HTTP server.
   - `scripts/`: Setup and verification scripts (`installer.ps1`, `installer.sh`, `init-kit.mjs`, `evaluer.mjs`, `partager-lecons.mjs`).
 - **Environment variables**:

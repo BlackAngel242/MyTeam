@@ -5,7 +5,7 @@ node_modules/
 .impeccable/mocks/
 .impeccable/tmp/
 .impeccable/*.local.json
-captures/
+/captures/
 .impeccable/hook.cache.json
 .playwright-mcp/
 dist/

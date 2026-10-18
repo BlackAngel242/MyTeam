@@ -18,4 +18,8 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `13-telephone-mosaique.png` : Mode mosaïque adapté sur téléphone (390x844) avec terminaux disposés en colonne fluide.
 - `14-telephone-crise.png` : Salle de crise affichée sur téléphone (390x844) avec avertissement d'urgence et panneau de contrôle.
 - `15-emblemes-outils.png` : Planche de contrôle des 24 emblèmes d'outils Herdr en pixel art 16×16 avec leurs identifiants de lancement.
+- `16-ordinateur-autonomie.png` : Fenêtre du mode Autonomie supervisée (NoBabysitter) ouverte sur ordinateur (1440x900) avec objectif cadré, durée maximale et échanges au plus.
+- `17-telephone-autonomie.png` : Mode Autonomie (NoBabysitter) adapté sur écran de téléphone (390x844).
+- `18-ordinateur-autonomie-en.png` : Fenêtre du mode Autonomie supervisée (NoBabysitter) sur ordinateur en anglais.
+- `19-telephone-autonomie-en.png` : Mode Autonomie supervisée sur téléphone en anglais.
 

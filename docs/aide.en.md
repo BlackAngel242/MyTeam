@@ -130,6 +130,7 @@ All 24 tools supported by Herdr benefit from universal monitoring and command or
 - Their screen turns off, desk lamp turns off, and a subtle purple standby light blinks.
 - A white desktop easel with "BACK" ("RETOUR") displays the exact resume time reported by the tool.
 - The local server schedules automatic retry of queued instructions 5 minutes after that time.
+- Automatic resumption: one minute after the pause ends (reported resume time), the server automatically enqueues a short instruction reminding the agent to reply "dispo" and resume its in-progress mission (`git status`, then lead instruction) without re-doing already committed work, preserving its quota. Sent once per break, in-memory only (server restarts never replay old reminders).
 
 #### Reflection Room for Subagents
 - Glass-walled dedicated room with fixed label "THINKING" ("REFLEXION" in French view), never truncated.
@@ -325,10 +326,22 @@ This tab monitors concrete work progress without artificial metrics.
 - Accessible via "Help" ("Aide") button or `?` key, opened automatically on first visit.
 - Contains the 7-step guided tour, visual legends, and signal controls.
 
-#### Signals: 8-Bit Audio and Windows Notifications
-- "Windows notifications" ("Notifications Windows") button: enables system alerts when page is in background (agent waiting, task complete, quota break). Polling happens every 15s in background.
-- "Sounds" ("Sons") button: enables discreet 8-bit Web Audio chimes (`public/sounds.js`, < 0.6s, low volume).
-- Preferences are saved locally in browser storage (`bureau.sons`).
+#### Supervised Autonomy Mode (NoBabysitter)
+- Accessible via the "Autonomy" button in the top header toolbar (tooltip: "Supervised autonomy: the chief decides what comes next, within caps").
+- "Autonomy (NoBabysitter)" modal: launch a supervised autonomous cycle by setting a clear objective (5 to 300 characters), a maximum duration (5 to 120 minutes, default 30 min), and a cap on exchanges (3 to 60, default 20).
+- Star-shaped architecture: the team lead coordinates everything. Upon each observed task completion from a teammate, the listening relay enqueues a prompt for the lead reminding it of the objective, exchange count (`{n}/{max}`), and deadline. The lead alone decides the next step and delegates it. No agent writes directly to another without passing through the lead.
+- Absolute safety guardrails:
+  - Never any Git push, file deletion, package installation, publication, or answering dialog prompts without explicit consent from DrSmoke.
+  - No claim of full autonomy: autonomy is strictly supervised, bounded, and measurable.
+- Automatic and safe stops:
+  - Time limit reached (`durée écoulée`).
+  - Exchange cap reached (`plafond d'échanges atteint`).
+  - Loop detected (`boucle détectée`, if the same agent finishes repeatedly within a 10-minute window).
+  - Crisis room activation (`salle de crise enclenchée`).
+  - Server restart (`redémarrage du serveur`: never resumes silently without human re-engagement).
+  - Instant manual stop: "Stop now" button available at any time.
+- Factual event log: lists only real events as they occur (session launch, messages enqueued to the lead, stop causes).
+- Live toolbar indicator: when active, the button displays remaining time and exchange progress (`Autonomy · {reste} · {n}/{max}`).
 
 ---
 
@@ -378,6 +391,7 @@ The team kit brings the multi-agent collaboration methodology used to build MyTe
 | :--- | :--- | :--- |
 | **General** | `Ctrl + K` | Opens modal command palette. |
 | **General** | `FR / EN` Button | Instantly toggles interface language between French and English. |
+| **General** | "Autonomy" Button | Opens configuration modal for supervised autonomy (NoBabysitter). |
 | **General** | Palette Ctrl+K: "Team board" ("Tableau de l'équipe") | Opens read-only team board modal (pillar files). |
 | **General** | Palette Ctrl+K: "Tile mode" ("Mode mosaïque") | Toggles between pixel art canvas and multi-terminal mosaic. |
 | **General** | Palette Ctrl+K: "Crisis room" ("Salle de crise") | Opens crisis room diagnostic and control modal. |

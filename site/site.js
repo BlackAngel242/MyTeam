@@ -80,6 +80,9 @@ const I18N = {
     'feat.securite.title': 'Sécurité et souveraineté locale',
     'feat.securite.desc': 'Écoute strictement restreinte à 127.0.0.1, jeton aléatoire de session, zéro appel sortant, zéro dépendance npm, zéro secret intercepté.',
 
+    'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
+    'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
+
     // Galerie
     'gallery.badge': 'Interface',
     'gallery.titre': 'L\'atelier sous tous les angles',
@@ -98,6 +101,8 @@ const I18N = {
     'gallery.crise.desc': 'Verrouillage de sécurité des envois et interruption polie sans destruction de processus.',
     'gallery.emblemes.title': 'Planche des 24 emblèmes d\'outils',
     'gallery.emblemes.desc': 'Représentations pixel art 16x16 pour identifier chaque IA compatible Herdr.',
+    'gallery.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
+    'gallery.autonomie.desc': 'Dialogue cadré par durée et plafond d\'échanges, arrêt d\'urgence et coordination par le chef.',
 
     // Installation
     'install.badge': 'Démarrage immédiat',
@@ -249,6 +254,9 @@ const I18N = {
     'feat.securite.title': 'Local security and sovereignty',
     'feat.securite.desc': 'Strictly bound to 127.0.0.1, random session token, zero external calls, zero npm dependencies, zero intercepted credentials.',
 
+    'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
+    'feat.autonomie.desc': 'Star-pattern coordination where the lead decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
+
     // Galerie
     'gallery.badge': 'Interface',
     'gallery.titre': 'The Workshop in Pictures',
@@ -267,6 +275,8 @@ const I18N = {
     'gallery.crise.desc': 'Safety lockout of outgoing instructions and polite task interruption.',
     'gallery.emblemes.title': '24 Herdr tool emblems sheet',
     'gallery.emblemes.desc': 'Dedicated 16x16 pixel art emblems to distinguish each supported AI tool.',
+    'gallery.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
+    'gallery.autonomie.desc': 'Objective-driven cycle with duration and exchange caps, emergency stop, and coordination through the lead.',
 
     // Installation
     'install.badge': 'Quick Start',

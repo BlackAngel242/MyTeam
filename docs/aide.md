@@ -130,6 +130,7 @@ Tous les outils pris en charge par Herdr bénéficient du socle universel de sur
 - L'écran de son ordinateur s'éteint, sa lampe de bureau s'éteint et une veilleuse violette clignote discrètement.
 - Un chevalet blanc portant la mention « RETOUR » affiche l'heure exacte de reprise annoncée par l'outil.
 - Le serveur local planifie la relance automatique des consignes en attente 5 minutes après cette heure.
+- Reprise automatique : une minute après la fin de la pause (heure de retour annoncée), le serveur envoie automatiquement dans la file d'attente une consigne courte à l'agent lui rappelant de répondre « dispo » et de reprendre sa mission en cours (`git status`, puis la consigne du chef) sans rien refaire de déjà commité, afin d'économiser son quota. Une seule fois par pause, en mémoire vive uniquement (un redémarrage du serveur ne rattrape aucune consigne).
 
 #### Salle de réflexion repliable des sous-agents
 - Pièce vitrée dédiée portant le libellé fixe « SALLE DE REFLEXION » (ou « REFLEXION » sur écran étroit), jamais tronqué quelle que soit l'activité.
@@ -325,10 +326,22 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 - Accessible par le bouton « Aide » ou la touche « ? », ouvert automatiquement à la première visite.
 - Contient la visite guidée en 7 étapes, les légendes visuelles et les boutons de contrôle des signaux.
 
-#### Signaux : Sons 8 bits et notifications Windows
-- Bouton « Notifications Windows » : active les notifications système quand la page est en arrière-plan (agent attendant une réponse, fin de mission, pause de limite). Page cachée, le bureau relit alors l'état des agents toutes les 15 secondes ; le navigateur peut espacer ces relectures.
-- Bouton « Sons » : active les signaux sonores synthétisés en Web Audio 8 bits (`public/sounds.js`), courts et discrets (< 0,6 s, volume bas), pour les mêmes événements et les délégations.
-- Le choix d'activation reste mémorisé localement dans votre navigateur (`bureau.sons`).
+#### Mode Autonomie supervisée (NoBabysitter)
+- Accessible par le bouton « Autonomie » dans la barre d'outils supérieure (titre : « Autonomie supervisée : le chef décide de la suite avec un plafond »).
+- Modale « Autonomie (NoBabysitter) » : permet de lancer une séquence de travail autonome supervisée en renseignant un objectif clair (5 à 300 caractères), une durée maximale (5 à 120 minutes, 30 min par défaut) et un plafond d'échanges (3 à 60, 20 par défaut).
+- Architecture en étoile : le chef d'équipe centralise tout. À chaque fin de travail d'un collaborateur, le relais d'écoute ajoute dans la file d'attente du chef une consigne lui rappelant l'objectif, le compte d'échanges (`{n}/{max}`) et l'heure limite. Le chef décide seul de la suite et la délègue. Aucun agent n'écrit directement à un autre sans passer par le chef.
+- Garde-fous et sécurité absolue :
+  - Jamais de push Git, de suppression de fichier, d'installation de paquet, de publication ni de validation de boîte de dialogue sans l'accord explicite de DrSmoke.
+  - Pas d'autonomie totale promise : l'autonomie reste strictement supervisée, bornée et mesurable.
+- Arrêts automatiques et sécurisés :
+  - Échéance temporelle (`durée écoulée`).
+  - Plafond d'échanges atteint (`plafond d'échanges atteint`).
+  - Détection de boucle (`boucle détectée`, quand un même agent termine trop souvent dans une fenêtre de 10 minutes).
+  - Enclenchement de la crise (`salle de crise enclenchée`).
+  - Redémarrage du serveur (`redémarrage du serveur` : jamais de reprise silencieuse sans consentement).
+  - Arrêt manuel immédiat : bouton « Arrêter maintenant » disponible à tout moment.
+- Journal factuel : la modale affiche en temps réel les faits survenus (lancement, messages transmis au chef, motifs d'arrêt).
+- Suivi en direct : lorsque le mode est actif, le bouton affiche en temps réel le temps restant et le ratio d'échanges (`Autonomie · {reste} · {n}/{max}`).
 
 ---
 
@@ -378,6 +391,7 @@ Le kit d'équipe apporte à n'importe quel projet la méthode et les outils de c
 | :--- | :--- | :--- |
 | **Général** | `Ctrl + K` | Ouvre la palette de commandes modale. |
 | **Général** | Bouton `FR / EN` | Bascule instantanément la langue de l'interface entre français et anglais. |
+| **Général** | Bouton « Autonomie » | Ouvre la fenêtre de configuration du mode autonomie supervisée (NoBabysitter). |
 | **Général** | Palette Ctrl+K : « Tableau de l'équipe » | Ouvre la fenêtre modale du tableau de l'équipe (mémoire partagée). |
 | **Général** | Palette Ctrl+K : « Mode mosaïque » | Bascule entre la vue scène pixel art et la mosaïque de terminaux. |
 | **Général** | Palette Ctrl+K : « Salle de crise » | Ouvre la modale de diagnostic et de gestion de la salle de crise. |

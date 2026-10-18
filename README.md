@@ -41,7 +41,8 @@ MyTeam (le Bureau des agents) s'adresse aux développeurs, chercheurs et orchest
 
 - **Organisation d'équipe claire** : Le bureau Direction accueille le chef d'équipe, entouré de ses collaborateurs sur leurs postes dédiés.
 - **Délégations incarnées** : Quand le chef délègue une mission (`herdr agent prompt`), il effectue sa tournée physique dans la pièce pour déposer le dossier doré sur le bureau du collaborateur.
-- **File d'attente avec priorités** : Différez vos consignes en toute sérénité pour les agents occupés ou en pause de limite, avec option prioritaire, bouton « Passer en tête » et relance automatique.
+- **File d'attente et gestion des quotas** : Différez vos consignes en toute sérénité pour les agents occupés ou en pause de limite, avec option prioritaire, bouton « Passer en tête », reprise automatique par consigne courte une minute après la levée d'une pause et relance différée.
+- **Autonomie supervisée (NoBabysitter)** : Lancez un cycle autonome cadré par un objectif (durée de 5 à 120 min, 3 à 60 échanges au plus). Le chef orchestre en étoile et délègue chaque étape ; le mode s'interrompt automatiquement sur échéance, plafond, boucle détectée, salle de crise ou redémarrage du serveur, sans jamais exécuter de push, suppression, installation, publication ni dialogue sans DrSmoke.
 - **Salle de réflexion vitrée** : Les sous-agents quittent leur poste pour plancher ensemble dans un espace dédié avant de rapporter leurs résultats.
 - **Suivi factuel des tâches** : Centralisation des cases cochées dans les fichiers du projet (`TODO.md`) et des plans publiés par les agents eux-mêmes, sans aucun pourcentage inventé.
 - **100% local et zéro dépendance** : Serveur local autonome sur `127.0.0.1`, aucune dépendance npm, aucun appel réseau sortant et aucune clé d'API stockée.
@@ -231,6 +232,7 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
   - `src/relais.mjs` : Relais d'écoute notifiant le chef quand un collaborateur termine son travail.
   - `src/responses.mjs` : Découpage et extraction des réponses lisibles des agents tour par tour.
   - `src/terminal-status.mjs` : Analyse en direct des pauses de quota et de la consommation de session dans les flux de terminal.
+  - `src/autonomie.mjs` : Moteur d'autonomie supervisée en étoile (NoBabysitter), plafonds d'échanges et durée, détection de boucle et arrêts sécurisés.
   - `server.mjs` : Serveur HTTP natif sécurisé.
   - `scripts/` : Scripts d'installation et de vérification automatisés (`installer.ps1`, `installer.sh`).
 - **Variables d'environnement utiles** :

@@ -45,3 +45,12 @@ Rang 6 (C-CD-03) : budget d'?criture de la file ?gal au budget de lecture, refus
 Rang 7 (C-CD-07) : continuit? des octets contr?l?e au point de reprise avant de reprendre un offset, dans l'activit? Claude et dans les t?ches. Reproduit avant : r??criture plus longue du m?me fichier donnait 10 au lieu de 20.
 Rang 5 (C-CD-04, 06, 12, 08) : masque public unique dans src/masque.mjs en trois r?gles distinctes (chemins avec espaces et UNC, secrets, adresses web et routes /api conserv?es), appliqu? avant toute troncature, y compris aux descriptions de sous-agents. Destinataire tiers ?cart? des r?ponses Codex (canaux admis : absent ou commentary ; destinataires admis : absent ou user).
 Commits : b56585c, 825fa11 (rangs 1 et 6), 9560c5a, f01f10f, af523d9 (rangs 7 et 5). Tests de mon p?rim?tre : 133, 131 r?ussis, 2 ignor?s, 0 ?chec. Reste ? v?rifier : le serveur du port 4317 n'a pas ?t? red?marr? avec ces changements, et aucun retour navigateur n'a ?t? fait (aucune interface modifi?e).
+
+## 18 octobre 2026, suite rang 10, part Antigravity (bouton Autonomie, documentation bilingue, captures Playwright)
+
+- Documentation du mode Autonomie (NoBabysitter supervisé) en français et en anglais dans docs/aide.md, docs/aide.en.md, README.md, README.en.md et site/ (index.html et site.js) : objectif (5 à 300 caractères), durée (5 à 120 min), échanges (3 à 60 au plus), arrêts automatiques sécurisés (échéance, plafond, boucle, salle de crise, redémarrage), architecture en étoile autour du chef, aucun push ni suppression sans DrSmoke.
+- Documentation de la reprise automatique : une minute après la levée d'une pause de quota, chaque agent reçoit une consigne courte par la file.
+- Enrichissement des leçons dans LESSONS.md : vérification préalable des libellés dans public/i18n*.js, gestion du rechargement de page de window.setLangue dans Playwright, et ancrage obligatoire /captures/ dans .gitignore pour préserver le suivi de docs/captures/.
+- Génération complète des captures d'écran en états simulés avec Playwright (Edge) à 1440x900 et 390x844 en FR et EN : fenêtre Autonomie ouverte (docs/captures/16, 17, 18, 19 et site/assets/autonomie*), mise à jour du catalogue LISEZMOI.md et rafraîchissement des scènes du bureau intégrant le bouton Autonomie dans l'en-tête.
+- Validation : npm run check vert, 397 tests exécutés par npm test (394 réussis, 0 échec, 3 ignorés).
+

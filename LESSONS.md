@@ -41,6 +41,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - `page.clock.setFixedTime` de Playwright fige aussi le temps des animations : vérifier une animation sans horloge figée, et l'heure du ciel séparément.
 - Un clic simulé sur le canvas doit compenser le centrage de l'image (`object-fit: contain`), comme le fait `toLogical` ; sinon le test conclut à tort qu'une zone cliquable ne marche pas.
 - Une animation qui lit une horloge partagée (`now`) ne doit jamais la réaffecter pour se figer : une variable locale par acteur évite de figer les acteurs suivants.
+- Dans Playwright, `window.setLangue(code)` appelle `location.reload()` : après un changement de langue, attendre `domcontentloaded` et rouvrir les fenêtres modales avant d'interagir avec leurs champs.
 
 ## Git et équipe
 
@@ -53,6 +54,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Un lot de missions ne s'arrête pas au premier agent bloqué : si un agent affiche une boîte de dialogue (OpenCode : choix de dossier ou Worktrees), ne pas y répondre, le signaler à DrSmoke et redistribuer ce qui peut l'être.
 - Ne pas commiter quand les tests n'ont pas pu être lancés (Codex a commité deux tests en échec le 18 octobre, bash bloqué dans son bac à sable) : laisser les fichiers modifiés, le dire au chef, qui lance les tests.
 - Worktrees interdits (règle de DrSmoke, 18 octobre 2026) : ne jamais créer ni supprimer un worktree, ni déplacer une session vers un autre dossier. Chaque cycle laissait le terminal OpenCode bloqué sur une fenêtre « Worktrees » ou « Choose directory ». La règle est gravée dans `~/.config/opencode/AGENTS.md`, les raccourcis de cette fenêtre sont désactivés dans `cli.json` et la compétence `worktrees` est retirée de l'orchestrateur. Travailler dans le dossier du projet, isoler par une branche git locale si besoin.
+- Dans `.gitignore`, ancrer `/captures/` avec un slash initial : sans slash, la règle ignore aussi `docs/captures/` et empêche Git de suivre les nouvelles captures du dossier de documentation.
 
 ## Sécurité
 
