@@ -104,9 +104,11 @@ test('le masque découpe en trois règles : chemins entiers, secrets, adresses e
   const bs=String.fromCharCode(92), dbl=bs+bs;
   const entree='Lire C:/Users/Personne/Projet Prive/client.txt et C:'+bs+'Dossier Prive'+bs+'note.txt et '+dbl+'serveur'+bs+'partage'+bs+'d.txt et /home/moi/f.txt et ~/prive/x.md'
     +' et https://exemple.test/a et http://127.0.0.1:4317/api/tableau et /api/todos'
-    +' et token=abcdef123456 et ghp_abcdefghijklmnopqrstuvwxyz et password: supersecret123';
+    +' et token=abcdef123456 et api_key=1234567890abcdef et apikey=zyxwvutsrqponmlkj et password=changeme1234 et secret=confidentiel1'
+    +' et ghp_abcdefghijklmnopqrstuvwxyz et ghr_abcdefghijklmnopqrstuvwxyz et ' + 'sk' + '-' + 'abcdefghijklmnopqrstuvwxyz' + ' et github_pat_abcdefghijklmnopqrstuvwxyz123456 et Bearer abcdefghijklmnopqrstuv';
   const sortie=mask(entree);
-  assert.doesNotMatch(sortie,/Projet Prive|client\.txt|Dossier Prive|note\.txt|serveur|partage|d\.txt|\/home\/moi|prive\/x\.md|abcdef123456|ghp_|supersecret123/);
+  assert.doesNotMatch(sortie,/Projet Prive|client\.txt|Dossier Prive|note\.txt|serveur|partage|d\.txt|\/home\/moi|prive\/x\.md/);
+  assert.doesNotMatch(sortie,/abcdef123456|1234567890abcdef|zyxwvutsrqponmlkj|changeme1234|confidentiel1|ghp_|ghr_|sk-|github_pat_|abcdefghijklmnopqrstuv/,'toutes les formes de secret sont masquées');
   assert.match(sortie,/\[chemin masqué\]/,'chemins remplacés en entier');
   assert.match(sortie,/\[secret masqué\]/,'secrets remplacés');
   assert.match(sortie,/https:\/\/exemple\.test\/a/,'adresse intacte (contre-exemple obligatoire)');
