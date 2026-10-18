@@ -70,3 +70,10 @@ test('une panne de lecture remonte au serveur au lieu d\'inventer une absence de
   const lire = createTerminalStatusReader({ run: async () => { throw new Error('Herdr indisponible'); } });
   await assert.rejects(() => lire({ paneId: 'w5:p1' }), /Herdr indisponible/);
 });
+
+test('l\'heure coupée sur la ligne suivante par la largeur du panneau est retrouvée', () => {
+  const ecran = ['■ You’ve hit your usage limit. Upgrade to Pro (https://', 'chatgpt.com/explore/pro), visit https://chatgpt.com/settings/', 'usage to purchase more credits or try again at 4:39 PM.', '', '› Ask Codex to do anything'].join('\n');
+  const etat = parseLimitMessage(ecran, { now: maintenant });
+  assert.equal(etat.limitReached, true);
+  assert.equal(etat.resetsAt, attendu(16, 39));
+});

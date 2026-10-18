@@ -375,6 +375,7 @@ test('la pause de quota vue du terminal remplit l\'activité avec source termina
   t.after(()=>rm(dossier,{recursive:true,force:true}));
   const agents=[{id:'w5:p2@fp',paneId:'w5:p2',kind:'Antigravity',name:'Antigravity',status:'idle',ready:true}];
   const {send,server}=await bureau(t,{list:async()=>agents},{
+    now:()=>Date.parse('2026-10-17T12:00:00.000Z'),
     readOtherActivity:async()=>null,
     lireEtat:async()=>({limitReached:true,resetsAt:'2026-10-17T18:00:00.000Z',usedPercent:91,source:'terminal'}),
     queueFile:join(dossier,'file-attente.json'),
@@ -495,4 +496,22 @@ test('la direction : un seul chef, choix confirmé, retour à la règle',async t
   const final=await send('/api/state');
   assert.deepEqual(final.data.agents.map(a=>a.boss),[true,false],'retour à la règle');
   assert.equal((await send('/api/direction',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:'{}'})).status,403,'jeton et origine exigés');
+});
+
+test('un message de limite resté affiché après l\'heure annoncée ne garde pas l\'agent en pause',async t=>{
+  const dossier=await mkdtemp(join(tmpdir(),'queue-serveur-'));
+  t.after(()=>rm(dossier,{recursive:true,force:true}));
+  const agents=[{id:'w5:p4@fp',paneId:'w5:p4',kind:'Codex',name:'Codex',status:'idle',ready:true}];
+  let maintenant=Date.parse('2026-10-18T16:00:00.000Z');
+  const {send,server}=await bureau(t,{list:async()=>agents},{
+    now:()=>maintenant,
+    readOtherActivity:async()=>null,
+    lireEtat:async()=>({limitReached:true,resetsAt:new Date(maintenant<Date.parse('2026-10-18T16:39:00.000Z')?'2026-10-18T16:39:00.000Z':'2026-10-19T16:39:00.000Z').toISOString(),usedPercent:null,source:'terminal'}),
+    queueFile:join(dossier,'file-attente.json'),
+  });
+  await server.pauses.tick();
+  assert.equal((await send('/api/state')).data.agents[0].activity.limitReached,true);
+  maintenant=Date.parse('2026-10-18T16:50:00.000Z');
+  await server.pauses.tick();
+  assert.notEqual((await send('/api/state')).data.agents[0].activity?.limitReached,true);
 });

@@ -40,7 +40,8 @@ function heureLocale(annonce, maintenant) {
 
 export function parseLimitMessage(texte, { now = () => Date.now() } = {}) {
   const maintenant = now();
-  for (const ligne of String(texte ?? '').slice(0, MAX_TEXTE).split('\n')) {
+  const lignes = String(texte ?? '').slice(0, MAX_TEXTE).split('\n');
+  for (const [i, ligne] of lignes.entries()) {
     const atteinte = /hit (?:your |the )?(?:usage|session|rate)[^\n]{0,40}limit/i.test(ligne)
       || /limit (?:has been )?reached/i.test(ligne);
     // « You've used 91% of your session limit » annonce un pourcentage ; la
@@ -53,7 +54,11 @@ export function parseLimitMessage(texte, { now = () => Date.now() } = {}) {
     else if (reste) usedPercent = 100 - Number(reste[1]);
     if (usedPercent !== null && !(usedPercent >= 0 && usedPercent <= 100)) usedPercent = null;
     const limiteAtteinte = atteinte || (usedPercent !== null && usedPercent >= 100);
-    const repere = /(?:try again at|resets?(?: at)?|reset at|réessaie(?:z)? à)\s*([^\n·]+)/i.exec(ligne);
+    // Le panneau coupe le message à sa largeur (« … or try again at / 4:39 PM. ») : l'heure peut suivre sur les lignes
+    // suivantes du même bloc, jusqu'à la première ligne vide.
+    let bloc = ligne;
+    for (let j = i + 1; j < Math.min(lignes.length, i + 5) && lignes[j].trim(); j++) bloc += ' ' + lignes[j].trim();
+    const repere = /(?:try again at|resets?(?: at)?|reset at|réessaie(?:z)? à)\s*([^\n·]+)/i.exec(bloc);
     const resetsAt = repere ? heureLocale(repere[1], maintenant) : null;
     return { limitReached: limiteAtteinte, resetsAt, usedPercent, source: 'terminal' };
   }

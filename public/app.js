@@ -54,7 +54,7 @@ function updateForm() {
 }
 let agentsKey='';
 function renderAgents() {
-  const key=JSON.stringify([state.connected,selected,state.agents.map(a=>[a.id,a.name,a.kind,a.status,label(a),a.paneId||'',quotaPause(a)?.until||0])]);
+  const key=JSON.stringify([state.connected,selected,state.agents.map(a=>[a.id,a.name,a.kind,a.status,label(a),a.paneId||'',quotaPause(a)?.until?.getTime?.()||0]),state.agents.some(quotaPause)?Math.floor(Date.now()/60000):0]);
   if(key!==agentsKey||!$('agents-list').children.length){agentsKey=key;buildAgentList();}
   renderDetail();
 }
@@ -69,7 +69,7 @@ function buildAgentList() {
     const face=logoCanvas(a)||document.createElement('span');
     if(face.tagName==='SPAN'){face.className='pixel-face';face.style.setProperty('--agent-color',colors[i%colors.length]);}
     face.setAttribute('aria-hidden','true');
-    const text=document.createElement('span'), name=document.createElement('span'), status=document.createElement('span');name.className='agent-name';name.textContent=a.name;status.className='agent-status';const qp=quotaPause(a);status.textContent=!state.connected?t('etat.connexion_perdue'):qp?(qp.until?t('pause.retour',{heure:hhmm(qp.until)}):t('pause.en_pause')):label(a);text.append(name,status);button.append(face,text);
+    const text=document.createElement('span'), name=document.createElement('span'), status=document.createElement('span');name.className='agent-name';name.textContent=a.name;status.className='agent-status';const qp=quotaPause(a);status.textContent=!state.connected?t('etat.connexion_perdue'):qp?(qp.until?t('pause.retour',{heure:hhmm(qp.until),reste:until(qp.until)}):t('pause.en_pause')):label(a);text.append(name,status);button.append(face,text);
     if(a.paneId){const pane=document.createElement('span');pane.className='pane-badge';pane.textContent=a.paneId;pane.title=t('poste.panneau_herdr');button.append(pane);}button.addEventListener('click',()=>selectAgent(a.id));list.append(button);
   });
   if(focused){const again=[...list.children].find(e=>e.dataset.agentId===focused);(again||list.querySelector('.agent-button')||$('refresh')).focus({preventScroll:true});}
@@ -180,10 +180,25 @@ function renderQueue(){
 // Le pourcentage est un simple rapport de cases cochées sur cases totales, jamais une estimation.
 const pct=(done,total)=>total?Math.round(done/total*100):0;
 function planOf(id){const steps=todosData?.agents?.[id];if(!steps?.length)return null;const done=steps.filter(s=>s.status==='completed').length;return{done,total:steps.length,pct:pct(done,steps.length)};}
+// Demandes envoyées aux agents (courrier du chef et file d'attente) : à faire tant que l'agent n'a pas rendu
+// de réponse terminée après l'envoi, réalisée ensuite. Rien n'est coché sans cette preuve.
+let discData=null;
+function demandes(){
+  const bulles=discData?.bulles||[],limite=Date.now()-12*3600000,vues=new Set(),out=[];
+  const fini=(id,at)=>bulles.some(b=>b.id===id&&b.state==='terminée'&&Date.parse(b.at)>Date.parse(at));
+  const ajoute=(clef,agent,texte,at)=>{
+    if(!agent||!at||vues.has(clef)||Date.parse(at)<limite)return;vues.add(clef);
+    out.push({at:Date.parse(at),text:t('taches.demande',{nom:agent.name,titre:texte.length>110?texte.slice(0,110)+'…':texte}),done:fini(agent.id,at),source:t('taches.demandes_source')});
+  };
+  for(const a of state.agents)for(const d of Array.isArray(a.delegations)?a.delegations:[])if(d&&d.title)ajoute('d'+d.id,agentByTarget(d.target),d.title,d.at);
+  for(const q of queueItems){if(q.state==='annulee'||typeof q.message!=='string')continue;ajoute('q'+q.itemId,state.agents.find(a=>a.id===q.id),q.message,q.sentAt||q.createdAt||q.notBefore);}
+  return out.sort((x,y)=>y.at-x.at).slice(0,15).map(({at,...rest})=>rest);
+}
 async function loadTodos(){
   if(!state.connected||!state.token){todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),t('taches.herdr_off'),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:t('taches.plans_non_charges')}));return;}
   const gen=++todosGen;let data;
   try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){if(gen!==todosGen)return;todosData=null;todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),errorText(error),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:t('taches.plans_non_charges')}));return;}
+  data.project=[...demandes(),...(data.project||[])];
   const shown=JSON.stringify([data,state.agents.map(a=>a.id+a.name)]);if(gen!==todosGen||shown===todosShown)return;todosShown=shown;todosData=data;renderStatusbar(activeAgent());
   const project=data.project||[],done=project.filter(t=>t.done).length;
   const prog=$('tasks-progress');prog.replaceChildren();
@@ -371,6 +386,8 @@ function quotaPause(a){
     // Seules les limites épuisées décident du retour ; si aucune ne l'est, l'outil ne dit pas laquelle bloque.
     const blocking=(act.limits||[]).filter(l=>l.usedPercent>=100);
     const times=[...blocking.filter(l=>l.resetsAt).map(l=>new Date(l.resetsAt)),act.resetsAt?new Date(act.resetsAt):null].filter(d=>d&&d>Date.now());
+    // Message de terminal resté affiché après l'heure annoncée : la pause est finie.
+    if(act.source==='terminal'&&act.resetsAt&&new Date(act.resetsAt)<=Date.now())return null;
     const which=blocking.map(l=>windowLabel(l.window)).filter(Boolean);
     return {until:times.length?new Date(Math.max(...times)):null,source:act.source==='terminal'?'terminal':'journal',which:which[0]||null};
   }
@@ -388,7 +405,7 @@ function pauseBanner(a,pause){
   const source=pause.source==='terminal'?t('pause.source.terminal'):t('pause.source.journal');
   if(!pause.until)return t('pause.quota_non_annonce',{source});
   const relance=holdUntilOf(a)||new Date(pause.until.getTime()+300000);
-  return t('pause.quota_retour',{retour:hhmm(pause.until),relance:hhmm(relance),source});
+  return t('pause.quota_retour',{retour:hhmm(pause.until),reste:until(pause.until),relance:hhmm(relance),source});
 }
 const hhmm=d=>d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 function renderStatusbar(a){
@@ -532,6 +549,8 @@ function logSend(names,message,outcome,detail){
 }
 const compact=n=>n>=1e6?t('poste.unites.m',{n:(n/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1})}):n>=1e3?t('poste.unites.k',{n:(n/1e3).toLocaleString('fr-FR',{maximumFractionDigits:1})}):String(n);
 function since(ms){const s=Math.round(ms/1000);return s<60?t('temps.passe.s',{n:s}):s<3600?t('temps.passe.min',{n:Math.round(s/60)}):t('temps.passe.h',{n:Math.round(s/3600)});}
+// Compte à rebours compact pour la scène : « 45MIN », « 1H12 ».
+function compte(d){const m=Math.max(0,Math.ceil((d-Date.now())/60000));return m<60?m+'MIN':Math.floor(m/60)+'H'+String(m%60).padStart(2,'0');}
 function until(d){const m=Math.max(0,Math.round((d-Date.now())/60000));return m<60?t('temps.future.min',{n:m}):t('temps.future.hm',{h:Math.floor(m/60),m:String(m%60).padStart(2,'0')});}
 // Tokens et sous-agents : uniquement ce que le transcript local expose (Claude). Les autres outils ne les publient pas.
 function renderActivity(a){
@@ -670,7 +689,7 @@ async function readOutput() {
 // Fil de la salle de contrôle : extraits des réponses lisibles de tous les agents.
 async function loadDiscussion(){
   if(!state.connected||!state.token||!window.Discussion)return;
-  try{Discussion.render($('disc-list'),await request('/api/discussion',{headers:{'X-Bureau-Token':state.token}}));}
+  try{discData=await request('/api/discussion',{headers:{'X-Bureau-Token':state.token}});Discussion.render($('disc-list'),discData);}
   catch(error){$('disc-list').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:errorText(error)}));}
 }
 // Fichiers confiés : faits observés par le serveur pour chaque pièce jointe, jamais un verdict.
@@ -906,7 +925,7 @@ function trackChanges(){
     lastStatus.set(a.id,a.status);
     const p=quotaPause(a);
     if(p&&!pausedSeen.has(a.id)){pausedSeen.add(a.id);if(prev&&!paused)quotaTrips.set(a.id,{dir:'out',t0:now,h:hash(a.id)});if(prev)signal('pause',t('pause.notif',{nom:a.name}),p.until?t('pause.notif_retour',{heure:hhmm(p.until)}):t('pause.notif_sans_heure'));}
-    else if(!p&&pausedSeen.has(a.id)){pausedSeen.delete(a.id);if(!paused)quotaTrips.set(a.id,{dir:'in',t0:now,h:hash(a.id)});}
+    else if(!p&&pausedSeen.has(a.id)){pausedSeen.delete(a.id);if(!paused)quotaTrips.set(a.id,{dir:'in',t0:now,h:hash(a.id)});signal('delegation',t('pause.notif_dispo',{nom:a.name}),'');$('mail-live').textContent=t('pause.notif_dispo',{nom:a.name});}
   }
 }
 const hash=s=>{let h=2166136261;for(const c of s)h=Math.imul(h^c.codePointAt(0),16777619);return h>>>0;};
@@ -1069,7 +1088,7 @@ function board(x,y,w){
   const paused=state.agents.map(quotaPause).filter(Boolean),back=paused.map(q=>q.until).filter(Boolean).sort((a,b)=>a-b)[0];
   const waitingQ=queueItems.filter(q=>q.state==='attente').length,subs=state.agents.reduce((k,a)=>k+(a.activity?.subagents?.length||0),0);
   const rows=[[t('scene.en_file'),String(waitingQ),'#9dbbff',waitingQ>0],[t('scene.courrier'),String(mailCount),'#a0dfc4',mailCount>0],[t('scene.sous_agents'),String(subs),'#c4d2e4',subs>0]];
-  if(paused.length)rows.unshift([t('scene.retour'),back?hhmm(back):t('scene.heure_inconnue'),'#b5a8e6',true]);
+  if(paused.length)rows.unshift([t('scene.retour'),back?compte(back):t('scene.heure_inconnue'),'#b5a8e6',true]);
   const h=rows.length*8+5;boardBottom=y+h;
   px(x,y,w,h,'#0b1426');px(x+1,y+1,w-2,h-2,'#111e33');
   rows.forEach(([name,value,c,on],i)=>{
@@ -1808,7 +1827,7 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 let cycleLent=0;
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(currentTab()==='equipe'&&cycleLent++%3===0){loadTreatments();loadDiscussion();}},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();if(currentTab()==='equipe')loadTreatments();}},5000);
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}

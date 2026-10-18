@@ -28,6 +28,9 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   let transferPending=Promise.resolve();
   const etats=new Map();
   let sondeur=null;
+  // Heure annoncée mémorisée à sa première lecture : le message reste affiché après la remise à zéro,
+  // et « 4:39 PM » relu à 16:50 ne doit pas devenir demain.
+  const echeances=new Map();
   // Pause de quota : la fin de pause retenue est la remise à zéro la plus tardive
   // parmi les limites atteintes. Une erreur de lecture est laissée remonter : la
   // file gèle alors l'envoi au lieu de l'autoriser (revue croisée, constat 3).
@@ -55,6 +58,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     for(const agent of liste) {
       try {
         const etat=await lireEtat(agent);
+        if(etat?.resetsAt) {
+          const annonce=new Date(etat.resetsAt).toTimeString().slice(0,5);
+          const connue=echeances.get(agent.id);
+          if(connue&&connue.annonce===annonce&&now()-connue.vu<12*3600000) etat.resetsAt=connue.resetsAt;
+          else echeances.set(agent.id,{annonce,resetsAt:etat.resetsAt,vu:now()});
+          // Remise à zéro passée : le message affiché est périmé, l'agent n'est plus en pause.
+          if(Date.parse(etat.resetsAt)<=now()) {etats.delete(agent.id);continue;}
+        } else echeances.delete(agent.id);
         if(etat) etats.set(agent.id,etat); else etats.delete(agent.id);
       } catch { /* Lecture impossible : on garde le dernier état connu. */ }
     }
