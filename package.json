@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",
-    "check": "node --check server.mjs && node --check src/herdr.mjs && node --check src/claude-activity.mjs && node --check src/agent-activity.mjs && node --check src/files.mjs && node --check src/todos.mjs && node --check public/app.js && node --check public/terminal.js && node --check src/delegations.mjs && node --check src/queue.mjs && node --check src/terminal-status.mjs && node --check src/blackboard.mjs && node --check src/direction.mjs && node --check scripts/init-kit.mjs && node --check scripts/evaluer.mjs && node --check scripts/partager-lecons.mjs && node --check scripts/installateur-anime.mjs && node --check scripts/empaqueter-release.mjs && node --check src/responses.mjs && node --check src/crisis.mjs"
+    "check": "node --check server.mjs && node --check src/herdr.mjs && node --check src/claude-activity.mjs && node --check src/agent-activity.mjs && node --check src/files.mjs && node --check src/todos.mjs && node --check public/app.js && node --check public/terminal.js && node --check src/delegations.mjs && node --check src/queue.mjs && node --check src/terminal-status.mjs && node --check src/blackboard.mjs && node --check src/direction.mjs && node --check scripts/init-kit.mjs && node --check scripts/evaluer.mjs && node --check scripts/partager-lecons.mjs && node --check scripts/installateur-anime.mjs && node --check scripts/empaqueter-release.mjs && node --check src/responses.mjs && node --check src/crisis.mjs && node --check src/autonomie.mjs"
   },
   "engines": {
     "node": ">=22"

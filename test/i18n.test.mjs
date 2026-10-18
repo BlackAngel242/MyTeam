@@ -100,7 +100,7 @@ test('i18n : aucune clé orpheline dans les dictionnaires',()=>{
 
 test('i18n : t remplace les valeurs du gabarit',()=>{
   const fenetre=charger();
-  const avecValeur=Object.entries(fenetre.__i18n.FR).find(([,texte])=>/\{\w+\}/.test(texte));
+  const avecValeur=Object.entries(fenetre.__i18n.FR).find(([,texte])=>(texte.match(/\{\w+\}/g)||[]).length===1);
   assert.ok(avecValeur,'un gabarit avec valeur existe');
   const [cle,texteFr]=avecValeur;
   const nom=texteFr.match(/\{(\w+)\}/)[1];

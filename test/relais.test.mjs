@@ -180,3 +180,24 @@ test('file API : le navigateur ne peut pas autoriser la répétition des message
   assert.match(repeated.data.error,/déjà en file/);
   assert.equal(server.queue.list().items.length,1);
 });
+
+test('autonomie API : protégée, lancée avec objectif, le chef reçoit l\'objectif à la fin d\'un agent, arrêt manuel',async t=>{
+  const {send,server,headers,status,sends,clock}=await bureau(t);
+  const post=value=>send('/api/autonomie',{method:'POST',headers,body:JSON.stringify(value)});
+  assert.equal((await send('/api/autonomie')).status,403);
+  assert.equal((await send('/api/autonomie',{method:'POST',body:'{}'})).status,403);
+  assert.equal((await send('/api/autonomie',{headers})).data.actif,false);
+  assert.equal((await post({actif:'oui'})).status,400);
+  assert.equal((await post({actif:true,objectif:'x'})).status,400);
+  const lance=await post({actif:true,objectif:'Finir le lot L',minutes:30,echanges:10});
+  assert.equal(lance.status,200);assert.equal(lance.data.actif,true);
+  assert.deepEqual((await send('/api/relais',{headers})).data,{actif:true});
+  await server.pauses.tick();clock.ms+=1000;status('idle');await server.pauses.tick();
+  await server.queue.tick();
+  assert.equal(sends.length,1);assert.equal(sends[0].id,'chef');
+  assert.match(sends[0].message,/objectif : « Finir le lot L »/);assert.match(sends[0].message,/échange 1\/10/);
+  assert.equal((await send('/api/autonomie',{headers})).data.echanges,1);
+  const arret=await post({actif:false});
+  assert.equal(arret.data.actif,false);
+  assert.deepEqual((await send('/api/relais',{headers})).data,{actif:false});
+});

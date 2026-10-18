@@ -961,6 +961,10 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 .crise-agents{list-style:none;margin:10px 0;padding:0;display:grid;gap:10px}
 .crise-agent{display:block;font-size:12.5px;font-weight:550;color:#d5e2f1}
 .crise-tail{margin:4px 0 6px;padding:6px 8px;max-height:84px;overflow:auto;background:#0b1626;border-radius:6px;font-size:11.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.auto-box{max-width:520px}.auto-form{display:grid;gap:6px;margin:8px 0}.auto-form textarea,.auto-form select{background:#0b1426;color:var(--text);border:1px solid #2a4768;border-radius:6px;padding:6px;font:inherit}
+.auto-row{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}.auto-h{margin:10px 0 4px;font-size:13px;color:var(--muted)}
+.auto-journal{list-style:none;margin:0;padding:0;max-height:160px;overflow:auto;font-size:12.5px}.auto-journal li{padding:3px 0;border-bottom:1px solid #1b2c46}
+.auto-live{font-size:13.5px;margin:8px 0}.auto-btn[data-actif="true"]{background:#14402f;border-color:#2e8f6a;color:#a0dfc4}
 .crise-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 .tool-button.danger{border-color:#e0a63a;color:#ffe2a8}
 @media (prefers-reduced-motion:no-preference){.crise .crise-btn{animation:crise-pulse 2.4s ease-in-out infinite}}

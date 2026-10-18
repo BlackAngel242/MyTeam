@@ -81,7 +81,7 @@ export function createRelais({file,enqueue,now=()=>Date.now(),locked=()=>false}=
         if(locked())continue;
         const raw=typeof agent.name==='string'&&!/[\\/]/.test(agent.name)&&!/^\s*[a-z]:/i.test(agent.name)?agent.name:'Agent';
         const name=Array.from(raw.replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim()).slice(0,80).join('')||'Agent';
-        await enqueue({id:bossId,message:`${name} vient de terminer. Lis son panneau avant de lui confier la suite.`,priority:'normale',requestKey:hash(`${epoch}:${agent.id}:${counter}`)});
+        await enqueue({id:bossId,message:`${name} vient de terminer. Lis son panneau avant de lui confier la suite.`,priority:'normale',requestKey:hash(`${epoch}:${agent.id}:${counter}`)},{agent:{id:agent.id,name}});
       }
     });
   }

@@ -18,12 +18,13 @@ import {readBlackboard} from './src/blackboard.mjs';
 import {readClaudeResponses,readAgentResponses} from './src/responses.mjs';
 import {createCrise} from './src/crisis.mjs';
 import {createRelais,RelaisError} from './src/relais.mjs';
+import {createAutonomie,AutonomieError} from './src/autonomie.mjs';
 
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),piedFile=fileURLToPath(new URL('./.bureau/pied.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),piedFile=fileURLToPath(new URL('./.bureau/pied.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais,autonomieFile=join(dirname(queueFile),'autonomie.json'),autonomie:autonomieInjectee}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -55,6 +56,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   const sonderEtats=async()=>{
     const liste=await bridge.list();
     await relaisEcoute.observe(liste,equipe.effective(liste).boss?.id).catch(()=>{});
+    await autonomie.verifier().catch(()=>{});
     for(const agent of liste) {
       try {
         const etat=await lireEtat(agent);
@@ -103,7 +105,9 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
   const equipe=direction??createDirection({file:directionFile,now});
-  const relaisEcoute=relais??createRelais({file:relaisFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),now,locked:()=>salleDeCrise.isActive()});
+  // Le relais d'écoute passe par l'autonomie : sans mode actif, la consigne part telle quelle ; sinon elle rappelle l'objectif.
+  const relaisEcoute=relais??createRelais({file:relaisFile,enqueue:(item,meta)=>autonomie.passer(item,meta),now,locked:()=>salleDeCrise.isActive()});
+  const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive()});
   async function allowedRoots() {
     const roots=new Map();
     const add=async(key,label,kind,path)=>{
@@ -483,6 +487,21 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(error instanceof QueueError?(error.status??400):errorStatus(error),{error:error.message||'La priorité n’a pas changé.'});
         }
       }
+      if(url.pathname==='/api/autonomie') {
+        if(req.method==='GET') {
+          if(!guard(req,{body:false})) return;
+          return json(200,autonomie.get());
+        }
+        if(req.method==='POST') {
+          if(!guard(req)) return;
+          const parsed=await readJson(req);
+          if(parsed===null) return;
+          if(typeof parsed?.actif!=='boolean') return json(400,{error:'L’autonomie exige {"actif":true,"objectif":"…"} ou {"actif":false}.'});
+          try {return json(200,parsed.actif?await autonomie.demarrer(parsed):await autonomie.arreter());}
+          catch(error) {return json(error instanceof AutonomieError?error.status:500,{error:error instanceof AutonomieError?error.message:'L’autonomie n’a pas pu être changée.'});}
+        }
+        return json(404,{error:'Page introuvable.'});
+      }
       if(url.pathname==='/api/relais') {
         if(req.method==='GET') {
           if(!guard(req,{body:false})) return;
@@ -559,6 +578,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   server.pauses=pauses;
   server.direction=equipe;
   server.relais=relaisEcoute;
+  server.autonomie=autonomie;
   return server;
 }
 
