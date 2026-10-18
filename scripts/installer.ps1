@@ -30,6 +30,9 @@
 .PARAMETER Aide
   Affiche cette aide.
 
+.PARAMETER Interface
+  Dialogue UTF-8 avec l'interface animée, par lignes @@ et réponses sur l'entrée standard.
+
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\installer.ps1 -DryRun
 #>
@@ -40,6 +43,7 @@ param(
   [int]$Port = 0,
   [string]$HerdrChemin = '',
   [switch]$SansRaccourci,
+  [switch]$Interface,
   [ValidateSet('fr','en')][string]$Lang = $(if ([Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName -eq 'fr') { 'fr' } else { 'en' }),
   [switch]$Aide
 )
@@ -49,11 +53,14 @@ function Texte([string]$fr, [string]$en) {
   if ($Lang -eq 'en') { return $en }
   return $fr
 }
-try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+try {
+  [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+  if ($Interface) { [Console]::InputEncoding = New-Object Text.UTF8Encoding($false) }
+} catch {}
 
 if ($Aide) {
   if ($Lang -eq 'en') {
-    Write-Host 'Agent desktop installer: -DryRun (preview), -Oui (does not confirm installations or agent launches), -Port <1024..65535>, -HerdrChemin <exe>, -SansRaccourci, -Lang fr|en, -Aide. Each installation requires individual confirmation.'
+    Write-Host 'Agent desktop installer: -DryRun (preview), -Oui (does not confirm installations or agent launches), -Port <1024..65535>, -HerdrChemin <exe>, -SansRaccourci, -Interface, -Lang fr|en, -Aide. Each installation requires individual confirmation.'
     exit 0
   }
   Write-Host @'
@@ -69,6 +76,7 @@ Options :
   -HerdrChemin <fichier>  Chemin de herdr.exe si absent du PATH.
   -SansRaccourci   Ne propose pas le raccourci « Ouvrir le bureau ».
   -Lang fr|en      Langue des messages (sinon langue du système).
+  -Interface       Dialogue avec l'interface animée.
   -Aide            Affiche cette aide.
 
 Chaque installation est confirmee par o/n. Aucune cle n'est demandee.
@@ -78,12 +86,79 @@ Chaque installation est confirmee par o/n. Aucune cle n'est demandee.
 
 $racine = Split-Path -Parent $PSScriptRoot
 $rapport = @()
+$script:questionNumero = 0
+$script:etape = ''
+$script:etatEtape = 'skip'
+$script:echecInterface = $false
+$script:interfaceFinie = $false
+$script:entreeFermee = $false
 
-function Dire([string]$texte) { Write-Host $texte }
-function Simuler([string]$texte) { Write-Host "[simulation] $texte" -ForegroundColor Yellow }
+function Champ-Interface([string]$texte) {
+  $texte = $texte -replace '[\r\n\t\x00-\x1f\x7f]', ' '
+  foreach ($chemin in @($racine,$HOME)) { if ($chemin) { $texte = $texte -replace [regex]::Escape($chemin), '[dossier]' } }
+  $texte = $texte -replace '\b[A-Za-z]:[\\/][^"<>|?*]+', '[dossier]'
+  $texte = $texte -replace '(?:~[\\/]|/(?:home|Users|root|tmp|private|mnt|media|Volumes)/)[^"<>|?*]+', '[dossier]'
+  return $texte -replace '(?:sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{12,}|(?i:Bearer\s+)[A-Za-z0-9_.-]+', '[masqué]'
+}
+function Emettre-Interface([string]$type, [string[]]$champs) {
+  $propres = @($champs | ForEach-Object { Champ-Interface $_ })
+  [Console]::WriteLine('@@' + $type + ' ' + ($propres -join "`t"))
+}
+function Etat-Etape([string]$etat) {
+  if (-not $Interface) { return }
+  if ($etat -eq 'fail') { $script:etatEtape = 'fail'; $script:echecInterface = $true }
+  elseif ($etat -eq 'ok' -and $script:etatEtape -ne 'fail') { $script:etatEtape = 'ok' }
+}
+function Fin-Etape {
+  if ($Interface -and $script:etape) {
+    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,(Texte 'Étape terminée.' 'Step finished.'))
+    $script:etape = ''
+  }
+}
+function Etape([string]$id) {
+  if (-not $Interface) { return }
+  Fin-Etape
+  $script:etape = $id; $script:etatEtape = 'skip'
+  Emettre-Interface 'STEP' @($id)
+}
+function Terminer-Interface {
+  if (-not $Interface -or $script:interfaceFinie) { return }
+  Fin-Etape
+  $script:interfaceFinie = $true
+  Emettre-Interface 'END' @($(if ($script:echecInterface) { 'fail' } else { 'ok' }))
+}
+function Lire-Interface([string]$type,[string]$question,[string[]]$valeurs) {
+  $script:questionNumero++
+  Emettre-Interface $type (@("q$script:questionNumero",$question) + $valeurs)
+  $ligne = [Console]::ReadLine()
+  if ($null -eq $ligne) { $script:entreeFermee = $true }
+  return $ligne
+}
+function Lire-Saisie([string]$question,[string]$defaut = '') {
+  if (-not $Interface) { return Read-Host $question }
+  $saisie = Lire-Interface 'INPUT' $question @($defaut)
+  if ($null -eq $saisie) { return $null }
+  if ($saisie -eq '') { return $defaut }
+  return $saisie
+}
+function Choisir([string]$question,[string[]]$options) {
+  if (-not $Interface) { return Read-Host $question }
+  return Lire-Interface 'CHOICE' $question $options
+}
+
+function Dire([string]$texte) {
+  if ($Interface) { Emettre-Interface 'INFO' @($texte) } else { Write-Host $texte }
+}
+function Simuler([string]$texte) {
+  if ($Interface) { Dire "[simulation] $texte" } else { Write-Host "[simulation] $texte" -ForegroundColor Yellow }
+}
 function Noter([string]$texte) { $script:rapport += $texte }
 
 function Confirmer([string]$question, [switch]$Individuel) {
+  if ($Interface) {
+    $saisie = Lire-Interface 'CONFIRM' $question @()
+    return $null -ne $saisie -and $saisie.Trim().ToLowerInvariant() -eq 'o'
+  }
   if ($DryRun) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
   if ($Oui -and -not $Individuel) { Dire (Texte "$question o/n : o (accepte automatiquement)" "$question y/n : y (automatic)"); return $true }
   while ($true) {
@@ -97,9 +172,15 @@ function Confirmer([string]$question, [switch]$Individuel) {
 }
 
 function Executer([string]$description, [scriptblock]$action) {
+  if ($Interface -and $script:entreeFermee) { Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
-  & $action
+  if ($Interface) { $global:LASTEXITCODE = 0 }
+  try {
+    & $action
+    if ($Interface -and $LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
+    if ($Interface) { Etat-Etape 'ok' }
+  } catch { if ($Interface) { Etat-Etape 'fail' }; throw }
   return $true
 }
 
@@ -117,12 +198,25 @@ function Rafraichir-Path {
   $env:Path = "$machine;$utilisateur"
 }
 
+if ($Interface) {
+  $plans = @(
+    @('node','Node.js','Node.js'), @('clink','Confort du terminal','Terminal comfort'),
+    @('herdr','Terminaux','Terminals'), @('panneaux','Quatre panneaux','Four panes'),
+    @('outils','Outils disponibles','Available tools'), @('chef','Commandes du chef','Chief commands'),
+    @('extensions','Extensions','Extensions'), @('config','Configuration','Configuration'),
+    @('kit',"Kit d'équipe",'Team kit'), @('tests','Vérifications','Checks')
+  )
+  foreach ($plan in $plans) { Emettre-Interface 'PLAN' @($plan[0],(Texte $plan[1] $plan[2])) }
+}
+trap { if ($Interface) { Etat-Etape 'fail'; Terminer-Interface }; break }
+
 Dire (Texte '=== Bureau des agents : installation ===' '=== Agent desktop: installation ===')
 Dire (Texte "Dossier du projet : $racine" "Project folder: $racine")
 if ($DryRun) { Dire (Texte 'Mode simulation : rien ne sera installe ni modifie.' 'Preview mode: nothing will be installed or changed.') }
 Dire ''
 
 # --- 1. Node.js ---------------------------------------------------------
+Etape 'node'
 Dire (Texte '--- 1. Node.js (version 22 ou plus) ---' '--- 1. Node.js (version 22 or later) ---')
 $majeur = Lire-VersionNode
 if ($null -ne $majeur -and $majeur -ge 22) {
@@ -158,6 +252,25 @@ if ($DryRun) { $nodeOk = $true } elseif ($null -ne $majeur -and $majeur -ge 22) 
 Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
+function Proposer-Clink {
+  if (@(Get-Command clink -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) {
+    Dire (Texte 'Clink est déjà présent.' 'Clink is already available.'); return
+  }
+  $wingetClink = @(Get-Command winget -CommandType Application -ErrorAction SilentlyContinue)[0]
+  if (-not $wingetClink) { Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
+  Dire (Texte 'Clink ajoute couleurs, complétion et historique à cmd.exe.' 'Clink adds colors, completion and history to cmd.exe.')
+  if (Confirmer (Texte 'Installer Clink ?' 'Install Clink?') -Individuel) {
+    try {
+      Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
+        & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
+      } | Out-Null
+    } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.') }
+  }
+}
+Etape 'clink'
+Dire (Texte '--- Clink : confort du terminal (facultatif) ---' '--- Clink: terminal comfort (optional) ---')
+Proposer-Clink
+Etape 'herdr'
 Dire (Texte '--- 2. Herdr (gestionnaire de terminaux) ---' '--- 2. Herdr (terminal manager) ---')
 function Resoudre-Herdr([string]$chemin) {
   $fichier = Get-Item -LiteralPath $chemin -ErrorAction SilentlyContinue
@@ -225,10 +338,11 @@ Dire ''
 # --- 3. Panneaux Herdr --------------------------------------------------
 function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   $texte = & $herdrTrouve @Arguments
-  if ($LASTEXITCODE -ne 0) { throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($Interface -and $Arguments[1] -in @('create','split','rename','start','prompt','install')) { Etat-Etape 'ok' }
   if ($SansJson) { return $texte }
   $resultat = ($texte -join "`n") | ConvertFrom-Json
-  if ($resultat.error) { throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($resultat.error) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
   return $resultat
 }
 
@@ -283,7 +397,8 @@ function Proposer-Agents([string[]]$Panneaux) {
     if ($DryRun) { Simuler (Texte "Choix et confirmation de l'outil pour $($noms[$i])." "Choose and confirm a tool for $($noms[$i])."); continue }
     Dire (Texte "Panneau $($noms[$i]) : outils detectes" "Pane $($noms[$i]): detected tools")
     for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
-    $choix = Read-Host (Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)")
+    $choix = Choisir (Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)") (@((Texte 'Ignorer' 'Skip')) + $outils)
+    if ($Interface -and $choix -match '^\d+$') { $choix = [string]([int]$choix - 1) }
     if ([string]::IsNullOrWhiteSpace($choix) -or $choix -eq '0') { continue }
     if ($choix -notmatch '^[0-9]{1,2}$' -or [int]$choix -lt 1 -or [int]$choix -gt $outils.Count) { Dire (Texte 'Choix invalide : panneau ignore.' 'Invalid choice: pane skipped.'); continue }
     $type = $outils[[int]$choix-1]
@@ -298,6 +413,7 @@ function Proposer-Agents([string[]]$Panneaux) {
   }
 }
 
+Etape 'panneaux'
 Dire (Texte '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---' '--- 3. Herdr workspace with 4 panes (first pane = chief) ---')
 # Commandes verifiees dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
@@ -320,6 +436,7 @@ if ($herdrTrouve) {
         Noter (Texte 'Panneaux Herdr : 4 panneaux crees et nommes.' 'Herdr panes: 4 panes created and named.')
         Proposer-Agents $ids
       } catch {
+        if ($Interface) { Etat-Etape 'fail' }
         Dire (Texte "La creation automatique n'a pas abouti : $($_.Exception.Message)" "Automatic creation failed: $($_.Exception.Message)")
         Dire (Texte 'Procedure manuelle (commandes verifiees de Herdr) :' 'Manual procedure (verified Herdr commands):')
         Dire '  herdr workspace create --label "Bureau des agents"'
@@ -358,6 +475,7 @@ function Installer-CompetenceChef([string]$DossierPersonnel) {
   [void][IO.Directory]::CreateDirectory($dossier)
   $flux = [IO.File]::Open($cible, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
   try { $octets = [Text.Encoding]::UTF8.GetBytes($contenu); $flux.Write($octets,0,$octets.Length) } finally { $flux.Dispose() }
+  if ($Interface) { Etat-Etape 'ok' }
 }
 
 function Proposer-Chef([string]$DossierPersonnel = $HOME) {
@@ -389,9 +507,10 @@ function Proposer-Chef([string]$DossierPersonnel = $HOME) {
     }
   }
 }
-Proposer-Chef
+if (-not $Interface) { Proposer-Chef }
 
 # --- 4. IA en ligne de commande (optionnelles) ---------------------------
+Etape 'outils'
 Dire (Texte '--- 4. Outils d''IA en ligne de commande (entierement optionnels) ---' '--- 4. Command-line AI tools (entirely optional) ---')
 Dire (Texte 'Aucune cle ni aucun jeton n''est demande ici. Si un outil vous demande de vous' 'No key or token is requested here. If a tool asks you to sign in,')
 Dire (Texte 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.' 'use its own interface when you first open it, never this script.')
@@ -442,6 +561,8 @@ Noter (Texte 'Antigravity : documentation seule (methode non verifiee).' 'Antigr
 Dire ''
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
+if ($Interface) { Etape 'chef'; Proposer-Chef }
+Etape 'extensions'
 Dire (Texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 5. Useful project extensions (optional) ---')
 # Trois extensions verifiees sur le marche VS Code le 17 octobre 2026, avec
 # leurs editeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
@@ -476,6 +597,7 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
 Dire ''
 
 # --- 6. Configuration ---------------------------------------------------
+Etape 'config'
 Dire (Texte '--- 6. Configuration du bureau ---' '--- 6. Desktop configuration ---')
 $portChoisi = 0
 $portActuel = [Environment]::GetEnvironmentVariable('BUREAU_PORT', 'User')
@@ -487,7 +609,8 @@ if ($Port -eq 0 -and -not $DryRun) {
   if (Confirmer (Texte "Utiliser le port $portChoisi pour le bureau ?" "Use port $portChoisi for the desktop?")) { }
   else {
     while ($true) {
-      $saisie = Read-Host (Texte 'Entrez un port entre 1024 et 65535' 'Enter a port between 1024 and 65535')
+      $saisie = Lire-Saisie (Texte 'Entrez un port entre 1024 et 65535' 'Enter a port between 1024 and 65535') "$portChoisi"
+      if ($Interface -and $null -eq $saisie) { break }
       if ($saisie -match '^\d+$') {
         $valeur = [int]$saisie
         if ($valeur -ge 1024 -and $valeur -le 65535) { $portChoisi = $valeur; break }
@@ -501,7 +624,7 @@ if ("$portActuel" -ne "$portChoisi") {
   Executer (Texte "Enregistrement de BUREAU_PORT = $portChoisi (variable de l'utilisateur)." "Saving BUREAU_PORT = $portChoisi (user environment variable).") {
     [Environment]::SetEnvironmentVariable('BUREAU_PORT', "$portChoisi", 'User')
   } | Out-Null
-  Noter (Texte "BUREAU_PORT : $portChoisi." "BUREAU_PORT: $portChoisi..")
+  if (-not ($Interface -and $script:entreeFermee)) { Noter (Texte "BUREAU_PORT : $portChoisi." "BUREAU_PORT: $portChoisi..") }
 } else {
   Dire (Texte "BUREAU_PORT deja enregistre ($portChoisi). Rien a faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
   Noter (Texte "BUREAU_PORT : deja a $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
@@ -514,7 +637,11 @@ if (-not $SansRaccourci) {
   # dans le navigateur. Le lanceur « Ouvrir le bureau.cmd » existant est reutilise
   # pour ce second cas : aucun doublon n'est cree.
   $choixLanceur = 'bureau'
-  if ($DryRun) {
+  if ($Interface) {
+    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @('Herdr',(Texte 'Le bureau' 'Desktop'),(Texte 'Herdr et bureau' 'Herdr and desktop'))
+    if ($saisie -eq '1') { $choixLanceur = 'herdr' }
+    if ($saisie -eq '3') { $choixLanceur = 'ensemble' }
+  } elseif ($DryRun) {
     Simuler (Texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (defaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')
   } elseif ($Oui) {
     Dire (Texte 'Raccourci : choix automatique « le bureau » (-Oui).' 'Shortcut: automatic desktop choice (-Oui).')
@@ -570,6 +697,26 @@ if (-not $SansRaccourci) {
 }
 Dire ''
 
+function Proposer-Kit {
+  if ($Oui) { Dire (Texte 'Le mode -Oui ne crée aucun kit.' 'The -Oui option never creates a kit.'); return }
+  $scriptKit = Join-Path $racine 'scripts/init-kit.mjs'
+  if (-not (Test-Path -LiteralPath $scriptKit -PathType Leaf)) { Dire (Texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.'); return }
+  if (-not (Confirmer (Texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?') -Individuel)) { return }
+  if ($DryRun -and -not $Interface) { Simuler (Texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.'); return }
+  $dossier = Lire-Saisie (Texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')
+  if ([string]::IsNullOrWhiteSpace($dossier)) { return }
+  if ($DryRun) { Simuler (Texte 'Initialisation du kit dans le dossier choisi.' 'Initialize the kit in the chosen folder.'); return }
+  $dossier = [IO.Path]::GetFullPath($dossier)
+  $nodeKit = @(Get-Command node -CommandType Application -ErrorAction Stop)[0]
+  & $nodeKit.Source $scriptKit $dossier --lang $Lang
+  if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; Dire (Texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.'); return }
+  if ($Interface) { Etat-Etape 'ok' }
+  Noter (Texte "Kit d'équipe : initialisé." 'Team kit: initialized.')
+}
+
+if ($Interface) { Etape 'kit'; Proposer-Kit }
+Etape 'tests'
+
 # --- 7. Tests -----------------------------------------------------------
 Dire (Texte '--- 7. Tests du projet ---' '--- 7. Project tests ---')
 if (-not $nodeOk) {
@@ -595,21 +742,7 @@ if (-not $nodeOk) {
 }
 Dire ''
 
-function Proposer-Kit {
-  if ($Oui) { Dire (Texte 'Le mode -Oui ne crée aucun kit.' 'The -Oui option never creates a kit.'); return }
-  $scriptKit = Join-Path $racine 'scripts/init-kit.mjs'
-  if (-not (Test-Path -LiteralPath $scriptKit -PathType Leaf)) { Dire (Texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.'); return }
-  if (-not (Confirmer (Texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?') -Individuel)) { return }
-  if ($DryRun) { Simuler (Texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.'); return }
-  $dossier = Read-Host (Texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')
-  if ([string]::IsNullOrWhiteSpace($dossier)) { return }
-  $dossier = [IO.Path]::GetFullPath($dossier)
-  $nodeKit = @(Get-Command node -CommandType Application -ErrorAction Stop)[0]
-  & $nodeKit.Source $scriptKit $dossier --lang $Lang
-  if ($LASTEXITCODE -ne 0) { Dire (Texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.'); return }
-  Noter (Texte "Kit d'équipe : initialisé." 'Team kit: initialized.')
-}
-Proposer-Kit
+if (-not $Interface) { Proposer-Kit }
 
 # --- Resume -------------------------------------------------------------
 Dire (Texte '=== Resume ===' '=== Summary ===')
@@ -619,3 +752,5 @@ Dire ''
 Dire (Texte "Pour ouvrir le bureau : double-cliquez sur 'Ouvrir le bureau.cmd' dans $racine" "To open the desktop: double-click Ouvrir le bureau.cmd in $racine")
 Dire (Texte "ou lancez 'node server.mjs' puis ouvrez http://127.0.0.1:$portChoisi" "or run node server.mjs, then open http://127.0.0.1:$portChoisi")
 Dire (Texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
+Terminer-Interface
+if ($Interface -and $script:echecInterface) { exit 1 }

@@ -17,12 +17,14 @@
 #   --sans-raccourci     Ne propose pas le raccourci « Ouvrir le bureau ».
 #   --aide               Affiche cette aide.
 #   --lang fr|en         Langue des messages (sinon langue du système).
+#   --interface          Dialogue UTF-8 avec l'interface animée.
 
 DRY_RUN=0
 OUI=0
 PORT=""
 HERDR_CHEMIN=""
 SANS_RACCOURCI=0
+INTERFACE=0
 LANGUE="${LC_ALL:-${LC_MESSAGES:-${LANG:-en}}}"
 case "$LANGUE" in fr*) LANGUE=fr ;; *) LANGUE=en ;; esac
 texte() {
@@ -36,11 +38,12 @@ while [ $# -gt 0 ]; do
     --port) PORT="${2:-}"; shift ;;
     --herdr-chemin) HERDR_CHEMIN="${2:-}"; shift ;;
     --sans-raccourci) SANS_RACCOURCI=1 ;;
+    --interface) INTERFACE=1 ;;
     --lang)
       case "${2:-}" in fr|en) LANGUE="$2"; shift ;; *) printf 'Langue invalide / Invalid language: fr|en\n'; exit 1 ;; esac ;;
     --aide)
-      if [ "$LANGUE" = en ]; then printf '%s\n' 'Agent desktop installer: --dry-run (preview), --oui (never confirms installations or agent launches), --port <1024..65535>, --herdr-chemin <file>, --sans-raccourci, --lang fr|en, --aide. Each installation needs individual confirmation.'; exit 0; fi
-      sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+      if [ "$LANGUE" = en ]; then printf '%s\n' 'Agent desktop installer: --dry-run (preview), --oui (never confirms installations or agent launches), --port <1024..65535>, --herdr-chemin <file>, --sans-raccourci, --interface, --lang fr|en, --aide. Each installation needs individual confirmation.'; exit 0; fi
+      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -55,12 +58,85 @@ done
 RACINE="$(cd "$(dirname "$0")/.." && pwd)"
 RAPPORT=""
 
-dire() { echo "$1"; }
-simuler() { echo "[simulation] $1"; }
+champ_interface() {
+  local valeur="$1"
+  valeur=${valeur//$'\r'/ };valeur=${valeur//$'\n'/ };valeur=${valeur//$'\t'/ }
+  [ -z "${RACINE:-}" ] || valeur=${valeur//"$RACINE"/[dossier]}
+  [ -z "${HOME:-}" ] || valeur=${valeur//"$HOME"/[dossier]}
+  if [[ "$valeur" =~ [[:cntrl:]]|[A-Za-z]:[\\/]|\~/|/(home|Users|root|tmp|private|mnt|media|Volumes)/|sk-|gh[pousr]_|github_pat_|Bearer ]]; then
+    printf '%s' "$valeur" | sed -E 's@[[:cntrl:]]@ @g; s@[A-Za-z]:[\\/][^"<>|?*]+@[dossier]@g; s@(~[\\/]|/(home|Users|root|tmp|private|mnt|media|Volumes)/)[^"<>|?*]+@[dossier]@g; s@(sk-|gh[pousr]_|github_pat_)[A-Za-z0-9_-]{12,}|Bearer[[:space:]]+[A-Za-z0-9_.-]+@[masqué]@g'
+  else printf '%s' "$valeur";fi
+}
+
+emettre_interface() {
+  local type="$1" separateur=' ' champ;shift
+  printf '@@%s' "$type"
+  for champ in "$@"; do printf '%s' "$separateur";champ_interface "$champ";separateur=$'\t';done
+  printf '\n'
+}
+
+etat_etape() {
+  [ "${INTERFACE:-0}" = 1 ] || return 0
+  if [ "$1" = fail ]; then ETAT_ETAPE=fail;ECHEC_INTERFACE=1
+  elif [ "$1" = ok ] && [ "$ETAT_ETAPE" != fail ]; then ETAT_ETAPE=ok;fi
+}
+
+fin_etape() {
+  if [ "${INTERFACE:-0}" = 1 ] && [ -n "${ETAPE:-}" ]; then
+    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$(texte 'Étape terminée.' 'Step finished.')"
+    ETAPE=''
+  fi
+}
+
+etape() {
+  [ "${INTERFACE:-0}" = 1 ] || return 0
+  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;emettre_interface STEP "$ETAPE"
+}
+
+terminer_interface() {
+  local code="$1"
+  [ "${INTERFACE:-0}" = 1 ] || return 0
+  [ "$code" = 0 ] || etat_etape fail
+  fin_etape
+  if [ "$ECHEC_INTERFACE" = 1 ]; then emettre_interface END fail;else emettre_interface END ok;fi
+}
+
+lire_interface() {
+  local type="$1" question="$2";shift 2
+  QUESTION_NUMERO=$((QUESTION_NUMERO+1))
+  emettre_interface "$type" "q$QUESTION_NUMERO" "$question" "$@"
+  REPONSE_INTERFACE=''
+  IFS= read -r REPONSE_INTERFACE || { ENTREE_FERMEE=1;return 1; }
+}
+
+lire_saisie() {
+  local question="$1" defaut="${2:-}"
+  if [ "${INTERFACE:-0}" = 1 ]; then
+    lire_interface INPUT "$question" "$defaut" || return 1
+    [ -n "$REPONSE_INTERFACE" ] || REPONSE_INTERFACE="$defaut"
+  else printf '%s : ' "$question";IFS= read -r REPONSE_INTERFACE;fi
+}
+
+choisir() {
+  local question="$1";shift
+  if [ "${INTERFACE:-0}" = 1 ]; then lire_interface CHOICE "$question" "$@"
+  else printf '%s : ' "$question";IFS= read -r REPONSE_INTERFACE;fi
+}
+
+dire() {
+  if [ "${INTERFACE:-0}" = 1 ];then emettre_interface INFO "$1";else echo "$1";fi
+}
+simuler() {
+  if [ "${INTERFACE:-0}" = 1 ];then dire "[simulation] $1";else echo "[simulation] $1";fi
+}
 noter() { RAPPORT="$RAPPORT
  - $1"; }
 
 confirmer() {
+  if [ "${INTERFACE:-0}" = 1 ]; then
+    lire_interface CONFIRM "$1" || return 1
+    [ "$REPONSE_INTERFACE" = o ];return $?
+  fi
   if [ "$DRY_RUN" = "1" ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
   if [ "$OUI" = "1" ] && [ "${2:-}" != "individuel" ]; then dire "$(texte "$1 o/n : o (accepte automatiquement)" "$1 y/n : y (automatic)")"; return 0; fi
   while true; do
@@ -77,10 +153,12 @@ confirmer() {
 }
 
 executer() {
+  if [ "${INTERFACE:-0}" = 1 ] && [ "${ENTREE_FERMEE:-0}" = 1 ];then dire "$(texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.')";return 0;fi
   if [ "$DRY_RUN" = "1" ]; then simuler "$1"; return 0; fi
   dire "$1"
   shift
-  "$@"
+  if [ "${INTERFACE:-0}" != 1 ];then "$@";return $?;fi
+  if "$@";then etat_etape ok;else etat_etape fail;return 1;fi
 }
 
 # Les valeurs deviennent des donnees, jamais du code shell reinterprete.
@@ -118,16 +196,18 @@ ecrire_lanceur() {
         printf 'exec %s\n' "$(literal_shell "$HERDR_LANCEUR")"
       fi
     fi
-  } > "$fichier"
-  chmod +x "$fichier"
+  } > "$fichier" || return 1
+  chmod +x "$fichier" || return 1
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
 }
 
 ecrire_desktop() {
   local fichier="$1" cible="$2" terminal="$3" argument
   argument=$(argument_desktop "$cible") || return 1
   printf '[Desktop Entry]\nType=Application\nName=Ouvrir le bureau\nExec=%s\nTerminal=%s\nCategories=Utility;\n' \
-    "$argument" "$terminal" > "$fichier"
-  chmod +x "$fichier"
+    "$argument" "$terminal" > "$fichier" || return 1
+  chmod +x "$fichier" || return 1
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
 }
 
 installer_node() {
@@ -177,12 +257,25 @@ commande_node() {
   esac
 }
 
+if [ "$INTERFACE" = 1 ]; then
+  QUESTION_NUMERO=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0;ENTREE_FERMEE=0
+  for id in node herdr panneaux outils chef extensions config kit tests; do
+    case "$id" in
+      node) libelle=Node.js;;herdr) libelle=$(texte Terminaux Terminals);;panneaux) libelle=$(texte 'Quatre panneaux' 'Four panes');;
+      outils) libelle=$(texte 'Outils disponibles' 'Available tools');;chef) libelle=$(texte 'Commandes du chef' 'Chief commands');;
+      extensions) libelle=Extensions;;config) libelle=Configuration;;kit) libelle=$(texte "Kit d'équipe" 'Team kit');;tests) libelle=$(texte Vérifications Checks);;
+    esac
+    emettre_interface PLAN "$id" "$libelle"
+  done
+  trap 'terminer_interface $?' EXIT
+fi
 dire "$(texte '=== Bureau des agents : installation ===' '=== Agent desktop: installation ===')"
 dire "$(texte "Dossier du projet : $RACINE" "Project folder: $RACINE")"
 if [ "$DRY_RUN" = "1" ]; then dire "$(texte 'Mode simulation : rien ne sera installe ni modifie.' 'Preview mode: nothing will be installed or changed.')"; fi
 dire ''
 
 # --- 1. Node.js ---------------------------------------------------------
+etape node
 dire "$(texte '--- 1. Node.js (version 22 ou plus) ---' '--- 1. Node.js (version 22 or later) ---')"
 MAJEURE=$(version_node_majeure || true)
 if [ -n "$MAJEURE" ] && [ "$MAJEURE" -ge 22 ] 2>/dev/null; then
@@ -221,6 +314,7 @@ fi
 dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
+etape herdr
 dire "$(texte '--- 2. Herdr (gestionnaire de terminaux) ---' '--- 2. Herdr (terminal manager) ---')"
 chercher_herdr() {
   if [ -n "$HERDR_CHEMIN" ]; then
@@ -336,21 +430,24 @@ proposer_agents() {
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Choix et confirmation de l'outil pour ${noms[$i]}." "Choose and confirm a tool for ${noms[$i]}.")"; i=$((i+1)); continue; fi
     dire "$(texte "Panneau ${noms[$i]} : outils détectés" "Pane ${noms[$i]}: detected tools")"
     for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
-    printf '%s : ' "$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')"
-    read -r choix || choix=0
+    choisir "$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')" "$(texte Ignorer Skip)" "${outils[@]}" || REPONSE_INTERFACE=0
+    choix="$REPONSE_INTERFACE"
+    if [ "${INTERFACE:-0}" = 1 ] && [[ "$choix" =~ ^[0-9]{1,2}$ ]]; then choix=$((10#$choix-1));fi
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
       type="${outils[$((10#$choix-1))]}"
       if command -v "$type" >/dev/null 2>&1 && confirmer "$(texte "Lancer $type dans le panneau ${noms[$i]} ?" "Start $type in pane ${noms[$i]}?")" individuel; then
         if "$HERDR_TROUVE" agent start "${noms[$i]}" --kind "$type" --pane "$pane" >/dev/null; then
+          [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
           if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
           noter "$(texte "$type : lancement confirmé par Herdr." "$type: launch confirmed by Herdr.")"
-        else dire "$(texte "Le lancement de $type n’a pas été confirmé. Consultez le panneau avant de réessayer." "Launch of $type was not confirmed. Check the pane before trying again.")"; fi
+        else [ "${INTERFACE:-0}" != 1 ] || etat_etape fail;dire "$(texte "Le lancement de $type n’a pas été confirmé. Consultez le panneau avant de réessayer." "Launch of $type was not confirmed. Check the pane before trying again.")"; fi
       fi
     fi
     i=$((i+1))
   done
 }
 
+etape panneaux
 dire "$(texte '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---' '--- 3. Herdr workspace with 4 panes (first pane = chief) ---')"
 # Commandes verifiées dans l'aide de Herdr 0.9.5 : herdr workspace create,
 # herdr pane split, herdr pane rename, herdr agent start <nom> --kind <type>
@@ -368,11 +465,13 @@ if [ -n "$HERDR_TROUVE" ]; then
       panneaux_ok=0
       ids=$(creer_grille_herdr) && panneaux_ok=1
       if [ "$panneaux_ok" = "1" ]; then
+        [ "$INTERFACE" != 1 ] || etat_etape ok
         dire "$(texte 'Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4.' 'Panes created and named: Chef, Agent 2, Agent 3, Agent 4.')"
         noter "$(texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')"
         proposer_agents "$ids"
       fi
       if [ "$panneaux_ok" = "0" ]; then
+        [ "$INTERFACE" != 1 ] || etat_etape fail
         dire "$(texte "La création automatique n'a pas abouti." "Automatic creation failed.")"
         dire "$(texte 'Procédure manuelle (commandes vérifiées de Herdr) :' 'Manual procedure (verified Herdr commands):')"
         dire '  herdr workspace create --label "Bureau des agents"'
@@ -410,6 +509,7 @@ installer_competence_chef() {
   [ -n "$contenu" ] && [ "${#contenu}" -le 524288 ] || return 1
   mkdir -p "$dossier" || return 1
   (set -C; printf '%s' "$contenu" > "$cible") || return 1
+  [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
 }
 
 proposer_chef() {
@@ -423,7 +523,8 @@ proposer_chef() {
     case "$integration" in pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|qwen|letta|cursor|mastracode|antigravity-cli|grok) ;; *) continue ;; esac
     if confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then
       if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
-      elif ! "$HERDR_TROUVE" integration install "$integration"; then dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
+      elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok
+      else etat_etape fail;dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
     fi
   done
   [ -n "${CHEF_PANE:-}" ] || return 0
@@ -434,12 +535,14 @@ proposer_chef() {
   dire "$orientation"
   if confirmer "$(texte 'Envoyer cette orientation au chef ?' 'Send this orientation to the chief?')" individuel; then
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Orientation du chef dans $CHEF_PANE." "Chief orientation in $CHEF_PANE.")"
-    elif ! "$HERDR_TROUVE" agent prompt "$CHEF_PANE" "$orientation"; then dire "$(texte 'Envoi non confirmé : consultez le panneau avant de réessayer.' 'Send not confirmed: check the pane before trying again.')"; fi
+    elif "$HERDR_TROUVE" agent prompt "$CHEF_PANE" "$orientation"; then etat_etape ok
+    else etat_etape fail;dire "$(texte 'Envoi non confirmé : consultez le panneau avant de réessayer.' 'Send not confirmed: check the pane before trying again.')"; fi
   fi
 }
-proposer_chef
+[ "$INTERFACE" = 1 ] || proposer_chef
 
 # --- 4. IA en ligne de commande (optionnelles) ---------------------------
+etape outils
 dire "$(texte "--- 4. Outils d'IA en ligne de commande (entierement optionnels) ---" "--- 4. Command-line AI tools (entirely optional) ---")"
 dire "$(texte "Aucune cle ni aucun jeton n'est demande ici. Si un outil vous demande de vous" "No key or token is requested here. If a tool asks you to sign in,")"
 dire "$(texte 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.' 'use its own interface when you first open it, never this script.')"
@@ -494,6 +597,8 @@ noter "$(texte 'Antigravity : documentation seule (methode non verifiee).' 'Anti
 dire ''
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
+if [ "$INTERFACE" = 1 ]; then etape chef;proposer_chef;fi
+etape extensions
 dire "$(texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 5. Useful project extensions (optional) ---')"
 # Trois extensions vérifiées sur le marché VS Code le 17 octobre 2026, avec
 # leurs éditeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
@@ -522,6 +627,7 @@ fi
 dire ''
 
 # --- 6. Configuration ---------------------------------------------------
+etape config
 dire "$(texte '--- 6. Configuration du bureau ---' '--- 6. Desktop configuration ---')"
 FICHIERS_PROFIL=("$HOME/.profile")
 [ -f "$HOME/.bashrc" ] && FICHIERS_PROFIL+=("$HOME/.bashrc")
@@ -541,8 +647,8 @@ fi
 if [ -z "$PORT" ] && [ "$DRY_RUN" != "1" ]; then
   if ! confirmer "$(texte "Utiliser le port $PORT_CHOISI pour le bureau ?" "Use port $PORT_CHOISI for the desktop?")"; then
     while true; do
-      printf '%s : ' "$(texte 'Entrez un port entre 1024 et 65535' 'Enter a port between 1024 and 65535')"
-      read -r saisie
+      lire_saisie "$(texte 'Entrez un port entre 1024 et 65535' 'Enter a port between 1024 and 65535')" "$PORT_CHOISI" || break
+      saisie="$REPONSE_INTERFACE"
       case "$saisie" in
         ''|*[!0-9]*) dire "$(texte 'Port invalide.' 'Invalid port.')" ;;
         *)
@@ -559,6 +665,7 @@ esac
 if [ "$PORT_CHOISI" -lt 1024 ] || [ "$PORT_CHOISI" -gt 65535 ]; then PORT_CHOISI="4317"; fi
 
 ecrire_profil() {
+  if [ "${INTERFACE:-0}" = 1 ] && [ "${ENTREE_FERMEE:-0}" = 1 ];then dire "$(texte 'Entrée fermée : configuration conservée.' 'Input closed: configuration kept.')";return 0;fi
   bloc="# >>> bureau-des-agents >>>
 export BUREAU_PORT=\"$PORT_CHOISI\""
   if [ -n "$HERDR_A_ENREGISTRER" ]; then
@@ -578,14 +685,17 @@ export BUREAU_HERDR_PATH=$(literal_shell "$HERDR_A_ENREGISTRER")"
     else
       : > "$tmp"
     fi
-    printf '%s\n' "$bloc" >> "$tmp"
-    mv "$tmp" "$fichier"
+    printf '%s\n' "$bloc" >> "$tmp" || return 1
+    mv "$tmp" "$fichier" || return 1
+    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
     dire "$(texte "Configuration ecrite dans $fichier." "Configuration written to $fichier.")"
   done
 }
-ecrire_profil
-noter "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")"
-if [ -n "$HERDR_A_ENREGISTRER" ]; then noter "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")"; fi
+ecrire_profil || { etat_etape fail;exit 1; }
+if [ "$INTERFACE" != 1 ] || [ "$ENTREE_FERMEE" != 1 ]; then
+  noter "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")"
+  if [ -n "$HERDR_A_ENREGISTRER" ]; then noter "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")"; fi
+fi
 
 if [ "$SANS_RACCOURCI" != "1" ]; then
   if command -v xdg-user-dir >/dev/null 2>&1; then
@@ -601,7 +711,11 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
   # dans le navigateur. Le lanceur existant est réutilisé pour ce second cas :
   # aucun doublon n'est créé.
   CHOIX_LANCEUR='bureau'
-  if [ "$DRY_RUN" = "1" ]; then
+  if [ "$INTERFACE" = 1 ]; then
+    choisir "$(texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?')" Herdr "$(texte 'Le bureau' Desktop)" "$(texte 'Herdr et bureau' 'Herdr and desktop')" || REPONSE_INTERFACE=''
+    [ "$REPONSE_INTERFACE" = 1 ] && CHOIX_LANCEUR=herdr
+    [ "$REPONSE_INTERFACE" = 3 ] && CHOIX_LANCEUR=ensemble
+  elif [ "$DRY_RUN" = "1" ]; then
     simuler "$(texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')"
   elif [ "$OUI" = "1" ]; then
     dire "$(texte 'Raccourci : choix automatique « le bureau » (--oui).' 'Shortcut: automatic desktop choice (--oui).')"
@@ -688,36 +802,43 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
 fi
 dire ''
 
+proposer_kit() {
+  [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne crée aucun kit.' 'The --oui option never creates a kit.')"; return 0; }
+  local script_kit="$RACINE/scripts/init-kit.mjs" dossier node_kit
+  [ -f "$script_kit" ] || { dire "$(texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.')"; return 0; }
+  confirmer "$(texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?')" individuel || return 0
+  if [ "$DRY_RUN" = 1 ] && [ "${INTERFACE:-0}" != 1 ]; then simuler "$(texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.')"; return 0; fi
+  lire_saisie "$(texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')" || return 0
+  dossier="$REPONSE_INTERFACE"
+  [ -n "$dossier" ] || return 0
+  if [ "$DRY_RUN" = 1 ]; then simuler "$(texte 'Initialisation du kit dans le dossier choisi.' 'Initialize the kit in the chosen folder.')";return 0;fi
+  case "$dossier" in --*) dossier="./$dossier" ;; esac
+  node_kit=$(command -v node || command -v node.exe) || return 1
+  if "$node_kit" "$script_kit" "$dossier" --lang "${LANGUE:-fr}"; then
+    [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
+    noter "$(texte "Kit d'équipe : initialisé." 'Team kit: initialized.')"
+  else [ "${INTERFACE:-0}" != 1 ] || etat_etape fail;dire "$(texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.')"; fi
+}
+
+if [ "$INTERFACE" = 1 ]; then etape kit;proposer_kit;fi
+etape tests
+
 # --- 7. Tests -----------------------------------------------------------
 dire "$(texte '--- 7. Tests du projet ---' '--- 7. Project tests ---')"
 if [ "$NODE_OK" != "1" ]; then
   dire "$(texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
   noter "$(texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')"
 elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')"; then
-  (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test)
-  (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check)
+  (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
+  (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail
+  if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ]; then etat_etape ok;fi
   noter "$(texte 'Tests : executes.' 'Tests: completed.')"
 else
   noter "$(texte 'Tests : non executes (refuse).' 'Tests: not run (declined).')"
 fi
 dire ''
 
-proposer_kit() {
-  [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne crée aucun kit.' 'The --oui option never creates a kit.')"; return 0; }
-  local script_kit="$RACINE/scripts/init-kit.mjs" dossier node_kit
-  [ -f "$script_kit" ] || { dire "$(texte 'Kit indisponible : script absent.' 'Kit unavailable: script missing.')"; return 0; }
-  confirmer "$(texte "Initialiser le kit d'équipe dans un projet ?" 'Initialize the team kit in a project?')" individuel || return 0
-  if [ "$DRY_RUN" = 1 ]; then simuler "$(texte 'Choix du dossier puis initialisation du kit.' 'Choose a folder, then initialize the kit.')"; return 0; fi
-  printf '%s : ' "$(texte 'Dossier du projet (Entrée pour ignorer)' 'Project folder (Enter to skip)')"
-  read -r dossier || return 0
-  [ -n "$dossier" ] || return 0
-  case "$dossier" in --*) dossier="./$dossier" ;; esac
-  node_kit=$(command -v node || command -v node.exe) || return 1
-  if "$node_kit" "$script_kit" "$dossier" --lang "${LANGUE:-fr}"; then
-    noter "$(texte "Kit d'équipe : initialisé." 'Team kit: initialized.')"
-  else dire "$(texte "Le kit n'a pas été initialisé. Consultez le résultat ci-dessus." 'The kit was not initialized. Check the output above.')"; fi
-}
-proposer_kit
+[ "$INTERFACE" = 1 ] || proposer_kit
 
 # --- Resume -------------------------------------------------------------
 dire "$(texte '=== Resume ===' '=== Summary ===')"
@@ -726,3 +847,4 @@ dire ''
 dire "$(texte "Pour ouvrir le bureau : lancez 'node server.mjs' dans $RACINE" "To open the desktop: run node server.mjs in $RACINE")"
 dire "$(texte "puis ouvrez http://127.0.0.1:$PORT_CHOISI (ou utilisez le raccourci cree)." "then open http://127.0.0.1:$PORT_CHOISI (or use the shortcut).")"
 dire "$(texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')"
+if [ "$INTERFACE" = 1 ] && [ "$ECHEC_INTERFACE" = 1 ]; then exit 1;fi

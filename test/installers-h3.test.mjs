@@ -18,7 +18,7 @@ async function ps(t,names,body){
   const path=await temporary(t),script=join(path,'test.ps1');
   await writeFile(script,`\ufeff$ErrorActionPreference='Stop'
 $ast=[System.Management.Automation.Language.Parser]::ParseFile(${literal(join(root,'scripts/installer.ps1'))},[ref]$null,[ref]$null)
-foreach($nom in @(${['Texte',...names].map(literal).join(',')})) {
+foreach($nom in @(${['Texte','Choisir','Lire-Saisie',...names].map(literal).join(',')})) {
  $f=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $nom},$true)
  if(-not $f){throw "fonction absente : $nom"}
  . ([scriptblock]::Create($f.Extent.Text))
@@ -28,7 +28,7 @@ ${body}`);
 }
 async function bash(t,names,body){
   const text=await readFile(join(root,'scripts/installer.sh'),'utf8');
-  const functions=['texte',...names].map(name=>{const match=text.match(new RegExp(`^${name}\\(\\) \\{[\\s\\S]*?^\\}`,'m'));assert.ok(match,`fonction ${name}`);return match[0];}).join('\n');
+  const functions=['texte','choisir','lire_saisie','etat_etape',...names].map(name=>{const match=text.match(new RegExp(`^${name}\\(\\) \\{[\\s\\S]*?^\\}`,'m'));assert.ok(match,`fonction ${name}`);return match[0];}).join('\n');
   const path=await temporary(t),script=join(path,'test.sh');
   await writeFile(script,functions+'\n'+body);
   return execute(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash',['--noprofile','--norc',script.replaceAll('\\','/')],options);

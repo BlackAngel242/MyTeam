@@ -1,0 +1,234 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdtemp, mkdir, copyFile, readFile, writeFile, chmod, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root=fileURLToPath(new URL('..',import.meta.url));
+const ps='C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
+const bash=process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash';
+const literal=value=>`'${value.replaceAll("'","''")}'`;
+async function fixture(t) {
+  const path=await mkdtemp(join(tmpdir(),'installer-interface-'));t.after(()=>rm(path,{recursive:true,force:true}));
+  await mkdir(join(path,'scripts'));
+  for(const file of ['installer.sh','installer.ps1'])await copyFile(join(root,'scripts',file),join(path,'scripts',file));
+  await writeFile(join(path,'scripts/init-kit.mjs'),'throw new Error("ne pas exécuter");');
+  await writeFile(join(path,'Ouvrir le bureau.cmd'),'ne pas exécuter');
+  await writeFile(join(path,'herdr.exe'),'ne pas exécuter');
+  await writeFile(join(path,'herdr'),'#!/bin/bash\nexit 77\n');await chmod(join(path,'herdr'),0o755);
+  return path;
+}
+function dialogue(t,file,args,{answer=()=> 'n',eof=false}={}) {
+  return new Promise((resolve,reject)=>{
+    const child=spawn(file,args,{windowsHide:true,env:{...process.env,BASH_ENV:''},stdio:['pipe','pipe','pipe']});
+    const timer=setTimeout(()=>{child.kill();reject(new Error('Dialogue bloqué'));},120000);
+    t.after(()=>{clearTimeout(timer);if(child.exitCode===null)child.kill();});
+    let output='',errors='',partial='';const records=[];
+    child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');
+    child.stdout.on('data',chunk=>{
+      output+=chunk;partial+=chunk;
+      let newline;
+      while((newline=partial.indexOf('\n'))!==-1) {
+        const line=partial.slice(0,newline).replace(/\r$/,'');partial=partial.slice(newline+1);
+        if(!line.startsWith('@@'))continue;
+        records.push(line);
+        if(!eof&&/^@@(?:CONFIRM|CHOICE|INPUT) /.test(line))child.stdin.write(answer(line)+'\n');
+      }
+    });
+    child.stderr.on('data',part=>errors+=part);child.stdin.on('error',()=>{});
+    child.on('error',reject);child.on('close',code=>{clearTimeout(timer);resolve({code,output,errors,records});});
+    if(eof)child.stdin.end();
+  });
+}
+async function run(t,platform,options={}) {
+  const path=await fixture(t),script=join(path,'scripts',platform==='ps'?'run.ps1':'run.sh');
+  if(platform==='ps') {
+    await writeFile(script,`\ufeff$ErrorActionPreference='Stop'
+    function Get-Command {param($Name,$CommandType,$ErrorAction)
+      if($Name -eq 'winget'){return @{Source='FakeWinget'}}
+      if($Name -eq 'herdr'){return @{Source=${literal(join(path,'herdr.exe'))}}}
+      if($Name -eq 'code'){return @{Source='FakeCode'}}
+    }
+    function FakeWinget {throw 'winget exécuté pendant la simulation'}
+    & ${literal(join(path,'scripts/installer.ps1'))} -DryRun -Lang ${options.lang??'fr'} -Port 4317 ${options.classic?'':'-Interface'} ${options.yes?'-Oui':''} -HerdrChemin ${literal(join(path,options.badHerdr?'scripts/installer.ps1':'herdr.exe'))}
+    exit $LASTEXITCODE`);
+    return {...await dialogue(t,ps,['-NoProfile','-File',script],options),path};
+  }
+  await writeFile(script,`command() {
+    if [ "$1" = -v ];then case "$2" in herdr) printf '%s\\n' '${path.replaceAll('\\','/')}/herdr';return 0;;code) printf 'fake_code\\n';return 0;;*)return 1;;esac;fi
+    builtin command "$@"
+  }
+  . '${join(path,'scripts/installer.sh').replaceAll('\\','/')}' --dry-run --lang ${options.lang??'fr'} --port 4317 ${options.classic?'':'--interface'} ${options.yes?'--oui':''} --herdr-chemin '${path.replaceAll('\\','/')}/herdr'
+  `);
+  return {...await dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options),path};
+}
+function checkProtocol(result,windows) {
+  assert.equal(result.code,0,result.errors);
+  const expected=windows?['node','clink','herdr','panneaux','outils','chef','extensions','config','kit','tests']:['node','herdr','panneaux','outils','chef','extensions','config','kit','tests'];
+  assert.deepEqual(result.records.filter(x=>x.startsWith('@@PLAN ')).map(x=>x.slice(7).split('\t')[0]),expected);
+  assert.deepEqual(result.records.filter(x=>x.startsWith('@@STEP ')).map(x=>x.slice(7)),expected);
+  assert.deepEqual(result.records.filter(x=>x.startsWith('@@DONE ')).map(x=>x.slice(7).split('\t')[0]),expected);
+  assert.equal(result.records.at(-1),'@@END ok');
+  assert.ok(result.records.filter(x=>x.startsWith('@@DONE ')).every(x=>/^@@DONE [a-z]+\t(?:ok|skip|fail)\t/.test(x)));
+  assert.ok(!result.records.join('\n').includes(result.path));
+  const ids=result.records.filter(x=>/^@@(?:CONFIRM|CHOICE|INPUT) /.test(x)).map(x=>x.split(' ')[1].split('\t')[0]);
+  assert.equal(new Set(ids).size,ids.length,'identifiants de questions uniques');
+}
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
+  test(`J1 ${platform} : dialogue complet, oui/non, choix et saisie sans installation`,async t=>{
+    const result=await run(t,platform,{answer:line=>{
+      if(line.startsWith('@@CHOICE'))return '2';
+      if(line.startsWith('@@INPUT'))return 'dossier $(commande) avec espaces';
+      return /extensions|kit|Node.js|Clink/i.test(line)?'o':'n';
+    }});
+    checkProtocol(result,platform==='ps');
+    assert.ok(result.records.some(x=>x.startsWith('@@CONFIRM ')));
+    assert.ok(result.records.some(x=>x.startsWith('@@CHOICE ')));
+    assert.ok(result.records.some(x=>x.startsWith('@@INPUT ')));
+    assert.doesNotMatch(result.errors,/exécuté|commande:|command not found/);
+  });
+  test(`J1 ${platform} : EOF refuse et Oui ne valide pas les installations`,async t=>{
+    const result=await run(t,platform,{yes:true,eof:true,lang:'en'});
+    checkProtocol(result,platform==='ps');
+    assert.ok(result.records.some(x=>/^@@CONFIRM .*Install .*\?/.test(x)));
+    assert.ok(result.records.some(x=>x.startsWith('@@PLAN tests\tChecks')));
+    assert.ok(!result.records.some(x=>/^@@DONE [a-z]+\tok\t/.test(x)),'aucun succès inventé en simulation');
+  });
+  test(`J1 ${platform} : sans drapeau, aucune ligne du protocole`,async t=>{
+    const result=await run(t,platform,{classic:true,eof:true});
+    assert.equal(result.code,0,result.errors);assert.deepEqual(result.records,[]);
+    assert.match(result.output,/Bureau des agents : installation/);
+  });
+}
+if(process.platform==='win32')test('J1 PowerShell : erreur fatale annonce DONE fail et END fail',async t=>{
+  const result=await run(t,'ps',{badHerdr:true,eof:true});
+  assert.equal(result.code,1);
+  assert.equal(result.records.at(-1),'@@END fail');
+  assert.ok(result.records.some(x=>x.startsWith('@@DONE herdr\tfail\t')));
+});
+
+async function functions(t,platform,names,body,options={}) {
+  const path=await fixture(t),script=join(path,'isolated.'+(platform==='ps'?'ps1':'sh'));
+  if(platform==='ps') {
+    await writeFile(script,`\ufeff$ErrorActionPreference='Stop'
+    $ast=[System.Management.Automation.Language.Parser]::ParseFile(${literal(join(root,'scripts/installer.ps1'))},[ref]$null,[ref]$null)
+    foreach($name in @(${names.map(literal).join(',')})) {
+      $f=$ast.Find({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq $name},$true)
+      if(-not $f){throw "fonction absente : $name"}
+      . ([scriptblock]::Create($f.Extent.Text))
+    }
+    ${body}`);
+    return dialogue(t,ps,['-NoProfile','-File',script],options);
+  }
+  const source=await readFile(join(root,'scripts/installer.sh'),'utf8');
+  const definitions=names.map(name=>{
+    const found=source.match(new RegExp(`^${name}\\(\\) \\{[\\s\\S]*?^\\}`,'m'));
+    assert.ok(found,name);return found[0];
+  }).join('\n');
+  await writeFile(script,definitions+'\n'+body);
+  return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
+}
+const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Executer','Proposer-Clink'];
+if(process.platform==='win32') {
+  for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, faux winget et accord individuel avec Oui`,async t=>{
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction)
+      if($CommandType -ne 'Application'){throw 'application requise'}
+      if($Name -eq 'clink' -and '${result}' -eq 'present'){return @{Source='FakeClink'}}
+      if($Name -eq 'winget' -and '${result}' -ne 'absent'){return @(@{Source='FakeWinget'},@{Source='WrongWinget'})}
+    }
+    function FakeWinget { [Console]::WriteLine('CALL:'+($args -join '|'));$global:LASTEXITCODE=$(if('${result}' -eq 'fail'){8}else{0}) }
+    function WrongWinget {throw 'deuxième exécutable interdit'}
+    Etape clink;Proposer-Clink;Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `,{answer:()=>result==='refus'?'n':'o'});
+    assert.equal(data.code,result==='fail'?1:0,data.errors);
+    assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
+    if(['ok','fail'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
+    else assert.doesNotMatch(data.output,/CALL:/);
+    assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+(['ok','fail'].includes(result)?result:'skip')+'\t')));
+    if(result==='refus')assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
+  });
+}
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
+  const body=platform==='ps'?`
+    $Interface=$true;$Lang='fr';$DryRun=$false;$script:interfaceFinie=$false;$script:echecInterface=$false
+    Etape tests
+    Dire ("texte"+[char]10+"@@END ok"+[char]9+" /home/exemple/projet")
+    Dire ('jeton sk-' + ('x'*24))
+    try {Executer 'Commande factice' { $global:LASTEXITCODE=8 }} catch {}
+    Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `:`
+    INTERFACE=1;LANGUE=fr;DRY_RUN=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0
+    etape tests
+    dire $'texte\\n@@END ok\\t /home/exemple/projet'
+    token_suffix=xxxxxxxxxxxxxxxxxxxxxxxx;dire "jeton sk-$token_suffix"
+    fake_failure(){ return 8; }
+    (executer 'Commande factice' fake_failure) || etat_etape fail
+    terminer_interface 0
+    [ "$ECHEC_INTERFACE" != 1 ]
+    `;
+  const names=platform==='ps'?psFunctions:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','dire','simuler','executer'];
+  const data=await functions(t,platform,names,body,{eof:true});
+  assert.equal(data.code,1,data.errors);
+  assert.equal(data.records.filter(x=>x.startsWith('@@END ')).length,1);
+  assert.equal(data.records.at(-1),'@@END fail');
+  assert.ok(data.records.some(x=>x.startsWith('@@DONE tests\tfail\t')));
+  assert.doesNotMatch(data.records.join('\n'),/\/home\/exemple|sk-x{24}/);
+});
+
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : choix d’un outil et confirmation avant l’appel au faux Herdr`,async t=>{
+  const body=platform==='ps'?`
+    $Interface=$true;$Lang='fr';$Oui=$false;$DryRun=$false;$script:questionNumero=0;$script:interfaceFinie=$false;$script:echecInterface=$false;$script:rapport=@()
+    function Get-Command {param($Name,$CommandType,$ErrorAction)
+      if($CommandType -ne 'Application'){throw 'application requise'}
+      if($Name -eq 'codex'){return @{Source='factice.exe'}}
+    }
+    function FakeHerdr { [Console]::WriteLine('CALL:'+($args -join '|'));$global:LASTEXITCODE=0;return '{"result":{}}' }
+    $herdrTrouve='FakeHerdr'
+    Etape panneaux;Proposer-Agents @('w9:p1');Terminer-Interface
+    `:`
+    INTERFACE=1;LANGUE=fr;OUI=0;DRY_RUN=0;QUESTION_NUMERO=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0
+    command(){ if [ "$1" = -v ];then [ "$2" = codex ];return $?;fi;builtin command "$@"; }
+    fake_herdr(){ CALLED="$*";printf '{"result":{}}'; }
+    HERDR_TROUVE=fake_herdr
+    etape panneaux;proposer_agents 'w9:p1';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
+    `;
+  const names=platform==='ps'?[...psFunctions,'Choisir','Detecter-Outils','Proposer-Agents','Appeler-Herdr','Noter']:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','choisir','dire','simuler','noter','confirmer','detecter_outils','proposer_agents'];
+  const data=await functions(t,platform,names,body,{answer:line=>line.startsWith('@@CHOICE')?'2':'o'});
+  assert.equal(data.code,0,data.errors);
+  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|Chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start Chef --kind codex --pane w9:p1/);
+  assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
+  assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
+  assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));
+});
+
+for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : entrée fermée, aucune configuration écrite ensuite`,async t=>{
+  const body=platform==='ps'?`
+    $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:interfaceFinie=$false;$script:echecInterface=$false
+    $script:calls=0
+    Etape config
+    if(Confirmer 'Question' -Individuel){throw 'EOF accepté'}
+    Executer 'Configuration' {$script:calls++} | Out-Null
+    if($script:calls -ne 0){throw 'écriture après EOF'}
+    Terminer-Interface
+    `:`
+    INTERFACE=1;LANGUE=fr;DRY_RUN=0;OUI=1;QUESTION_NUMERO=0;ETAPE='';ETAT_ETAPE=skip;ECHEC_INTERFACE=0
+    work=$(mktemp -d);trap 'rm -rf "$work"' EXIT
+    FICHIERS_PROFIL=("$work/profile");PORT_CHOISI=4317;HERDR_A_ENREGISTRER=''
+    printf 'conserver' > "$work/profile"
+    etape config
+    if confirmer Question individuel;then exit 1;fi
+    ecrire_profil
+    [ "$(cat "$work/profile")" = conserver ] || exit 2
+    terminer_interface 0
+    `;
+  const names=platform==='ps'?psFunctions:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','dire','simuler','confirmer','literal_shell','ecrire_profil'];
+  const data=await functions(t,platform,names,body,{eof:true});
+  assert.equal(data.code,0,data.errors);
+  assert.ok(data.records.some(x=>x.startsWith('@@DONE config\tskip\t')));
+});
