@@ -103,7 +103,7 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe'){loadQueue();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
+  if(name==='equipe'){loadQueue();loadTreatments();renderMail();if(mailCount){mailCount=0;draw(lastFrame);}}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
 // File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
@@ -647,6 +647,26 @@ async function readOutput() {
     $('read-note').textContent=data.truncated?'Extrait des dernières lignes du terminal. Les lignes plus anciennes ne sont pas affichées.':'Les sorties viennent directement du terminal de l’agent.';
   }catch(error){if(id===selected&&sequence===readSequence){$('read-state').textContent='Lecture indisponible';termPlaceholder(errorText(error));}}
   finally{readBusy=false;if(id!==selected&&selected)readOutput();}
+}
+// Fichiers confiés : faits observés par le serveur pour chaque pièce jointe, jamais un verdict.
+const sourceLabels={file:'file',disque:'disque',herdr:'Herdr',journal:'journal'};
+let treatShown='';
+async function loadTreatments(){
+  if(!state.connected||!state.token||!state.agents.length)return;
+  try{
+    const lists=await Promise.all(state.agents.map(a=>request('/api/traitement?id='+encodeURIComponent(a.id),{headers:{'X-Bureau-Token':state.token}}).then(d=>(d.dossiers||[]).map(x=>({...x,agent:a.name})),()=>[])));
+    const dossiers=lists.flat().sort((x,y)=>Date.parse(y.faits.at(-1)?.at||0)-Date.parse(x.faits.at(-1)?.at||0)).slice(0,10);
+    const shown=JSON.stringify(dossiers);if(shown===treatShown)return;treatShown=shown;
+    $('treat-count').textContent=dossiers.length?'('+dossiers.length+')':'';
+    if(!dossiers.length){$('treat-list').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:'Aucun fichier confié pour le moment.'}));return;}
+    $('treat-list').replaceChildren(...dossiers.map(d=>{
+      const sec=document.createElement('section');sec.className='task-group';
+      const h=document.createElement('h3');h.textContent=d.fichierConfie+' · confié à '+d.agent;
+      const ul=document.createElement('ul');ul.className='task-list';
+      for(const f of d.faits){const li=document.createElement('li');li.textContent=hhmm(new Date(f.at))+' · '+f.fait+' ('+(sourceLabels[f.source]||f.source)+')';ul.append(li);}
+      sec.append(h,ul);return sec;
+    }));
+  }catch{ /* Lecture facultative : la file reste utilisable. */ }
 }
 // Pièces jointes : fichiers récents du dossier de l'agent, copiés par le serveur au départ de la consigne (par la file).
 const attachSize=n=>n<1048576?Math.max(1,Math.round(n/1024))+' Ko':(n/1048576).toLocaleString('fr-FR',{maximumFractionDigits:1})+' Mo';
@@ -1594,7 +1614,7 @@ addEventListener('keydown',e=>{
   else if(e.key==='?'&&!typing&&!e.isComposing){e.preventDefault();toggleHelp();}
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadTodos();loadResponses();if(currentTab()==='equipe')loadTreatments();},5000);
 setTimeout(loadTodos,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}

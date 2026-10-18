@@ -41,7 +41,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] E4 (Claude, OpenCode bloqué) Fil de la salle de contrôle `GET /api/discussion` (réutilise le lecteur de journaux du lot A, messages chiffrés de Codex jamais exposés)
 - [ ] E5 (Antigravity) Fil de discussion dans l'interface
 - [x] E6 (OpenCode) Traitement de fichier suivi jusqu'au résultat : `GET /api/traitement`, faits sourcés, jamais « réussi » (section 6)
-- [ ] E7 (Claude) Interface du dossier de traitement
+- [x] E7 (Claude) Interface du dossier de traitement
 
 ## Lot F. Clôture
 
