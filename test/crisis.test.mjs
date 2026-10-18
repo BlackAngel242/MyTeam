@@ -88,7 +88,7 @@ test('crise : interruption polie avec arguments exacts, sans shell, jamais de ki
   const reponse=await herdr.interrupt(agent.id);
   assert.deepEqual(reponse,{requested:true,agent:agent.name});
   const envoi=appels.find(a=>a.args[0]==='pane');
-  assert.deepEqual(envoi.args,['pane','send-keys','w5:p3','Escape']);
+  assert.deepEqual(envoi.args,['pane','send-keys','w5:p3','esc']);
   assert.equal(envoi.options.shell,undefined);
   assert.ok(!appels.some(a=>/kill/i.test(a.args.join(' '))),'aucun kill jamais envoyé');
 });

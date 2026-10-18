@@ -104,7 +104,7 @@ export function createHerdr({run,executeFile=execute}={}) {
   async function interrupt(id) {
     // Interruption polie : Échap dans le panneau, jamais de kill.
     const agent=await resolve(id);
-    await invoke(['pane','send-keys',agent.paneId,'Escape']);
+    await invoke(['pane','send-keys',agent.paneId,'esc']);
     return {requested:true,agent:agent.name};
   }
   async function broadcast(ids,message) {

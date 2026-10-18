@@ -27,7 +27,7 @@ Côté serveur de la salle de crise. Le chef branche l'interface sur ce contrat 
 - Corps : `{"id": "<identifiant d'agent>"}` (identifiant courant, empreinte comprise).
 - Seulement si la crise est active, sinon 409 : `{error: "La salle de crise n'est pas active."}`.
 - 400 si `id` manque ou si l'agent est introuvable : `{error}`.
-- Demande une interruption polie : `herdr pane send-keys <paneId> Escape` (aucun shell, aucun kill). L'agent est invité à s'arrêter proprement ; rien n'est confirmé d'autre qu'une demande envoyée.
+- Demande une interruption polie : `herdr pane send-keys <paneId> esc` (nom canonique de la touche Échap dans Herdr) (aucun shell, aucun kill). L'agent est invité à s'arrêter proprement ; rien n'est confirmé d'autre qu'une demande envoyée.
 - Réponse 200 : `{requested: true, agent: "<nom de l'agent>"}` (jamais de chemin).
 
 ## Effets de la crise active
