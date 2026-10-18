@@ -155,3 +155,16 @@ test('un arrêt demandé pendant la mise en file attend la fin de l\'envoi, sans
   assert.equal(etat.actif, false);
   assert.deepEqual(annulees, ['q-1']);
 });
+
+test('un redémarrage retire de la file les consignes du mode clos', async t => {
+  const { creer, file, relais } = await banc(t);
+  const retirees = [];
+  const a = createAutonomie({ file, enqueue: async () => ({ itemId: 'q-9' }), cancel: async id => { retirees.push(id); }, relais, now: () => Date.parse('2026-10-18T10:00:00.000Z'), locked: () => false });
+  await a.demarrer({ objectif: 'Finir le lot L' });
+  await a.passer(...fin('x', 'Codex'));
+  const b = createAutonomie({ file, enqueue: async () => ({}), cancel: async id => { retirees.push(id); }, relais, now: () => Date.parse('2026-10-18T10:05:00.000Z'), locked: () => false });
+  await b.verifier();
+  await new Promise(r => setTimeout(r, 30));
+  assert.deepEqual(retirees, ['q-9']);
+  assert.equal(JSON.parse(await readFile(file, 'utf8')).actif, false);
+});

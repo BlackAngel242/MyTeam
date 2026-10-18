@@ -37,8 +37,10 @@ export function createAutonomie({ file, enqueue, cancel = async () => {}, relais
       dernierArret = 'redémarrage du serveur';
       pending = Promise.resolve().then(async () => {
         if (saved.relaisAvant === false) await relais.set(false).catch(() => {});
+        // Les consignes d'un mode clos par le redémarrage ne partent jamais.
+        for (const itemId of Array.isArray(saved.enFile) ? saved.enFile.filter(x => typeof x === 'string').slice(0, 100) : []) await cancel(itemId).catch(() => {});
         await mkdir(dirname(file), { recursive: true });
-        await writeFile(`${file}.tmp`, JSON.stringify({ actif: false, arret: dernierArret, relaisAvant: null }), 'utf8');
+        await writeFile(`${file}.tmp`, JSON.stringify({ actif: false, arret: dernierArret, relaisAvant: null, enFile: [] }), 'utf8');
         await rename(`${file}.tmp`, file);
       }).catch(() => {});
     } else if (typeof saved?.arret === 'string') dernierArret = saved.arret.slice(0, 200);
@@ -48,7 +50,7 @@ export function createAutonomie({ file, enqueue, cancel = async () => {}, relais
   async function sauver() {
     try {
       await mkdir(dirname(file), { recursive: true });
-      await writeFile(`${file}.tmp`, JSON.stringify({ actif: Boolean(etat), arret: dernierArret, relaisAvant: etat ? etat.relaisAvant : null }), 'utf8');
+      await writeFile(`${file}.tmp`, JSON.stringify({ actif: Boolean(etat), arret: dernierArret, relaisAvant: etat ? etat.relaisAvant : null, enFile: etat ? etat.enFile : [] }), 'utf8');
       await rename(`${file}.tmp`, file);
     } catch { throw new AutonomieError("Sauvegarde impossible : l'autonomie n'a pas été changée.", 500); }
   }
