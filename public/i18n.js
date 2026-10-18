@@ -490,7 +490,6 @@
   "poste.unites.m": "{n} M",
   "scene.attend_reponse": "ATTEND REPONSE",
   "scene.au_travail": "AU TRAVAIL",
-  "scene.bureau": "BUREAU DE DRSMOKE",
   "scene.canvas.aria": "Bureau animé des agents. Utilise la liste sous le bureau pour sélectionner un agent.",
   "scene.clique-personnage": "Clique sur un personnage pour ouvrir son poste.",
   "scene.courrier": "COURRIER",

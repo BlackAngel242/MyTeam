@@ -483,7 +483,6 @@ window.DICTIONNAIRE_EN = {
   "poste.unites.m": "{n} M",
   "scene.attend_reponse": "AWAITING REPLY",
   "scene.au_travail": "WORKING",
-  "scene.bureau": "DRSMOKE OFFICE",
   "scene.canvas.aria": "Animated desk of the agents. Use the list under the desk to pick an agent.",
   "scene.clique-personnage": "Click a character to open their desk.",
   "scene.courrier": "MAIL",

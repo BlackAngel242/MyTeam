@@ -234,4 +234,4 @@ Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, 
 
 DrSmoke « Un Mbokatié engagé »
 
-**Optional footer.** To show your own information at the bottom of the desk, create the file `.bureau/pied.json` (local, never published): `{"gauche": "your text", "droite": "a contact"}` (`gauche` = left, `droite` = right). Without this file only DrSmoke « Un Mbokatié engagé » is shown.
+**Optional footer.** To show your own information at the bottom of the desk, create the file `.bureau/pied.json` (local, never published): `{"gauche": "your text", "droite": "a contact", "enseigne": "MY TEAM DESK"}` (`gauche` = left, `droite` = right). Without this file only DrSmoke « Un Mbokatié engagé » is shown. `enseigne` is the neon sign on the scene wall: absent by default.

@@ -268,8 +268,8 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         const net=valeur=>typeof valeur==='string'?Array.from(valeur.replace(/[\u0000-\u001f\u007f-\u009f]/g,' ').trim()).slice(0,120).join(''):'';
         try {
           const brut=JSON.parse(await readFile(piedFile,'utf8'));
-          return json(200,{gauche:net(brut?.gauche),droite:net(brut?.droite)});
-        } catch {return json(200,{gauche:'DrSmoke « Un Mbokatié engagé »',droite:''});}
+          return json(200,{gauche:net(brut?.gauche),droite:net(brut?.droite),enseigne:net(brut?.enseigne).slice(0,28)});
+        } catch {return json(200,{gauche:'DrSmoke « Un Mbokatié engagé »',droite:'',enseigne:''});}
       }
       // Tableau mural : fichiers piliers du projet, en lecture seule, protégés comme les tâches.
       if(req.method==='GET'&&url.pathname==='/api/tableau') {

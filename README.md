@@ -234,4 +234,4 @@ Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, Ope
 
 DrSmoke « Un Mbokatié engagé »
 
-**Pied de page facultatif.** Pour afficher vos propres informations en bas du bureau, créez le fichier `.bureau/pied.json` (local, jamais publié) : `{"gauche": "votre texte", "droite": "un contact"}`. Sans ce fichier, seul « DrSmoke « Un Mbokatié engagé » » est affiché.
+**Pied de page facultatif.** Pour afficher vos propres informations en bas du bureau, créez le fichier `.bureau/pied.json` (local, jamais publié) : `{"gauche": "votre texte", "droite": "un contact", "enseigne": "BUREAU DE MON EQUIPE"}`. Sans ce fichier, seul « DrSmoke « Un Mbokatié engagé » » est affiché. L'`enseigne` est le panneau lumineux du mur de la scène : absent par défaut.

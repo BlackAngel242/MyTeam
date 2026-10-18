@@ -744,6 +744,7 @@ async function loadFooter(){
     const p=await request('/api/pied',{headers:{'X-Bureau-Token':state.token}});
     $('footer-left').textContent=p.gauche||'';$('footer-right').textContent=p.droite||'';
     $('page-footer').hidden=!(p.gauche||p.droite);
+    enseigne=p.enseigne||'';
   }catch{ /* Pied facultatif : sans réponse, il reste masqué. */ }
 }
 // Relais d'écoute : option du serveur, désactivée par défaut ; le chef est prévenu quand un agent termine.
@@ -1014,7 +1015,7 @@ function clock(x,y){
 // Tableau de la scène (proposition P1 d'OpenCode) : seulement des faits absents du reste de la scène,
 // les états étant déjà portés par les cartes et les postures. Une ligne s'allume quand son fait est observé.
 // Panneau de liège : ouvre le tableau de l'équipe. Ses notes reflètent le nombre réel de tâches ouvertes.
-let boardSpot=null,boardData=null;
+let boardSpot=null,boardData=null,enseigne='';
 // Lettres agrandies (chaque pixel d'une lettre devient k x k) : gros pourcentage de l'écran de projection.
 function textBig(s,x,y,c,k){[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')px(x+i*4*k+(b%3)*k,y+Math.floor(b/3)*k,k,k,c);});}
 // Tableau de liège : la todo réelle du projet (cases de TODO.md et des plans), jamais une valeur inventée.
@@ -1102,7 +1103,7 @@ function room(L,time){
   if(narrow){cityWindow(6,10,58,44);sunbeam(L,6,58,10,44);board(70,10,68);clock(70,44);if(nightLight)glow(35,wallH+8,16,'#9dbbff',.7*nightLight);}
   else{
     cityWindow(8,10,112,50);sunbeam(L,8,112,10,50);if(nightLight)glow(64,wallH+9,26,'#9dbbff',.7*nightLight);
-    board(128,12,64);clock(198,12);neon(t('scene.bureau'),128,Math.max(50,boardBottom+5),'#a0dfc4');
+    board(128,12,64);clock(198,12);if(enseigne)neon(fit(enseigne,60),128,Math.max(50,boardBottom+5),'#a0dfc4');
     const bordX=W-100,libre=bordX-8-202;
     if(W>=352)cork(bordX,10,true);else boardSpot=null;
     // L'écran se range sous l'horloge, dans le mur resté libre ; plus large quand la scène l'est.
