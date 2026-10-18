@@ -63,7 +63,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] H9 (Antigravity) Moyens de participation : `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md` enrichi (ajouter un outil et son logo, ajouter une langue, proposer une leçon, signaler un défaut), modèles de signalement « nouvel outil » et « traduction », liste d'étiquettes `.github/labels.json`
 - [x] H10 (Claude et Codex) Le chef écoute et dirige : `CHEF.md` dans le kit (découvrir les agents, déléguer avec `herdr agent prompt`, lire les résultats, ne jamais laisser un agent libre, évaluer, corriger, partager les leçons), étape d'installation « donner ses commandes Herdr au chef » (`herdr --skill` pour son outil, intégrations officielles `herdr integration install <outil>`, une confirmation par outil) et consigne d'orientation envoyée au premier agent (confirmée)
 - [x] H11 (Codex, après H3) Relais d'écoute facultatif, désactivé par défaut : quand un agent délégué passe de « au travail » à « disponible », le bureau met en file un message neutre au chef (« X a terminé, lis son panneau »), une seule fois par fin observée, jamais en salle de crise, bascule dans l'onglet Équipe
-- [ ] H7 (Claude) Évaluation, vérification, fusion ; publication sur GitHub seulement avec l'accord de DrSmoke (fenêtre de pleins droits terminée)
+- [x] H7 (Claude) Évaluation, vérification et fusion faites ; réécriture de l’historique (signature DrSmoke) et publication faites avec l’accord de DrSmoke
 
 ## Lot F. Clôture
 
