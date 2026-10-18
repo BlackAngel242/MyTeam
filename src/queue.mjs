@@ -467,10 +467,14 @@ export function createQueue({
               message += '\n\nFichiers copiés dans ton dossier de travail :\n' + element.copiedFiles.map(file => '- '+JSON.stringify(file.name)).join('\n');
               if (message.length > 12000) throw new QueueError('La consigne avec les noms de fichiers dépasse 12 000 caractères.');
               await persister();
-              // La copie peut prendre du temps : revérifier la cible avant l'envoi.
-              const limit = await limitsOf(element.id,await listAgents());
+              // La copie peut prendre du temps : revérifier quota et cible sur
+              // une seule lecture, pour ne pas demander deux fois la liste à
+              // Herdr pour le même contrôle. Le contrôle final juste avant
+              // l'envoi reste en place plus bas.
+              const recheck = await listAgents();
+              const limit = await limitsOf(element.id,recheck);
               if (limit?.limitReached === true) throw new QueueError('Une limite est apparue après la copie : revoyez cette consigne.');
-              const current = (await listAgents()).find(candidate => candidate.id === element.id);
+              const current = recheck.find(candidate => candidate.id === element.id);
               if (!current || !['idle','done'].includes(current.status) || current.ready !== true || current.cwd !== target.cwd || current.kind !== target.kind || current.sessionId !== target.sessionId) {
                 throw new QueueError('La cible a changé ou n’est plus disponible après la copie.');
               }
