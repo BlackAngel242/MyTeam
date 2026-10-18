@@ -1,0 +1,42 @@
+[
+  {
+    "name": "bug",
+    "color": "d73a4a",
+    "description": "Quelque chose ne fonctionne pas comme prévu ou produit une erreur."
+  },
+  {
+    "name": "enhancement",
+    "color": "a2eeef",
+    "description": "Proposition de nouvelle fonctionnalité ou d'amélioration."
+  },
+  {
+    "name": "outil",
+    "color": "7057ff",
+    "description": "Ajout ou adaptation d'un outil d'agent compatible avec Herdr."
+  },
+  {
+    "name": "traduction",
+    "color": "1d76db",
+    "description": "Ajout d'une nouvelle langue ou correction d'une traduction."
+  },
+  {
+    "name": "documentation",
+    "color": "0075ca",
+    "description": "Amélioration, précision ou ajout dans les guides et documents."
+  },
+  {
+    "name": "good first issue",
+    "color": "7057ff",
+    "description": "Tâche simple et bien délimitée, idéale pour débuter."
+  },
+  {
+    "name": "help wanted",
+    "color": "008672",
+    "description": "Sujet ouvert nécessitant l'aide ou l'avis de la communauté."
+  },
+  {
+    "name": "sécurité",
+    "color": "b60205",
+    "description": "Renforcement de la sécurité locale, de la confidentialité ou des gardes."
+  }
+]

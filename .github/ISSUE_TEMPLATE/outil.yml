@@ -1,0 +1,36 @@
+name: Proposer un outil compatible Herdr
+description: Ajouter un nouvel outil d'agent ou son emblème dans le bureau.
+labels: [outil, enhancement]
+body:
+  - type: input
+    id: nom
+    attributes:
+      label: Nom de l'outil
+      description: Le nom usuel de l'agent ou de l'outil (ex. Claude, Codex, Kimi, Cursor).
+      placeholder: Mon Outil
+    validations:
+      required: true
+  - type: input
+    id: kind
+    attributes:
+      label: Identifiant Herdr (--kind)
+      description: La valeur exacte passée à herdr agent start --kind.
+      placeholder: monoutil
+    validations:
+      required: true
+  - type: input
+    id: commande
+    attributes:
+      label: Commande de détection
+      description: Le nom de l'exécutable pour Get-Command ou command -v.
+      placeholder: monoutil
+  - type: textarea
+    id: embleme
+    attributes:
+      label: Proposition d'emblème (facultatif)
+      description: Grille pixel 16x16 et palette (même format que public/logos.js) ou idée visuelle.
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Informations complémentaires
+      description: Lien vers le projet ou particularités de l'outil.

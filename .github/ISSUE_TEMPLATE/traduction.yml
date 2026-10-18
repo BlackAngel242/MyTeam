@@ -1,0 +1,36 @@
+name: Proposer ou corriger une traduction
+description: Ajouter une nouvelle langue ou améliorer une traduction existante.
+labels: [traduction, documentation]
+body:
+  - type: dropdown
+    id: type_traduction
+    attributes:
+      label: Type de contribution
+      options:
+        - Nouvelle langue pour l'interface (public/i18n-*.js)
+        - Nouvelle traduction de la documentation (README, aide, kit)
+        - Correction d'une traduction existante
+    validations:
+      required: true
+  - type: input
+    id: langue
+    attributes:
+      label: Langue concernée
+      description: Nom et code ISO de la langue (ex. English [en], Espagnol [es], Allemand [de]).
+      placeholder: English (en)
+    validations:
+      required: true
+  - type: textarea
+    id: fichiers
+    attributes:
+      label: Fichiers visés
+      description: Indiquez les fichiers concernés (ex. public/i18n-en.js, README.en.md, docs/aide.en.md).
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Détails ou proposition de texte
+      description: Décrivez vos modifications ou collez votre proposition de traduction.
+    validations:
+      required: true
