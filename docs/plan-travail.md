@@ -99,7 +99,7 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 ## Lot N. Suggestions de l'équipe (revue en famille, 19 octobre 2026)
 
 - [x] N1 (Antigravity) Profils ergonome tactile et a11y, storyteller GitHub, lecteur sceptique : adopté, ajouté au Fixit d'équipe
-- [ ] N2 (Antigravity) Capsule animée de la tournée du chef pour le site et le README : adopté, branche `agent/antigravity/capsule-chef`
+- [x] N2 (Antigravity) Capsule animée de la tournée du chef (7,2 s, 234 Ko) pour le site et le README : fusionnée, `3917114` (branche `agent/antigravity/capsule-chef`)
 - [x] N3 (Antigravity) Bouton « Aller au poste » sur mobile : écarté, le clic sur un personnage ou une carte fait déjà défiler vers le poste (0.2.0)
 - [x] N4 (OpenCode) Profils ressources et preuve ; (Codex) cinq corrections de méthode (preuves, verdicts, consensus, mémoire) : adoptés dans `docs/fixit-equipe.md`
 - [ ] N5 (Codex) Signaler que le serveur exécute un code plus ancien que les fichiers du projet, sans redémarrage automatique : adopté
