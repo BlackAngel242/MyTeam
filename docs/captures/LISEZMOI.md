@@ -24,4 +24,9 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `19-telephone-autonomie-en.png` : Mode Autonomie supervisée sur téléphone en anglais.
 - `20-ordinateur-10-agents.png` : Vue d'ensemble sur ordinateur (1440x900) avec dix agents connectés aux états variés (travail, attente, pause de quota, disponible, chef en Direction).
 - `21-telephone-10-agents.png` : Scène adaptée sur téléphone (390x844) avec disposition en 3 colonnes pour 10 agents.
+- `22-ordinateur-autonomie-actif.png` : Vue d'ensemble sur ordinateur (1440x900) avec le mode Autonomie actif (interrupteur vert ON dans la barre d'outils avec compte à rebours et objectif en cours).
+- `23-ordinateur-autonomie-fenetre-active.png` : Fenêtre du mode Autonomie ouverte pendant l'exécution (compte à rebours de 5 min, objectif en cours, bouton rouge d'interruption et journal des faits).
+- `24-telephone-autonomie-actif.png` : Scène adaptée sur téléphone (390x844) avec l'interrupteur Autonomie actif.
+- `25-ordinateur-autonomie-actif-en.png` : Mode Autonomie supervisée actif sur ordinateur en anglais (interrupteur vert ON, décompte, objectif et journal bilingue).
+- `26-telephone-autonomie-actif-en.png` : Mode Autonomie supervisée actif sur téléphone en anglais.
 

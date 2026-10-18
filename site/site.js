@@ -6,6 +6,7 @@ const I18N = {
     'nav.sous-titre': 'Le Bureau des agents',
     'nav.presentation': 'Présentation',
     'nav.fonctions': 'Fonctionnalités',
+    'nav.nouveautes': 'Nouveautés',
     'nav.captures': 'Captures',
     'nav.installation': 'Installation',
     'nav.compatibilite': 'Compatibilité',
@@ -82,6 +83,19 @@ const I18N = {
 
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
+
+    // Nouveautés 0.4.1
+    'nouveautes.badge': 'Version 0.4.1',
+    'nouveautes.titre': 'Les nouveautés de la version 0.4.1',
+    'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
+    'nouveautes.switch.title': 'Interrupteur Autonomie permanent',
+    'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif, le compte à rebours et le compteur d\'échanges en temps réel.',
+    'nouveautes.reprise.title': 'Reprise automatique après pause',
+    'nouveautes.reprise.desc': 'Reprise sans intervention : une consigne courte est expédiée à l\'agent exactement une minute après la levée de sa pause de quota.',
+    'nouveautes.agents10.title': 'Équipe jusqu\'à 10 agents',
+    'nouveautes.agents10.desc': 'Atelier testé et validé jusqu\'à 10 agents simultanés avec scène responsive en 3 colonnes sur mobile, jusqu\'à 12 en envoi groupé et mosaïque 4 tuiles.',
+    'nouveautes.recap.title': 'Bouton Récapitulatif factuel',
+    'nouveautes.recap.desc': 'Bouton dédié dans la fenêtre Autonomie générant un bilan Markdown fidèle, extrait exclusivement du journal des faits réels observés lors de la session.',
 
     // Galerie
     'gallery.badge': 'Interface',
@@ -182,6 +196,7 @@ const I18N = {
     'nav.sous-titre': 'Agent desk',
     'nav.presentation': 'Overview',
     'nav.fonctions': 'Features',
+    'nav.nouveautes': 'What\'s new',
     'nav.captures': 'Screenshots',
     'nav.installation': 'Installation',
     'nav.compatibilite': 'Compatibility',
@@ -257,14 +272,27 @@ const I18N = {
     'feat.securite.desc': 'Strictly bound to 127.0.0.1, random session token, zero external calls, zero npm dependencies, zero intercepted credentials.',
 
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
-    'feat.autonomie.desc': 'Star-pattern coordination where the lead decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
+    'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
+
+    // What's new 0.4.1
+    'nouveautes.badge': 'Version 0.4.1',
+    'nouveautes.titre': 'What\'s new in version 0.4.1',
+    'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
+    'nouveautes.switch.title': 'Permanent Autonomy toggle switch',
+    'nouveautes.switch.desc': 'Permanent OFF / ON toggle switch in the top toolbar displaying active state, remaining time countdown, and exchange counter in real time.',
+    'nouveautes.reprise.title': 'Automatic resume after quota pause',
+    'nouveautes.reprise.desc': 'Seamless recovery: a short prompt is automatically dispatched to the agent exactly one minute after its quota pause lifts.',
+    'nouveautes.agents10.title': 'Teams up to 10 agents',
+    'nouveautes.agents10.desc': 'Workshop tested and verified up to 10 concurrent agents with responsive 3-column layout on mobile, up to 12 in broadcast, and 4-tile mosaic.',
+    'nouveautes.recap.title': 'Factual Summary report button',
+    'nouveautes.recap.desc': 'Dedicated button in the Autonomy dialog generating an accurate Markdown report, extracted exclusively from the factual event log of the session.',
 
     // Galerie
     'gallery.badge': 'Interface',
     'gallery.titre': 'The Workshop in Pictures',
     'gallery.desc': 'Click any screenshot to view it in full high-definition resolution.',
     'gallery.scene.title': 'Daytime scene overview',
-    'gallery.scene.desc': 'Lead agent at the Direction desk, workstations, and glass reflection room.',
+    'gallery.scene.desc': 'Chief agent at the Direction desk, workstations, and glass reflection room.',
     'gallery.soir.title': 'Evening atmosphere',
     'gallery.soir.desc': 'Automatic cozy illumination starting at 7:00 PM with ceiling pendants and desk lamps.',
     'gallery.poste.title': 'Workstation tab',
