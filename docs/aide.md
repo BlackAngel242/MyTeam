@@ -12,26 +12,34 @@ Le Bureau des agents est votre tour de contrôle locale. Il vous permet de surve
 
 Tout ce qui s'affiche à l'écran provient d'observations réelles : processus Herdr actifs, sorties réelles de terminaux, journaux locaux et fichiers sur votre disque. Le bureau n'invente jamais de données, de pourcentages d'avancement ni de faux états.
 
+L'application est bilingue (français et anglais). Un bouton « FR / EN » dans la barre d'outils supérieure permet de basculer instantanément la langue de l'ensemble de l'interface, des fiches et des messages d'erreur.
+
 ---
 
-## 2. Visite guidée en 5 étapes
+## 2. Visite guidée en 7 étapes
 
 Cette visite rapide présente le fonctionnement essentiel de votre bureau. Vous pouvez passer cette étape à tout moment avec le bouton « Passer la visite ».
 
 ### Étape 1 : Observer l'équipe dans la scène pixel art
-La fenêtre principale présente votre équipe dans un décor animé en pixel art. Le ciel change en continu selon l'heure de votre ordinateur (lever à 6 h 30, coucher à 19 h 30), et l'éclairage intérieur s'allume automatiquement en soirée (suspensions et lampes de bureau). Le tableau d'affichage résume les faits utiles (RETOUR, EN FILE, COURRIER, SOUS-AGENTS). Le chef de l'équipe occupe le bureau Direction. Chaque personnage montre son état réel par sa posture, son écran et le soulignement coloré de son nom.
+La fenêtre principale présente votre équipe dans un décor animé en pixel art. Le ciel change en continu selon l'heure de votre ordinateur (lever à 6 h 30, coucher à 19 h 30), et l'éclairage intérieur s'allume automatiquement en soirée (suspensions et lampes de bureau). Le tableau d'affichage mural résume les faits utiles (RETOUR, EN FILE, COURRIER, SOUS-AGENTS). Le chef de l'équipe occupe le bureau Direction. Chaque personnage montre son état réel par sa posture, son écran, son emblème d'outil en façade et le soulignement coloré de son nom.
 
 ### Étape 2 : Sélectionner un poste
 Cliquez sur n'importe quel personnage dans la scène (ou touchez-le sur écran tactile), sur son nom dans la liste des postes sous le bureau, ou directement dans la vue d'accueil du poste. Sur téléphone ou écran étroit, la page fait défiler l'affichage automatiquement jusqu'au panneau de pilotage.
 
 ### Étape 3 : Inspecter et guider dans l'onglet « Poste »
-L'onglet « Poste » affiche les informations détaillées de l'agent : son modèle, son activité, sa consommation et les dernières lignes de son terminal. Vous pouvez figer le défilement, agrandir le terminal en pleine hauteur, rechercher du texte et lui envoyer une consigne avec le raccourci Ctrl+Entrée (ou cliquer sur « Mettre en file » s'il est occupé).
+L'onglet « Poste » affiche les informations détaillées de l'agent : son modèle, son activité, sa consommation et les dernières lignes de son terminal. Vous pouvez figer le défilement, agrandir le terminal en pleine hauteur, rechercher du texte, consulter ses réponses structurées dans le volet « Réponses lisibles » et lui envoyer une consigne avec le raccourci Ctrl+Entrée (ou cliquer sur « Mettre en file » s'il est occupé, avec possibilité d'y joindre des fichiers locaux).
 
 ### Étape 4 : Coordonner dans l'onglet « Équipe »
-L'onglet « Équipe » centralise la gestion collective. La section « Courrier du chef » vous signale chaque agent qui vient de terminer son travail (la liste se remet à zéro dès que vous la consultez). La section « File d'attente » liste les consignes différées avec relance automatique. Vous pouvez aussi cocher plusieurs agents disponibles pour leur envoyer une consigne commune en deux clics sécurisés.
+L'onglet « Équipe » centralise la gestion collective. La section « Courrier du chef » vous signale chaque agent qui vient de terminer son travail. La section « Relais d'écoute du chef » permet de prévenir automatiquement le chef via la file d'attente dès qu'un collaborateur achève une tâche. La section « File d'attente » liste les consignes différées avec relance automatique. Vous pouvez aussi cocher plusieurs agents disponibles pour leur envoyer une consigne commune en deux clics sécurisés.
 
 ### Étape 5 : Gérer les documents et suivre les tâches
-L'onglet « Fichiers » vous permet de voir les fichiers récemment modifiés par l'agent ou de naviguer dans les dossiers de votre projet par copie ou déplacement sans suppression. L'onglet « Tâches » affiche l'avancement des cases réellement cochées dans les fichiers du projet et les plans d'action publiés par les agents.
+L'onglet « Fichiers » vous permet de voir les fichiers récemment modifiés par l'agent ou de naviguer dans les dossiers de votre projet par copie ou déplacement sans suppression. L'onglet « Tâches » affiche l'avancement des cases réellement cochées dans les fichiers du projet (`TODO.md`) et les plans d'action publiés par les agents.
+
+### Étape 6 : Mosaïque (surveillance multi-terminaux)
+Le bouton « Mosaïque » dans le cadre de la scène remplace le décor par une vue de 2 à 4 terminaux côte à côte, avec recherche textuelle surlignée, bascule entre grille 2×2 ou colonnes, et champ de consigne rapide (Ctrl+Entrée). Le bouton « Revenir à la scène » rétablit la vue atelier à tout moment.
+
+### Étape 7 : Salle de crise (disjoncteur d'urgence)
+Le bouton sous clapet « Salle de crise » (raccourci d'urgence Ctrl+Maj+C) permet de réagir immédiatement en cas de dérive : il verrouille tous les envois directs (code HTTP 423), gèle la file d'attente et offre une modale de diagnostic calme pour ordonner une interruption polie d'un agent par la touche Échap, sans jamais recourir à un arrêt forcé (aucun kill).
 
 ---
 
@@ -82,11 +90,16 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - L'éclairage de la pièce, de la salle de réflexion et du bureau Direction s'adapte en temps réel à l'ambiance du ciel et des moniteurs.
 - Réduction des mouvements : si votre système active la réduction des mouvements (`prefers-reduced-motion`), la scène est automatiquement figée par défaut (sans choix manuel enregistré). Dans cet état figé, le décor continue d'être redessiné une fois par minute pour suivre l'heure et l'éclairage.
 
-#### Identification des postes et nom souligné
-- En façade de chaque bureau, le logo 16x16 en pixel art identifie clairement l'outil (Claude, Codex, Antigravity, OpenCode).
+#### Identification des postes et les 24 emblèmes d'outils Herdr
+- En façade de chaque bureau, le logo 16×16 en pixel art identifie clairement l'outil parmi les 24 types supportés par Herdr : `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`, ou l'emblème d'agent générique en cas de type inconnu.
+- Ces emblèmes se retrouvent également sur les cartes d'agents et dans les tuiles de la mosaïque.
 - Sous chaque bureau, le nom seul de l'agent est affiché, souligné d'un trait fin de la couleur de son état (bleu pour travail, menthe pour disponible, ambre pour attente, violet pour pause).
 - Si l'application perd la liaison avec Herdr, la mention `HORS LIGNE` s'affiche sous le bureau.
-- L'état n'a pas besoin d'être répété en texte : il est clairement exprimé par la posture de l'agent, le contenu de son écran, sa bulle et le soulignement coloré de son nom.
+- L'état n'a pas besoin d'être répété en texte : il est clairement exprimé par la posture de l'agent, le contenu de son écran, sa bulle, son emblème et le soulignement coloré de son nom.
+
+#### Intégrations Herdr officielles
+- La commande `herdr integration install <outil>` permet d'installer les intégrations officielles pour les outils compatibles : `pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`.
+- Ces intégrations modifient la configuration de l'outil pour faire remonter à Herdr et au bureau les états précis, les contextes de session et l'activité réelle de l'agent.
 
 #### Postures des personnages
 - Frappe au clavier : agent au travail sur une tâche (bleu ciel).
@@ -136,7 +149,7 @@ La scène offre une vue d'ensemble immédiate sur toute votre équipe d'agents.
 - Si l'équipe compte plus de 4 agents, une barre de sélection propose des cases à cocher pour choisir les agents à afficher (4 tuiles au maximum).
 - Bascule de disposition : boutons « Grille 2×2 » et « Colonnes » (sur smartphone, les tuiles se disposent en colonne unique adaptée à l'écran).
 - Chaque tuile propose :
-  - Un en-tête compact avec nom, outil, badge de statut et bouton « Agrandir » pour ouvrir le poste individuel complet.
+  - Un en-tête compact avec nom, emblème de l'outil, badge de statut et bouton « Agrandir » pour ouvrir le poste individuel complet.
   - Le texte brut du terminal dans un bloc défilant propre, nettoyé des séquences d'échappement ANSI.
   - Un champ de recherche textuelle avec surlignage des occurrences et compteur de correspondances.
   - Un formulaire de consigne rapide expédiable avec `Ctrl+Entrée`, automatiquement désactivé avec mention explicite quand l'agent n'est pas disponible.
@@ -192,6 +205,7 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 - Prendre connaissance des missions terminées grâce au courrier du chef.
 - Suivre et administrer les consignes en attente dans la file d'attente avec gestion des priorités.
 - Désigner le chef d'équipe et gérer les propositions de passation en cas de pause de quota.
+- Configurer le relais d'écoute pour prévenir automatiquement le chef dès qu'un agent termine.
 - Transmettre une même directive à plusieurs agents en une seule action.
 - Consulter le journal des transmissions de la session.
 
@@ -207,6 +221,13 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 - La liste se remet automatiquement à zéro dès que vous consultez l'onglet Équipe.
 - Un clic sur un courrier ou sur son bouton « Ouvrir son poste » permet d'accéder directement au terminal de l'agent pour vérifier son travail.
 - Rappel de prudence : le courrier confirme l'arrêt du processus de travail, pas la réussite de l'objectif. Vérifiez toujours les sorties réelles.
+
+#### Relais d'écoute du chef
+- Section dédiée dans l'onglet Équipe : case à cocher « Prévenir le chef quand un agent termine ».
+- Option facultative, désactivée par défaut, conservée sur le disque dans `.bureau/relais.json`.
+- Fonctionnement : dès qu'un agent passe de l'état « au travail » à « disponible » ou « terminé », le serveur génère et insère dans la file d'attente une consigne de priorité normale pour le chef effectif : *« [Nom] vient de terminer. Lis son panneau avant de lui confier la suite. »*
+- Sécurité et anti-saturation : une seule notification par fin observée, au minimum une minute d'espacement entre deux avis pour le même agent, persistance de l'état avant la file pour éviter toute répétition automatique en cas de réponse réseau perdue.
+- Jamais en crise : si la salle de crise est enclenchée, le relais d'écoute est totalement neutralisé ; aucun message n'est généré ni envoyé au chef pendant toute la durée de la crise.
 
 #### File d'attente des consignes et priorités
 - Affiche la liste des consignes en attente d'expédition avec le destinataire, l'horodatage, le statut et le niveau de priorité (« haute » ou « normale »), ordonnée selon l'ordre réel d'envoi prévu.
@@ -282,16 +303,22 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 
 ---
 
-### Zone 6 : Palette de commandes, aide et signaux
+### Zone 6 : Palette de commandes, interface bilingue et signaux
 
 #### Palette de commandes (Ctrl+K)
 - Accessible par le bouton « Commandes » ou le raccourci clavier Ctrl+K.
 - Permet de chercher un agent, ouvrir son poste, rédiger un message, ouvrir le tableau de l'équipe (« Mémoire partagée »), basculer d'onglet ou lancer une action sans lâcher le clavier.
 - Navigation fluide : flèches haut et bas pour choisir, Entrée pour valider, Échap pour fermer.
 
+#### Interface bilingue FR / EN
+- Bouton « FR / EN » situé dans la barre d'en-tête (à côté du bouton Aide).
+- Détection automatique : au premier chargement, la langue s'aligne sur celle de votre navigateur (`navigator.language`).
+- Bascule manuelle : un clic sur le bouton permute la langue et enregistre votre choix dans le navigateur (`bureau.langue`).
+- Couverture complète : l'ensemble des boutons, fiches d'état, formulaires, aides et messages d'erreur du serveur sont instantanément traduits.
+
 #### Panneau d'aide latéral (Touche ?)
 - Accessible par le bouton « Aide » ou la touche « ? », ouvert automatiquement à la première visite.
-- Contient la visite guidée en 5 étapes, les légendes visuelles et les boutons de contrôle des signaux.
+- Contient la visite guidée en 7 étapes, les légendes visuelles et les boutons de contrôle des signaux.
 
 #### Signaux : Sons 8 bits et notifications Windows
 - Bouton « Notifications Windows » : active les notifications système quand la page est en arrière-plan (agent attendant une réponse, fin de mission, pause de limite). Page cachée, le bureau relit alors l'état des agents toutes les 15 secondes ; le navigateur peut espacer ces relectures.
@@ -312,7 +339,7 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 #### Effets immédiats du verrou de crise
 - **Verrouillage absolu des envois directs** : les routes `/api/prompt` et `/api/broadcast` répondent par le code HTTP 423 avec un message explicite (« Salle de crise active : les envois sont verrouillés »).
 - **Gel de la file d'attente** : les consignes continuent d'être reçues et enregistrées en file sans perte, mais aucun départ automatique n'a lieu tant que la crise reste active.
-- **Suspension de la passation** : le message de passation de direction passe par la file et reste également suspendu.
+- **Suspension de la passation et du relais d'écoute** : le message de passation de direction et le relais d'écoute du chef sont totalement suspendus pendant toute la durée de la crise.
 - **Persistance atomique** : l'état `{active, since, reason}` est conservé dans `.bureau/crise.json` hors Git. Si le fichier est corrompu ou illisible, la crise reste active par défaut par précaution.
 
 #### Diagnostic calme et interruption polie
@@ -323,11 +350,29 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 
 ---
 
-## 4. Tableau des raccourcis et commandes rapides
+## 4. Kit d'équipe et outillage (docs/kit.md)
+
+Le kit d'équipe apporte à n'importe quel projet la méthode et les outils de collaboration multi-agents utilisés pour bâtir MyTeam. Consultez [docs/kit.md](kit.md) pour la documentation exhaustive.
+
+### Fichiers piliers
+- `AGENTS.md` : Règles de collaboration pour toutes les IA (rôles, propriété des fichiers, vérité des faits, définition de « terminé », sécurité).
+- `CHEF.md` : Guide du chef d'équipe pour écouter, déléguer, évaluer, corriger et fusionner.
+- `LESSONS.md` : Mémoire partagée des erreurs à ne jamais reproduire.
+- `TODO.md` et `HANDOFF.md` : Tâches ouvertes et état d'avancement pour passer le relais sans perte d'information.
+
+### Scripts du kit
+- **Initialisation** : `node scripts/init-kit.mjs <dossier> [--lang fr|en]` déploie les fichiers piliers sans jamais écraser de documents existants.
+- **Auto-évaluation factuelle** : `node scripts/evaluer.mjs [dossier]` génère un rapport basé uniquement sur des faits vérifiés (piliers présents, ratio de cases cochées, leçons, statut Git et exécution des tests `npm test` et `npm run check`). Code de sortie 1 en cas de manquement ou d'échec.
+- **Partage des leçons** : `node scripts/partager-lecons.mjs "La leçon en une ligne." [dossier]` ajoute la leçon à `LESSONS.md` et notifie avec bienveillance les agents Herdr actuellement disponibles (`idle` ou `done`), sans jamais interrompre un collaborateur au travail.
+
+---
+
+## 5. Tableau des raccourcis et commandes rapides
 
 | Zone | Action ou raccourci | Effet |
 | :--- | :--- | :--- |
 | **Général** | `Ctrl + K` | Ouvre la palette de commandes modale. |
+| **Général** | Bouton `FR / EN` | Bascule instantanément la langue de l'interface entre français et anglais. |
 | **Général** | Palette Ctrl+K : « Tableau de l'équipe » | Ouvre la fenêtre modale du tableau de l'équipe (mémoire partagée). |
 | **Général** | Palette Ctrl+K : « Mode mosaïque » | Bascule entre la vue scène pixel art et la mosaïque de terminaux. |
 | **Général** | Palette Ctrl+K : « Salle de crise » | Ouvre la modale de diagnostic et de gestion de la salle de crise. |
@@ -358,6 +403,7 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 | **Crise** | Bouton « Arrêter cet agent » | Demande l'interruption polie (Échap) d'un agent après confirmation. |
 | **Crise** | Bouton « Lever la crise » | Déverrouille les envois directs et relance le traitement de la file. |
 | **Équipe** | Section « Direction de l'équipe » | Choisit le chef d'équipe, rétablit la règle ou valide une passation. |
+| **Équipe** | Case « Relais d'écoute du chef » | Active ou désactive l'envoi d'une consigne neutre au chef à chaque fin observée. |
 | **Équipe** | Bouton « Passer en tête » | Promeut une consigne en attente au rang de priorité haute. |
 | **Équipe** | Bouton « Retirer » | Supprime une consigne en attente dans la file. |
 | **Équipe** | `Ctrl + Entrée` (ou `Cmd + Entrée`) | Déclenche l'envoi groupé armé. |
@@ -366,14 +412,12 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 | **Fichiers** | `Maj` + Glisser-déposer sur un lieu | Déplace le fichier (nécessite une confirmation). |
 | **Fichiers** | Bouton « Afficher » | Ouvre le dossier du fichier dans l'Explorateur Windows. |
 
-
 ---
 
-## 5. Règle d'or : La vérité des faits
+## 6. Règle d'or : La vérité des faits
 
 Le Bureau des agents applique une règle d'intégrité stricte :
 1. Seuls les faits observables sont affichés (processus réels, horloge de l'ordinateur, journaux locaux, fichiers du disque).
 2. Aucun pourcentage d'avancement inventé n'est proposé lorsqu'un outil ne le calcule pas lui-même.
 3. Si un outil ne publie pas sa consommation de jetons ou ses sous-agents, la mention « Non exposé par cet outil » est fidèlement indiquée.
 4. Une erreur constatée n'est jamais masquée : elle est rapportée dans les sorties et vient enrichir le document LESSONS.md pour prémunir l'équipe contre toute récidive.
-
