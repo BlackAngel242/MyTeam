@@ -1,5 +1,7 @@
 # Code de conduite
 
+**Français** | [English](CODE_OF_CONDUCT.en.md)
+
 ## Notre engagement
 
 En tant que membres, contributrices et contributeurs de MyTeam (le Bureau des agents), nous nous engageons à offrir à chacune et chacun un environnement accueillant, respectueux et constructif, sans distinction d'expérience, de genre, d'identité ou d'expression de genre, d'orientation sexuelle, de handicap, d'apparence physique, d'origine ou de religion.

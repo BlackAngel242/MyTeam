@@ -1,25 +1,26 @@
-name: Signaler un défaut
-description: Quelque chose ne marche pas comme prévu.
+name: Signaler un défaut / Report a bug
+description: Quelque chose ne marche pas comme prévu / Something is not working as expected.
 labels: [bug]
 body:
   - type: textarea
     id: constat
     attributes:
-      label: Ce qui se passe
-      description: Ce que vous voyez, et ce que vous attendiez.
+      label: Ce qui se passe / What happened
+      description: Ce que vous voyez et ce que vous attendiez (français ou anglais) / What you see and what you expected (French or English).
     validations:
       required: true
   - type: textarea
     id: etapes
     attributes:
-      label: Comment le reproduire
+      label: Comment le reproduire / Reproduction steps
+      description: Étapes précises pour reproduire le défaut / Steps to reproduce the issue.
     validations:
       required: true
   - type: input
     id: environnement
     attributes:
-      label: Environnement
-      description: Système, version de Node.js, version de Herdr, navigateur.
+      label: Environnement / Environment
+      description: Système (OS), version de Node.js, version de Herdr, navigateur / OS, Node.js version, Herdr version, browser.
   - type: markdown
     attributes:
-      value: Ne collez ni jeton, ni clé, ni chemin personnel dans ce formulaire.
+      value: "Ne collez ni jeton, ni clé, ni chemin personnel dans ce formulaire / Never paste tokens, API keys, or personal paths in this form."

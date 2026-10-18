@@ -1,5 +1,7 @@
 # Avis
 
+**Français** | [English](NOTICE.en.md)
+
 Le code du Bureau des agents est publié sous licence MIT (voir `LICENSE`).
 
 ## Marques

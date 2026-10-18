@@ -1,5 +1,7 @@
 # Outils et plugins recommandés
 
+**Français** | [English](plugins-recommandes.en.md)
+
 Ce que l'auteur utilise avec MyTeam. **Rien n'est installé automatiquement** : c'est une liste de départ, à choisir selon vos besoins. Chaque installation passe par votre confirmation, dans l'outil concerné.
 
 ## Outils d'IA en ligne de commande (dans les panneaux Herdr)

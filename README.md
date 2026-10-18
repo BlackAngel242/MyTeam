@@ -1,6 +1,7 @@
 # MyTeam · Le Bureau des agents
 
-**Français** | [English](README.en.md)
+> 🌐 **Langue / Language** : **Français** | [English](README.en.md)  
+> 📚 **Index de la documentation** : [docs/index.md](docs/index.md) ([English index](docs/index.en.md))
 
 Un tableau de bord immersif et vivant en pixel art pour surveiller, lire et piloter vos équipes d'agents d'intelligence artificielle autonomes exécutés dans Herdr.
 
@@ -66,7 +67,7 @@ Des scripts interactifs et sécurisés sont mis à disposition dans le dossier `
   ```
 
 > [!TIP]
-> **Ce que fait et ne fait pas l'installation** : Les scripts vérifient Node.js (>= 22) et Herdr, créent une grille Herdr 2×2 (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), détectent les 24 outils compatibles, proposent les intégrations `herdr integration install`, installent la compétence du chef (`herdr --skill`) ou orientent avec `CHEF.md`, préparent la consigne d'orientation, proposent 3 raccourcis de bureau (dont « Herdr et bureau » combiné) et l'initialisation du kit d'équipe (`node scripts/init-kit.mjs`). Ils n'installent aucune dépendance npm, ne demandent ni ne stockent aucune clé API, et ne valident aucune installation silencieuse : le commutateur `-Oui` / `--oui` n'auto-approuve jamais les installations ou lancements (un accord individuel o/n reste obligatoire). Paramètres utiles : `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) pour le guide complet.
+> **Ce que fait et ne fait pas l'installation** : Les scripts vérifient Node.js (>= 22) et Herdr, créent une grille Herdr 2×2 (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), détectent les 24 outils compatibles, proposent les intégrations `herdr integration install`, installent la compétence du chef (`herdr --skill`) ou orientent avec `CHEF.md`, préparent la consigne d'orientation, proposent 3 raccourcis de bureau (dont « Herdr et bureau » combiné) et l'initialisation du kit d'équipe (`node scripts/init-kit.mjs`). Ils n'installent aucune dépendance npm, ne demandent ni ne stockent aucune clé API, et ne valident aucune installation silencieuse : le commutateur `-Oui` / `--oui` n'auto-approuve jamais les installations ou lancements (un accord individuel o/n reste obligatoire). Paramètres utiles : `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Consultez [docs/INSTALLATION.md](docs/INSTALLATION.md) ([English](docs/INSTALLATION.en.md)) pour le guide complet.
 
 ### 2. Démarrage du bureau
 
@@ -163,14 +164,16 @@ MyTeam applique des règles d'ingénierie et d'intégrité strictes :
 
 ## Réalisé avec l'aide de l'IA
 
-Ce projet a été concrétisé grâce à l'intelligence artificielle : Claude (Anthropic, Opus 5.5 et Sonnet 5.5), Codex (OpenAI, GPT-6.1-Sol), Antigravity (Google, Gemini 3.8 Flash) et OpenCode (MiMo V2.6 Pro) ont aidé à le concevoir, l'écrire et le tester. **L'auteur et le contributeur du projet est DrSmoke** ([BlackAngel242](https://github.com/BlackAngel242)) : les idées, les décisions et la publication sont les siennes, aucune IA ne signe de contribution. Détails dans [`docs/credits-ia.md`](docs/credits-ia.md).
+Ce projet a été concrétisé grâce à l'intelligence artificielle : Claude (Anthropic, Opus 5.5 et Sonnet 5.5), Codex (OpenAI, GPT-6.1-Sol), Antigravity (Google, Gemini 3.8 Flash) et OpenCode (MiMo V2.6 Pro) ont aidé à le concevoir, l'écrire et le tester. **L'auteur et le contributeur du projet est DrSmoke** ([BlackAngel242](https://github.com/BlackAngel242)) : les idées, les décisions et la publication sont les siennes, aucune IA ne signe de contribution. Détails dans [`docs/credits-ia.md`](docs/credits-ia.md) ([English](docs/credits-ia.en.md)).
 
 ## Contribuer
 
 Les contributions respectant la philosophie du projet (indépendance technique, vérité des faits, esthétique pixel art et accessibilité) sont les bienvenues.
 
-- Consultez le guide [CONTRIBUTING.md](CONTRIBUTING.md) pour les consignes d'architecture, l'environnement de développement et les règles de soumission de Pull Request.
-- Consultez l'historique des évolutions dans [CHANGELOG.md](CHANGELOG.md).
+- Consultez le guide [CONTRIBUTING.md](CONTRIBUTING.md) ([English](CONTRIBUTING.en.md)) pour les consignes d'architecture, l'environnement de développement et les règles de soumission de Pull Request.
+- Consultez le code de conduite [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ([English](CODE_OF_CONDUCT.en.md)) et la politique de sécurité [SECURITY.md](SECURITY.md) ([English](SECURITY.en.md)).
+- Consultez l'historique des évolutions dans [CHANGELOG.md](CHANGELOG.md) ([English](CHANGELOG.en.md)).
+- Consultez l'index de toute la documentation publique dans [docs/index.md](docs/index.md) ([English](docs/index.en.md)).
 - Avant toute proposition, assurez-vous que la syntaxe est impeccable (`npm run check`) et que tous les tests automatisés réussissent (`npm test`).
 
 ---
@@ -201,6 +204,6 @@ Les contributions respectant la philosophie du projet (indépendance technique, 
 
 Le code de MyTeam est distribué sous **licence MIT** (consultez le fichier [LICENSE](LICENSE)).
 
-Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md).
+Les noms, marques et emblèmes des outils tiers (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) demeurent la propriété exclusive de leurs éditeurs respectifs. Leurs représentations en pixel art dans `public/logos.js` ont pour unique vocation d'identifier visuellement l'outil occupant chaque poste de travail, sans aucune affiliation ni approbation commerciale : consultez [NOTICE.md](NOTICE.md) ([English](NOTICE.en.md)).
 
 DrSmoke « Un Mbokatié engagé »

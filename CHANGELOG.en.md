@@ -1,0 +1,133 @@
+# Changelog
+
+[Français](CHANGELOG.md) | **English**
+
+All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
+
+## [Unreleased]
+
+### Fixed
+
+- Draft preservation on enqueue (G1): enqueueing a prompt for an agent then switching workstations during the network request no longer clears drafts on other stations.
+- Protected browser read validity (G2): local browser GET requests (`/api/queue`, `/api/todos`, `/api/places`, `/api/files/*`) are validated using `Sec-Fetch-Site` when `Origin` header is absent, preventing false "Session expired" error notices.
+- Quota pause deadline calculations (M2): deadline announcements in terminal outputs (such as "try again at 4:45 PM") preserve the calculated resume time upon re-reading rather than postponing to the next day; invalid times are rejected and UTC/GMT mentions are respected.
+- Accurate quota limit labeling (M3): a 24-hour window displays "24 h" instead of "weekly", and only limits reached at 100% determine resume times.
+- Static script distribution (M4): the local HTTP server exposes secure static routes for `/sounds.js` and `/empty-icons.js`.
+- Respect for reduced motion (M8): system preference `prefers-reduced-motion` freezes animated canvas by default without manual toggle, while maintaining a 1-minute tick to update time, sky, and lighting.
+- Expanded terminal height on mobile (M9): the "Agrandir" button applies a priority CSS rule ensuring substantial height gain (between 62% and 80% of screen height, with internal scrolling tracking the last line) on smartphones.
+- Truly modal command palette (M1): backdrop is inert, Tab key stays trapped in the palette, focus returns to trigger or open tab; Escape closes only one layer at a time (palette, then Arrange mode, then help drawer); Arrange arrow keys do not intercept list navigation; first-visit help does not open if an action has already begun.
+- Background notifications (M5): when Windows notifications are enabled, agent states are polled every 15 seconds while page is hidden, without canvas animation.
+- Stable rerenders (M6): landing cards, queue, and tasks are only redrawn when content changes; focused button is preserved, recurring failures are notified only once, and slow responses do not overwrite newer reads.
+- Bounded memory (M7): 30 mail items retained in detail (counter covers full session), up to 500 delegation IDs tracked, dropped agent caches purged.
+
+### Added
+
+- Task board with percentage: factual calculation and display of completion percentage based on checked boxes in `TODO.md` and action plans published by agents in their local logs.
+- Readable agent responses: `public/response-card.js` component and `.rc-` styles beneath workstation terminal (hooked to `GET /api/reponses`), rendering structured responses in safe Markdown without `innerHTML`, accurate source text copy, code block copy buttons, local `.md` export (single turn or full session), accessible clipboard fallback, and stable key reconciliation without breaking active text selection (Claude, Codex, OpenCode).
+- File attachments and entrusted files: ability to attach local files to queued instructions with safe non-overwriting copy into the agent's working directory before dispatch, 2 files / 20 MB cap, and factual tracking of processing milestones in Team tab via `GET /api/traitement`.
+- Team discussion stream: `public/discussion.js` component and `.disc-` styles in control room (hooked to `GET /api/discussion`), assembling excerpts of recent responses across the entire team ordered newest to oldest, with explicit notice for unread agents ("not exposed by tool", "not matched with certainty").
+- Hardened installer security: `scripts/installer.sh` and `scripts/installer.ps1` hardened against trap directories (`$(command)`), strict rejection of auto-approval flags (`--oui` / `-Oui`) requiring interactive y/n confirmation, and strict resolution of Herdr binary.
+- Team board: "Tableau" button and corkboard on canvas wall opening a read-only modal viewing pillar files (`HANDOFF.md` stage, `TODO.md` open boxes, `AGENTS.md` roles, `LESSONS.md` latest rules), with source and timestamp per file. Token-protected `/api/tableau` route, closed file list, masked paths and IDs.
+- Staged quota break: when an agent enters quota pause, they leave their seat with empty battery; their easel alternates between resume time and countdown; upon resumption, they return with full battery. Nothing is animated on initial page load.
+- Lead rounds: on observed delegations (`herdr agent prompt`), the lead leaves Direction, places the titled folder on the target agent's desk, and walks back. One round at a time.
+- Crisis room (G1, G3): flip-covered emergency circuit breaker ("Salle de crise", shortcut `Ctrl+Shift+C` or command palette), amber safety halo, calm diagnostic displaying last terminal lines per agent, immediate lock on all direct sends and queue freeze (HTTP 423), and polite per-agent interruption sending canonical Escape (`esc` in Herdr) after human confirmation, without brutal process kills. Atomic persistence in `.bureau/crise.json` (defaults to active on file corruption).
+- Mosaic mode (G2, G4): switchable multi-terminal view replacing canvas scene ("Mosaïque" / "Vue scène", palette command), prioritizing active agents, toggle between "Grille 2×2" and "Colonnes", tile picker for >4 agents, clean terminal outputs stripped of ANSI codes with highlighted text search and match counter, quick prompt field (`Ctrl+Enter`) disabled with explanation when agent is unavailable, "Agrandir" button opening individual station, and bounded economical polling (every 3s, paused when tab hidden, one read at a time per tile, preserving active text selections).
+- Bilingual FR / EN interface: instant toggle via top header "FR / EN" button (persisted in `localStorage` under `bureau.langue`), automatic detection from system or browser language (`navigator.language`), full translation of all screens, forms, help drawers, and server error messages without external page reload.
+- Lead listening relay: optional feature in Team tab (off by default, persisted in `.bureau/relais.json`), dispatching a neutral message to the active lead via queue when an agent transitions from working to available ("an agent just finished, read its pane"), with minimum 1-minute interval per agent, strict deduplication, and complete shutdown during crisis.
+- Team kit and evaluation tooling: `scripts/init-kit.mjs` setup script (non-overwriting deployment of pillar files `AGENTS.md`, `CHEF.md`, `LESSONS.md`, etc.), factual self-evaluation script `scripts/evaluer.mjs` (verifying pillars, checked boxes, and tests with zero invented metrics), and `scripts/partager-lecons.mjs` dissemination script (recording lessons in `LESSONS.md` and gently notifying available Herdr agents only), documented in `docs/kit.en.md`.
+- 24 pixel art Herdr tool emblems: integration in `public/logos.js` of 16×16 emblems for all 24 Herdr-supported tools (`pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`) plus generic agent fallback, displayed on desk fronts, agent cards, and mosaic tiles.
+- Official Herdr integrations: support and documentation for `herdr integration install <tool>` integrations enabling fine-grained session reporting and agent activity tracking in Herdr.
+- 7-step guided tour and help: upgrade of interactive help drawer and documentation to a 7-step walkthrough (adding steps 6 Mosaic and 7 Crisis Room).
+
+### Changed
+
+- Evening lighting: ceiling pendant lights and desk lamps illuminate starting at 5:30 PM until morning based on local clock; desk lamp of an agent on quota break remains off.
+- Wall scoreboard: displays resume time of quota pause, queued prompts, unread mail, and active subagents instead of repeating card states.
+- Under each desk, agent name only underlined with state color; state is conveyed through card, character pose, screen glow, and bubble.
+- Reflection room fixed label: "SALLE DE REFLEXION" never truncated regardless of activity.
+- Touchscreens: "Touche" instead of "Clique", status pill padding adjusted to prevent overflow on mobile.
+- Multi-target lead command: dispatches visual rounds for each targeted agent sequentially rather than stopping at the first.
+
+## [0.3.0] - October 17, 2026
+
+### Added
+
+- Intelligent and safe queue:
+  - "Mettre en file" button available on workstation when agent is busy or on quota break.
+  - Queue list in Team tab showing targets, status, and single-item cancel buttons.
+  - Scheduled automatic retry 5 minutes after reported quota reset time (`reset + 5 min`).
+  - Strong double-send protection (idempotence key, persistent send state prior to external calls, atomic disk writes, preserved corrupt files).
+- Tasks tab:
+  - Tracking real checked boxes in project documentation files (`TODO.md`).
+  - Tracking action plans published by agents in their local logs.
+  - Strict factual progress calculation based only on observed facts, without invented estimates.
+- Collapsible help drawer:
+  - Lateral help drawer opened via dedicated button or `?` key, activated on first visit.
+  - Guided tour, zone visual legend, full keyboard shortcuts reference.
+  - Signal toggles (desktop notifications and sound chimes).
+- Modal command palette (`Ctrl+K`):
+  - Fast search dialog with keyboard navigation to open a workstation, draft prompts, browse files, or switch modes.
+- 8-bit Web Audio module (`public/sounds.js`):
+  - Standalone audio synthesizer without external audio files providing 4 discreet alerts (< 0.6s, max gain 0.05): task finished ('mail'), agent blocked ('blocked'), quota pause ('pause'), and delegation ('delegation').
+  - Stored in `localStorage` under `bureau.sons`.
+- Windows desktop notifications:
+  - System alerts when page is in background for blocks, completions, and quota pauses.
+- Continuous day-night cycle and lighting ambiance:
+  - Smooth sky gradient following local clock with fading stars and city lights.
+  - Diurnal arc for sun and moon (warm sun near horizon, fixed 6:30 AM sunrise, 7:30 PM sunset).
+  - Dynamic ambient lighting in main room, Direction desk, and reflection room.
+- Collapsible reflection room:
+  - Subagent animations in dedicated room with collapse toggle for small screens.
+- Direction desk:
+  - Dedicated VIP workstation for the first agent started in Herdr (team lead), with clickable mail stack opening Team tab directly.
+- Delegation cycle and lead mail:
+  - Observation of delegation commands (`herdr agent prompt`), walking animation to fetch tasks, and mail to lead upon completion.
+
+### Changed
+
+- Design review synthesis applied (decisions D1 to D8):
+  - D1: Unified main state "En pause (limite)" across cards, workstation sheets, and command palette during observed pauses.
+  - D2: Arrangement help bar placed on its own row beneath toolbar to prevent overlap with alert banner.
+  - D3: Agent cards structured on two rows (name then status) with compact Herdr pane pill and 2-column grid under 1360px.
+  - D4: Streamlined Team tab with single synthetic sentence per section and counters in headers.
+  - D5: Workstation terminal sized to fill available height with "Agrandir" / "Réduire" button.
+  - D6: Unified error blocks with clear explanation and "Actualiser le bureau" button; 6 empty state pixel art icons (`public/empty-icons.js`).
+  - D7: Engaging landing card in Workstation tab inviting user to select an agent.
+  - D8: Mobile responsive layout verified at 390px and 360px widths without horizontal overflow.
+- Automated test suite extension: 161 total tests (159 passing, 2 skipped on Windows symlinks, 0 failures).
+
+## [0.2.0] - October 17, 2026
+
+### Added
+
+- Tabbed navigation: Clean separation of sidebar into "Poste" (individual agent) and "Équipe" (collective coordination).
+- Terminal tooling: live text search with highlighted matches, "Figer" scroll freeze button, "Copier" clipboard button, auto-pause on text selection.
+- Ergonomics and shortcuts: Ctrl+Enter (or Cmd+Enter) for quick prompt and broadcast, "Cocher tous les disponibles" button, arrow key tab navigation.
+- Full-screen control tower: full-screen mode unifying canvas scene and control panel.
+- Herdr pane identifiers: exact pane ID (`w5:p1`, `w5:p4`) shown on cards and detail header.
+- Mobile experience: selecting an agent on narrow viewports smoothly scrolls to control panel.
+- Live visual indicators: top bar badges counting working, waiting, and available agents; yellow alert banner for input requests; session transmission journal.
+- Team lead and Direction desk: first agent recognized as lead with dedicated scene desk.
+- Delegation cycle and mail: delegation detection, walking animations, and completion mail.
+- Reflection room: animated room hosting subagents.
+- Secure file explorer: safe directory browsing (`src/files.mjs` and `/api/files`) restricted to local folders without deletion or overwrite.
+- Codex and OpenCode telemetry: non-destructive parsing of local configuration and logs (`src/agent-activity.mjs`).
+- Truth of facts: strict rule banning invented metrics; real errors feed `LESSONS.md`.
+- Claude token tracking: transcript parsing for real token consumption.
+- Automated tests: 90 tests covering server, Herdr, activities, files, and origin verification.
+
+## [0.1.0] - October 17, 2026
+
+### Added
+
+- Initial release of The Agent Office (Bureau des agents) by DrSmoke and the agent team.
+- Animated pixel art scene in clean scaled canvas respecting selected art styles.
+- Continuous panoramic sky synced with machine clock.
+- Direct local connection to Herdr CLI agents.
+- Faithful character poses: typing when working, mug when available, raised arm when waiting.
+- 16x16 pixel logos for Claude, Codex, Antigravity, and OpenCode.
+- Ephemeral token authentication (`X-Bureau-Token`) preventing dispatches to busy agents.
+- 2-click armed group broadcast.
+- Automatic draft preservation when switching between agents.
+- Standalone local HTTP server with zero npm dependencies bound to 127.0.0.1.
+- Quick start scripts for Windows (`Ouvrir le bureau.cmd` and `Ouvrir le bureau.ps1`).

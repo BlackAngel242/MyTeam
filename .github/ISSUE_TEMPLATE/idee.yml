@@ -1,11 +1,11 @@
-name: Proposer une idée
-description: Une fonction ou une amélioration.
+name: Proposer une idée / Suggest an idea
+description: Une fonction ou une amélioration / A feature or improvement.
 labels: [enhancement]
 body:
   - type: textarea
     id: idee
     attributes:
-      label: Votre idée
-      description: Quel besoin, et comment vous l'imaginez. Le bureau n'affiche que des faits observés : dites d'où viendrait la donnée.
+      label: Votre idée / Your idea
+      description: "Quel besoin et comment vous l'imaginez (français ou anglais). Le bureau n'affiche que des faits observés : précisez d'où viendrait la donnée / The need and proposed solution (French or English). The office only displays observed facts: specify data sources."
     validations:
       required: true

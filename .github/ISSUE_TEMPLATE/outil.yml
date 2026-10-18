@@ -1,36 +1,36 @@
-name: Proposer un outil compatible Herdr
-description: Ajouter un nouvel outil d'agent ou son emblème dans le bureau.
+name: Proposer un outil compatible Herdr / Propose a Herdr-compatible tool
+description: Ajouter un nouvel outil d'agent ou son emblème dans le bureau / Add a new agent tool or its emblem in the office.
 labels: [outil, enhancement]
 body:
   - type: input
     id: nom
     attributes:
-      label: Nom de l'outil
-      description: Le nom usuel de l'agent ou de l'outil (ex. Claude, Codex, Kimi, Cursor).
-      placeholder: Mon Outil
+      label: Nom de l'outil / Tool name
+      description: Le nom usuel de l'agent ou de l'outil / Usual name of the agent or tool (ex. Claude, Codex, Kimi, Cursor).
+      placeholder: Mon Outil / My Tool
     validations:
       required: true
   - type: input
     id: kind
     attributes:
-      label: Identifiant Herdr (--kind)
-      description: La valeur exacte passée à herdr agent start --kind.
+      label: Identifiant Herdr (--kind) / Herdr identifier (--kind)
+      description: La valeur exacte passée à herdr agent start --kind / Exact value passed to herdr agent start --kind.
       placeholder: monoutil
     validations:
       required: true
   - type: input
     id: commande
     attributes:
-      label: Commande de détection
-      description: Le nom de l'exécutable pour Get-Command ou command -v.
+      label: Commande de détection / Detection command
+      description: Le nom de l'exécutable pour Get-Command ou command -v / Binary name for Get-Command or command -v.
       placeholder: monoutil
   - type: textarea
     id: embleme
     attributes:
-      label: Proposition d'emblème (facultatif)
-      description: Grille pixel 16x16 et palette (même format que public/logos.js) ou idée visuelle.
+      label: Proposition d'emblème (facultatif) / Emblem suggestion (optional)
+      description: Grille pixel 16x16 et palette (format public/logos.js) ou idée visuelle / 16x16 pixel grid and palette or visual idea.
   - type: textarea
     id: contexte
     attributes:
-      label: Informations complémentaires
-      description: Lien vers le projet ou particularités de l'outil.
+      label: Informations complémentaires / Additional information
+      description: Lien vers le projet ou particularités de l'outil / Project link or specific details.

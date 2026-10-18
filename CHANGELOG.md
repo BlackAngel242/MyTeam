@@ -1,5 +1,7 @@
 # Journal des modifications (Changelog)
 
+**Français** | [English](CHANGELOG.en.md)
+
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
 ## [Non publié]

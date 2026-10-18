@@ -1,36 +1,36 @@
-name: Proposer ou corriger une traduction
-description: Ajouter une nouvelle langue ou améliorer une traduction existante.
+name: Proposer ou corriger une traduction / Propose or fix a translation
+description: Ajouter une nouvelle langue ou améliorer une traduction existante / Add a new language or improve an existing translation.
 labels: [traduction, documentation]
 body:
   - type: dropdown
     id: type_traduction
     attributes:
-      label: Type de contribution
+      label: Type de contribution / Contribution type
       options:
-        - Nouvelle langue pour l'interface (public/i18n-*.js)
-        - Nouvelle traduction de la documentation (README, aide, kit)
-        - Correction d'une traduction existante
+        - Nouvelle langue pour l'interface / New UI language (public/i18n-*.js)
+        - Nouvelle traduction de la documentation / New documentation translation (README, docs/)
+        - Correction d'une traduction existante / Fix for existing translation
     validations:
       required: true
   - type: input
     id: langue
     attributes:
-      label: Langue concernée
-      description: Nom et code ISO de la langue (ex. English [en], Espagnol [es], Allemand [de]).
+      label: Langue concernée / Target language
+      description: Nom et code ISO de la langue / Language name and ISO code (ex. English [en], Espagnol [es], Allemand [de]).
       placeholder: English (en)
     validations:
       required: true
   - type: textarea
     id: fichiers
     attributes:
-      label: Fichiers visés
-      description: Indiquez les fichiers concernés (ex. public/i18n-en.js, README.en.md, docs/aide.en.md).
+      label: Fichiers visés / Target files
+      description: Indiquez les fichiers concernés / Specify target files (ex. public/i18n-en.js, README.en.md, docs/aide.en.md).
     validations:
       required: true
   - type: textarea
     id: proposition
     attributes:
-      label: Détails ou proposition de texte
-      description: Décrivez vos modifications ou collez votre proposition de traduction.
+      label: Détails ou proposition de texte / Details or translation content
+      description: Décrivez vos modifications ou collez votre texte / Describe changes or paste your translation.
     validations:
       required: true

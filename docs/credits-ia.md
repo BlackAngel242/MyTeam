@@ -1,5 +1,7 @@
 # Réalisé avec l'aide de l'IA
 
+**Français** | [English](credits-ia.en.md)
+
 MyTeam (le Bureau des agents) a été concrétisé grâce à l'intelligence artificielle. Les assistants et modèles ci-dessous ont aidé à concevoir, écrire, relire et tester le projet, sous la direction de son auteur.
 
 | Outil | Éditeur | Modèle affiché pendant le développement |

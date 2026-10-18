@@ -1,13 +1,13 @@
-## Ce que change cette proposition
+## Ce que change cette proposition / What this PR changes
 
-<!-- Une ou deux phrases. -->
+<!-- Une ou deux phrases (français ou anglais) / One or two sentences (French or English). -->
 
-## Vérifications
+## Vérifications / Checklist
 
-- [ ] `npm run check` et `npm test` passent
-- [ ] Aucune dépendance ajoutée sans raison (le projet n'en a aucune)
-- [ ] Le bureau n'affiche que des faits observés (rien d'inventé : pourcentage, état, message)
-- [ ] Interface modifiée : vérifiée sur ordinateur et sur téléphone (360 et 390 px)
-- [ ] Une nouvelle erreur rencontrée est ajoutée à `LESSONS.md`
+- [ ] `npm run check` et / and `npm test` passent / pass
+- [ ] Aucune dépendance ajoutée / No dependencies added (le projet n'en a aucune / zero npm dependencies)
+- [ ] Vérité des faits : rien d'inventé (pourcentage, tâche, état) / Factual truth: nothing invented (percentage, task, state)
+- [ ] Interface modifiée vérifiée sur ordinateur et téléphone (360 et 390 px) / Modified UI checked on desktop and mobile
+- [ ] Nouvelle erreur rencontrée ajoutée à `LESSONS.md` / Any new error added to `LESSONS.md`
 
-Voir `CONTRIBUTING.md` et `AGENTS.md`.
+Voir / See `CONTRIBUTING.md` (`CONTRIBUTING.en.md`) et / and `AGENTS.md`.

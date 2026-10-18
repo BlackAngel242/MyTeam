@@ -1,6 +1,7 @@
 # MyTeam · The Agent Office
 
-[Français](README.md) | **English**
+> 🌐 **Language / Langue** : [Français](README.md) | **English**  
+> 📚 **Documentation index** : [docs/index.en.md](docs/index.en.md) ([Index en français](docs/index.md))
 
 An immersive and living pixel art dashboard to monitor, inspect, and direct your autonomous AI agent teams running in Herdr.
 
@@ -66,7 +67,7 @@ Interactive and hardened scripts are provided in `scripts/` to verify requiremen
   ```
 
 > [!TIP]
-> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer `herdr integration install` integrations, install the lead skill (`herdr --skill`) or guide with `CHEF.md`, prepare the lead orientation prompt, offer 3 desktop shortcuts (including combined "Herdr and desktop"), and initialize the team kit (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) for the complete guide.
+> **What the installer does and does not do**: The scripts verify Node.js (>= 22) and Herdr, prepare a 2×2 Herdr grid (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), detect all 24 compatible tools, offer `herdr integration install` integrations, install the lead skill (`herdr --skill`) or guide with `CHEF.md`, prepare the lead orientation prompt, offer 3 desktop shortcuts (including combined "Herdr and desktop"), and initialize the team kit (`node scripts/init-kit.mjs`). They install no external npm packages, neither request nor store API keys, and never auto-approve silent installations: the `-Oui` / `--oui` switch never auto-confirms installations or agent launches (individual y/n prompt remains mandatory). Useful options: `-DryRun` / `--dry-run` (simulation), `-Lang fr|en` / `--lang fr|en`, `-Port` / `--port`, `-HerdrChemin` / `--herdr-chemin`, `-SansRaccourci` / `--sans-raccourci`. Refer to [docs/INSTALLATION.en.md](docs/INSTALLATION.en.md) ([Français](docs/INSTALLATION.md)) for the complete guide.
 
 ### 2. Starting the office
 
@@ -163,14 +164,16 @@ MyTeam adheres to strict engineering rules:
 
 ## Built with the Help of AI
 
-This project was built with the assistance of artificial intelligence: Claude (Anthropic, Opus 5.5 and Sonnet 5.5), Codex (OpenAI, GPT-6.1-Sol), Antigravity (Google, Gemini 3.8 Flash), and OpenCode (MiMo V2.6 Pro) assisted in its design, implementation, and testing. **The sole author and contributor of the project is DrSmoke** ([BlackAngel242](https://github.com/BlackAngel242)): ideas, architectural choices, and releases are his; no AI signs contributions. Full credits in [`docs/credits-ia.md`](docs/credits-ia.md).
+This project was built with the assistance of artificial intelligence: Claude (Anthropic, Opus 5.5 and Sonnet 5.5), Codex (OpenAI, GPT-6.1-Sol), Antigravity (Google, Gemini 3.8 Flash), and OpenCode (MiMo V2.6 Pro) assisted in its design, implementation, and testing. **The sole author and contributor of the project is DrSmoke** ([BlackAngel242](https://github.com/BlackAngel242)): ideas, architectural choices, and releases are his; no AI signs contributions. Full credits in [`docs/credits-ia.en.md`](docs/credits-ia.en.md) ([Français](docs/credits-ia.md)).
 
 ## Contributing
 
 Contributions that align with the project's philosophy (technical independence, factual truth, pixel art aesthetics, and accessibility) are welcome.
 
-- Refer to [CONTRIBUTING.en.md](CONTRIBUTING.en.md) for architectural guidelines, setup steps, and PR checklist.
-- Review recent release history in [CHANGELOG.md](CHANGELOG.md).
+- Refer to [CONTRIBUTING.en.md](CONTRIBUTING.en.md) ([Français](CONTRIBUTING.md)) for architectural guidelines, setup steps, and PR checklist.
+- Review the code of conduct in [CODE_OF_CONDUCT.en.md](CODE_OF_CONDUCT.en.md) ([Français](CODE_OF_CONDUCT.md)) and the security policy in [SECURITY.en.md](SECURITY.en.md) ([Français](SECURITY.md)).
+- Review release history in [CHANGELOG.en.md](CHANGELOG.en.md) ([Français](CHANGELOG.md)).
+- Explore the complete public documentation index in [docs/index.en.md](docs/index.en.md) ([Français](docs/index.md)).
 - Before submitting, verify syntax (`npm run check`) and ensure all tests pass (`npm test`).
 
 ---
@@ -201,6 +204,6 @@ Contributions that align with the project's philosophy (technical independence, 
 
 MyTeam source code is released under the **MIT License** (see [LICENSE](LICENSE)).
 
-Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) remain the property of their respective owners. Pixel art representations in `public/logos.js` are used solely to visually distinguish tools occupying each workstation, without commercial affiliation or endorsement: see [NOTICE.md](NOTICE.md).
+Third-party names, trademarks, and logos (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) remain the property of their respective owners. Pixel art representations in `public/logos.js` are used solely to visually distinguish tools occupying each workstation, without commercial affiliation or endorsement: see [NOTICE.en.md](NOTICE.en.md) ([Français](NOTICE.md)).
 
 DrSmoke « Un Mbokatié engagé »
