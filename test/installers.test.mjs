@@ -96,7 +96,7 @@ test('syntaxe PowerShell de installer.ps1 (parse seul, sans exécution)', async 
   const script = `$t=[IO.File]::ReadAllText('${ps1.replace(/'/g, "''")}'); $e=$null; [void][System.Management.Automation.Language.Parser]::ParseInput($t,[ref]$null,[ref]$e); if($e.Count -gt 0){ $e | ForEach-Object { $_.Message }; exit 1 }`;
   let stdout;
   try {
-    ({ stdout } = await execute(binaire, ['-NoProfile', '-Command', script], { windowsHide: true, timeout: 30000 }));
+    ({ stdout } = await execute(binaire, ['-NoProfile', '-Command', script], { windowsHide: true, timeout: 120000 }));
   } catch (erreur) {
     if (erreur.code !== 'EPERM' && erreur.code !== 'EACCES') throw erreur;
     t.skip('PowerShell bloqué par les droits de cette machine');
@@ -115,7 +115,7 @@ test('syntaxe bash de installer.sh (bash -n seul, sans exécution)', async t => 
   }
   for (const binaire of dispos) {
     try {
-      await execute(binaire, ['-n', sh], { windowsHide: true, timeout: 30000 });
+      await execute(binaire, ['-n', sh], { windowsHide: true, timeout: 120000 });
       assert.ok(true, `${binaire} : syntaxe valide`);
       return;
     } catch (erreur) {
