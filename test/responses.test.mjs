@@ -99,3 +99,10 @@ test('un chemin Windows contenant une espace est masqué en entier, sans avaler 
   assert.match(text,/Suite du texte/);
   assert.match(mask('voir C:/a/b.txt, puis la suite'),/puis la suite/);
 });
+
+test('un tour en cours dont le début est hors de la partie lue du journal garde ses textes', () => {
+  const out = parseClaudeResponses([reply('Texte venu d\'un tour commencé plus haut', '2026-10-18T10:00:05Z', 'tool_use'), reply('Suite', '2026-10-18T10:00:09Z', 'end_turn')], SESSION);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].state, 'terminée');
+  assert.deepEqual(out[0].blocks.map(b => b.text), ['Texte venu d\'un tour commencé plus haut', 'Suite']);
+});

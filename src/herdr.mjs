@@ -1,7 +1,7 @@
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {createHash} from 'node:crypto';
-import {readdirSync,statSync} from 'node:fs';
+import {readdirSync,statSync,readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {homedir} from 'node:os';
 
@@ -46,9 +46,11 @@ function parseResult(output) {
   if(data.error) throw new HerdrError('Herdr a refusé la demande. Consultez son panneau pour vérifier son état.');
   return data.result;
 }
-export function createHerdr({run,executeFile=execute}={}) {
+export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),'.claude','sessions'),now=()=>Date.now()}={}) {
   const inflight=new Set();
   let listing;
+  const sessionsClaude=new Map();
+  const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
   const invoke=async args=>{
     try {
       if(run) return await run(args);
@@ -64,13 +66,51 @@ export function createHerdr({run,executeFile=execute}={}) {
       throw new HerdrError('Herdr ne répond pas ou a refusé la demande. Vérifiez sa fenêtre. Un envoi peut avoir été reçu : consultez le terminal avant de le répéter.');
     }
   };
+  // Session exacte d'un Claude sans agent_session (intégration Herdr absente) : le processus au premier plan du
+  // panneau a un fichier ~/.claude/sessions/<pid>.json qui porte son identifiant de session. Aucune approximation :
+  // le pid doit correspondre et l'identifiant doit avoir la forme d'un UUID, sinon rien.
+  async function sessionClaude(paneId) {
+    const vu=sessionsClaude.get(paneId);
+    if(vu&&now()-vu.at<15000) return vu.id;
+    let id;
+    try {
+      const info=parseResult(await invoke(['pane','process-info','--pane',paneId]))?.process_info;
+      const pids=[info?.foreground_process_group_id,...(Array.isArray(info?.foreground_processes)?info.foreground_processes.map(p=>p?.pid):[])].filter(n=>Number.isInteger(n)&&n>0);
+      for(const pid of [...new Set(pids)]) {
+        try {
+          const chemin=join(sessionsDir,pid+'.json');
+          if(statSync(chemin).size>65536) continue;
+          const session=JSON.parse(readFileSync(chemin,'utf8'));
+          if(session?.pid!==pid||!UUID.test(session.sessionId)) continue;
+          id=session.sessionId;
+          // Le client interactif peut « garder » une conversation tournant en fond (parkedJobId) : la vraie conversation,
+          // celle dont le journal grandit, est la session de fond portant ce jobId.
+          if(typeof session.parkedJobId==='string'&&session.parkedJobId) {
+            for(const nom of readdirSync(sessionsDir)) {
+              if(!/^\d+\.json$/.test(nom)) continue;
+              try {
+                const autre=JSON.parse(readFileSync(join(sessionsDir,nom),'utf8'));
+                if(autre?.jobId===session.parkedJobId&&UUID.test(autre.sessionId)) {id=autre.sessionId;break;}
+              } catch { /* fichier de session illisible : ignoré */ }
+            }
+          }
+          break;
+        } catch { /* ce processus n'est pas une session Claude */ }
+      }
+    } catch { /* Herdr ne donne pas d'information de processus : pas de session */ }
+    sessionsClaude.set(paneId,{at:now(),id});
+    if(sessionsClaude.size>32) sessionsClaude.delete(sessionsClaude.keys().next().value);
+    return id;
+  }
   function list() {
     if(listing) return listing;
     listing=(async()=>{
       try {
         const result=parseResult(await invoke(['agent','list']));
         if(!Array.isArray(result?.agents)) throw new HerdrError('Liste des agents de Herdr illisible.');
-        return result.agents.filter(a=>a.pane_id&&a.terminal_id).map(normalizeAgent);
+        const agents=result.agents.filter(a=>a.pane_id&&a.terminal_id).map(normalizeAgent);
+        await Promise.all(agents.map(async a=>{if(a.kind==='Claude'&&!a.sessionId){const id=await sessionClaude(a.paneId);if(id)a.sessionId=id;}}));
+        return agents;
       } finally {listing=undefined;}
     })();
     return listing;

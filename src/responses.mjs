@@ -103,7 +103,9 @@ export function parseClaudeResponses(lines, sessionId) {
       if (/^\[Request interrupted/.test(text.trim())) { if (turn) turn.interrupted = true; continue; }
       turn = { id: typeof entry.uuid === 'string' ? entry.uuid : `${at}#${turns.length}`, startedAt: at, endedAt: at, blocks: [], interrupted: false, ended: false };
       turns.push(turn);
-    } else if (entry?.type === 'assistant' && turn && Array.isArray(content)) {
+    } else if (entry?.type === 'assistant' && Array.isArray(content)) {
+      // Journal lu par la fin : le tour en cours peut avoir commencé avant la partie lue. Son début manque, mais ses textes existent.
+      if (!turn) { turn = { id: `fin-${typeof entry.uuid === 'string' ? entry.uuid : turns.length}`, startedAt: at, endedAt: at, blocks: [], interrupted: false, ended: false }; turns.push(turn); }
       for (const block of content) {
         if (block?.type === 'text' && typeof block.text === 'string' && block.text.trim()) turn.blocks.push({ text: mask(block.text.slice(0, MAX_BLOCK)) });
       }
