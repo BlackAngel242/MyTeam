@@ -21,7 +21,7 @@ const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),direction}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -72,7 +72,17 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const base=activite??{tokens:null,limits:[],model:null,effort:null};
     return {...base,limitReached:etat.limitReached===true,resetsAt:etat.resetsAt??null,usedPercent:typeof etat.usedPercent==='number'?etat.usedPercent:null,source:'terminal'};
   }
-  const reponsesDe=(agent,agents)=>agent.kind==='Claude'?(agent.sessionId?getResponses(agent.sessionId):{found:false,complete:false,responses:[]}):getOtherResponses(agent,agents);
+  // Cache de 3 s par agent (cacheReponsesMs) : le fil, les réponses et le suivi relisaient les mêmes journaux à chaque sondage.
+  const cacheReponses=new Map();
+  const reponsesDe=(agent,agents)=>{
+    const vu=cacheReponses.get(agent.id);
+    if(vu&&now()-vu.at<cacheReponsesMs) return vu.promesse;
+    const promesse=Promise.resolve(agent.kind==='Claude'?(agent.sessionId?getResponses(agent.sessionId):{found:false,complete:false,responses:[]}):getOtherResponses(agent,agents));
+    cacheReponses.set(agent.id,{at:now(),promesse});
+    if(cacheReponses.size>64) cacheReponses.delete(cacheReponses.keys().next().value);
+    promesse.catch(()=>cacheReponses.delete(agent.id));
+    return promesse;
+  };
   const fileAttente=queue??createQueue({listAgents:async()=>bridge.list(),prompt:(id,message)=>bridge.prompt(id,message),limitsOf:limiteQuota,prepareFiles:prepareQueuedFiles,file:queueFile,now});
   // Direction de l'équipe : choix de DrSmoke persisté, sinon la règle du plus
   // petit panneau. Le serveur n'envoie jamais de message lors d'un changement.
@@ -380,7 +390,10 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           return json(200,{bulles:bulles.slice(0,50),sources});
         } catch(error) {return json(errorStatus(error),{error:'Impossible de lire la discussion pour le moment.'});}
       }
-      if(req.method==='GET'&&url.pathname==='/api/read') return json(200,await bridge.read(url.searchParams.get('id')));
+      if(req.method==='GET'&&url.pathname==='/api/read') {
+        if(!guard(req,{body:false})) return;
+        return json(200,await bridge.read(url.searchParams.get('id')));
+      }
       if(req.method==='POST'&&(url.pathname==='/api/prompt'||url.pathname==='/api/broadcast')) {
         if(!guard(req)) return;
         const parsed=await readJson(req);

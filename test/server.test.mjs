@@ -82,8 +82,10 @@ test('le serveur refuse données illisibles, format incorrect et consigne trop g
 });
 
 test('la lecture transmet la cible et conserve le terminal comme texte',async t=>{
-  const {send}=await bureau(t);
-  const response=await send('/api/read?id=agent-1');
+  const {send,origin}=await bureau(t);
+  assert.equal((await send('/api/read?id=agent-1')).status,403);
+  const {data:{token}}=await send('/api/state');
+  const response=await send('/api/read?id=agent-1',{headers:{Origin:origin,'X-Bureau-Token':token}});
   assert.equal(response.status,200);
   assert.match(response.headers['content-type'],/^application\/json/);
   assert.deepEqual(response.data,{id:'agent-1',text:'<script>texte du terminal</script>'});

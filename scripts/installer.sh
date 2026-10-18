@@ -210,7 +210,11 @@ dire ''
 # --- 2. Herdr -----------------------------------------------------------
 dire '--- 2. Herdr (gestionnaire de terminaux) ---'
 chercher_herdr() {
-  if [ -n "$HERDR_CHEMIN" ] && [ -x "$HERDR_CHEMIN" ]; then echo "$HERDR_CHEMIN"; return 0; fi
+  if [ -n "$HERDR_CHEMIN" ]; then
+    # Nom littéral herdr ou herdr.exe : un autre exécutable n'est jamais pris pour Herdr.
+    case "${HERDR_CHEMIN##*/}" in herdr|herdr.exe) [ -x "$HERDR_CHEMIN" ] && { echo "$HERDR_CHEMIN"; return 0; } ;; esac
+    return 1
+  fi
   if command -v herdr >/dev/null 2>&1; then command -v herdr; return 0; fi
   if [ -d "$HOME/.herdr/packages" ]; then
     trouve=$(find "$HOME/.herdr/packages" -type f \( -name herdr -o -name herdr.exe \) 2>/dev/null | head -n 1)

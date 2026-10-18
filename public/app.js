@@ -638,7 +638,7 @@ async function readOutput() {
   if(readBusy||!selected||!state.connected)return;
   readBusy=true;const id=selected,sequence=readSequence;
   try{
-    const data=await request('/api/read?id='+encodeURIComponent(id));
+    const data=await request('/api/read?id='+encodeURIComponent(id),{headers:{'X-Bureau-Token':state.token||''}});
     if(id!==selected||sequence!==readSequence)return;
     const parts=splitChrome(data.text||'');
     statusCache.set(id,{status:parts.status,at:new Date()});renderStatusbar(activeAgent());

@@ -14,7 +14,7 @@ async function fixture(t) {
   await writeFile(join(source,'rapport é.txt'),'Contenu privé 🎉');
   const clock={ms:Date.now()},agents=[{id:'c',kind:'Codex',name:'Agent',cwd:target,status:'idle',ready:true,creator_account_id:'COMPTE_PRIVE'}];
   let responses={found:false,responses:[]},reads=0,sends=0;
-  const server=createBureauServer({queueFile:join(root,'queue.json'),now:()=>clock.ms,
+  const server=createBureauServer({queueFile:join(root,'queue.json'),now:()=>clock.ms,cacheReponsesMs:0,
     bridge:{list:async()=>agents,prompt:async()=>{sends++;clock.ms+=1000;}},
     getPlaces:()=>({documents:{path:source}}),readOtherActivity:async()=>null,
     getOtherResponses:async()=>{reads++;return responses;},

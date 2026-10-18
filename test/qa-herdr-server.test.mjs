@@ -119,7 +119,7 @@ test('lecture, envoi et état distinguent 400, 502 et 500 sans changer les messa
   for(const [error,status] of [[new AgentInputError('Saisie refusée.'),400],[new HerdrError('Herdr indisponible.'),502],[new Error('Erreur interne.'),500]]) {
     failure=error;
     for(const [path,options] of [
-      ['/api/read?id=agent-1',{}],
+      ['/api/read?id=agent-1',{headers}],
       ['/api/prompt',{method:'POST',headers,body:JSON.stringify({id:'agent-1',message:'Bonjour'})}],
       ['/api/state',{}],
     ]) {

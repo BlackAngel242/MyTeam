@@ -86,3 +86,9 @@ test('/api/discussion fusionne les réponses lisibles, du plus récent au plus a
   assert.deepEqual(Object.fromEntries(r.data.sources.map(s=>[s.agent,s.etat])),{Claude:'lu',Codex:'lu',Antigravity:'non exposé',OpenCode:'non rattaché'});
   assert.doesNotMatch(JSON.stringify(r.data),/12345678|sessionId/);
 });
+
+test('le masque couvre aussi racines usuelles, clés Google, jetons fins, empreintes et digests',()=>{
+  const text=mask('/workspace/projet/a.mjs /srv/y /data/x AIza'+'a'.repeat(35)+' github_pat_'+'b'.repeat(30)+' w5:p1@d234f56741fc0479 '+'e3b0c442'.repeat(8)+' et la route /api/reponses');
+  assert.doesNotMatch(text,/workspace|\/srv|\/data|AIza|github_pat_|d234f567|e3b0c442/);
+  assert.match(text,/\/api\/reponses/);
+});

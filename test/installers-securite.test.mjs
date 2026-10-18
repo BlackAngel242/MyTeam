@@ -188,3 +188,19 @@ if((Chercher-Herdr) -cne ${psLiteral(executable)}){throw 'chemin littéral perdu
 'ok'`);
   if (resultat) assert.equal(resultat.stdout.trim(), 'ok');
 });
+
+test('B4 (sh) : --herdr-chemin exige un exécutable nommé herdr ou herdr.exe', async t => {
+  const dossier = await mkdtemp(join(tmpdir(), 'bureau-herdr-'));
+  t.after(() => rm(dossier, { recursive: true, force: true }));
+  const base = dossier.replaceAll(String.fromCharCode(92), '/');
+  const resultat = await bash(t, `${fonctionsBash('chercher_herdr')}
+for nom in faux.sh herdr; do
+  printf '#!/bin/sh\n' > "$DOSSIER/$nom"; chmod +x "$DOSSIER/$nom"
+  HERDR_CHEMIN="$DOSSIER/$nom"; HOME=/inexistant
+  printf '%s=%s\n' "$nom" "$(chercher_herdr || echo refuse)"
+done`, { DOSSIER: base });
+  if (!resultat) return;
+  assert.equal(resultat.stdout, `faux.sh=refuse
+herdr=${base}/herdr
+`);
+});

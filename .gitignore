@@ -6,3 +6,4 @@ node_modules/
 .impeccable/tmp/
 .impeccable/*.local.json
 captures/
+.impeccable/hook.cache.json

@@ -62,3 +62,9 @@ Le dossier `docs/captures/` rassemble les captures candidates réalisées avec d
 5. `04-ordinateur-palette.png` : Boîte modale de palette de commandes (Ctrl+K) ouverte au centre de l'écran.
 6. `05-ordinateur-aide.png` : Volet d'aide latérale avec guide en 5 étapes, légendes et tableau des raccourcis.
 7. Vues mobiles (`06-telephone-scene.png` à `10-telephone-aide.png`) : Adaptation responsive complète sur smartphone (390x844).
+
+## 5. Revue QA finale du 18 octobre (docs/revue-opencode-final.md) : décisions
+
+- Corrigés : chemin personnel dans un jeu d'essai, masque des réponses élargi (racines Unix usuelles, clés Google, jetons fins, empreintes), cache de 3 s des lectures de journaux, `/api/read` protégé par le jeton, `.impeccable/hook.cache.json` ignoré, `--herdr-chemin` de `installer.sh` limité à un exécutable nommé `herdr` ou `herdr.exe`.
+- Acceptés, documentés : l'historique Git public garde le chemin local du projet dans trois anciens documents (réécrire l'historique est irréversible et le gain est faible) ; une copie de fichier joint déjà faite reste dans le dossier de l'agent si l'envoi échoue ensuite (aucun écrasement, suffixe de copie) ; `/api/state` distribue le jeton par conception.
+- Publics par choix : `JOURNAL.md`, `HANDOFF.md`, `LESSONS.md`, `ERREURS.md` (reprise par une autre IA).

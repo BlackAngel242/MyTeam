@@ -30,11 +30,14 @@ export function mask(value) {
   return String(value)
     .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi, '[identifiant masqué]')
     .replace(/\b(?:sk|pk|ghp|gho|ghu|ghs|xox[abprs])[-_][A-Za-z0-9_-]{16,}\b/g, '[secret masqué]')
+    .replace(/\b(?:github_pat_[A-Za-z0-9_]{20,}|AIza[0-9A-Za-z_-]{30,})/g, '[secret masqué]')
+    .replace(/@[0-9a-f]{8,}\b/g, '@[empreinte masquée]')
+    .replace(/\b[0-9a-f]{32,}\b/gi, '[empreinte masquée]')
     .replace(/\b(Bearer)\s+[A-Za-z0-9._~+/=-]{16,}/gi, '$1 [secret masqué]')
     .replace(/\b((?:api[_-]?key|token|secret|password|passwd)\s*[:=]\s*)["']?[^\s"',;]{6,}/gi, '$1[secret masqué]')
     .replace(/(?:[a-z]:[\\/]|\\\\)[^\s`"'<>]+/gi, '[chemin masqué]')
     .replace(/(^|[\s`"'(])(~[\\/][^\s`"'<>)]*)/g, '$1[chemin masqué]')
-    .replace(/(^|[\s`"'(])(\/(?:home|Users|root|etc|usr|var|tmp|mnt|opt|proc)(?:\/[^\s`"'<>)]*)?)/g, '$1[chemin masqué]');
+    .replace(/(^|[\s`"'(])(\/(?:home|Users|root|etc|usr|var|tmp|mnt|opt|proc|workspace|data|srv|app|work|code|projects?)(?:\/[^\s`"'<>)]*)?)/g, '$1[chemin masqué]');
 }
 
 async function inside(path, root) {

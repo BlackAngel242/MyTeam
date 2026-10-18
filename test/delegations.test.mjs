@@ -282,7 +282,7 @@ test('l\'état de saut d\'une ligne géante survit entre deux lectures', async t
 test('le titre n\'est jamais la consigne complète et masque les chemins', async t => {
   const root = await journal(t, [
     appel('t1', 'herdr agent prompt w5:p1 "Court"'),
-    appel('t2', 'herdr agent prompt w5:p2 "Relis C:\\Users\\DrSmoke\\secret.txt et dis-moi"'),
+    appel('t2', 'herdr agent prompt w5:p2 "Relis C:\\projet-factice\\secret.txt et dis-moi"'),
     appel('t3', 'herdr agent prompt w5:p3 "Voir ~/prive/notes.md stp"'),
     appel('t4', 'herdr agent prompt w5:p4 "' + 'Phrase longue '.repeat(20) + '"'),
   ]);

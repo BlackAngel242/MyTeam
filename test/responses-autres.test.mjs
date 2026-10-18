@@ -114,7 +114,7 @@ test('/api/reponses raccorde Codex avec la liste courante et protège la lecture
   const f = await fixture(t);
   await writeFile(f.file, line(meta, message('Réponse de la route')));
   let agents = [codex];
-  const server = createBureauServer({ bridge: { list: async () => agents }, readOtherActivity: async () => null, getOtherResponses: f.reader });
+  const server = createBureauServer({ bridge: { list: async () => agents }, readOtherActivity: async () => null, getOtherResponses: f.reader, cacheReponsesMs: 0 });
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const origin = `http://127.0.0.1:${server.address().port}`;
