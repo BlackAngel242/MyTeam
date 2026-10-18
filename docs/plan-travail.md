@@ -43,6 +43,14 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] E6 (OpenCode) Traitement de fichier suivi jusqu'au résultat : `GET /api/traitement`, faits sourcés, jamais « réussi » (section 6)
 - [x] E7 (Claude) Interface du dossier de traitement
 
+## Lot G. Salle de crise et mosaïque (accordées par DrSmoke le 18 octobre)
+
+- [ ] G1 (OpenCode) Salle de crise côté serveur : `src/crisis.mjs`, `GET/POST /api/crise`, envois verrouillés (423), file suspendue, `POST /api/crise/arret` (interruption polie par Échap, jamais un arrêt brutal), tests, contrat `docs/contrat-crise.md`
+- [ ] G2 (Antigravity) Mosaïque : `public/tiles.js`, 2 à 4 terminaux côte à côte, consigne rapide, rafraîchissement borné aux tuiles visibles
+- [ ] G3 (Claude) Salle de crise dans l'interface : bouton sous clapet, `Ctrl+Maj+C`, lumière ambrée, fenêtre de diagnostic, « Arrêter cet agent » (double confirmation), « Lever la crise »
+- [ ] G4 (Claude) Intégration de la mosaïque : bouton « Mosaïque », « Vue scène », entrée dans la palette `Ctrl+K`
+- [ ] G5 (Claude) Évaluation, vérification Playwright (1440, 390, 360 px), documentation et mise à jour de `docs/aide.md` par Antigravity, fusion et push
+
 ## Lot F. Clôture
 
 - [x] F1 (Antigravity) Nom `MyTeam` partout dans les documents (écart relevé dans `HANDOFF.md`)

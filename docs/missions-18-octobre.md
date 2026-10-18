@@ -62,3 +62,30 @@ Compte rendu court après chaque point (A1b d'abord), avec hash de commit.
 ## OpenCode : revue QA finale (lecture seule, sauf ton rapport)
 
 Tu travailles dans un worktree : lis et teste uniquement dans le dossier du projet (branche `main`), ne modifie rien d'autre que ton rapport `docs/revue-opencode-final.md`. Relis `AGENTS.md` et `LESSONS.md` d'abord. Passe en revue les commits du 18 octobre (`git log --since=2026-10-18`) : `src/responses.mjs`, `/api/reponses`, `/api/discussion`, `/api/traitement`, fichiers joints dans `src/queue.mjs`, `public/response-card.js`, `public/discussion.js`, installeurs. Cherche : fuite de chemin, identifiant ou secret dans une réponse publique, contournement de garde (jeton, origine), double envoi, écrasement de fichier, lecture de `credential` ou de messages chiffrés, régression d'accessibilité. Rapport court : défauts numérotés (gravité, fichier:ligne, scénario, correctif proposé). Ne commite que ce rapport (`git add docs/revue-opencode-final.md`), pas de push.
+
+# Lot G : salle de crise et mosaïque (DrSmoke a accepté les deux)
+
+Spécification de départ : `docs/os-fonctions-antigravity.md`, fonctions 6 et 7, et `docs/idees-os.md` section 8. Relis `LESSONS.md` avant de commencer (ne pas modifier `npm test`, ne commiter que si les tests ont tourné, chemins avec espaces, antislashs dans les fichiers écrits).
+
+## OpenCode : G1, salle de crise côté serveur
+
+Fichiers à toi : `src/crisis.mjs` (nouveau), `src/herdr.mjs` (ajout de `interrupt` seulement), `src/queue.mjs` (option de verrou seulement), `server.mjs` (routes), `test/crisis.test.mjs` (nouveau), `docs/contrat-crise.md` (nouveau), ligne dans `npm run check`.
+
+- État `{active, since}` persisté de façon atomique dans `.bureau/crise.json` (hors Git, comme la file). Fichier corrompu ou illisible : crise ACTIVE (en cas de doute, rien ne part), avec la raison.
+- `GET /api/crise` renvoie `{active, since, reason}` ; `POST /api/crise {active:boolean}` (jeton et origine exacte comme les autres écritures) l'enclenche ou la lève. Une requête mal formée est une erreur de saisie (400).
+- Crise active : `POST /api/prompt` et `POST /api/broadcast` répondent 423 avec « Salle de crise active : les envois sont verrouillés. Levez la crise pour reprendre. » ; la file continue d'accepter des consignes mais `tick()` n'envoie rien (option `locked: () => boolean` de `createQueue`, vérifiée juste avant chaque envoi) ; la passation de direction passe par la file donc reste suspendue.
+- `POST /api/crise/arret {id}` : seulement si la crise est active (sinon 409). Demande à l'agent de s'arrêter proprement par une interruption polie : `bridge.interrupt(id)` dans `src/herdr.mjs` retrouve l'agent avec son identifiant courant (empreinte comprise, comme `prompt`) puis lance `herdr pane send-keys <paneId> Escape` via `execFile` avec un tableau d'arguments, aucun shell. Jamais de kill. Réponse `{requested:true}`, avec le nom de l'agent, sans chemin.
+- Tests : verrou persistant après redémarrage, fichier corrompu = active, 423 sur envoi et diffusion, `tick` n'envoie rien puis reprend à la levée, interruption avec arguments exacts (faux `executeFile`), agent inconnu 400, garde jeton et origine.
+- Contrat exact des routes dans `docs/contrat-crise.md` : le chef branche l'interface dessus.
+
+## Antigravity : G2, mosaïque
+
+Fichier à toi : `public/tiles.js` (nouveau) et styles `.tl-` dans `public/style.css` (ajout en fin de fichier seulement). Même méthode que `public/response-card.js` : en-tête de module documentant le contrat, aucun `innerHTML`.
+
+- `window.Tiles.mount(container, api)` et `window.Tiles.unmount()`. `api` fourni par le chef : `agents()` renvoie `[{id,name,kind,status,paneId,paused}]` (statuts Herdr : `working`, `idle`, `blocked`, `done`, `unknown`), `read(id)` renvoie `Promise<{text}>` (les dernières lignes du terminal), `send(id,message)` renvoie `Promise<void>` et peut échouer avec un `Error` portant un message lisible, `canSend(agent)` renvoie un booléen, `onExpand(id)` ouvre le poste complet, `onClose()` revient à la vue scène.
+- 2 à 4 tuiles : les agents au travail d'abord, puis les autres, au plus 4 ; bascule « grille 2×2 » ou « colonnes » ; si plus de 4 agents, des cases permettent de choisir lesquels affichés.
+- Chaque tuile : en-tête compact (nom, outil, état, bouton Agrandir), dernières lignes du terminal dans un `pre` en `textContent` (nettoyer les séquences ANSI avec `TerminalView` de `public/terminal.js` si utilisable, sinon un nettoyage simple), recherche légère, champ de consigne rapide avec `Ctrl+Entrée`, désactivé avec l'explication quand `canSend` est faux.
+- Rafraîchissement borné aux tuiles visibles : une lecture par tuile toutes les 3 s, rien quand l'onglet du navigateur est caché, une lecture à la fois par tuile, pas de relecture si le texte est identique, sélection de texte conservée.
+- Accessibilité : grille avec `role="group"` et noms accessibles, tout au clavier.
+- Vérifie avec Playwright sur des états simulés (1440, 390 et 360 px) : aucune consigne réelle.
+
