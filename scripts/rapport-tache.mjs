@@ -19,6 +19,11 @@ const executer = promisify(execFile);
 const envGit = Object.fromEntries(Object.entries(process.env).filter(([cle]) => !cle.startsWith('GIT_')));
 
 const A_COMPLETER = 'à compléter';
+// Un champ fourni garde sa ponctuation : jamais deux points à la suite.
+const ponctue = texte => {
+  const propre = String(texte).trim();
+  return /[.!?]$/.test(propre) ? propre : `${propre}.`;
+};
 
 export async function rapportTache(id, { depot = '.', agent = 'OpenCode', resume = null, tests = null, nonVerifie = null, git = null } = {}) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('Identifiant de tâche attendu (par exemple N9).');
@@ -50,9 +55,9 @@ export async function rapportTache(id, { depot = '.', agent = 'OpenCode', resume
     `Rapport de fin de tâche ${identifiant} (${nom}).`,
     `Branche : ${branche ?? A_COMPLETER}.`,
     `Hash : ${commits.length ? commits.join(' ; ') : `aucun commit trouvé pour ${identifiant}`}.`,
-    `Résumé : ${resume ?? `${A_COMPLETER} (trois lignes)`}.`,
-    `Tests : ${tests ?? A_COMPLETER}.`,
-    `Non vérifié : ${nonVerifie ?? A_COMPLETER}.`,
+    `Résumé : ${resume === null ? `${A_COMPLETER} (trois lignes).` : ponctue(resume)}`,
+    `Tests : ${tests === null ? `${A_COMPLETER}.` : ponctue(tests)}`,
+    `Non vérifié : ${nonVerifie === null ? `${A_COMPLETER}.` : ponctue(nonVerifie)}`,
   ].join('\n');
 }
 
