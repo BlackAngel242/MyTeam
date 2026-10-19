@@ -24,6 +24,13 @@ L'application MyTeam (« Bureau des agents ») est une tour de contrôle locale 
 
 Le bureau n'affiche que ce qui est réellement observé : états Herdr, journaux locaux, fichiers du disque, horloge de la machine. Jamais de pourcentage fictif, de tâche imaginaire ou d'humeur inventée. Toute lacune d'un outil est signalée par « Non exposé par cet outil ».
 
+## État au 19 octobre 2026 (release 0.4.2 « Ogun »)
+
+- Version 0.4.2 « Ogun » (divinité yoruba du fer et des outils) : chaque version porte désormais le nom d'une divinité ashanti ou yoruba, voir `docs/noms-de-versions.md`. Contenu : interrupteur Autonomie visible et récapitulatif, santé du bureau (`/api/sante`, pastille « Redémarrage à prévoir », diagnostic copiable), capsule animée, scène lisible à 10 agents sur téléphone, outillage d'équipe (`scripts/rapport-tache.mjs`, `scripts/branche-agent.mjs`, plafond de 90 s par test).
+- Méthode d'équipe : `docs/protocole-agents.md` (tâche = identifiant du plan, rapport bref, surveillance sans boucle ; branches nommées permises sauf pour OpenCode, jamais de worktree pour lui) et `docs/fixit-equipe.md` (revue à 2 à 4 profils adaptés au contexte).
+- Le projet passe en attente : on attend les propositions et améliorations des contributeurs (issues, discussions, pull requests).
+- Pas de redémarrage du serveur principal (port 4317) pendant un mode Autonomie : le redémarrage le clôt.
+
 ## État au 18 octobre 2026 (0.4.x, dépôt public MyTeam)
 
 - Dépôt public `BlackAngel242/MyTeam`, CI Ubuntu et Windows, site GitHub Pages, releases 0.4.0 et 0.4.1 (tag `v0.4.1`) ; le reste à faire est dans `TODO.md`. Aucun nom d'auteur imposé dans l'interface (pied de page dans `.bureau/pied.json`).
