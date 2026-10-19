@@ -160,3 +160,15 @@ test('l\'aperçu de partage (Open Graph) : image en URL absolue, existante, 1200
   assert.equal(octets.readUInt32BE(20), 630);
   assert.ok((await stat(fichier)).size < 300 * 1024, 'moins de 300 Ko pour WhatsApp');
 });
+
+test('la vidéo d\'accueil a ses sources (webm, mp4), un repli GIF léger et respecte le mouvement réduit', async () => {
+  const { readFile, stat } = await import('node:fs/promises');
+  const html = await readFile(new URL('../site/index.html', import.meta.url), 'utf8');
+  assert.match(html, /<video id="hero-video"[^>]*autoplay muted loop playsinline/);
+  for (const [fichier, plafondKo] of [['tournee-du-chef.webm', 1500], ['tournee-du-chef.mp4', 1500], ['tournee-du-chef.gif', 5000]]) {
+    assert.ok(html.includes(`assets/${fichier}`), fichier);
+    assert.ok((await stat(new URL(`../site/assets/${fichier}`, import.meta.url))).size < plafondKo * 1024, `${fichier} sous ${plafondKo} Ko`);
+  }
+  const js = await readFile(new URL('../site/site.js', import.meta.url), 'utf8');
+  assert.match(js, /prefers-reduced-motion/);
+});

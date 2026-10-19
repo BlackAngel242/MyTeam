@@ -523,6 +523,14 @@ if (typeof document !== 'undefined') {
   });
 }
 
+// Mouvement réduit : la vidéo d'accueil reste sur sa première image si l'utilisateur le demande.
+if (typeof document !== 'undefined') {
+  const video = document.getElementById('hero-video');
+  if (video && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    video.removeAttribute('autoplay'); video.pause(); video.controls = true;
+  }
+}
+
 // Export pour les tests automatisés Node.js
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { I18N, t };

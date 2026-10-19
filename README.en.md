@@ -9,9 +9,7 @@ Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel 
 [![CI](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml)
 [![Dependencies](https://img.shields.io/badge/dependencies-0%20npm-informational.svg)](package.json)
 
-[![MyTeam main scene](docs/captures/01-ordinateur-scene.png)](https://blackangel242.github.io/MyTeam/)
-
-![Chief tour: live animated delegation](docs/captures/tournee-du-chef.gif)
+[![Chief tour: live animated delegation](docs/captures/tournee-du-chef.gif)](https://blackangel242.github.io/MyTeam/)
 
 - **Who does what, live**: who works, waits or finishes, tested with up to 10 agents.
 - **You stay in control**: queue, crisis room, capped Autonomy mode you can stop.

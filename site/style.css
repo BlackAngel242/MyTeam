@@ -347,6 +347,8 @@ img {
   image-rendering: pixelated;
 }
 
+.hero-preview video { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; display: block; background: #0b1426; }
+
 /* --- Section commune --- */
 .section {
   padding: 72px 0;
