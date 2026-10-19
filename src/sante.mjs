@@ -96,14 +96,16 @@ export function createSante({
 
   const herdrRepond = async () => {
     if (typeof bridge?.list !== 'function') return false;
-    const minuteur = new Promise(resolve => {
-      const t = setTimeout(() => resolve(false), delaiHerdr);
-      t.unref?.();
-    });
-    return Promise.race([
-      Promise.resolve().then(() => bridge.list()).then(() => true, () => false),
-      minuteur,
-    ]);
+    // Le minuteur garde la boucle d'événements vivante le temps du délai (un minuteur « unref » laissait un test, ou un
+    // processus sans autre activité, s'arrêter avec une promesse en attente) et il est annulé dès que Herdr répond.
+    let minuteur;
+    const delai = new Promise(resolve => { minuteur = setTimeout(() => resolve(false), delaiHerdr); });
+    try {
+      return await Promise.race([
+        Promise.resolve().then(() => bridge.list()).then(() => true, () => false),
+        delai,
+      ]);
+    } finally { clearTimeout(minuteur); }
   };
 
   const version = versionHerdr ?? (async () => {
