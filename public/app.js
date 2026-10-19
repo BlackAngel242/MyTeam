@@ -767,6 +767,28 @@ function setTiles(on){
 }
 $('tiles-open').addEventListener('click',()=>setTiles(!tilesOn));
 // Pied de page facultatif : le texte vient de .bureau/pied.json (local, jamais imposé).
+// Santé du bureau : observée par le serveur (Herdr, journaux, version chargée comparée aux fichiers), jamais de chemin ni de message.
+let santeData=null;
+async function loadSante(){
+  if(!state.connected||!state.token)return;
+  try{santeData=await request('/api/sante',{headers:{'X-Bureau-Token':state.token}});}catch{santeData=null;}
+  renderSante();
+}
+function renderSante(){
+  const d=santeData,chip=$('sante-chip');
+  if(!d){chip.hidden=true;$('sante-ligne').textContent=t('sante.indisponible');return;}
+  chip.hidden=d.conforme!==false;chip.title=t('sante.redemarrage_aide');
+  $('sante-ligne').textContent=t('sante.ligne',{herdr:d.herdr?t('sante.oui'):t('sante.non'),journaux:d.journauxTrouves,version:d.conforme===false?t('sante.version_ancienne'):t('sante.version_ok')});
+}
+async function copierDiagnostic(){
+  await loadSante();
+  const d=santeData,pre=$('sante-texte');
+  if(!d){$('sante-ligne').textContent=t('sante.indisponible');return;}
+  const texte=JSON.stringify(d,null,2);
+  try{await navigator.clipboard.writeText(texte);pre.hidden=true;$('sante-ligne').textContent=t('sante.copie');}
+  catch{pre.textContent=texte;pre.hidden=false;$('sante-ligne').textContent=t('sante.copie_impossible');}
+}
+$('sante-copier').addEventListener('click',copierDiagnostic);
 async function loadFooter(){
   if(!state.connected||!state.token)return;
   try{
@@ -1891,7 +1913,7 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 let cycleLent=0;
-setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadAuto();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();if(currentTab()==='equipe')loadTreatments();}},5000);
+setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis();loadAuto();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}

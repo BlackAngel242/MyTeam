@@ -25,6 +25,7 @@
       <li class="chip working"><i></i><b id="count-work">0</b> <span data-i18n="header.au-travail">au travail</span></li>
       <li class="chip waiting"><i></i><b id="count-wait">0</b> <span data-i18n="header.en-attente">en attente</span></li>
       <li class="chip idle"><i></i><b id="count-free">0</b> <span data-i18n="header.disponibles">disponibles</span></li>
+      <li class="chip warn" id="sante-chip" hidden><i></i><span data-i18n="sante.redemarrage">Redémarrage à prévoir</span></li>
     </ul>
     <div class="connection" id="connection" role="status"><span class="signal"></span><span id="connection-text" data-i18n="header.connexion">Connexion à Herdr…</span></div>
     <div class="top-actions">
@@ -146,6 +147,10 @@
         <tr><td><kbd data-i18n="aide.kbd-echap">Échap</kbd></td><td data-i18n="aide.racc-fermer">Fermer l’aide, la palette ou le mode Disposer</td></tr>
         <tr><td><kbd data-i18n="aide.kbd-maj">Maj</kbd> <span data-i18n="aide.glisser">+ glisser</span></td><td data-i18n="aide.racc-deplacer">Déplacer un fichier (confirmation demandée)</td></tr>
       </tbody></table>
+      <h3 data-i18n="sante.titre">Santé du bureau</h3>
+      <p class="help-foot" id="sante-ligne" role="status"></p>
+      <div class="help-toggles"><button type="button" class="tool-button" id="sante-copier" data-i18n="sante.copier">Copier le diagnostic</button></div>
+      <pre class="auto-recap" id="sante-texte" hidden></pre>
       <h3 data-i18n="aide.signaux-titre">Signaux</h3>
       <div class="help-toggles"><button type="button" class="tool-button" id="notif-toggle" data-i18n="bouton.notifications">Notifications Windows : désactivées</button><button type="button" class="tool-button" id="sound-toggle" data-i18n="bouton.sons">Sons : désactivés</button></div>
       <p class="help-foot" data-i18n="aide.foot-notifs">Notifications quand la page est en arrière-plan : agent qui attend ta réponse, fin de travail, pause de limite. Sons 8 bits discrets pour les mêmes événements et les délégations.</p>
