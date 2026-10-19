@@ -102,8 +102,8 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] N2 (Antigravity) Capsule animée de la tournée du chef (7,2 s, 234 Ko) pour le site et le README : fusionnée, `3917114` (branche `agent/antigravity/capsule-chef`)
 - [x] N3 (Antigravity) Bouton « Aller au poste » sur mobile : écarté, le clic sur un personnage ou une carte fait déjà défiler vers le poste (0.2.0)
 - [x] N4 (OpenCode) Profils ressources et preuve ; (Codex) cinq corrections de méthode (preuves, verdicts, consensus, mémoire) : adoptés dans `docs/fixit-equipe.md`
-- [ ] N5 (Codex) Signaler que le serveur exécute un code plus ancien que les fichiers du projet, sans redémarrage automatique : adopté
-- [ ] N6 (Codex) Fiche de diagnostic copiable (versions, connexion, états, sans chemins ni messages) : adopté, après N5
+- [x] N5 (Codex, fusionné dans N7) Signaler que le serveur exécute un code plus ancien que les fichiers du projet, sans redémarrage automatique : adopté
+- [x] N6 (Codex, fusionné dans N7) Fiche de diagnostic copiable (versions, connexion, états, sans chemins ni messages) : adopté, après N5
 - [x] N7 (OpenCode `e20fb07` pour l'API, Claude pour l'interface) Santé du bureau, fusion de N5, N6 et de la suggestion d'OpenCode : route `/api/sante` (Herdr répond, journaux trouvés, version chargée par le serveur comparée aux fichiers), ligne de santé et « Redémarrage à prévoir » dans l'interface, puis fiche de diagnostic copiable : adopté
 - [x] N8 (OpenCode, `e7b09f4`) Plafond de temps par test : `--test-timeout=90000` (pire mesure 38,5 s, marge x2,3 ; 3080 durées relevées)
-- [ ] N9 (OpenCode) `scripts/rapport-tache.mjs` : rapport de fin de tâche pré-rempli à partir de la branche, du hash et des tests : adopté
+- [x] N9 (OpenCode, `599d056` et `0e90727`) `scripts/rapport-tache.mjs` : rapport de fin de tâche pré-rempli à partir de la branche, du hash et des tests : adopté
