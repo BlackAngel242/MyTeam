@@ -8,6 +8,31 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 _Nothing yet._
 
+## [0.4.2] - October 19, 2026 · "Ogun"
+
+Ogun is the Yoruba deity of iron and tools: a release about tooling and solidity. From now on each version carries the name of an Ashanti or Yoruba deity (see `docs/noms-de-versions.md`).
+
+### Added
+
+- A permanent "Autonomy" switch in the top bar (OFF / ON, time left and exchanges), with 5 min and 3 exchanges for a trial run, and a "Summary" button (route `/api/autonomie/recap`) that reports the run from the log alone.
+- Desk health: `/api/sante` route, a health line and a "Copy diagnostic" button in the help (versions and states only, no path or message), and a "Restart needed" badge when the server runs older code than the files.
+- Animated capsule of the chief's round (7 seconds, under 250 KB) on the website and in the README.
+- Scene readable up to 10 agents on phones: three columns from five teammates (725 px tall instead of 1,491 px).
+- Team tooling: `scripts/rapport-tache.mjs` (pre-filled end-of-task report, nothing invented), `scripts/branche-agent.mjs` (named branch per task), a 90 s cap per test, a 10-agent measurement bench (`docs/performance.md`).
+- Team method: working protocol (`docs/protocole-agents.md`) and the team Fixit, a review by 2 to 4 profiles (`docs/fixit-equipe.md`).
+
+### Fixed
+
+- Page share preview (Open Graph): absolute URLs, 1200×630 image without personal data, alternative text.
+- Autonomy mode: stopping waits for an in-flight send, queued instructions are removed at stop and at restart, the objective can no longer close its quotes or outrank the prohibitions, which are presented as an instruction and not as a lock.
+- Quota pause: the announced time is found even when split across two terminal lines, with a countdown and an automatic resume one minute later.
+- Load-insensitive tests (fixture isolated from agents' home folders).
+- The website no longer shows a frozen version number; README cut to one page; Herdr link fixed.
+
+### Security
+
+- Public captures and images were redone without personal information, and the repository history was cleaned of older versions of these images.
+
 ## [0.4.1] - October 18, 2026
 
 ### Added

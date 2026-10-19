@@ -8,6 +8,31 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 _Rien pour l’instant._
 
+## [0.4.2] - 19 octobre 2026 · « Ogun »
+
+Ogun est la divinité yoruba du fer et des outils : une version d'outillage et de solidité. Chaque version porte désormais le nom d'une divinité ashanti ou yoruba (voir `docs/noms-de-versions.md`).
+
+### Ajouté
+
+- Interrupteur « Autonomie » toujours visible dans la barre du haut (OFF / ON, temps restant et échanges), avec les choix 5 min et 3 échanges pour un essai, et un bouton « Récapitulatif » (route `/api/autonomie/recap`) qui raconte le mode à partir du seul journal.
+- Santé du bureau : route `/api/sante`, ligne de santé et bouton « Copier le diagnostic » dans l'aide (versions et états seulement, aucun chemin ni message), pastille « Redémarrage à prévoir » quand le serveur exécute un code plus ancien que les fichiers.
+- Capsule animée de la tournée du chef (7 secondes, moins de 250 Ko) sur le site et dans le README.
+- Scène lisible jusqu'à 10 agents sur téléphone : trois colonnes dès cinq collaborateurs (725 px de haut au lieu de 1 491 px).
+- Outillage d'équipe : `scripts/rapport-tache.mjs` (rapport de fin de tâche pré-rempli, rien d'inventé), `scripts/branche-agent.mjs` (branche nommée par tâche), plafond de 90 s par test, banc de mesure à 10 agents (`docs/performance.md`).
+- Méthode d'équipe : protocole de travail (`docs/protocole-agents.md`) et Fixit d'équipe, revue à 2 à 4 profils (`docs/fixit-equipe.md`).
+
+### Corrigé
+
+- Aperçu de partage de la page (Open Graph) : adresses absolues, image 1200×630 sans donnée personnelle, texte alternatif.
+- Mode Autonomie : l'arrêt attend la fin d'un envoi en cours, les consignes encore en file sont retirées à l'arrêt et au redémarrage, l'objectif ne peut plus fermer ses guillemets ni passer avant les interdits, qui sont présentés comme une consigne et non comme un verrou.
+- Pause de quota : l'heure annoncée est retrouvée même coupée sur deux lignes du terminal, avec compte à rebours et reprise automatique une minute après.
+- Tests insensibles à la charge (fixture isolée du dossier personnel des agents).
+- Le site n'affiche plus de numéro de version figé ; README ramené à une page ; lien Herdr corrigé.
+
+### Sécurité
+
+- Les captures et images publiques ont été reprises sans information personnelle, et l'historique du dépôt a été nettoyé des anciennes versions de ces images.
+
 ## [0.4.1] - 18 octobre 2026
 
 ### Ajouté

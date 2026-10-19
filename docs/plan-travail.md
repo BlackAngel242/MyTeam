@@ -107,3 +107,9 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] N7 (OpenCode `e20fb07` pour l'API, Claude pour l'interface) Santé du bureau, fusion de N5, N6 et de la suggestion d'OpenCode : route `/api/sante` (Herdr répond, journaux trouvés, version chargée par le serveur comparée aux fichiers), ligne de santé et « Redémarrage à prévoir » dans l'interface, puis fiche de diagnostic copiable : adopté
 - [x] N8 (OpenCode, `e7b09f4`) Plafond de temps par test : `--test-timeout=90000` (pire mesure 38,5 s, marge x2,3 ; 3080 durées relevées)
 - [x] N9 (OpenCode, `599d056` et `0e90727`) `scripts/rapport-tache.mjs` : rapport de fin de tâche pré-rempli à partir de la branche, du hash et des tests : adopté
+
+## Lot O. Release 0.4.2 « Ogun » (19 octobre 2026)
+
+- [x] O1 (Claude) Changelog FR et EN, documentation (santé du bureau), noms de versions, piliers
+- [ ] O2 (Antigravity) Site : nouveautés 0.4.2 et nom de version (N10)
+- [ ] O3 (Claude) Archive, audit du paquet, publication de la release et nettoyage à deux releases

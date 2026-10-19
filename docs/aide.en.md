@@ -345,6 +345,11 @@ This tab monitors concrete work progress without artificial metrics.
 - Search for agents, open workstations, draft prompts, open the team board ("Shared memory"), switch tabs, or trigger actions from the keyboard.
 - Fluid navigation: arrow keys to choose, Enter to confirm, Escape to close.
 
+#### Desk health
+- In the help (`?` key), a line shows whether Herdr responds, how many agent logs are found and whether the server runs the latest version of the files.
+- The "Restart needed" badge appears in the header when the server runs older code than the files: restart it when no Autonomy mode is running (a restart ends that mode).
+- The "Copy diagnostic" button copies versions and states only: never a path, key, objective or message. Useful to ask for help without exposing your terminal.
+
 #### Bilingual FR / EN Interface
 - "FR / EN" button located in the top header toolbar (next to Help).
 - Automatic detection: defaults to browser language (`navigator.language`) on initial visit.

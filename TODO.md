@@ -82,3 +82,10 @@ Détail, propriétaires et état de chaque case dans `docs/plan-travail.md` (lu 
 - [x] Dépôt public GitHub `MyTeam` créé, publié et configuré, CI verte.
 - [x] Salle de crise et mosaïque livrées (lot G).
 
+## Version 0.4.2 « Ogun » : publiée
+
+- [x] Interrupteur Autonomie visible, récapitulatif, choix 5 min et 3 échanges.
+- [x] Santé du bureau (route, ligne de santé, redémarrage à prévoir, diagnostic copiable).
+- [x] Capsule animée, scène à 10 agents sur téléphone, aperçu de partage corrigé.
+- [x] Plafond de temps par test, rapport de fin de tâche, protocole d'équipe et Fixit d'équipe.
+- [ ] En attente : propositions et améliorations des contributeurs (issues, discussions, pull requests).

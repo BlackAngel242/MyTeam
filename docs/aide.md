@@ -345,6 +345,11 @@ Cet onglet permet de suivre l'avancement concret du travail sans estimation arti
 - Permet de chercher un agent, ouvrir son poste, rédiger un message, ouvrir le tableau de l'équipe (« Mémoire partagée »), basculer d'onglet ou lancer une action sans lâcher le clavier.
 - Navigation fluide : flèches haut et bas pour choisir, Entrée pour valider, Échap pour fermer.
 
+#### Santé du bureau
+- Dans l'aide (touche `?`), une ligne indique si Herdr répond, combien de journaux d'agents sont trouvés et si le serveur exécute bien la dernière version des fichiers.
+- La pastille « Redémarrage à prévoir » apparaît dans l'en-tête quand le serveur exécute un code plus ancien que les fichiers : relance-le quand aucun mode Autonomie ne tourne (un redémarrage clôt ce mode).
+- Le bouton « Copier le diagnostic » copie les versions et les états seulement : jamais de chemin, de clé, d'objectif ni de message. Utile pour demander de l'aide sans exposer son terminal.
+
 #### Interface bilingue FR / EN
 - Bouton « FR / EN » situé dans la barre d'en-tête (à côté du bouton Aide).
 - Détection automatique : au premier chargement, la langue s'aligne sur celle de votre navigateur (`navigator.language`).
