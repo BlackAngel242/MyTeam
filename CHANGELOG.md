@@ -8,9 +8,9 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 _Rien pour l’instant._
 
-## [0.4.2] - 19 octobre 2026 · « Ogun »
+## [0.4.2] - 19 octobre 2026 · « Ọṣun »
 
-Ogun est la divinité yoruba du fer et des outils : une version d'outillage et de solidité. Chaque version porte désormais le nom d'une divinité ashanti ou yoruba (voir `docs/noms-de-versions.md`).
+Ọṣun est la divinité yoruba des eaux douces, de la beauté et de l'abondance : une version qui rend le flux du travail visible et fluide. Chaque version porte désormais le nom d'une divinité ashanti ou yoruba (voir `docs/noms-de-versions.md`).
 
 ### Ajouté
 

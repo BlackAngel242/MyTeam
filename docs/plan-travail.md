@@ -108,8 +108,8 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] N8 (OpenCode, `e7b09f4`) Plafond de temps par test : `--test-timeout=90000` (pire mesure 38,5 s, marge x2,3 ; 3080 durées relevées)
 - [x] N9 (OpenCode, `599d056` et `0e90727`) `scripts/rapport-tache.mjs` : rapport de fin de tâche pré-rempli à partir de la branche, du hash et des tests : adopté
 
-## Lot O. Release 0.4.2 « Ogun » (19 octobre 2026)
+## Lot O. Release 0.4.2 « Ọṣun » (19 octobre 2026)
 
 - [x] O1 (Claude) Changelog FR et EN, documentation (santé du bureau), noms de versions, piliers
-- [x] O2 (Antigravity N10 `c982208`, Claude pour la capsule en motion design `45ddc62`) Site : nouveautés 0.4.2 « Ogun », vidéo d'accueil
+- [x] O2 (Antigravity N10 `c982208`, Claude pour la capsule en motion design `45ddc62`) Site : nouveautés 0.4.2 « Ọṣun », vidéo d'accueil
 - [ ] O3 (Claude) Archive, audit du paquet, publication de la release et nettoyage à deux releases

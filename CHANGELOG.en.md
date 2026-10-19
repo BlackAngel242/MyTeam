@@ -8,9 +8,9 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 _Nothing yet._
 
-## [0.4.2] - October 19, 2026 · "Ogun"
+## [0.4.2] - October 19, 2026 · "Ọṣun"
 
-Ogun is the Yoruba deity of iron and tools: a release about tooling and solidity. From now on each version carries the name of an Ashanti or Yoruba deity (see `docs/noms-de-versions.md`).
+Ọṣun is the Yoruba deity of fresh waters, beauty and abundance: a release that makes the flow of work visible and smooth. From now on each version carries the name of an Ashanti or Yoruba deity (see `docs/noms-de-versions.md`).
 
 ### Added
 

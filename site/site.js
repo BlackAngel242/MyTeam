@@ -84,9 +84,9 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.4.2 · Ogun
-    'nouveautes.badge': 'Version 0.4.2 · Ogun',
-    'nouveautes.titre': 'Les nouveautés de la version 0.4.2 · Ogun',
+    // Nouveautés 0.4.2 · Ọṣun
+    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
+    'nouveautes.titre': 'Les nouveautés de la version 0.4.2 · Ọṣun',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
     'nouveautes.switch.title': 'Interrupteur Autonomie permanent',
     'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.',
@@ -185,7 +185,7 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
-    'footer.divinite': 'Chaque version porte le nom d\'une divinité ashanti ou yoruba : 0.4.2 · Ogun, le forgeron des outils.',
+    'footer.divinite': 'Chaque version porte le nom d\'une divinité ashanti ou yoruba : 0.4.2 · Ọṣun, la divinité des eaux douces.',
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
@@ -275,9 +275,9 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.4.2 · Ogun
-    'nouveautes.badge': 'Version 0.4.2 · Ogun',
-    'nouveautes.titre': 'What\'s new in version 0.4.2 · Ogun',
+    // What's new 0.4.2 · Ọṣun
+    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
+    'nouveautes.titre': 'What\'s new in version 0.4.2 · Ọṣun',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
     'nouveautes.switch.title': 'Permanent Autonomy toggle switch',
     'nouveautes.switch.desc': 'Permanent OFF / ON toggle in the top bar displaying active state and remaining time, with a Summary button generating a factual Markdown report.',
@@ -376,7 +376,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
-    'footer.divinite': 'Each version is named after an Ashanti or Yoruba deity: 0.4.2 · Ogun, the blacksmith of tools.',
+    'footer.divinite': 'Each version is named after an Ashanti or Yoruba deity: 0.4.2 · Ọṣun, the deity of fresh waters.',
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'
