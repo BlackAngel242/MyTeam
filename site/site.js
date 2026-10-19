@@ -84,18 +84,18 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.4.1
-    'nouveautes.badge': 'Version 0.4.1',
-    'nouveautes.titre': 'Les nouveautés de la version 0.4.1',
+    // Nouveautés 0.4.2 · Ogun
+    'nouveautes.badge': 'Version 0.4.2 · Ogun',
+    'nouveautes.titre': 'Les nouveautés de la version 0.4.2 · Ogun',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
     'nouveautes.switch.title': 'Interrupteur Autonomie permanent',
-    'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif, le compte à rebours et le compteur d\'échanges en temps réel.',
-    'nouveautes.reprise.title': 'Reprise automatique après pause',
-    'nouveautes.reprise.desc': 'Reprise sans intervention : une consigne courte est expédiée à l\'agent exactement une minute après la levée de sa pause de quota.',
-    'nouveautes.agents10.title': 'Équipe jusqu\'à 10 agents',
-    'nouveautes.agents10.desc': 'Atelier testé et validé jusqu\'à 10 agents simultanés avec scène responsive en 3 colonnes sur mobile, jusqu\'à 12 en envoi groupé et mosaïque 4 tuiles.',
-    'nouveautes.recap.title': 'Bouton Récapitulatif factuel',
-    'nouveautes.recap.desc': 'Bouton dédié dans la fenêtre Autonomie générant un bilan Markdown fidèle, extrait exclusivement du journal des faits réels observés lors de la session.',
+    'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.',
+    'nouveautes.sante.title': 'Santé du bureau et diagnostic',
+    'nouveautes.sante.desc': 'Ligne de santé dans l\'aide, pastille « Redémarrage à prévoir » et bouton de diagnostic copiable sans aucun chemin, secret ni message privé.',
+    'nouveautes.agents10.title': 'Scène lisible jusqu\'à 10 agents',
+    'nouveautes.agents10.desc': 'Atelier testé jusqu\'à 10 agents avec disposition responsive en 3 colonnes sur téléphone (390 px) pour garder les personnages immédiatement visibles.',
+    'nouveautes.capsule.title': 'Capsule animée et partage corrigé',
+    'nouveautes.capsule.desc': 'Capsule animée légère montrant la tournée du chef et la remise de dossier doré, et aperçu de partage Open Graph corrigé en haute fidélité.',
 
     // Galerie
     'gallery.badge': 'Interface',
@@ -185,6 +185,7 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
+    'footer.divinite': 'Chaque version porte le nom d\'une divinité ashanti ou yoruba : 0.4.2 · Ogun, le forgeron des outils.',
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
@@ -274,18 +275,18 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.4.1
-    'nouveautes.badge': 'Version 0.4.1',
-    'nouveautes.titre': 'What\'s new in version 0.4.1',
+    // What's new 0.4.2 · Ogun
+    'nouveautes.badge': 'Version 0.4.2 · Ogun',
+    'nouveautes.titre': 'What\'s new in version 0.4.2 · Ogun',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
     'nouveautes.switch.title': 'Permanent Autonomy toggle switch',
-    'nouveautes.switch.desc': 'Permanent OFF / ON toggle switch in the top toolbar displaying active state, remaining time countdown, and exchange counter in real time.',
-    'nouveautes.reprise.title': 'Automatic resume after quota pause',
-    'nouveautes.reprise.desc': 'Seamless recovery: a short prompt is automatically dispatched to the agent exactly one minute after its quota pause lifts.',
-    'nouveautes.agents10.title': 'Teams up to 10 agents',
-    'nouveautes.agents10.desc': 'Workshop tested and verified up to 10 concurrent agents with responsive 3-column layout on mobile, up to 12 in broadcast, and 4-tile mosaic.',
-    'nouveautes.recap.title': 'Factual Summary report button',
-    'nouveautes.recap.desc': 'Dedicated button in the Autonomy dialog generating an accurate Markdown report, extracted exclusively from the factual event log of the session.',
+    'nouveautes.switch.desc': 'Permanent OFF / ON toggle in the top bar displaying active state and remaining time, with a Summary button generating a factual Markdown report.',
+    'nouveautes.sante.title': 'Desk health and diagnostic',
+    'nouveautes.sante.desc': 'Health status line in help, "Restart needed" badge, and copyable diagnostic button without any private path, secret, or prompt content.',
+    'nouveautes.agents10.title': 'Readable scene up to 10 agents',
+    'nouveautes.agents10.desc': 'Workshop tested with up to 10 agents and a responsive 3-column layout on mobile (390 px) keeping agents immediately visible.',
+    'nouveautes.capsule.title': 'Animated capsule and corrected social preview',
+    'nouveautes.capsule.desc': 'Lightweight animated capsule showcasing the lead\'s tour and golden folder delivery, alongside a high-fidelity Open Graph social share preview.',
 
     // Galerie
     'gallery.badge': 'Interface',
@@ -375,6 +376,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
+    'footer.divinite': 'Each version is named after an Ashanti or Yoruba deity: 0.4.2 · Ogun, the blacksmith of tools.',
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'
