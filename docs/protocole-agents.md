@@ -10,8 +10,9 @@ Règles de DrSmoke du 18 octobre 2026. Elles valent pour le chef et pour chaque 
 
 ## 2. Une tâche, un identifiant, des commits ciblés
 
-- **Les worktrees sont interdits** (règle de DrSmoke du 18 octobre : chaque cycle bloquait OpenCode sur une fenêtre « Worktrees »). Le travail se fait donc dans le dossier du projet, sur `main`, avec des commits ciblés (`git commit -- <fichiers>`) qui portent l'identifiant de tâche dans leur message (ex. « N7 … »).
-- La branche nommée par agent et par tâche (`agent/<agent>/<id-tâche>`, via `scripts/branche-agent.mjs --worktree-autorise`) attend l'accord explicite de DrSmoke : elle exige un worktree. Tant que cet accord manque, ne pas l'utiliser.
+- **Antigravity, Codex et le chef** peuvent travailler sur une branche nommée `agent/<agent>/<id-tâche>` dans un dossier à part : `node scripts/branche-agent.mjs <agent> <id-tâche>` (décision de DrSmoke du 19 octobre, « tant que ça passe »). Avant de signaler la fin : `git merge main` dans la branche, tests, commit ciblé ; le chef fusionne et supprime la branche et son dossier.
+- **OpenCode n'a jamais de worktree** (son interface se bloque sur la fenêtre « Worktrees ») : il travaille dans le dossier du projet, sur `main`, avec des commits ciblés (`git commit -- <fichiers>`) qui portent l'identifiant de tâche (ex. « N7 … »). Le script le refuse.
+- Si une branche ou un worktree pose problème à un agent, il revient à `main` avec des commits ciblés et me le dit.
 - Aucun push, aucune publication.
 
 ## 3. Fin de tâche : rapport bref, dans les deux sens
