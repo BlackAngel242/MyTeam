@@ -989,7 +989,11 @@ $('prompt-form').addEventListener('submit',async event=>{
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
-function syncMotion(){ $('motion').dataset.actif=String(paused);$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
+function syncMotion(){
+  $('motion').dataset.actif=String(paused);$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');
+  if(!paused&&frameId) { clearTimeout(frameId); cancelAnimationFrame(frameId); frameId=requestAnimationFrame(frame); }
+  draw(0);
+}
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
 motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
@@ -997,7 +1001,7 @@ const WORK=['busy','working','running'], FREE=['idle','done'], WAIT=['waiting','
 const sceneLabels={working:()=>t('scene.au_travail'),busy:()=>t('scene.au_travail'),running:()=>t('scene.au_travail'),idle:()=>t('scene.disponible'),done:()=>t('scene.termine'),waiting:()=>t('scene.attend_reponse'),blocked:()=>t('scene.attend_reponse')};
 const glyphs={'%':'101001010100101',A:'010101111101101',B:'110101110101110',C:'011100100100011',D:'110101101101110',E:'111100110100111',F:'111100110100100',G:'011100101101011',H:'101101111101101',I:'111010010010111',J:'001001001101010',K:'101101110101101',L:'100100100100111',M:'101111111101101',N:'110101101101101',O:'010101101101010',P:'110101110100100',Q:'010101101110011',R:'110101110101101',S:'011100010001110',T:'111010010010010',U:'101101101101111',V:'101101101101010',W:'101101111111101',X:'101101010101101',Y:'101101010010010',Z:'111001010100111',0:'111101101101111',1:'010110010010111',2:'110001010100111',3:'110001010001110',4:'101101111001001',5:'111100110001110',6:'011100111101111',7:'111001010010010',8:'111101111101111',9:'111101111001110','-':'000000111000000','+':'000010111010000','_':'000000000000111','.':'000000000000010',':':'000010000010000','?':'110001010000010','!':'010010010000010','/':'001001010100100',"'":'010010000000000',' ':'000000000000000'};
 const off=document.createElement('canvas'), g=off.getContext('2d');
-let hovered=null, ariaText='', lastFrame=0, layoutKey='', boardBottom=0;
+let hovered=null, ariaText='', lastFrame=0, layoutKey='', boardBottom=0, frameId=null;
 const lastStatus=new Map(), changes=new Map();
 // Départs et retours de pause de quota : déclenchés seulement par un passage observé, jamais au chargement.
 const pausedSeen=new Set(),quotaTrips=new Map();
@@ -1709,7 +1713,14 @@ document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.full
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+t('etat.titre_document');if(document.title!==title)document.title=title;}
 // Figée, la scène se redessine encore chaque minute pour suivre l'heure et la lumière.
-function frame(time){if(!tilesOn&&time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+function frame(time){
+  if(!tilesOn&&time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}
+  // Optimisation: Si la scène est figée et la mosaïque est fermée, on remplace l'appel
+  // en boucle requestAnimationFrame (qui consomme des ressources inutilement à 60 Hz)
+  // par un timeout d'une minute, pour ne redessiner que lorsque la lumière du jour change.
+  if(paused&&!tilesOn) frameId = setTimeout(()=>requestAnimationFrame(frame), 60000);
+  else frameId = requestAnimationFrame(frame);
+}
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1917,7 +1928,7 @@ setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis()
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
-termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});requestAnimationFrame(frame);
+termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});frameId=requestAnimationFrame(frame);
 // En arrière-plan, avec les notifications activées, seul l'état des agents est relu (toutes les 15 s) :
 // draw(0) y repère les changements sans animer la scène. Le navigateur peut encore espacer ces relectures.
 let hiddenTicks=0;
