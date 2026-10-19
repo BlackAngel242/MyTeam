@@ -111,5 +111,5 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 ## Lot O. Release 0.4.2 « Ogun » (19 octobre 2026)
 
 - [x] O1 (Claude) Changelog FR et EN, documentation (santé du bureau), noms de versions, piliers
-- [ ] O2 (Antigravity) Site : nouveautés 0.4.2 et nom de version (N10)
+- [x] O2 (Antigravity N10 `c982208`, Claude pour la capsule en motion design `45ddc62`) Site : nouveautés 0.4.2 « Ogun », vidéo d'accueil
 - [ ] O3 (Claude) Archive, audit du paquet, publication de la release et nettoyage à deux releases
