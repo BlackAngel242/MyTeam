@@ -4,7 +4,7 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
-## [0.5.0] - 2026-10-20
+## [0.5.0] - 2026-10-20 · « Ṣàngó »
 
 ### Projets et confidentialité
 
