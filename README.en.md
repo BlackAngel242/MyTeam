@@ -2,7 +2,7 @@
 
 **🌐 Official website: [https://blackangel242.github.io/MyTeam/](https://blackangel242.github.io/MyTeam/)** · [Français](README.md)
 
-Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel art office, send them instructions and read their replies. Everything stays on your machine.
+Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel art office, send them instructions and read their replies. The office and its state run locally; AI tools use their own services.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -14,6 +14,16 @@ Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel 
 - **Who does what, live**: who works, waits or finishes, tested with up to 10 agents.
 - **You stay in control**: queue, crisis room, capped Autonomy mode you can stop.
 - **Local and plain**: `127.0.0.1` only, zero npm dependencies, nothing invented on screen.
+
+## Choose your project before working (0.5.0)
+
+At startup, choose **Improve MyTeam** to work on the software, or **Create or resume another project** for your own folder. Select and confirm the folders before sending any instruction. The active project and folder remain visible; **Change project** returns to `/demarrage`, the startup screen and stops the previous context. Agents must work inside the selected folders: agents from another project are not authorized targets.
+
+Execution memory (queue, direction, autonomy and configuration) is private, separated by project in the operating system data folder under `MyTeam`, outside the checkout. An older installation is never imported automatically. Changing projects does not replay old instructions.
+
+Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
+
+[Download MyTeam 0.5.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.0/MyTeam-0.5.0.zip)
 
 ## Quick start
 

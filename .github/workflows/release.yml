@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: ['package.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm run check
+      - run: npm test
+
+  publish:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Prepare version and notes
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+          const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? '')) throw new Error('Invalid release version');
+          const text = readFileSync('CHANGELOG.md', 'utf8');
+          const start = text.indexOf(`## [${version}]`);
+          if (start === -1) throw new Error('Missing changelog');
+          const end = text.indexOf('\n## [', start + 1);
+          writeFileSync('release-notes.md', text.slice(start, end === -1 ? undefined : end));
+          appendFileSync(process.env.GITHUB_ENV, `VERSION=${version}\n`);
+          JS
+      - name: Build verified archive and checksum
+        run: node scripts/empaqueter-release.mjs "$VERSION" --rev "$GITHUB_SHA"
+      - name: Create draft and upload assets
+        run: |
+          gh release create "v$VERSION" "dist/MyTeam-$VERSION.zip" "dist/MyTeam-$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "MyTeam $VERSION" --notes-file release-notes.md --draft
+      - name: Verify downloaded draft assets
+        run: |
+          mkdir verification
+          gh release download "v$VERSION" --dir verification --pattern "MyTeam-$VERSION.zip*"
+          cd verification
+          sha256sum --check "MyTeam-$VERSION.zip.sha256"
+          unzip -t "MyTeam-$VERSION.zip"
+      - name: Publish new reference
+        run: |
+          gh release edit "v$VERSION" --draft=false --latest
+          gh release view "v$VERSION" --json isDraft,tagName --jq 'if .isDraft then error("Release is still a draft") else .tagName end'
+      - name: Verify Pages download link
+        run: |
+          for attempt in {1..24}; do
+            if curl --fail --silent --show-error --max-time 20 "https://blackangel242.github.io/MyTeam/?release=$VERSION" | grep -Fq "releases/download/v$VERSION/MyTeam-$VERSION.zip"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Pages does not reference the new archive; older releases are preserved."
+          exit 1
+      - name: Retire older releases, preserving Git tags
+        run: node scripts/garder-releases.mjs "$GH_REPO" --reference "v$VERSION" --garder 1

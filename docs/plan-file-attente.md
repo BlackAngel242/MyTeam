@@ -1,6 +1,9 @@
 # Plan : file d'attente de consignes (conception seule, sans code)
 
-Date : 17 octobre 2026. Auteur : OpenCode, mission de conception de Claude (panneau w5:p1). Ce document ne contient aucune ligne de code exécutable : c'est un plan pour que DrSmoke et Codex décident avant de construire. Fichier unique créé pour cette mission. Codex reste propriétaire de server.mjs, src/ et test/ ; Claude reste propriétaire de public/.
+Référence technique historique : les attributions de session ne sont pas des missions actuelles. Depuis 0.5.0, l’état d’exécution est privé par projet dans les données système `MyTeam`, hors checkout ; les anciennes mentions `.bureau/` décrivent l’architecture antérieure.
+
+
+Date : 17 octobre 2026. Auteur : OpenCode, mission de conception de Claude. Ce document ne contient aucune ligne de code exécutable : c'est un plan pour que DrSmoke et Codex décident avant de construire. Fichier unique créé pour cette mission. Codex reste propriétaire de server.mjs, src/ et test/ ; Claude reste propriétaire de public/.
 
 ## 1. Le comportement proposé
 
@@ -8,7 +11,7 @@ Aujourd'hui, quand DrSmoke écrit à un agent occupé, la consigne est refusée 
 
 Concrètement :
 
-1. DrSmoke écrit sa consigne et clique sur Envoyer. L'agent est au travail : le bureau affiche « Agent occupé : consigne mise en file pour Claude (panneau w5:p1) » avec le texte complet de la consigne visible, et un bouton « Retirer de la file » toujours cliquable.
+1. DrSmoke écrit sa consigne et clique sur Envoyer. L'agent est au travail : le bureau affiche « Agent occupé : consigne mise en file pour Claude » avec le texte complet de la consigne visible, et un bouton « Retirer de la file » toujours cliquable.
 2. La consigne attend. Rien ne part pendant ce temps. Le bureau montre la file : pour qui, depuis quand, et ce qui sera envoyé.
 3. Dès que l'agent passe dans un état réellement disponible (disponible ou terminé, avec saisie prête, exactement le même contrôle que l'envoi direct d'aujourd'hui), la consigne part automatiquement, dans l'ordre où elle a été écrite.
 4. Le bureau affiche « Consigne transmise à Herdr à 14 h 32 », sans jamais prétendre que la tâche est faite (principe de PRODUCT.md : signaler l'envoi, rien de plus).

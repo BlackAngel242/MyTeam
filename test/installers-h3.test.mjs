@@ -281,3 +281,14 @@ printf 'ok'`);
   }
   await assert.rejects(readFile(join(outside,'skills/herdr/SKILL.md')),{code:'ENOENT'});
 });
+
+test('installeur bash : Herdr dans local/bin est détecté sans PATH et sans exécution',async t=>{
+  const path=await temporary(t),binary=join(path,'.local','bin','herdr');
+  await mkdir(join(path,'.local','bin'),{recursive:true});await writeFile(binary,'#!/bin/sh\nexit 99\n',{mode:0o700});
+  const source=await readFile(join(root,'scripts/installer.sh'),'utf8');
+  // Seule la référence au dossier personnel est isolée ; le HOME du processus reste intact.
+  const fn=source.match(/^chercher_herdr\(\) \{[\s\S]*?^\}/m)[0].replaceAll('$HOME','$herdr_test_home');
+  const script=join(path,'discovery.sh');await writeFile(script,fn+`\ncommand(){ if [ "$*" = '-v herdr' ]; then return 1; fi; builtin command "$@"; }\nchercher_herdr\n`);
+  const result=await execute(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash',['--noprofile','--norc',script.replaceAll('\\','/')],{...options,env:{...process.env,herdr_test_home:path}});
+  assert.equal(result.stdout.trim().replaceAll('\\','/'),binary.replaceAll('\\','/'));
+});

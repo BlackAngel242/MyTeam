@@ -97,3 +97,7 @@ Détail, propriétaires et état de chaque case dans `docs/plan-travail.md` (lu 
 - [x] Galerie clavier et libellés corrigés, contrastes ciblés et responsive vérifiés.
 - [x] Captures simulées et documentation actualisées sur `codex_harmonisation-interface`.
 - [ ] Intégration de la branche, puis publication autorisée ; extension VS Code reportée.
+
+## Référence 0.5.0
+
+Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage public, choix et séparation des projets, correction du canvas, vérifications puis publication de la nouvelle référence avant retrait des anciennes releases.

@@ -10,13 +10,13 @@ Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claud
 
 ## Rôles
 
-- Le chef est le premier agent démarré dans Herdr (aujourd'hui Claude, panneau w5:p1). Il coordonne, répartit le travail, relit et intègre.
+- Le chef est le premier agent démarré dans Herdr (désigné dans le projet actif). Il coordonne, répartit le travail, relit et intègre.
 - Les autres agents reçoivent une mission écrite, travaillent dans les fichiers qui leur sont confiés et rendent compte en quelques lignes.
 - DrSmoke décide. Aucune IA ne répond à une boîte de dialogue, une autorisation ou un choix de dossier à sa place.
 
 ## Un fichier, un propriétaire
 
-- Propriété actuelle : `public/` et `src/files.mjs` pour Claude ; `server.mjs`, `src/agent-activity.mjs`, `src/delegations.mjs`, `src/queue.mjs` et leurs tests pour OpenCode (repris de Codex, dont la limite d'usage est presque atteinte) ; `src/herdr.mjs`, `src/claude-activity.mjs`, `src/todos.mjs`, `public/terminal.js` et `public/logos.js` pour Codex ; `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` et `docs/` de publication pour Antigravity. Le chef peut réattribuer, notamment quand un agent approche de sa limite d'usage.
+- Les propriétaires sont attribués par mission dans le plan courant. Ne pas reprendre une ancienne attribution de session.
 - Avant de modifier un fichier d'un autre agent : lire son `git diff`, puis demander au chef.
 
 ## Vérité des faits
@@ -69,8 +69,12 @@ Détail dans `docs/protocole-agents.md`. En bref :
 - Prévenir le chef tout de suite, sans attendre la fin du lot : tâche, hash du commit, nombre de tests, ce qui n'a pas pu être vérifié.
 - Mettre à jour les fichiers piliers touchés : `LESSONS.md`, `HANDOFF.md`, `JOURNAL.md`, `TODO.md` et `docs/plan-travail.md` (seul le chef coche).
 - Partager ce qui a été appris : une ligne dans `LESSONS.md` pour chaque erreur, découverte ou astuce (quoi, cause, règle), et le dire dans le compte rendu pour que le chef prévienne les autres.
-- Quota : quand la limite d'usage d'un agent se lève, le bureau lui envoie une minute après l'heure de retour une consigne courte. Répondre « dispo » en une ligne, puis reprendre la mission en cours sans refaire ce qui est commité.
+- Quota : reprendre seulement dans le projet actif après contrôle de la cible et de sa disponibilité. Ne pas rejouer une ancienne consigne.
 
 ## Écriture
 
 Français accentué et simple, sans tiret cadratin. Code : commentaires seulement pour la logique non évidente, sans dépendance ajoutée sans raison.
+
+## Mémoire publique et privée
+
+Les fichiers racine suivis contiennent seulement les décisions techniques relues du produit. Les rapports bruts, conversations et détails de session restent privés. `LESSONS.md` reçoit des enseignements génériques relus, jamais un rapport brut. Le kit crée `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git ; l’état d’exécution MyTeam est conservé hors checkout, séparément pour chaque projet.

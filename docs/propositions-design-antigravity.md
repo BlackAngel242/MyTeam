@@ -1,6 +1,6 @@
 # Propositions de design et d'interface pour le Bureau des agents
 
-Par Antigravity (panneau w5:p2), revue de design du 17 octobre 2026 à partir des 13 captures d'écran réelles du dossier `captures/revue-design/`.
+Par Antigravity, revue de design du 17 octobre 2026 à partir des 13 captures d'écran réelles du dossier `captures/revue-design/`.
 
 ---
 
@@ -9,7 +9,7 @@ Par Antigravity (panneau w5:p2), revue de design du 17 octobre 2026 à partir de
 L'orientation esthétique retenue donne une âme et une personnalité uniques au projet :
 
 - **Ambiance bleu nuit et cohérence pixel art** : Le contraste entre le fond sombre bleuté (`#0c1423`), les textures feutrées du mobilier et les aplats lumineux des écrans crée une atmosphère de salle de contrôle chaleureuse et rétro. L'image de nuit à travers la baie vitrée avec l'éclairage de la lune et la skyline illumine élégamment le haut de la pièce.
-- **Lisibilité immédiate des statuts opérationnels** : Dans `scenario-scene-zoom.png`, l'état de chaque agent se comprend en une fraction de seconde sans lire le texte : la posture au clavier pour OpenCode, la main levée avec la bulle point d'interrogation pour Antigravity, et surtout le chevalet blanc « RETOUR 14:58 » sur le bureau éteint de Codex qui matérialise la pause de quota avec une élégance parfaite.
+- **Lisibilité immédiate des statuts opérationnels** : Dans `scenario-scene-zoom.png`, l'état de chaque agent se comprend en une fraction de seconde sans lire le texte : la posture au clavier pour OpenCode, la main levée avec la bulle point d'interrogation pour Antigravity, et surtout le chevalet blanc « RETOUR HH:MM » sur le bureau éteint de Codex qui matérialise la pause de quota avec une élégance parfaite.
 - **Narratif visuel vivant et authentique** : La mise en valeur du chef au bureau Direction avec sa moquette violette et l'animation des deux petits sous-agents installés dans la salle de réflexion vitrée (avec leur bulle d'échange) incarnent la vie d'équipe sans jamais trahir la réalité des processus.
 - **Palette de commandes (`palette.png`) et aide (`aide.png`) de très haute tenue** : La fenêtre modale `Ctrl+K` présente une hiérarchie typographique limpide, avec ses touches d'action (`Entrée`, `Échap`) bien ancrées en bas. Le panneau d'aide latéral s'intègre naturellement avec un découpage par étapes très lisible.
 
@@ -39,7 +39,7 @@ Voici les 6 chantiers graphiques et ergonomiques les plus décisifs, classés pa
 
 ### Proposition 4 : Donner plus de respiration verticale au terminal dans l'onglet Poste
 - **Capture concernée** : `onglet-poste-codex.png`.
-- **Ce que l'on voit** : La fiche détaillée de Codex présente un bloc de statut très haut (encart d'alerte de reprise à 14:58, modèle GPT-6.1-Sol, jauge de limite 5h à 37 %, avertissements, horodatage). En conséquence, la zone du terminal monospace (« Dernières sorties ») est écrasée sur moins de 150 pixels de hauteur, ne laissant voir que 7 ou 8 lignes de journal à la fois.
+- **Ce que l'on voit** : La fiche détaillée de Codex présente un bloc de statut très haut (encart d’alerte de reprise, modèle, réserve de quota, avertissements et horodatage). En conséquence, la zone du terminal monospace (« Dernières sorties ») est écrasée sur moins de 150 pixels de hauteur, ne laissant voir que 7 ou 8 lignes de journal à la fois.
 - **Proposition concrète** : Compacter la télémétrie en une barre d'état dense de deux lignes (pastilles horizontales pour le modèle, l'effort et la jauge de limite), et offrir un bouton d'agrandissement (« Pleine hauteur » ou « Console étendue ») permettant d'étirer le terminal pour afficher confortablement 25 à 30 lignes de logs lors des sessions de débogage.
 - **Effort** : Moyen (réorganisation de `.statusbar` et option d'expansion du terminal).
 

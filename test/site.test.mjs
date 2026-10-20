@@ -172,3 +172,15 @@ test('la vidéo d\'accueil a ses sources (webm, mp4), un repli GIF léger et res
   const js = await readFile(new URL('../site/site.js', import.meta.url), 'utf8');
   assert.match(js, /prefers-reduced-motion/);
 });
+
+test('le parcours Git propose les commandes Windows, Linux et macOS dans les deux langues',()=>{
+  const html=readFileSync(join(siteDir,'index.html'),'utf8'),section=html.slice(html.indexOf('data-i18n="alt.git.title"'),html.indexOf('<!-- Compatibilité'));
+  assert.match(section,/git clone https:\/\/github.com\/BlackAngel242\/MyTeam.git/);
+  assert.match(section,/powershell -ExecutionPolicy Bypass -File scripts\\installer.ps1/);
+  assert.match(section,/bash scripts\/installer.sh/);
+  const translations=loadSiteI18N();
+  for(const lang of ['fr','en']){
+    assert.match(translations[lang]['alt.git.windows'],/Windows/);
+    assert.match(translations[lang]['alt.git.unix'],/Linux.*macOS|macOS.*Linux/);
+  }
+});

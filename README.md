@@ -2,7 +2,7 @@
 
 **🌐 Site officiel : [https://blackangel242.github.io/MyTeam/](https://blackangel242.github.io/MyTeam/)** · [English](README.en.md)
 
-Voyez vos agents d'IA [Herdr](https://github.com/herdrdev/herdr) travailler dans un bureau en pixel art, envoyez-leur des consignes et lisez leurs réponses. Tout reste sur votre machine.
+Voyez vos agents d'IA [Herdr](https://github.com/herdrdev/herdr) travailler dans un bureau en pixel art, envoyez-leur des consignes et lisez leurs réponses. Le bureau et son état fonctionnent localement ; les outils d’IA utilisent leurs propres services.
 
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
@@ -14,6 +14,16 @@ Voyez vos agents d'IA [Herdr](https://github.com/herdrdev/herdr) travailler dans
 - **Qui fait quoi, en direct** : qui travaille, attend ou finit, jusqu'à 10 agents testés.
 - **Vous gardez la main** : file d'attente, salle de crise, mode Autonomie plafonné et arrêtable.
 - **Local et sobre** : `127.0.0.1` seulement, zéro dépendance npm, rien d'inventé à l'écran.
+
+## Choisir le projet avant de travailler (0.5.0)
+
+Au démarrage, choisissez **Améliorer MyTeam** pour travailler sur le logiciel, ou **Créer ou reprendre un autre projet** pour votre propre dossier. Sélectionnez et validez les dossiers avant toute consigne. Le dossier et le projet actifs restent visibles ; **Changer de projet** revient à l’écran de choix `/demarrage` et arrête l’ancien contexte. Les agents doivent travailler dans les dossiers sélectionnés : un agent d’un autre projet n’est pas une cible autorisée.
+
+La mémoire d’exécution (file, direction, autonomie et configuration) est privée, séparée par projet dans le dossier de données du système sous `MyTeam`, hors du checkout. Une ancienne installation n’est pas importée automatiquement. Changer de projet ne rejoue pas les anciennes consignes.
+
+Les documents techniques relus peuvent être partagés volontairement. Le kit crée ses notes `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git, et n’écrase aucun fichier existant. `.gitignore` ne protège pas un fichier déjà suivi ou ajouté de force ; vérifiez les fichiers avant publication. Les outils d’IA conservent leurs propres journaux, droits et connexions : MyTeam ne fournit pas de bac à sable système pour ces outils.
+
+[Télécharger MyTeam 0.5.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.0/MyTeam-0.5.0.zip)
 
 ## Démarrage
 

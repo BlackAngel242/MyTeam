@@ -12,7 +12,7 @@ Choix délégué par DrSmoke : application locale dans le navigateur. Propositio
 
 ## Users
 
-DrSmoke pilote plusieurs agents dans Herdr sous la coordination de Claude.
+La personne qui utilise MyTeam pilote une équipe d’agents Herdr dans un projet sélectionné.
 
 ## Product Purpose
 
@@ -20,7 +20,7 @@ Voir les agents travailler dans un bureau animé, consulter leurs sorties et leu
 
 ## Operating Context
 
-Windows, Herdr 0.9.5 installé. Cette conversation Codex est extérieure à Herdr. Les commandes locales de Herdr exposent la liste, la lecture et l'envoi de messages.
+Application locale pour Windows, macOS et Linux, Node.js 22/24 et Herdr. Les commandes locales Herdr exposent la liste, la lecture et l’envoi de messages.
 
 ## Capabilities and Constraints
 
@@ -33,6 +33,10 @@ Windows, Herdr 0.9.5 installé. Cette conversation Codex est extérieure à Herd
 - Aucune fermeture, interruption, mise à jour ou création de session Herdr automatique.
 - L'envoi de messages doit vérifier la cible et son état, puis signaler l'envoi sans prétendre que la tâche est accomplie.
 - Écoute locale uniquement, aucun secret enregistré dans Git.
+
+- Avant toute consigne : choisir « Améliorer MyTeam » ou « Créer ou reprendre un autre projet », puis les dossiers du contexte.
+- État d’exécution privé par projet, sous `MyTeam` dans les données locales du système, hors checkout ; aucune importation automatique d’une ancienne installation.
+- Changer de projet arrête l’ancien contexte. Ces contrôles ne restreignent pas les droits système des outils externes.
 
 ## Brand Commitments
 

@@ -7,7 +7,7 @@ Rappel issu des leçons : la police pixel n'a pas tous les signes. « », « » 
 ## 1. Constats observés sur les captures
 
 - C1. La même information apparaît jusqu'à quatre fois : compteurs du haut (« 4 au travail, 0 en attente, 0 disponibles »), panneau de la scène (TRAVAIL, DISPONIBLE, ATTENTE, parfois EN PAUSE), noms sous les bureaux (« CODEX AU TRAVAIL »), cartes du bas (« Claude - Au travail »). La règle de DrSmoke est pourtant « jamais la même information deux fois ».
-- C2. Sur la fiche de Codex (capture onglet-poste-codex), la pause annonce « retour à 16:50 (dans 1 h 35) - relance prévue à 16:50 » : la relance y est présentée à la même heure que le retour. Le contrat du serveur est « remise à zéro + 5 minutes » (champ holdUntil de la file).
+- C2. Sur la fiche de Codex (capture onglet-poste-codex), la pause annonce « retour à HH:MM - relance prévue à HH:MM » : la relance y est présentée à la même heure que le retour. Le contrat du serveur est « remise à zéro + 5 minutes » (champ holdUntil de la file).
 - C3. Le message « Lecture indisponible : Session expirée. Actualisez le bureau. » occupe l'onglet Tâches (capture palette) et deux sections de l'onglet Équipe. C'est exactement le défaut G2 de la revue d'interface : un navigateur n'envoie pas Origin sur un GET de même origine. Corrigé côté serveur (commit 0791adc, provenance acceptée par Sec-Fetch-Site = same-origin) : la capture doit être refaite après rechargement.
 - C4. Le libellé de la salle de réflexion change et se tronque d'une capture à l'autre : « SALLE DE REFLEXION - 1 SOUS-AGENT DE COD... », « REFLEXION - 1 S. », « SALLE DE REFLEXION ».
 - C5. Sur téléphone, l'invitation dit « Clique sur un personnage pour ouvrir son poste » alors qu'on touche l'écran.
@@ -27,7 +27,7 @@ Rappel issu des leçons : la police pixel n'a pas tous les signes. « », « » 
 3. Garder les deux mais différencier clairement : la scène montre l'ambiance, les cartes portent la couleur d'état officielle.
 
 ### P3. Bandeau de pause de quota en une seule ligne
-« Pause de quota : retour annoncé 16:50, relance 16:55 (source : terminal) ». Le retour vient de resetsAt, la relance de holdUntil (retour + 5 min), la source distingue le journal du terminal. Cela règle C2 et évite de reparser le terminal côté interface : le serveur expose déjà limitReached, resetsAt, usedPercent et la source.
+« Pause de quota : retour annoncé HH:MM, relance HH:MM (source : terminal) ». Le retour vient de resetsAt, la relance de holdUntil (retour + 5 min), la source distingue le journal du terminal. Cela règle C2 et évite de reparser le terminal côté interface : le serveur expose déjà limitReached, resetsAt, usedPercent et la source.
 
 ### P4. Libellé stable de la salle de réflexion (choix à faire, trois options)
 1. « SALLE DE REFLEXION » toujours, et le nombre de sous-agents passe dans le panneau de P1. (Recommandé : jamais tronqué, jamais faux)

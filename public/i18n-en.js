@@ -362,6 +362,7 @@ window.DICTIONNAIRE_EN = {
   "etat.connexion_indisponible": "Connection unavailable",
   "etat.connexion_perdue": "Connection lost",
   "etat.disponible": "Available",
+  "etat.verifier_herdr": "Check in Herdr",
   "etat.herdr_connecte": "Herdr connected",
   "etat.herdr_deconnecte": "Herdr disconnected",
   "etat.herdr_hors_ligne": "Herdr is disconnected",

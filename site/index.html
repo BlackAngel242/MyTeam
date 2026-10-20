@@ -87,7 +87,7 @@
         
         <p class="hero-requirements" data-i18n="hero.requirements">MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
+          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.0/MyTeam-0.5.0.zip" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
           <a class="btn btn-secondary" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-github">Voir le projet sur GitHub</a>
         </div>
 
@@ -228,38 +228,38 @@
       </div>
     </section>
 
-    <!-- Nouveautés de la version 0.4.2 · Ọṣun -->
+    <!-- Nouveautés de la version 0.5.0 -->
     <section id="nouveautes" class="section">
       <div class="container">
         <div class="section-head">
-          <span class="section-pill" data-i18n="nouveautes.badge">Version 0.4.2 · Ọṣun</span>
-          <h2 class="section-title" data-i18n="nouveautes.titre">Les nouveautés de la version 0.4.2 · Ọṣun</h2>
+          <span class="section-pill" data-i18n="nouveautes.badge">Version 0.5.0</span>
+          <h2 class="section-title" data-i18n="nouveautes.titre">Les nouveautés de la version 0.5.0</h2>
           <p class="section-desc" data-i18n="nouveautes.desc">Des fonctionnalités concrètes, testées et observées sur votre poste.</p>
         </div>
 
         <div class="features-grid">
           <div class="feature-card">
             <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#power"></use></svg></div>
-            <h3 class="feature-title" data-i18n="nouveautes.switch.title">Interrupteur Autonomie permanent</h3>
-            <p class="feature-desc" data-i18n="nouveautes.switch.desc">Bascule permanente OFF / ON dans la barre supérieure affichant l'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.</p>
+            <h3 class="feature-title" data-i18n="nouveautes.switch.title">Choix du projet dès le démarrage</h3>
+            <p class="feature-desc" data-i18n="nouveautes.switch.desc">Améliorer MyTeam ou travailler dans un autre dossier : le contexte est choisi avant les commandes.</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#heart-pulse"></use></svg></div>
-            <h3 class="feature-title" data-i18n="nouveautes.sante.title">Santé du bureau et diagnostic</h3>
-            <p class="feature-desc" data-i18n="nouveautes.sante.desc">Ligne de santé dans l'aide, pastille « Redémarrage à prévoir » et bouton de diagnostic copiable sans aucun chemin, secret ni message privé.</p>
+            <h3 class="feature-title" data-i18n="nouveautes.sante.title">Données locales séparées</h3>
+            <p class="feature-desc" data-i18n="nouveautes.sante.desc">Chaque projet possède son propre état local, hors du code. Les journaux du kit restent ignorés par Git.</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#users"></use></svg></div>
-            <h3 class="feature-title" data-i18n="nouveautes.agents10.title">Scène lisible jusqu'à 10 agents</h3>
-            <p class="feature-desc" data-i18n="nouveautes.agents10.desc">Atelier testé jusqu'à 10 agents avec disposition responsive en 3 colonnes sur téléphone (390 px) pour garder les personnages immédiatement visibles.</p>
+            <h3 class="feature-title" data-i18n="nouveautes.agents10.title">Interface harmonisée</h3>
+            <p class="feature-desc" data-i18n="nouveautes.agents10.desc">Icônes Lucide et thèmes clair et sombre sur ordinateur comme sur téléphone.</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#clapperboard"></use></svg></div>
-            <h3 class="feature-title" data-i18n="nouveautes.capsule.title">Capsule animée et partage corrigé</h3>
-            <p class="feature-desc" data-i18n="nouveautes.capsule.desc">Capsule animée légère montrant la tournée du chef et la remise de dossier doré, et aperçu de partage Open Graph corrigé en haute fidélité.</p>
+            <h3 class="feature-title" data-i18n="nouveautes.capsule.title">Animation et survol corrigés</h3>
+            <p class="feature-desc" data-i18n="nouveautes.capsule.desc">Une seule boucle de dessin après reprise et aucun survol persistant après la sortie du canvas.</p>
           </div>
         </div>
       </div>
@@ -402,7 +402,11 @@
             <h4 data-i18n="alt.git.title">Pour les développeurs (via Git)</h4>
             <p data-i18n="alt.git.desc">Clonez directement le dépôt public et démarrez :</p>
             <pre><code>git clone https://github.com/BlackAngel242/MyTeam.git
-cd MyTeam && powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</code></pre>
+cd MyTeam</code></pre>
+            <p data-i18n="alt.git.windows">Sous Windows :</p>
+            <pre><code>powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</code></pre>
+            <p data-i18n="alt.git.unix">Sous Linux et macOS :</p>
+            <pre><code>bash scripts/installer.sh</code></pre>
           </div>
         </div>
       </div>
@@ -544,7 +548,7 @@ cd MyTeam && powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</cod
       </div>
 
       <div class="footer-bottom">
-        <p data-i18n="footer.divinite">Chaque version porte le nom d'une divinité ashanti ou yoruba : 0.4.2 · Ọṣun, la divinité des eaux douces.</p>
+        <p data-i18n="footer.divinite">MyTeam 0.5.0 · Version de référence</p>
         <p data-i18n="footer.credit">Réalisé avec l'aide de l'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).</p>
         <p><span data-i18n="footer.license">Distribué sous licence libre MIT.</span> · <a href="#presentation" data-i18n="footer.top">Haut de page</a></p>
       </div>

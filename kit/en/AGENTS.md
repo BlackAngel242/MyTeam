@@ -5,7 +5,7 @@ This file applies to every AI working on this project (Claude, Codex, OpenCode, 
 ## Read before working
 
 1. `LESSONS.md`: mistakes already made and how to avoid them. Never repeat them.
-2. `PRODUCT.md` (what the product does), then `HANDOFF.md` (current state) and `TODO.md`.
+2. `PRODUCT.md` (what the product does), then `.myteam-local/HANDOFF.md` (current state) and `TODO.md`.
 3. `docs/plan-travail.md`: the plan, the owners and the state of each box.
 4. If you are the lead: `CHEF.md`.
 
@@ -53,3 +53,7 @@ This file applies to every AI working on this project (Claude, Codex, OpenCode, 
 ## Writing
 
 Simple sentences, in the project's language. Code: comments only for non-obvious logic.
+
+## Private memory
+
+Keep raw reports and conversations in `.myteam-local/`, ignored by Git. Only reviewed generic lessons belong in public `LESSONS.md`. Review tracked files before publishing; ignore rules do not remove files already tracked. MyTeam project filtering is not an OS sandbox for external tools.

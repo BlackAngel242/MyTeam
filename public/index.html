@@ -19,9 +19,11 @@
   <script src="/tiles.js" defer></script>
   <script src="/discussion.js" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/project-context.js" defer></script>
 </head>
 <body>
   <header class="topbar">
+    <a id="project-context" class="chip" href="/demarrage">Changer de projet</a>
     <a class="brand" href="/" data-i18n-attr="aria-label:header.marque.aria" aria-label="Bureau des agents, accueil"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span><span data-i18n="header.marque">Bureau des agents</span><span class="brand-sub" data-i18n="header.marque-sous">Ton équipe d’agents</span></span></a>
     <ul class="chips" id="chips" data-i18n-attr="aria-label:header.chips.aria" aria-label="Résumé de l’équipe">
       <li class="chip working"><i></i><b id="count-work">0</b> <span data-i18n="header.au-travail">au travail</span></li>

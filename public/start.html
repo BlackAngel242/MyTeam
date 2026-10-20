@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Choisir le projet · MyTeam</title><link rel="stylesheet" href="/start.css"><script src="/start.js" defer></script></head>
+<body><main>
+<label><span data-start="language">Langue</span> <select id="language"><option value="fr">Français</option><option value="en">English</option></select></label>
+<p class="eyebrow" data-start="eyebrow">MYTEAM · DÉMARRAGE</p><h1 data-start="heading">Sur quoi travaille ton équipe ?</h1><p data-start="intro">Choisis le contexte avant de confier une mission au directeur.</p>
+<form id="choice"><div class="choices">
+<label class="card"><input type="radio" name="mode" value="myteam" required><strong data-start="myteam">Améliorer MyTeam</strong><span data-start="myteamDescription">Partir du produit installé et contribuer à son évolution.</span></label>
+<label class="card"><input type="radio" name="mode" value="project" required><strong data-start="project">Travailler sur un autre projet</strong><span data-start="projectDescription">Démarrer un nouveau projet ou poursuivre un dossier existant.</span></label></div>
+<section id="folder" hidden><h2 data-start="folder">Dossier de travail</h2><p data-start="folderDescription">Ouvre explicitement un sous-dossier existant, vide pour un nouveau projet. Les agents doivent être ouverts dans ce dossier.</p>
+<label><span data-start="place">Lieu</span> <select id="place"></select></label><div class="path"><button type="button" id="parent" data-start="parent">Remonter</button><output id="path">/</output></div>
+<ul id="directories" aria-label="Sous-dossiers"></ul><p id="selection-hint"></p><label><input id="kit" type="checkbox"> <span data-start="kit">Préparer le kit d’équipe sans remplacer les fichiers existants</span></label></section>
+<p class="privacy" data-start="privacy">L’état de chaque projet reste sur cet ordinateur, séparé du code. Aucune publication GitHub n’est déclenchée par ce choix. Les outils des agents conservent leurs propres permissions.</p>
+<p id="status" role="status"></p><button class="primary" type="submit" disabled>Choisis un contexte</button></form><a href="/" id="back" hidden data-start="back">Retour au projet actif</a>
+</main></body></html>

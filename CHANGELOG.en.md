@@ -4,7 +4,16 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
-## [Unreleased]
+## [0.5.0] - 2026-10-20
+
+### Projects and privacy
+
+- Startup choice: Improve MyTeam or create/resume another project; folders selected before instructions.
+- Project filtering for agents and operations, including shared lessons; changing projects stops the previous context.
+- Private execution memory per project in system data outside the checkout; no automatic import of an older installation.
+- Generic team kit with private handoff and journal in ignored `.myteam-local/`, preserving existing files.
+- Public technical documentation cleaned of personal session details. Previous releases are retired only after the new release is published and verified; Git history is unchanged.
+- Canvas scheduling and hover cleanup corrected while preserving local Lucide and dynamic translations.
 
 ### Interface
 
