@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,symlink,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,symlink,rm,realpath} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {resolveProject,projectContains,scopedBridge,projectStateDir} from '../src/projects.mjs';
@@ -8,8 +8,8 @@ import {resolveProject,projectContains,scopedBridge,projectStateDir} from '../sr
 async function setup(t){const dir=await mkdtemp(join(tmpdir(),'myteam-project-'));t.after(()=>rm(dir,{recursive:true,force:true}));for(const d of ['myteam','projects','projects/a','projects/ab','outside'])await mkdir(join(dir,d),{recursive:true});return {dir,myteam:join(dir,'myteam'),places:{home:join(dir,'projects')}};}
 test('projets : résolution explicite, refus traversée, absolu et dossier manquant',async t=>{
   const {myteam,places}=await setup(t);
-  assert.equal((await resolveProject({mode:'myteam'},places,myteam)).root,myteam);
-  assert.equal((await resolveProject({mode:'project',place:'home',path:'a'},places,myteam)).root,join(places.home,'a'));
+  assert.equal((await resolveProject({mode:'myteam'},places,myteam)).root,await realpath(myteam));
+  assert.equal((await resolveProject({mode:'project',place:'home',path:'a'},places,myteam)).root,await realpath(join(places.home,'a')));
   for(const selection of [{mode:'x'},...['','.','./','././'].map(path=>({mode:'project',place:'home',path})),{mode:'project',place:'inconnu',path:'a'},{mode:'project',place:'home',path:'../outside'},{mode:'project',place:'home',path:myteam},{mode:'project',place:'home',path:'absent'}])await assert.rejects(resolveProject(selection,places,myteam));
 });
 test('projets : symlink sortant refusé, préfixe voisin exclu et état hors projet',async t=>{
