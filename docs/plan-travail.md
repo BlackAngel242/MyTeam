@@ -113,3 +113,11 @@ Cycle de chaque lot : mission écrite → travail de l'agent (commit de ses seul
 - [x] O1 (Claude) Changelog FR et EN, documentation (santé du bureau), noms de versions, piliers
 - [x] O2 (Antigravity N10 `c982208`, Claude pour la capsule en motion design `45ddc62`) Site : nouveautés 0.4.2 « Ọṣun », vidéo d'accueil
 - [ ] O3 (Claude) Archive, audit du paquet, publication de la release et nettoyage à deux releases
+
+## Lot U. Interface harmonisée (accord de DrSmoke, 20 octobre 2026)
+
+Travail prêt à intégrer sur `codex_harmonisation-interface`. Les cases d'intégration restent à cocher par le chef après fusion.
+
+- [ ] U1 Galerie clavier, prérequis et libellés harmonisés.
+- [ ] U2 Icônes Lucide locales et trois modes d'apparence sur les deux surfaces.
+- [ ] U3 Tests, captures et documentation, puis intégration. VS Code reporté.

@@ -27,3 +27,8 @@ Couleurs d'identité des personnages : #d98a74, #9b86e0, #d17aa6, #a3b05f, #b565
 Le titre de l'onglet compte les agents qui attendent DrSmoke. Mode plein écran sur le cadre du bureau.
 
 Vérification Impeccable effectuée une fois. Tailles de texte corrigées. Le signalement du contour de l'avatar est un faux positif : il s'agit volontairement d'une géométrie en pixels, pas d'une forme organique imitée.
+
+
+## Harmonisation du 20 octobre 2026
+
+Choix validé par DrSmoke : icônes fonctionnelles Lucide locales, thèmes Système / Clair / Sombre, personnages et emblèmes pixel art conservés. `public/appearance.css` porte les tokens communs et la palette claire ; le ciel reste indépendant du thème. Voir `docs/interface.md` pour les critères et la maintenance.

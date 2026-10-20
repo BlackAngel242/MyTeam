@@ -1,6 +1,12 @@
 /* site/site.js - Logique d'interface et dictionnaire bilingue pour GitHub Pages */
 const I18N = {
   fr: {
+    "nav.menu": "Menu de navigation", "gallery.close": "Fermer la vue agrandie",
+    "appearance.label": "Apparence",
+    "appearance.system": "Système",
+    "appearance.light": "Clair",
+    "appearance.dark": "Sombre",
+
     // Navigation
     'nav.marque': 'MyTeam',
     'nav.sous-titre': 'Le Bureau des agents',
@@ -15,6 +21,7 @@ const I18N = {
     'nav.code': 'Code source',
     'nav.langue.aria': 'Changer la langue (FR / EN)',
 
+    "hero.requirements": "MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.",
     // Hero
     'hero.badge': '100% Local · Zéro Dépendance npm · Vérité des faits',
     'hero.titre': 'Surveillez, lisez et dirigez vos agents d\'IA dans un atelier vivant en pixel art',
@@ -101,10 +108,10 @@ const I18N = {
     'gallery.badge': 'Interface',
     'gallery.titre': 'L\'atelier sous tous les angles',
     'gallery.desc': 'Cliquez sur une capture pour l\'agrandir en haute définition.',
-    'gallery.scene.title': 'Scène principale de jour',
+    'gallery.scene.title': 'Scène principale',
     'gallery.scene.desc': 'Le chef au bureau Direction, les postes de travail et la salle de réflexion vitrée.',
     'gallery.soir.title': 'Ambiance de soirée',
-    'gallery.soir.desc': 'Éclairage tamisé automatique dès 19 h 00 avec suspensions et lampes de bureau allumées.',
+    'gallery.soir.desc': 'Éclairage intérieur progressif à partir de 17 h 30, à pleine puissance dès 19 h ; le coucher du soleil est fixé à 19 h 30.',
     'gallery.poste.title': 'Onglet Poste de travail',
     'gallery.poste.desc': 'Terminal interactif en direct avec filtres de couleurs et zone de consigne rapide.',
     'gallery.equipe.title': 'Onglet Équipe et file d\'attente',
@@ -155,7 +162,7 @@ const I18N = {
     'tools.info.title': 'Détection automatique et emblèmes dédiés',
     'tools.info.p1': 'Lors de la préparation de votre grille Herdr 2x2, l\'installeur teste dans votre environnement la présence de chacun des 24 outils compatibles et vous propose de les lancer panneau par panneau.',
     'tools.info.p2': 'Chaque outil possède son propre emblème 16x16 sur le bureau. Claude, Codex et OpenCode bénéficient en plus d\'un lecteur de journaux locaux extrayant les réponses réelles, les jetons consommés et l\'historique.',
-    'tools.list.legend': 'Outils à télémétrie enrichie :',
+    'tools.list.legend': '24 outils reconnus ; journaux enrichis pour les trois outils en évidence :',
 
     // Contribuer
     'contrib.badge': 'Communauté',
@@ -192,6 +199,13 @@ const I18N = {
   },
 
   en: {
+    "nav.menu": "Navigation menu", "gallery.close": "Close enlarged view",
+    "hero.requirements": "MyTeam runs on your computer and supervises agents launched in Herdr. Node.js 22 or newer and Herdr are required.",
+    "appearance.label": "Appearance",
+    "appearance.system": "System",
+    "appearance.light": "Light",
+    "appearance.dark": "Dark",
+
     // Navigation
     'nav.marque': 'MyTeam',
     'nav.sous-titre': 'Agent desk',
@@ -292,10 +306,10 @@ const I18N = {
     'gallery.badge': 'Interface',
     'gallery.titre': 'The Workshop in Pictures',
     'gallery.desc': 'Click any screenshot to view it in full high-definition resolution.',
-    'gallery.scene.title': 'Daytime scene overview',
+    'gallery.scene.title': 'Main scene',
     'gallery.scene.desc': 'Chief agent at the Direction desk, workstations, and glass reflection room.',
     'gallery.soir.title': 'Evening atmosphere',
-    'gallery.soir.desc': 'Automatic cozy illumination starting at 7:00 PM with ceiling pendants and desk lamps.',
+    'gallery.soir.desc': 'Indoor lighting gradually comes on from 5:30 PM, reaches full brightness at 7 PM, and sunset is set to 7:30 PM.',
     'gallery.poste.title': 'Workstation tab',
     'gallery.poste.desc': 'Live interactive terminal with error highlighting and quick prompt dispatch.',
     'gallery.equipe.title': 'Team tab and priority queue',
@@ -346,7 +360,7 @@ const I18N = {
     'tools.info.title': 'Automatic detection and dedicated pixel emblems',
     'tools.info.p1': 'During the 2x2 Herdr grid setup, the installer inspects your environment for each of the 24 compatible tools and offers pane-by-pane launch.',
     'tools.info.p2': 'Each tool displays its custom 16x16 pixel emblem on the desk. Claude, Codex, and OpenCode additionally feature a local log parser extracting final answers, token counts, and turn history.',
-    'tools.list.legend': 'Tools with deep telemetry:',
+    'tools.list.legend': '24 recognized tools; enriched logs for the three highlighted tools:',
 
     // Contribuer
     'contrib.badge': 'Community',
@@ -388,10 +402,10 @@ function t(key, lang = 'fr') {
 }
 
 function getStoredLanguage() {
-  if (typeof localStorage !== 'undefined') {
+  try {
     const stored = localStorage.getItem('myteam.site.lang');
     if (stored === 'fr' || stored === 'en') return stored;
-  }
+  } catch {}
   if (typeof navigator !== 'undefined') {
     const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
     return nav.startsWith('fr') ? 'fr' : 'en';
@@ -402,9 +416,7 @@ function getStoredLanguage() {
 function applyLanguage(lang) {
   if (typeof document === 'undefined') return;
   document.documentElement.lang = lang;
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('myteam.site.lang', lang);
-  }
+  try { localStorage.setItem('myteam.site.lang', lang); } catch {}
 
   // Mettre à jour le bouton de bascule
   const langBtn = document.getElementById('btn-lang');
@@ -443,33 +455,35 @@ function setupLightbox() {
 
   if (!lightbox || !lbImg || !lbClose) return;
 
-  function open(src, caption) {
+  let trigger;
+  function open(src, caption, item) {
+    trigger = item;
     lbImg.src = src;
+    lbImg.alt = item.querySelector('img')?.alt || caption;
     lbCaption.textContent = caption || '';
     lightbox.classList.add('active');
-    lightbox.setAttribute('aria-hidden', 'false');
+    lightbox.showModal();
     lbClose.focus();
-    document.body.style.overflow = 'hidden';
   }
 
   function close() {
-    lightbox.classList.remove('active');
-    lightbox.setAttribute('aria-hidden', 'true');
-    lbImg.src = '';
-    document.body.style.overflow = '';
+    lightbox.close();
   }
+  lightbox.addEventListener('close', () => {
+    lightbox.classList.remove('active');
+    lbImg.removeAttribute('src');
+    trigger?.focus({ preventScroll: true });
+  });
+  lightbox.addEventListener('cancel', event => { event.preventDefault(); close(); });
+  lightbox.addEventListener('keydown', event => {
+    if (event.key === 'Tab') { event.preventDefault(); lbClose.focus(); }
+  });
 
   document.querySelectorAll('[data-lightbox]').forEach(item => {
     item.addEventListener('click', () => {
       const src = item.getAttribute('data-lightbox');
       const caption = item.getAttribute('data-caption') || item.querySelector('.gallery-title')?.textContent || '';
-      open(src, caption);
-    });
-    item.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        item.click();
-      }
+      open(src, caption, item);
     });
   });
 
@@ -478,11 +492,6 @@ function setupLightbox() {
     if (e.target === lightbox) close();
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-      close();
-    }
-  });
 }
 
 function setupNavToggle() {

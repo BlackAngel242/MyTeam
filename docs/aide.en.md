@@ -474,3 +474,7 @@ MyTeam · Agent desk strictly enforces factual integrity:
 2. No completion percentage is invented if a tool does not calculate it.
 3. If a tool does not report token usage or subagents, "Not exposed by this tool" ("Non exposé par cet outil") is faithfully displayed.
 4. Detected errors are never concealed: they appear in outputs and enrich LESSONS.md to prevent future regressions.
+
+## Appearance and icons
+
+Use System, Light or Dark in the top toolbar. System follows your computer's appearance; an explicit choice takes precedence. Your browser remembers the choice separately for the public website and local office. The office sky still follows the actual time, and the terminal retains its dark background for highlighted output. Controls use locally bundled Lucide icons.

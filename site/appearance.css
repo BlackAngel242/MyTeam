@@ -1,0 +1,38 @@
+:root{
+  --control-line:#5f7590;--input:#0f1a2c;--hover:#20314a;--selected:#1b343a;--on-accent:#122b29;
+  --positive-bg:#122825;--positive-line:#1e463e;--positive-ink:#bcebd8;
+  --warning-bg:#2a2416;--warning-line:#6f5a33;--warning-ink:#fbe3b8;
+  --negative-bg:#2c1a1a;--negative-line:#582e2e;--negative-ink:#ffb4a8;
+  --purple-bg:#221d3a;--purple-line:#4c2866;--purple-ink:#d8b4fe;
+  --blue-bg:#17283c;--blue-line:#224168;--blue-ink:#c0d4ff;
+  --overlay:#050a14b3;--terminal-bg:#09111f;--terminal-text:#d8e4f2;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --control-line:#73879f;--bg:#f3f6fb;--bg-deep:#e7edf5;--surface:#fff;--raised:#eaf0f7;
+  --surface-raised:#eaf0f7;--surface-card:#fff;--input:#f8fafd;--hover:#e5edf6;
+  --line:#8c9db2;--line-strong:#73879f;--line-light:#73879f;
+  --text:#172638;--muted:#465970;--quiet:#53657a;--grey:#53657a;
+  --mint:#146249;--mint-dark:#e0f2e9;--blue:#235a9d;--blue-dark:#e4effd;
+  --amber:#875312;--amber-dark:#fff2d5;--red:#b42332;--purple:#7141a5;
+  --selected:#e1f1e9;--on-accent:#fff;
+  --positive-bg:#edf8f2;--positive-line:#628b74;--positive-ink:#215f41;
+  --warning-bg:#fff5dc;--warning-line:#9b792e;--warning-ink:#72450c;
+  --negative-bg:#fff1f1;--negative-line:#b46e76;--negative-ink:#a32937;
+  --purple-bg:#f6f0ff;--purple-line:#9874b5;--purple-ink:#633b8a;
+  --blue-bg:#edf4ff;--blue-line:#7596c0;--blue-ink:#254f88;
+  --overlay:#17263899;
+}
+.lucide{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.appearance-control{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:4px 8px;border:1px solid var(--control-line);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px;white-space:nowrap}
+.appearance-control .lucide{width:16px;height:16px;color:var(--muted)}
+.appearance-control select{min-width:0;min-height:32px;max-width:105px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.appearance-control select:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:3px}
+.appearance-control option{background:var(--surface);color:var(--text)}
+/* Les sorties de terminal gardent leur contraste et leurs couleurs ANSI. */
+.output-wrap,.tl-terminal-wrap{background:var(--terminal-bg);--text:#f2f4f7;--muted:#a7b8ce;--mint:#a0dfc4;--amber:#f4c780;--blue:#9dbbff;--negative-ink:#ffb4a8;--positive-ink:#bcebd8;--purple-ink:#d8b4fe}
+#output,.tl-terminal-pre{color:var(--terminal-text)}
+:root[data-theme="light"] .agent-logo{background:var(--terminal-bg);border-radius:5px;padding:3px;box-sizing:content-box}
+@media(max-width:600px){.appearance-control{padding:3px 6px}.appearance-control select{max-width:92px}}
+
+:root[data-theme] :is(input,textarea,select){border-color:var(--control-line)}

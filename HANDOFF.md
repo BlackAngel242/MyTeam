@@ -1,5 +1,12 @@
 # Reprise IA
 
+## 20 octobre 2026 : lot U, interface harmonisée, prêt à intégrer
+
+Branche `codex_harmonisation-interface`, périmètre approuvé par DrSmoke : Lucide local, thèmes Système / Clair / Sombre, galerie accessible, libellés et prérequis harmonisés. La scène et les API d’envoi ne changent pas. Assets communs dans `public/`, copie par `npm run sync:interface`. Captures régénérées sur données simulées, sans envoi. VS Code reporté. Voir `docs/interface.md` et le plan `docs/superpowers/plans/2026-10-20-interface.md`. La branche ne constitue pas une nouvelle release ; intégration et publication restent à faire.
+
+Vérification finale : `npm run check` réussi ; Node 24.19.0 avec navigateur, 457 tests dont 443 réussis et 14 ignorés ; Node 22.14.0, 457 tests dont 435 réussis et 22 ignorés (dont les contrôles navigateur optionnels). Aucun échec. Régénération des captures : 1 test réussi, aucune écriture API. Limites : Chromium, sans Herdr réel ni lecteur d’écran. Les six remarques de la relecture et le libellé dynamique d’animation sont corrigés.
+
+
 Lire attentivement ce document ainsi que `PRODUCT.md`, `DESIGN.md`, `JOURNAL.md`, `LESSONS.md` et `docs/publication-github.md` avant toute intervention sur le projet.
 
 ## Contexte et architecture du projet

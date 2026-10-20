@@ -35,7 +35,9 @@
   <link rel="icon" type="image/png" href="assets/favicon.png">
 
   <!-- Styles et scripts locaux (aucun CDN ni police externe) -->
+  <script src="appearance.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="appearance.css">
   <script src="site.js" defer></script>
 </head>
 <body>
@@ -64,11 +66,12 @@
       </nav>
 
       <div class="nav-actions">
+        <label class="appearance-control"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#sun"></use></svg><select data-appearance-select aria-label="Apparence" data-i18n-attr="aria-label:appearance.label"><option value="system" data-i18n="appearance.system">Système</option><option value="light" data-i18n="appearance.light">Clair</option><option value="dark" data-i18n="appearance.dark">Sombre</option></select></label>
         <button id="btn-lang" class="lang-btn" type="button" aria-pressed="false" data-i18n-attr="aria-label:nav.langue.aria" aria-label="Changer la langue (FR / EN)">EN</button>
         <a class="btn-github" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer">
           <span data-i18n="nav.code">Code source</span>
         </a>
-        <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-label="Ouvrir le menu">☰</button>
+        <button class="nav-toggle" id="nav-toggle" type="button" data-i18n-attr="aria-label:nav.menu" aria-expanded="false" aria-label="Ouvrir le menu"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#menu"></use></svg></button>
       </div>
     </div>
   </header>
@@ -82,6 +85,7 @@
         <h1 class="hero-title" data-i18n="hero.titre">Surveillez, lisez et dirigez vos agents d'IA dans un atelier vivant en pixel art</h1>
         <p class="hero-tagline" data-i18n="hero.description">Un tableau de bord local immersif pour orchestrer vos équipes d'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.</p>
         
+        <p class="hero-requirements" data-i18n="hero.requirements">MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
           <a class="btn btn-secondary" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-github">Voir le projet sur GitHub</a>
@@ -144,79 +148,79 @@
 
         <div class="features-grid">
           <div class="feature-card">
-            <div class="feature-icon">☀</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#sun"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.scene.title">Scène vivante et ambiance lumineuse</h3>
             <p class="feature-desc" data-i18n="feat.scene.desc">Vue panoramique calée sur votre horloge système : lever de soleil à 6 h 30, coucher à 19 h 30, éclairage chaleureux des lampes de bureau en soirée.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">⌨</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#terminal"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.postes.title">Poste individuel et terminal en direct</h3>
             <p class="feature-desc" data-i18n="feat.postes.desc">Lecture du terminal sans pollution : surlignage des erreurs et des succès, défilement fluide, recherche textuelle instantanée et saut aux résultats.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">★</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#crown"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.direction.title">Bureau Direction et délégations</h3>
             <p class="feature-desc" data-i18n="feat.direction.desc">Le chef d'équipe coordonne les agents. Sur chaque délégation observée, il quitte son bureau pour remettre physiquement le dossier à son collègue.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">✉</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#mail"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.relais.title">Relais d'écoute du chef</h3>
             <p class="feature-desc" data-i18n="feat.relais.desc">Alerte discrète et neutre mise en file pour le chef dès qu'un collaborateur termine sa tâche, l'invitant à relire son panneau avant de lui confier la suite.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">☷</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#panels-top-left"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.mosaique.title">Mosaïque multi-terminaux</h3>
             <p class="feature-desc" data-i18n="feat.mosaique.desc">Basculez de la scène à une grille de 2 à 4 terminaux en direct avec recherche simultanée, consigne rapide et agrandissement à la demande (4 tuiles au plus, équipe testée jusqu'à 10 agents, 12 en envoi groupé).</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📝</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#file-text"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.reponses.title">Réponses lisibles en Markdown</h3>
             <p class="feature-desc" data-i18n="feat.reponses.desc">Extraction des réponses réelles de l'agent, filtrées de tout contenu privé ou raisonnement brut, avec copie en un clic et fil de discussion complet.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📎</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#paperclip"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.fichiers.title">Fichiers joints et suivi des faits</h3>
             <p class="feature-desc" data-i18n="feat.fichiers.desc">Associez des documents de travail en toute sécurité. Le bureau observe les créations et modifications réelles sur disque sans jamais rien écraser.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">✔</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#list-checks"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.taches.title">Suivi factuel des tâches</h3>
             <p class="feature-desc" data-i18n="feat.taches.desc">Centralisation en temps réel des cases cochées dans TODO.md et des plans d'action publiés par les agents eux-mêmes, sans pourcentage artificiel.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">⚡</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#zap"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.crise.title">Salle de crise sous clapet</h3>
             <p class="feature-desc" data-i18n="feat.crise.desc">Bouton protégé (Ctrl+Maj+C) pour geler immédiatement les départs de consignes en cas d'urgence et demander un arrêt poli par la touche Échap.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📦</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#package"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.kit.title">Kit d'équipe et collaboration</h3>
             <p class="feature-desc" data-i18n="feat.kit.desc">Règles communes (AGENTS.md), consignes du chef (CHEF.md) et mémoire collective des leçons (LESSONS.md) prêtes à être déployées dans vos projets.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">🌐</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#languages"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.bilingue.title">Interface 100% bilingue FR / EN</h3>
             <p class="feature-desc" data-i18n="feat.bilingue.desc">Basculez à tout moment entre le français et l'anglais d'un simple clic, avec détection de la langue du navigateur et mémorisation locale.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">🛡</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#shield-check"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.securite.title">Sécurité et souveraineté locale</h3>
             <p class="feature-desc" data-i18n="feat.securite.desc">Écoute strictement restreinte à 127.0.0.1, jeton aléatoire de session, zéro appel sortant, zéro dépendance npm, zéro secret intercepté.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">⚙</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#settings"></use></svg></div>
             <h3 class="feature-title" data-i18n="feat.autonomie.title">Autonomie supervisée (NoBabysitter)</h3>
             <p class="feature-desc" data-i18n="feat.autonomie.desc">Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.</p>
           </div>
@@ -235,25 +239,25 @@
 
         <div class="features-grid">
           <div class="feature-card">
-            <div class="feature-icon">⚡</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#power"></use></svg></div>
             <h3 class="feature-title" data-i18n="nouveautes.switch.title">Interrupteur Autonomie permanent</h3>
             <p class="feature-desc" data-i18n="nouveautes.switch.desc">Bascule permanente OFF / ON dans la barre supérieure affichant l'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">🩺</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#heart-pulse"></use></svg></div>
             <h3 class="feature-title" data-i18n="nouveautes.sante.title">Santé du bureau et diagnostic</h3>
             <p class="feature-desc" data-i18n="nouveautes.sante.desc">Ligne de santé dans l'aide, pastille « Redémarrage à prévoir » et bouton de diagnostic copiable sans aucun chemin, secret ni message privé.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">👥</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#users"></use></svg></div>
             <h3 class="feature-title" data-i18n="nouveautes.agents10.title">Scène lisible jusqu'à 10 agents</h3>
             <p class="feature-desc" data-i18n="nouveautes.agents10.desc">Atelier testé jusqu'à 10 agents avec disposition responsive en 3 colonnes sur téléphone (390 px) pour garder les personnages immédiatement visibles.</p>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">🎬</div>
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#clapperboard"></use></svg></div>
             <h3 class="feature-title" data-i18n="nouveautes.capsule.title">Capsule animée et partage corrigé</h3>
             <p class="feature-desc" data-i18n="nouveautes.capsule.desc">Capsule animée légère montrant la tournée du chef et la remise de dossier doré, et aperçu de partage Open Graph corrigé en haute fidélité.</p>
           </div>
@@ -271,77 +275,77 @@
         </div>
 
         <div class="gallery-grid">
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/scene.png">
-            <img class="gallery-thumb" src="assets/scene.png" alt="Scène principale de jour dans MyTeam">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.scene.title">Scène principale de jour</h3>
-              <p class="gallery-desc" data-i18n="gallery.scene.desc">Le chef au bureau Direction, les postes de travail et la salle de réflexion vitrée.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/scene.png">
+            <img data-i18n-attr="alt:gallery.scene.title" class="gallery-thumb" src="assets/scene.png" alt="Scène principale dans MyTeam">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.scene.title">Scène principale</strong>
+              <span class="gallery-desc" data-i18n="gallery.scene.desc">Le chef au bureau Direction, les postes de travail et la salle de réflexion vitrée.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/scene-soir.png">
-            <img class="gallery-thumb" src="assets/scene-soir.png" alt="Ambiance de soirée dans l'atelier MyTeam">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.soir.title">Ambiance de soirée</h3>
-              <p class="gallery-desc" data-i18n="gallery.soir.desc">Éclairage tamisé automatique dès 19 h 00 avec suspensions et lampes de bureau allumées.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/scene-soir.png">
+            <img data-i18n-attr="alt:gallery.soir.title" class="gallery-thumb" src="assets/scene-soir.png" alt="Ambiance de soirée dans l'atelier MyTeam">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.soir.title">Ambiance de soirée</strong>
+              <span class="gallery-desc" data-i18n="gallery.soir.desc">Éclairage intérieur progressif à partir de 17 h 30, à pleine puissance dès 19 h ; le coucher du soleil est fixé à 19 h 30.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/poste.png">
-            <img class="gallery-thumb" src="assets/poste.png" alt="Onglet Poste de travail avec terminal en direct">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.poste.title">Onglet Poste de travail</h3>
-              <p class="gallery-desc" data-i18n="gallery.poste.desc">Terminal interactif en direct avec filtres de couleurs et zone de consigne rapide.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/poste.png">
+            <img data-i18n-attr="alt:gallery.poste.title" class="gallery-thumb" src="assets/poste.png" alt="Onglet Poste de travail avec terminal en direct">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.poste.title">Onglet Poste de travail</strong>
+              <span class="gallery-desc" data-i18n="gallery.poste.desc">Terminal interactif en direct avec filtres de couleurs et zone de consigne rapide.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/equipe.png">
-            <img class="gallery-thumb" src="assets/equipe.png" alt="Onglet Équipe et gestion de la file d'attente">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.equipe.title">Onglet Équipe et file d'attente</h3>
-              <p class="gallery-desc" data-i18n="gallery.equipe.desc">Supervision de l'effectif, attribution du rôle de chef et file d'attente prioritaire.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/equipe.png">
+            <img data-i18n-attr="alt:gallery.equipe.title" class="gallery-thumb" src="assets/equipe.png" alt="Onglet Équipe et gestion de la file d'attente">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.equipe.title">Onglet Équipe et file d'attente</strong>
+              <span class="gallery-desc" data-i18n="gallery.equipe.desc">Supervision de l'effectif, attribution du rôle de chef et file d'attente prioritaire.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/mosaique.png">
-            <img class="gallery-thumb" src="assets/mosaique.png" alt="Mode Mosaïque multi-terminaux dans MyTeam">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.mosaique.title">Mode Mosaïque multi-terminaux</h3>
-              <p class="gallery-desc" data-i18n="gallery.mosaique.desc">Surveillance simultanée de plusieurs agents au travail avec recherche réactive.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/mosaique.png">
+            <img data-i18n-attr="alt:gallery.mosaique.title" class="gallery-thumb" src="assets/mosaique.png" alt="Mode Mosaïque multi-terminaux dans MyTeam">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.mosaique.title">Mode Mosaïque multi-terminaux</strong>
+              <span class="gallery-desc" data-i18n="gallery.mosaique.desc">Surveillance simultanée de plusieurs agents au travail avec recherche réactive.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/crise.png">
-            <img class="gallery-thumb" src="assets/crise.png" alt="Salle de crise active avec bouton sous clapet">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.crise.title">Salle de crise active</h3>
-              <p class="gallery-desc" data-i18n="gallery.crise.desc">Verrouillage de sécurité des envois et interruption polie sans destruction de processus.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/crise.png">
+            <img data-i18n-attr="alt:gallery.crise.title" class="gallery-thumb" src="assets/crise.png" alt="Salle de crise active avec bouton sous clapet">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.crise.title">Salle de crise active</strong>
+              <span class="gallery-desc" data-i18n="gallery.crise.desc">Verrouillage de sécurité des envois et interruption polie sans destruction de processus.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/emblemes.png">
-            <img class="gallery-thumb" src="assets/emblemes.png" alt="Planche des 24 emblèmes d'outils compatibles Herdr">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.emblemes.title">Planche des 24 emblèmes d'outils</h3>
-              <p class="gallery-desc" data-i18n="gallery.emblemes.desc">Représentations pixel art 16x16 pour identifier chaque IA compatible Herdr.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/emblemes.png">
+            <img data-i18n-attr="alt:gallery.emblemes.title" class="gallery-thumb" src="assets/emblemes.png" alt="Planche des 24 emblèmes d'outils compatibles Herdr">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.emblemes.title">Planche des 24 emblèmes d'outils</strong>
+              <span class="gallery-desc" data-i18n="gallery.emblemes.desc">Représentations pixel art 16x16 pour identifier chaque IA compatible Herdr.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/autonomie.png">
-            <img class="gallery-thumb" src="assets/autonomie.png" alt="Mode Autonomie supervisée NoBabysitter">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.autonomie.title">Autonomie supervisée</h3>
-              <p class="gallery-desc" data-i18n="gallery.autonomie.desc">Dialogue cadré par durée et plafond d'échanges, arrêt d'urgence et coordination par le chef.</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/autonomie.png">
+            <img data-i18n-attr="alt:gallery.autonomie.title" class="gallery-thumb" src="assets/autonomie.png" alt="Mode Autonomie supervisée NoBabysitter">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.autonomie.title">Autonomie supervisée</strong>
+              <span class="gallery-desc" data-i18n="gallery.autonomie.desc">Dialogue cadré par durée et plafond d'échanges, arrêt d'urgence et coordination par le chef.</span>
+            </span>
+          </button>
 
-          <div class="gallery-item" tabindex="0" data-lightbox="assets/10-agents.png">
-            <img class="gallery-thumb" src="assets/10-agents.png" alt="Scène à 10 agents dans l'atelier MyTeam">
-            <div class="gallery-caption">
-              <h3 class="gallery-title" data-i18n="gallery.10agents.title">Équipe de 10 agents</h3>
-              <p class="gallery-desc" data-i18n="gallery.10agents.desc">Atelier à pleine charge avec 10 collaborateurs aux statuts variés (jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4).</p>
-            </div>
-          </div>
+          <button class="gallery-item" type="button" data-lightbox="assets/10-agents.png">
+            <img data-i18n-attr="alt:gallery.10agents.title" class="gallery-thumb" src="assets/10-agents.png" alt="Scène à 10 agents dans l'atelier MyTeam">
+            <span class="gallery-caption">
+              <strong class="gallery-title" data-i18n="gallery.10agents.title">Équipe de 10 agents</strong>
+              <span class="gallery-desc" data-i18n="gallery.10agents.desc">Atelier à pleine charge avec 10 collaborateurs aux statuts variés (jusqu'à 10 agents testés, 12 en envoi groupé, mosaïque 4).</span>
+            </span>
+          </button>
         </div>
       </div>
     </section>
@@ -380,7 +384,7 @@
 
         <!-- Alerte SmartScreen rassurante -->
         <div class="smartscreen-alert">
-          <div class="alert-icon">ℹ</div>
+          <div class="alert-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24"><use href="icons.svg#circle-question-mark"></use></svg></div>
           <div class="alert-body">
             <h4 data-i18n="smartscreen.title">Note de confiance sur l'avertissement Windows SmartScreen</h4>
             <p data-i18n="smartscreen.desc">Comme tout script .bat téléchargé depuis Internet sans certificat commercial payant, Windows SmartScreen peut afficher un écran bleu préventif (« Windows a protégé votre ordinateur »). Le projet est entièrement auditable et à code ouvert : cliquez sur Informations complémentaires puis Exécuter quand même, ou faites un clic droit sur le fichier .bat > Propriétés > Débloquer.</p>
@@ -423,7 +427,7 @@ cd MyTeam && powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</cod
             <p data-i18n="tools.info.p1">Lors de la préparation de votre grille Herdr 2x2, l'installeur teste dans votre environnement la présence de chacun des 24 outils compatibles et vous propose de les lancer panneau par panneau.</p>
             <p data-i18n="tools.info.p2">Chaque outil possède son propre emblème 16x16 sur le bureau. Claude, Codex et OpenCode bénéficient en plus d'un lecteur de journaux locaux extrayant les réponses réelles, les jetons consommés et l'historique.</p>
             
-            <p><strong data-i18n="tools.list.legend">Outils à télémétrie enrichie :</strong></p>
+            <p><strong data-i18n="tools.list.legend">24 outils reconnus ; journaux enrichis pour les trois outils en évidence :</strong></p>
             <div class="tools-tags">
               <span class="tool-tag featured">Claude Code</span>
               <span class="tool-tag featured">Codex (OpenAI)</span>
@@ -548,13 +552,13 @@ cd MyTeam && powershell -ExecutionPolicy Bypass -File scripts\installer.ps1</cod
   </footer>
 
   <!-- Modale Lightbox pour agrandir les captures d'écran -->
-  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Agrandissement de capture d'écran">
+  <dialog id="lightbox" class="lightbox" aria-labelledby="lightbox-caption">
     <div class="lightbox-content">
-      <button id="lightbox-close" class="lightbox-close" type="button" aria-label="Fermer la vue agrandie">✕</button>
+      <button id="lightbox-close" class="lightbox-close" type="button" data-i18n-attr="aria-label:gallery.close" aria-label="Fermer la vue agrandie"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#x"></use></svg></button>
       <img id="lightbox-img" class="lightbox-img" alt="Capture agrandie">
       <p id="lightbox-caption" class="lightbox-caption"></p>
     </div>
-  </div>
+  </dialog>
 
 </body>
 </html>

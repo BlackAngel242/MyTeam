@@ -36,7 +36,7 @@ Windows, Herdr 0.9.5 installé. Cette conversation Codex est extérieure à Herd
 
 ## Brand Commitments
 
-Personnages en pixels, bureau bleu nuit. Tous les textes en français simple. Construction directe approuvée, sans maquette préalable.
+Personnages en pixels, bureau bleu nuit ; panneaux en thème Système / Clair / Sombre et contrôles Lucide locaux. Tous les textes en français simple. Construction directe approuvée, sans maquette préalable.
 
 ## Product Principles
 

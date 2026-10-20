@@ -6,7 +6,15 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 ## [Non publié]
 
-_Rien pour l’instant._
+### Interface
+
+- Icônes fonctionnelles Lucide locales et notices intégrées, sur la vitrine et le bureau ; personnages et emblèmes pixel art conservés.
+- Thèmes Système / Clair / Sombre mémorisés par origine, adaptation au système et fonctionnement quand le stockage est refusé.
+- Galerie au clavier : dialogue natif, focus confiné et retour à la vignette, libellés FR/EN.
+- Prérequis visibles avant téléchargement, distinction entre outils reconnus et journaux enrichis, légendes harmonisées.
+- Contrastes des champs, destinations, code Markdown, autonomie active et alertes ; barre d'actions adaptée aux tablettes.
+- Captures simulées actualisées et tests navigateur reproductibles. Extension VS Code reportée.
+
 
 ## [0.4.2] - 19 octobre 2026 · « Ọṣun »
 

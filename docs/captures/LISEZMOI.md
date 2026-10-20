@@ -2,7 +2,7 @@
 
 Ce dossier rassemble les captures candidates pour la présentation et la documentation du projet, réalisées avec des états simulés sécurisés (aucun secret ni chemin personnel, requêtes d'envoi bloquées).
 
-- `01-ordinateur-scene.png` : Vue d'ensemble sur ordinateur (1440x900) en journée (14 h 30) avec ciel clair, chef au bureau Direction, tableau mural et trois agents.
+- `01-ordinateur-scene.png` : Vue d'ensemble sur ordinateur (1440x900) en journée (14 h 30) avec ciel clair, chef au bureau Direction, tableau mural et quatre agents.
 - `01-ordinateur-scene-soir.png` : Vue d'ensemble sur ordinateur (1440x900) en soirée (21 h) avec suspensions au plafond et lampes de bureau allumées.
 - `02-ordinateur-poste.png` : Vue du poste ouvert sur ordinateur avec lecture des sorties du terminal et barre d'état de l'outil.
 - `03-ordinateur-equipe.png` : Onglet Équipe sur ordinateur montrant le courrier du chef, la file d'attente sécurisée et l'envoi groupé.
@@ -30,3 +30,10 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `25-ordinateur-autonomie-actif-en.png` : Mode Autonomie supervisée actif sur ordinateur en anglais (interrupteur vert ON, décompte, objectif et journal bilingue).
 - `26-telephone-autonomie-actif-en.png` : Mode Autonomie supervisée actif sur téléphone en anglais.
 
+
+20 octobre 2026 : captures avec Lucide et sélecteur d'apparence, heure simulée 14 h 30 (21 h 30 pour la soirée), quatre agents sauf scénarios à dix. Les états, réponses et heures sont simulés ; aucune consigne réelle ni donnée privée. `15-emblemes-outils.png` ne change pas, les emblèmes restent identiques.
+
+- `27-ordinateur-clair.png` : interface claire sur ordinateur, scène pixel art conservée.
+- `28-telephone-clair.png` : interface claire sur téléphone.
+
+Commande de reproduction : voir `docs/interface.md`.
