@@ -87,6 +87,23 @@ test('file : jamais d\'envoi vers un agent au travail, bloqué ou inconnu', asyn
   assert.equal(queue.list().items.filter(item => item.state === 'attente').length, 3);
 });
 
+test('file : un agent demandant une action humaine explique l’attente, puis reprend sans doublon', async t => {
+  const agents=[{id:'codex',status:'idle',ready:false,needsUserAttention:true}];
+  const {queue,envois,file}=await montage(t,{agents});
+  await queue.enqueue({id:'codex',message:'Instruction après validation'});
+  await queue.tick();
+  await queue.tick();
+  assert.equal(envois.length,0);
+  assert.equal(queue.list().items[0].state,'attente');
+  assert.match(queue.list().items[0].reason,/action.*Herdr/i);
+  assert.match(JSON.parse(await readFile(file,'utf8')).items[0].reason,/action.*Herdr/i);
+  agents[0]={...agents[0],ready:true,needsUserAttention:false};
+  await queue.tick();
+  assert.deepEqual(envois.map(e=>e.message),['Instruction après validation']);
+  assert.equal(queue.list().items[0].state,'envoyee');
+  assert.equal(queue.list().items[0].reason,null);
+});
+
 test('file : notBefore est respectée, puis l\'envoi a lieu', async t => {
   const { queue, envois, horloge } = await montage(t);
   await queue.enqueue({ id: 'a', message: 'Plus tard', notBefore: '2026-10-17T12:00:00.000Z' });

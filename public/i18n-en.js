@@ -301,6 +301,7 @@ window.DICTIONNAIRE_EN = {
   "equipe.file.a_revoir": "to review",
   "equipe.file.annulee": "cancelled",
   "equipe.file.attente": "waiting",
+  "equipe.file.action_herdr": "Waiting: action required in Herdr.",
   "equipe.file.entete": "{nom} · {etat}",
   "equipe.file.envoyee": "sent",
   "equipe.file.normal": "Set back to normal",
