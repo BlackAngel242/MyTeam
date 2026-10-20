@@ -308,6 +308,7 @@
   "equipe.file.a_revoir": "à revoir",
   "equipe.file.annulee": "annulée",
   "equipe.file.attente": "en attente",
+  "equipe.file.action_herdr": "En attente : action requise dans Herdr.",
   "equipe.file.entete": "{nom} · {etat}",
   "equipe.file.envoyee": "envoyée",
   "equipe.file.normal": "Remettre en normal",
@@ -691,7 +692,8 @@
   "La crise s’active ou se lève avec {\"active\":true} ou {\"active\":false}.": "erreur.serveur.crise_format",
   "Impossible de copier les fichiers joints. Aucun envoi effectué.": "erreur.serveur.fichiers_copie",
   "Impossible d’accéder aux fichiers pour le moment.": "erreur.serveur.fichiers_acces",
-  "Consigne transmise à Herdr.": "erreur.serveur.transmise"
+  "Consigne transmise à Herdr.": "erreur.serveur.transmise",
+  "En attente : action requise dans Herdr.": "equipe.file.action_herdr"
   };
   // i18n-en.js se charge après ce fichier : le dictionnaire anglais est lu à la demande.
   const anglais = () => window.DICTIONNAIRE_EN || {};
