@@ -369,6 +369,7 @@
   "etat.connexion_indisponible": "Connexion indisponible",
   "etat.connexion_perdue": "Connexion perdue",
   "etat.disponible": "Disponible",
+  "etat.verifier_herdr": "À vérifier dans Herdr",
   "etat.herdr_connecte": "Herdr connecté",
   "etat.herdr_deconnecte": "Herdr déconnecté",
   "etat.herdr_hors_ligne": "Herdr est déconnecté",

@@ -2,7 +2,15 @@
 
 **Français** | [English](INSTALLATION.en.md)
 
-Le Bureau des agents est une petite application locale : elle s'ouvre dans votre navigateur, montre vos agents Herdr au travail et vous permet de leur écrire. Tout reste sur votre ordinateur, sur l'adresse 127.0.0.1. Aucune clé API ni aucun jeton n'est demandé, lu ou enregistré par le bureau ni par ses scripts d'installation.
+Le Bureau des agents est une petite application locale : elle s'ouvre dans votre navigateur, montre vos agents Herdr au travail et vous permet de leur écrire. Le serveur écoute sur `127.0.0.1` ; les outils d’IA peuvent utiliser leurs propres services distants. Aucune clé API ni aucun jeton n'est demandé, lu ou enregistré par le bureau ni par ses scripts d'installation.
+
+## Choisir le projet avant de travailler (0.5.0)
+
+Au démarrage, choisissez **Améliorer MyTeam** pour travailler sur le logiciel, ou **Créer ou reprendre un autre projet** pour votre propre dossier. Sélectionnez et validez les dossiers avant toute consigne. Le dossier et le projet actifs restent visibles ; **Changer de projet** revient à l’écran de choix `/demarrage` et arrête l’ancien contexte. Les agents doivent travailler dans les dossiers sélectionnés : un agent d’un autre projet n’est pas une cible autorisée.
+
+La mémoire d’exécution (file, direction, autonomie et configuration) est privée, séparée par projet dans le dossier de données du système sous `MyTeam`, hors du checkout. Emplacements : Windows `%LOCALAPPDATA%/MyTeam`, macOS `~/Library/Application Support/MyTeam`, Linux `$XDG_DATA_HOME/MyTeam` ou `~/.local/share/MyTeam`. Chaque projet possède son sous-dossier `projects/<empreinte du chemin canonique>`. Une ancienne installation n’est pas importée automatiquement. Changer de projet ne rejoue pas les anciennes consignes.
+
+Les documents techniques relus peuvent être partagés volontairement. Le kit crée ses notes `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git, et n’écrase aucun fichier existant. `.gitignore` ne protège pas un fichier déjà suivi ou ajouté de force ; vérifiez les fichiers avant publication. Les outils d’IA conservent leurs propres journaux, droits et connexions : MyTeam ne fournit pas de bac à sable système pour ces outils.
 
 ## Prérequis
 
@@ -34,7 +42,7 @@ Le Bureau des agents est une petite application locale : elle s'ouvre dans votre
 - **Aucune dépendance npm externe** : Le projet ne contient aucun `node_modules` et ne fait aucun `npm install`.
 - **Aucune collecte de clés ou secrets** : Aucun mot de passe, jeton ou clé API n'est demandé ni manipulé. Chaque IA gère sa propre authentification.
 - **Aucune installation automatique forcée** : L'option `-Oui` / `--oui` ne valide JAMAIS d'installation de logiciel, d'intégration, de lancement d'agent ou de kit d'équipe. Chaque action sensible exige un accord interactif « o/n ».
-- **Aucun écrasement de fichier** : Les scripts ne remplacent jamais vos compétences existantes ni vos fichiers de projet sans confirmation expresse.
+- **Aucun écrasement de fichier** : Les scripts ne remplacent jamais vos compétences existantes ni vos fichiers de projet.
 - **Aucun appel réseau extérieur non maîtrisé** : Le serveur écoute exclusivement sur l'interface locale `127.0.0.1`.
 
 ## Méthode 1 : Installation par la release (recommandée)
@@ -134,7 +142,7 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 Une fois l'installation terminée, suivez ce parcours pour démarrer votre session :
 
 1. **Ouvrir le raccourci** : Double-cliquez sur le raccourci « Herdr et bureau » créé sur votre Bureau (ou lancez `herdr` dans un terminal puis démarrez `node server.mjs`).
-2. **Voir les 4 panneaux dans la grille 2×2 et le bureau animé dans le navigateur** : Vérifiez que Herdr affiche vos 4 terminaux (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) et ouvrez l'adresse `http://127.0.0.1:4317` dans votre navigateur pour découvrir la scène animée avec les postes de travail, les emblèmes d'outils et l'ambiance lumineuse calée sur votre horloge.
+2. **Voir les 4 panneaux dans la grille 2×2 et le bureau animé dans le navigateur** : Vérifiez que Herdr affiche vos 4 terminaux (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) et ouvrez l'adresse `http://127.0.0.1:4317` dans votre navigateur puis choisissez et validez le projet avant d’ouvrir son bureau.
 3. **Le chef lit CHEF.md** : Dans le panneau du chef (ou via l'onglet Poste du bureau Web), le chef prend connaissance de `CHEF.md` et `AGENTS.md`, interroge ses équipiers avec la commande `herdr agent list` et se tient prêt à coordonner le travail.
 4. **Première délégation** : Envoyez une mission au chef depuis le formulaire du bureau (Ctrl+Entrée). Dès que le chef confie une tâche dans son journal, observez sa tournée physique dans la scène : il quitte son bureau Direction pour aller déposer le dossier sur le poste de son collaborateur.
 5. **Onglet Tâches** : Basculez sur l'onglet Tâches pour suivre en temps réel la progression factuelle des cases cochées dans `TODO.md` et des plans d'action publiés par les agents, sans pourcentage inventé.
@@ -205,7 +213,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 
 1. `npm test` : la suite de tests automatisés doit passer (vérifie les modules locaux et l'intégrité).
 2. `npm run check` : valide la syntaxe de l'ensemble des fichiers JavaScript du projet.
-3. `node server.mjs` puis consultation de `http://127.0.0.1:4317` : le bureau affiche fidèlement les agents connectés dans Herdr.
+3. `node server.mjs` puis consultation de `http://127.0.0.1:4317` : le choix initial s’affiche ; après validation, le bureau affiche les agents des dossiers sélectionnés.
 
 ## Dépannage
 
@@ -218,7 +226,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 - **Node.js absent ou trop vieux** : `node --version` doit indiquer v22 ou plus. Téléchargez la dernière version LTS sur https://nodejs.org/en/download puis relancez le script d'installation.
 - **Un antivirus bloque une commande d'installation** : certaines protections bloquent les commandes sans fichier de type `irm ... | iex`. Utilisez la variante par fichier `install.cmd` proposée par Herdr et Claude Code.
 - **Les tests échouent** : assurez-vous de la version de Node.js, puis relancez `npm test`.
-- **Désinstallation complète** : supprimez le dossier du projet (ce qui efface également `.bureau/`, où sont conservées les consignes en attente), le raccourci sur votre Bureau, et retirez les variables d'environnement `BUREAU_PORT` et `BUREAU_HERDR_PATH`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
+- **Désinstallation complète** : supprimez le dossier du logiciel et le raccourci sur votre Bureau, puis, si vous souhaitez effacer les états privés, le dossier de données système `MyTeam` séparément, et retirez les variables d'environnement `BUREAU_PORT` et `BUREAU_HERDR_PATH`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
 
 ## Sources vérifiées
 

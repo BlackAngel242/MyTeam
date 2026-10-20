@@ -42,6 +42,8 @@ test('l\'archive contient les fichiers suivis dans MyTeam-<version>/, sans les e
   await git('commit', '-q', '-m', 'essai');
   const r = await empaqueter('1.2.3', { depot });
   assert.match(r.sha256, /^[0-9a-f]{64}$/);
+  assert.equal(typeof r.checksum, 'string', 'le checksum doit être écrit');
+  assert.equal(await readFile(r.checksum, 'utf8'), `${r.sha256}  MyTeam-1.2.3.zip\n`);
   assert.ok((await stat(r.fichier)).size > 0);
   const noms = nomsZip(await readFile(r.fichier));
   assert.ok(noms.includes('MyTeam-1.2.3/README.md'));
@@ -70,4 +72,20 @@ test('une version ou une révision invalide est refusée', async () => {
   await assert.rejects(empaqueter('v1'), /Version attendue/);
   await assert.rejects(empaqueter('1.0.0', { rev: 'HEAD; rm -rf /' }), /Révision invalide/);
   for(const rev of ['--list','--help','-o',null,{},''])await assert.rejects(empaqueter('1.0.0',{rev}),/Révision invalide/);
+});
+
+test('un journal privé suivi par erreur bloque la production du paquet', async t => {
+  const depot = await mkdtemp(join(tmpdir(), 'release-prive-'));
+  t.after(() => rm(depot, { recursive: true, force: true }));
+  const git = (...a) => executer('git', ['-C', depot, '-c', 'user.name=T', '-c', 'user.email=t@example.invalid', ...a], { env: envGit });
+  await git('init', '-q');
+  for (const nom of ['.myteam-local/JOURNAL.md', '.bureau/queue.json', '.env.local']) {
+    await mkdir(join(depot, nom, '..'), { recursive: true });
+    await writeFile(join(depot, nom), 'donnée privée factice');
+    await git('add', nom);
+    await git('commit', '-q', '-m', 'fixture');
+    await assert.rejects(empaqueter('1.2.3', { depot }), /privé/i);
+    await git('rm', nom);
+    await git('commit', '-q', '-m', 'fixture retirée');
+  }
 });

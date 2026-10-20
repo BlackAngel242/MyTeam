@@ -1,6 +1,6 @@
 # Performance mesurée avec dix agents
 
-Note interne du 18 octobre 2026. Chaque chiffre vient d'un passage du banc de mesure sur le poste de DrSmoke (Windows 11, Node 24.22.0 LTS) et se reproduit avec la commande donnée ci-dessous. Les durées changent d'une machine et d'un passage à l'autre : seuls les budgets d'appels et les plafonds sont des inégalités vérifiées par les tests à chaque passage.
+Note interne du 18 octobre 2026. Chaque chiffre vient d'un passage du banc de mesure dans un environnement Windows avec Node 24 et peut être remesuré avec la commande donnée ci-dessous. Les durées changent d'une machine et d'un passage à l'autre : seuls les budgets d'appels et les plafonds sont des inégalités vérifiées par les tests à chaque passage.
 
 ## Le banc
 

@@ -21,8 +21,8 @@ node scripts/init-kit.mjs <dossier-du-projet> [--lang fr|en] [--dry-run]
 | `AGENTS.md` | Règles pour toutes les IA : rôles, un fichier un propriétaire, vérité des faits, définition de « terminé », boucle de correction, signature, sécurité. |
 | `CLAUDE.md`, `GEMINI.md` | Renvoient à `AGENTS.md` : chaque outil lit la même source. Codex et OpenCode lisent `AGENTS.md` directement. |
 | `CHEF.md` | Guide du chef : écouter les autres agents (`herdr agent list`, `herdr agent read`) et les diriger (`herdr agent prompt`), cycle planifier, déléguer, évaluer, corriger, fusionner. |
-| `LESSONS.md` | Mémoire commune des erreurs, une ligne chacune. |
-| `HANDOFF.md`, `JOURNAL.md`, `TODO.md`, `PRODUCT.md` | État actuel, historique daté, cases à cocher, ce que fait le produit. |
+| `LESSONS.md` | Enseignements génériques relus, une ligne chacun ; aucun rapport brut de session. |
+| `.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md`, `TODO.md`, `PRODUCT.md` | État actuel, historique daté, cases à cocher, ce que fait le produit. |
 | `docs/plan-travail.md` | Plan avec propriétaires et cases : le bureau en affiche le pourcentage (cases cochées sur cases totales). |
 | `docs/mission-modele.md` | Modèle de mission écrite pour un agent. |
 | `docs/auto-evaluation.md` | Questions à se poser avant de dire « terminé », et grille du chef. |
@@ -42,7 +42,7 @@ Un rapport fait de faits uniquement : fichiers piliers présents, cases cochées
 node scripts/partager-lecons.mjs "La leçon, en une ligne." [dossier] [--dry-run] [--lang fr|en]
 ```
 
-Ajoute la leçon à `LESSONS.md` (une seule fois), puis prévient les agents Herdr **disponibles** (`idle` ou `done`) : un message court, puis la touche Entrée au cas où le texte resterait dans la zone de saisie. Un agent au travail n'est jamais interrompu : il est listé « à prévenir plus tard ». Herdr injoignable : la leçon est ajoutée, aucun agent n'est prévenu.
+Ajoute la leçon à `LESSONS.md` (une seule fois), puis prévient les agents Herdr **disponibles du même projet** (`idle` ou `done`) : un message court, puis la touche Entrée au cas où le texte resterait dans la zone de saisie. Un agent au travail n'est jamais interrompu : il est listé « à prévenir plus tard ». Herdr injoignable : la leçon est ajoutée, aucun agent n'est prévenu.
 
 ## Le chef écoute et dirige
 
@@ -51,3 +51,5 @@ Le premier agent démarré dans Herdr est le chef. `CHEF.md` lui donne ses comma
 ## Signature
 
 Toute contribution est signée par le profil GitHub de l'auteur, jamais par une IA. Les IA sont créditées une fois, dans le `README.md` (section « Réalisé avec l'aide de l'IA »). Voir `AGENTS.md`.
+
+L’initialisation ajoute `.myteam-local/` au `.gitignore` local sans remplacer ses règles. Reprise et journal sont des notes de session privées ; les fichiers racine sont des guides techniques génériques. Aucun fichier existant n’est écrasé. L’état d’exécution de MyTeam reste distinct, dans les données système sous `MyTeam`, hors checkout.

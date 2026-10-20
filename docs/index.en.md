@@ -20,6 +20,6 @@ This index catalogs all public documentation files for the MyTeam · Agent desk 
 | [credits-ia.md](credits-ia.md) | [credits-ia.en.md](credits-ia.en.md) | Details on AI models and assistants used during development. |
 | [plugins-recommandes.md](plugins-recommandes.md) | [plugins-recommandes.en.md](plugins-recommandes.en.md) | Recommended AI tools, Herdr integrations, and editor extensions. |
 
-## Internal Working Notes
+## Public Technical Notes
 
-The other files in the `docs/` folder (architecture reviews, design syntheses, daily missions, interface contracts, and technical studies) are internal working notes written in French during development.
+The other files in the `docs/` folder (architecture reviews, design syntheses, daily missions, interface contracts, and technical studies) are public technical summaries written in French. They must not contain raw session reports.

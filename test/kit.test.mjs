@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readFile, writeFile, readdir, stat } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile, readdir, stat, mkdir, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -22,7 +22,7 @@ test('init-kit crée les fichiers piliers sans jamais écraser un fichier exista
   const r = await initKit(dossier, { lang: 'fr' });
   assert.ok(r.conserves.includes('LESSONS.md'));
   assert.equal(await readFile(join(dossier, 'LESSONS.md'), 'utf8'), '# Mes leçons\n- gardée\n');
-  for (const nom of ['AGENTS.md', 'CHEF.md', 'CLAUDE.md', 'GEMINI.md', 'HANDOFF.md', 'TODO.md', 'JOURNAL.md', 'PRODUCT.md', 'docs/plan-travail.md', 'docs/mission-modele.md', 'docs/auto-evaluation.md', 'scripts/evaluer.mjs', 'scripts/partager-lecons.mjs']) {
+  for (const nom of ['AGENTS.md', 'CHEF.md', 'CLAUDE.md', 'GEMINI.md', '.myteam-local/HANDOFF.md', 'TODO.md', '.myteam-local/JOURNAL.md', 'PRODUCT.md', 'docs/plan-travail.md', 'docs/mission-modele.md', 'docs/auto-evaluation.md', 'scripts/evaluer.mjs', 'scripts/partager-lecons.mjs']) {
     assert.ok(await existe(join(dossier, nom)), nom);
   }
   const deuxieme = await initKit(dossier, { lang: 'fr' });
@@ -64,9 +64,9 @@ test('evaluer ne rapporte que des faits : piliers, cases cochées, leçons, cont
   assert.equal(r.ok, true);
   assert.match(texte(r, 'fr'), /Fichiers piliers : 5\/5/);
   assert.match(texte(r, 'en'), /Pillar files: 5\/5/);
-  await rm(join(dossier, 'JOURNAL.md'));
+  await rm(join(dossier, '.myteam-local/JOURNAL.md'));
   const sans = await evaluer(dossier, { lancerTests: false });
-  assert.deepEqual(sans.piliers.manquants, ['JOURNAL.md']);
+  assert.deepEqual(sans.piliers.manquants, ['.myteam-local/JOURNAL.md']);
   assert.equal(sans.ok, false);
 });
 
@@ -97,10 +97,10 @@ test('partagerLecon ajoute la leçon une seule fois et ne prévient que les agen
   const lancer = async (_b, args) => {
     appels.push(args);
     if (args[0] === 'agent' && args[1] === 'list') return JSON.stringify({ result: { agents: [
-      { pane_id: 'w1:p2', name: 'codex', agent_status: 'idle' },
-      { pane_id: 'w1:p3', name: 'opencode', agent_status: 'working' },
-      { pane_id: 'w1:p4', name: 'agy', agent_status: 'done' },
-      { pane_id: 'w1:p5; rm -rf /', name: 'piege', agent_status: 'idle' },
+      { pane_id: 'w1:p2', name: 'codex', cwd:dossier, agent_status: 'idle' },
+      { pane_id: 'w1:p3', name: 'opencode', cwd:dossier, agent_status: 'working' },
+      { pane_id: 'w1:p4', name: 'agy', cwd:dossier, agent_status: 'done' },
+      { pane_id: 'w1:p5; rm -rf /', name: 'piege', cwd:dossier, agent_status: 'idle' },
     ] } });
     // Écran visible : le texte déposé reste dans la zone de saisie de codex ; agy affiche autre chose (une autorisation, par exemple).
     if (args[0] === 'agent' && args[1] === 'read') return args[2] === 'w1:p2' ? '> Nouvelle leçon du chef : Une leçon utile. Relis LESSONS.md' : 'Autoriser la commande ? (o/n)';
@@ -123,12 +123,26 @@ test('partagerLecon ajoute la leçon une seule fois et ne prévient que les agen
   await assert.rejects(partagerLecon('deux\nlignes', { dossier, lancer }), /une ligne/);
 });
 
+test('partagerLecon : le dialogue de confiance Codex bloque la consigne et Entrée', async t => {
+  const dossier=await temporaire(t);
+  await initKit(dossier,{lang:'fr'});
+  const appels=[];
+  const lancer=async (_b,args)=>{
+    appels.push(args);
+    if(args[1]==='list')return JSON.stringify({result:{agents:[{pane_id:'w1:p2',agent:'codex',cwd:dossier,agent_status:'idle'}]}});
+    if(args[1]==='read')return 'Do you trust the contents of this directory?\n1. Yes, continue\n2. No, quit\nPress enter to continue';
+    throw Error('Aucun envoi attendu');
+  };
+  await partagerLecon('Une leçon.',{dossier,lancer,attendre:async()=>{}});
+  assert.equal(appels.some(args=>args[1]==='prompt'||args[1]==='send-keys'),false);
+});
+
 test('partagerLecon : simulation sans écriture ni envoi, Herdr injoignable sans échec', async t => {
   const dossier = await temporaire(t);
   await initKit(dossier, { lang: 'fr' });
   const avant = await readFile(join(dossier, 'LESSONS.md'), 'utf8');
   const envois = [];
-  const r = await partagerLecon('Simulée.', { dossier, dryRun: true, lancer: async (_b, a) => { envois.push(a); return JSON.stringify({ result: { agents: [{ pane_id: 'w1:p2', name: 'codex', agent_status: 'idle' }] } }); } });
+  const r = await partagerLecon('Simulée.', { dossier, dryRun: true, lancer: async (_b, a) => { envois.push(a); return JSON.stringify({ result: { agents: [{ pane_id: 'w1:p2', name: 'codex', cwd:dossier, agent_status: 'idle' }] } }); } });
   assert.deepEqual(r.serait, ['codex']);
   assert.deepEqual(r.prevenus, []);
   assert.equal(r.simulation, true);
@@ -151,4 +165,61 @@ test('evaluer sans contrôle lancé ne dit pas « aucun défaut » mais « inven
   const avec = await evaluer(dossier, { lancer: async () => true });
   assert.equal(avec.controlesLances, 1);
   assert.match(texte(avec, 'fr'), /aucun défaut constaté par les contrôles lancés/);
+});
+
+
+test('init-kit garde les journaux locaux et complète gitignore sans perte ni doublon',async t=>{
+  const dossier=await temporaire(t);
+  await writeFile(join(dossier,'.gitignore'),'custom/\n.bureau/');
+  await writeFile(join(dossier,'HANDOFF.md'),'Ancien relais conservé');
+  await initKit(dossier);
+  const ignore=await readFile(join(dossier,'.gitignore'),'utf8');
+  assert.equal(ignore,'custom/\n.bureau/\n.myteam-local/\n.env*\n*.log\n');
+  assert.equal(await readFile(join(dossier,'HANDOFF.md'),'utf8'),'Ancien relais conservé');
+  assert.equal(await existe(join(dossier,'JOURNAL.md')),false);
+  await writeFile(join(dossier,'.myteam-local/JOURNAL.md'),'Privé');
+  await initKit(dossier);
+  assert.equal(await readFile(join(dossier,'.gitignore'),'utf8'),ignore);
+  assert.equal(await readFile(join(dossier,'.myteam-local/JOURNAL.md'),'utf8'),'Privé');
+});
+
+test('partagerLecon refuse cwd absent, relatif, extérieur et lien sortant',async t=>{
+  const dossier=await temporaire(t),exterieur=await temporaire(t);
+  await mkdir(join(dossier,'src'));await symlink(exterieur,join(dossier,'sortie'),'dir');
+  const chemins=[undefined,'src',exterieur,join(dossier,'sortie'),dossier,join(dossier,'src')];
+  const agents=chemins.map((cwd,i)=>({pane_id:`w1:p${i}`,name:`agent${i}`,cwd,agent_status:'idle'}));
+  const r=await partagerLecon('Locale.',{dossier,dryRun:true,lancer:async()=>JSON.stringify({result:{agents}})});
+  assert.deepEqual(r.serait,['agent4','agent5']);
+});
+
+test('partagerLecon revalide le projet avant prompt puis avant Entrée',async t=>{
+  for(const depart of ['prompt','Enter']){
+    const dossier=await temporaire(t),exterieur=await temporaire(t),appels=[];let listes=0;
+    const lancer=async(_b,args)=>{
+      appels.push(args);
+      if(args[1]==='list'){
+        listes++;const parti=listes>=(depart==='prompt'?2:3);
+        return JSON.stringify({result:{agents:[{pane_id:'w1:p2',name:'agent',cwd:parti?exterieur:dossier,agent_status:'idle'}]}});
+      }
+      if(args[1]==='read')return 'Nouvelle leçon du chef : Locale.';
+      return '';
+    };
+    await partagerLecon('Locale.',{dossier,lancer,attendre:async()=>{}});
+    assert.equal(appels.filter(a=>a[1]==='prompt').length,depart==='prompt'?0:1);
+    assert.equal(appels.filter(a=>a[1]==='send-keys').length,0);
+  }
+});
+
+
+test('init-kit refuse gitignore et les parents symboliques avant toute écriture',async t=>{
+  for(const nom of ['.gitignore','scripts','docs','.myteam-local']){
+    const dossier=await temporaire(t),outside=await temporaire(t);
+    const cible=nom==='.gitignore'?join(outside,'ignore'):outside;
+    if(nom==='.gitignore')await writeFile(cible,'Secret inchangé');
+    await symlink(cible,join(dossier,nom),nom==='.gitignore'?'file':'dir');
+    await assert.rejects(initKit(dossier),/Lien symbolique refusé/);
+    assert.deepEqual((await readdir(dossier)),[nom]);
+    if(nom==='.gitignore')assert.equal(await readFile(cible,'utf8'),'Secret inchangé');
+    else assert.deepEqual(await readdir(outside),[]);
+  }
 });

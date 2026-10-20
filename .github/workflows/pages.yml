@@ -23,6 +23,32 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Wait for the published download assets
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version; the current site is preserved."
+            exit 1
+          fi
+          for attempt in {1..60}; do
+            if release=$(timeout 10s gh release view "v$version" --json tagName,isDraft,assets 2>/dev/null) &&
+              jq --exit-status --arg tag "v$version" --arg zip "MyTeam-$version.zip" '
+                .tagName == $tag and .isDraft == false and
+                ([.assets[]?.name] | index($zip) != null and index($zip + ".sha256") != null)
+              ' <<< "$release" >/dev/null; then
+              echo "Published archive and checksum are available."
+              break
+            fi
+            if (( attempt == 60 )); then
+              echo "The release is unavailable; the current site is preserved."
+              exit 1
+            fi
+            sleep 10
+          done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

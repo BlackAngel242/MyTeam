@@ -1,6 +1,6 @@
 # Revue critique du Bureau des agents
 
-Par Antigravity (panneau w5:p2), evaluation independante du 17 octobre 2026.
+Par Antigravity, evaluation independante du 17 octobre 2026.
 
 ## 1. Notes d'evaluation (sur 10)
 

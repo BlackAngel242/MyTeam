@@ -2,7 +2,7 @@
 
 Ce document recense les commandes internes, la gestion des modèles et le déclenchement des compétences (skills) pour les 5 agents pris en charge dans l'écosystème : Claude Code, Codex, OpenCode, Antigravity et Gemini CLI.
 
-Toutes les informations proviennent de lectures directes de l'aide intégrée (`--help`) et des fichiers de configuration locaux présents sur cette machine (`~/.claude/settings.json`, `~/.codex/config.toml`, `~/.config/opencode/opencode.json`, `~/.gemini/settings.json`). Aucun secret, jeton ou clé API n'a été recopié.
+Référence technique issue de l’aide des outils consultée en octobre 2026. Les commandes, modèles et emplacements dépendent de la version installée : vérifier `--help` avant usage. Les chemins ci-dessous sont des emplacements génériques, pas un inventaire de configuration personnelle.
 
 ---
 
@@ -41,7 +41,7 @@ Toutes les informations proviennent de lectures directes de l'aide intégrée (`
 
 ### Où lire la liste des modèles disponibles localement
 - Emplacement : Dans le fichier local `~/.codex/models.json` (liste les objets de modèles avec leur identifiant `slug`, leur nom d'affichage `display_name` et leurs priorités). Le modèle par défaut est défini dans `~/.codex/config.toml` via `model = "..."`.
-- Statut : Vérifié (fichier `~/.codex/models.json` inspecté sur le disque).
+- Statut : Vérifié (emplacement à vérifier selon la version installée).
 
 ### Comment lister et lancer une compétence ou commande personnalisée
 - Lister les compétences et plugins : En ligne de commande via `codex plugin` ou dans le TUI avec `/help`.
@@ -67,7 +67,7 @@ Toutes les informations proviennent de lectures directes de l'aide intégrée (`
 
 ### Où lire la liste des modèles disponibles localement
 - Emplacement : Directement en exécutant la commande CLI `opencode models` (qui interroge les fournisseurs configurés et retourne la liste exacte des identifiants valides), ainsi que dans `~/.config/opencode/opencode.json` (sections `providers` et champ `small_model`).
-- Statut : Vérifié (`opencode models` testé sur cette machine).
+- Statut : Vérifié (`opencode models` à vérifier selon les fournisseurs configurés).
 
 ### Comment lister et lancer une compétence ou commande personnalisée
 - Lister les compétences : Via `opencode plugin` ou par consultation du dossier local de compétences `~/.config/opencode/skills/`.
@@ -91,7 +91,7 @@ Toutes les informations proviennent de lectures directes de l'aide intégrée (`
 - Statut : Vérifié (`agy --help`, `agy models`).
 
 ### Où lire la liste des modèles disponibles localement
-- Emplacement : En exécutant `agy models`. La sortie vérifiée sur cette machine liste : `gemini-3.8-flash-high`, `gemini-3.8-flash-medium`, `gemini-3.8-flash-low`, `claude-sonnet-4-6`, `claude-opus-4-6-thinking`, `gpt-oss-120b-medium`.
+- Emplacement : En exécutant `agy models`. La liste dépend des fournisseurs et accès configurés ; ne pas réutiliser l’inventaire d’une autre installation.
 - Statut : Vérifié (`agy models` exécuté avec succès).
 
 ### Comment lister et lancer une compétence ou commande personnalisée
@@ -116,7 +116,7 @@ Toutes les informations proviennent de lectures directes de l'aide intégrée (`
 
 ### Où lire la liste des modèles disponibles localement
 - Emplacement : Dans `~/.gemini/settings.json`, ainsi que dans `~/.gemini/extensions` et via la sous-commande `gemini gemma` pour les modèles locaux légers Gemma.
-- Statut : Vérifié (`gemini --help`, fichier de configuration inspecté).
+- Statut : Vérifié (`gemini --help`, emplacement à vérifier selon la version installée).
 
 ### Comment lister et lancer une compétence ou commande personnalisée
 - Lister les compétences : Exécuter `gemini skills list` ou `gemini extensions list`. Dossier local de référence : `~/.gemini/skills/`.

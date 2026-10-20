@@ -2,8 +2,8 @@
 // Initialise un projet avec le kit d'équipe : fichiers piliers, plan, missions, évaluation et leçons communes.
 // Jamais d'écrasement : un fichier déjà présent est conservé et signalé.
 // Usage : node scripts/init-kit.mjs <dossier> [--lang fr|en] [--dry-run]
-import { mkdir, readdir, copyFile, stat, constants } from 'node:fs/promises';
-import { join, relative, dirname, resolve } from 'node:path';
+import { mkdir, readdir, copyFile, stat, lstat, constants, readFile, open } from 'node:fs/promises';
+import { join, relative, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const racine = fileURLToPath(new URL('../', import.meta.url));
@@ -21,15 +21,31 @@ export async function initKit(cible, { lang = 'fr', dryRun = false, kitRoot = jo
   if (!['fr', 'en'].includes(lang)) throw new Error('Langue inconnue : fr ou en.');
   if (typeof cible !== 'string' || !cible.trim()) throw new Error('Indiquez le dossier du projet à initialiser.');
   cible = resolve(cible);
-  const existant = await stat(cible).catch(() => null);
+  const existant = await lstat(cible).catch(() => null);
+  if(existant?.isSymbolicLink())throw new Error('Lien symbolique refusé : '+cible);
   if (existant && !existant.isDirectory()) throw new Error('La cible existe et n\u2019est pas un dossier.');
   const source = join(kitRoot, lang);
   const aCopier = [];
-  for await (const chemin of fichiers(source)) aCopier.push({ de: chemin, vers: join(cible, relative(source, chemin)) });
+  for await (const chemin of fichiers(source)) {
+    const nom=relative(source, chemin);
+    aCopier.push({ de: chemin, vers: join(cible, ...(['JOURNAL.md','HANDOFF.md'].includes(nom)?['.myteam-local',nom]:[nom])) });
+  }
   for (const nom of SCRIPTS_COPIES) aCopier.push({ de: join(scriptsRoot, nom), vers: join(cible, 'scripts', nom) });
   const resultat = { cible, crees: [], conserves: [] };
+  async function verifier(chemin){
+    let courant=cible;
+    for(const segment of relative(cible,chemin).split(sep)){
+      courant=join(courant,segment);
+      const info=await lstat(courant).catch(error=>{if(error.code==='ENOENT')return null;throw error;});
+      if(info?.isSymbolicLink())throw new Error('Lien symbolique refusé : '+courant);
+    }
+  }
+  // Vérifier toutes les destinations avant la première copie, y compris gitignore.
+  for(const {vers} of aCopier)await verifier(vers);
+  await verifier(join(cible,'.gitignore'));
   for (const { de, vers } of aCopier) {
     const nom = relative(cible, vers).split('\\').join('/');
+    await verifier(vers);
     if (await stat(vers).catch(() => null)) { resultat.conserves.push(nom); continue; }
     if (!dryRun) {
       await mkdir(dirname(vers), { recursive: true });
@@ -37,6 +53,12 @@ export async function initKit(cible, { lang = 'fr', dryRun = false, kitRoot = jo
     }
     resultat.crees.push(nom);
   }
+  const ignore=join(cible,'.gitignore'),avant=await readFile(ignore,'utf8').catch(error=>{if(error.code==='ENOENT')return '';throw error;});
+  const manquants=['.myteam-local/','.bureau/','.env*','*.log'].filter(ligne=>!avant.split(/\r?\n/).includes(ligne));
+  if(manquants.length){
+    if(!dryRun){await mkdir(cible,{recursive:true});await verifier(ignore);const fichier=await open(ignore,constants.O_WRONLY|constants.O_APPEND|constants.O_CREAT|constants.O_NOFOLLOW,0o600);try{await fichier.writeFile((avant&&!avant.endsWith('\n')?'\n':'')+manquants.join('\n')+'\n');}finally{await fichier.close();}}
+    resultat.crees.push('.gitignore');
+  }else resultat.conserves.push('.gitignore');
   return resultat;
 }
 

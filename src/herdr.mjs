@@ -1,7 +1,7 @@
 import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
+import {promisify,stripVTControlCharacters} from 'node:util';
 import {createHash} from 'node:crypto';
-import {readdirSync,statSync,readFileSync} from 'node:fs';
+import {readdirSync,statSync,readFileSync,accessSync,constants} from 'node:fs';
 import {join} from 'node:path';
 import {homedir} from 'node:os';
 
@@ -14,6 +14,10 @@ export class AgentInputError extends Error {
 }
 export function findHerdr({home=homedir(),env=process.env,platform=process.platform}={}) {
   if(env.BUREAU_HERDR_PATH) return env.BUREAU_HERDR_PATH;
+  if(platform!=='win32'){
+    const local=join(home,'.local','bin','herdr');
+    try{if(statSync(local).isFile()){accessSync(local,constants.X_OK);return local;}}catch{/* Installation locale absente ou non exécutable. */}
+  }
   const releases=join(home,'.herdr','packages','standalone','releases');
   const candidates=[];
   try {
@@ -46,7 +50,12 @@ function parseResult(output) {
   if(data.error) throw new HerdrError('Herdr a refusé la demande. Consultez son panneau pour vérifier son état.');
   return data.result;
 }
-export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),'.claude','sessions'),now=()=>Date.now()}={}) {
+function codexScreenSafe(output) {
+  const screen=stripVTControlCharacters(String(output||'')).replace(/\s+/g,' ').toLowerCase();
+  if(!screen.trim()) return false;
+  return !(/do you trust the contents of this directory\?/.test(screen)&&/1\. yes, continue/.test(screen)&&/2\. no, quit/.test(screen));
+}
+export function createHerdr({allowAgent=async()=>true,run,executeFile=execute,sessionsDir=join(homedir(),'.claude','sessions'),now=()=>Date.now()}={}) {
   const inflight=new Set();
   let listing;
   const sessionsClaude=new Map();
@@ -66,6 +75,10 @@ export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),
       throw new HerdrError('Herdr ne répond pas ou a refusé la demande. Vérifiez sa fenêtre. Un envoi peut avoir été reçu : consultez le terminal avant de le répéter.');
     }
   };
+  async function codexReady(agent) {
+    try {return codexScreenSafe(await invoke(['agent','read',agent.paneId,'--source','detection','--lines','80']));}
+    catch {return false;}
+  }
   // Session exacte d'un Claude sans agent_session (intégration Herdr absente) : le processus au premier plan du
   // panneau a un fichier ~/.claude/sessions/<pid>.json qui porte son identifiant de session. Aucune approximation :
   // le pid doit correspondre et l'identifiant doit avoir la forme d'un UUID, sinon rien.
@@ -108,8 +121,10 @@ export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),
       try {
         const result=parseResult(await invoke(['agent','list']));
         if(!Array.isArray(result?.agents)) throw new HerdrError('Liste des agents de Herdr illisible.');
-        const agents=result.agents.filter(a=>a.pane_id&&a.terminal_id).map(normalizeAgent);
+        let agents=result.agents.filter(a=>a.pane_id&&a.terminal_id).map(normalizeAgent);
+        const allowed=await Promise.all(agents.map(allowAgent));agents=agents.filter((_,i)=>allowed[i]);
         await Promise.all(agents.map(async a=>{if(a.kind==='Claude'&&!a.sessionId){const id=await sessionClaude(a.paneId);if(id)a.sessionId=id;}}));
+        await Promise.all(agents.map(async a=>{if(a.kind==='Codex'&&a.ready&&!await codexReady(a)){a.ready=false;a.needsUserAttention=true;}}));
         return agents;
       } finally {listing=undefined;}
     })();
@@ -117,7 +132,7 @@ export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),
   }
   async function resolve(id) {
     const agent=(await list()).find(a=>a.id===id);
-    if(!agent) throw new AgentInputError('Agent introuvable. La liste a changé, sélectionnez à nouveau un agent.');
+    if(!agent||!await allowAgent(agent)) throw new AgentInputError('Agent introuvable. La liste a changé, sélectionnez à nouveau un agent.');
     return agent;
   }
   const checkMessage=message=>{
@@ -136,6 +151,7 @@ export function createHerdr({run,executeFile=execute,sessionsDir=join(homedir(),
     try {
       const agent=await resolve(id);
       if(!agent.ready) throw new AgentInputError('Cet agent n’est pas disponible. Attendez la fin de son travail ou répondez dans Herdr.');
+      if(agent.kind==='Codex'&&!await codexReady(agent)) throw new AgentInputError('Vérifiez le panneau Codex dans Herdr avant d’envoyer une consigne.');
       const result=parseResult(await invoke(['agent','prompt',agent.paneId,message]));
       if(result?.type!=='agent_prompted') throw new HerdrError('L’envoi n’a pas été confirmé par Herdr. Consultez le terminal avant de réessayer.');
       return {ok:true,message:'Consigne transmise à Herdr.'};

@@ -37,3 +37,4 @@ Ce dossier rassemble les captures candidates pour la présentation et la documen
 - `28-telephone-clair.png` : interface claire sur téléphone.
 
 Commande de reproduction : voir `docs/interface.md`.
+

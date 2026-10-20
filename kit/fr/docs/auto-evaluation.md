@@ -8,7 +8,7 @@ Avant de dire « terminé », chaque IA (et le chef avant de fusionner) répond 
 4. Ai-je modifié seulement mes fichiers ? (`git status`, `git diff`.)
 5. Ai-je inventé quelque chose (valeur, état, pourcentage) ? Si oui, le retirer.
 6. Une erreur s'est-elle produite ? A-t-elle une ligne dans `LESSONS.md` ?
-7. `HANDOFF.md`, `JOURNAL.md` et la case du plan sont-ils à jour ?
+7. `.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md` et la case du plan sont-ils à jour ?
 
 ## Pour le chef : évaluer le travail d'un agent
 

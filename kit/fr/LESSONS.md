@@ -1,6 +1,6 @@
 # Leçons
 
-Mémoire commune de toutes les IA du projet. Une leçon par ligne : l'erreur, sa cause, la règle. Ajoute-en une à chaque nouvelle erreur (ou `node scripts/partager-lecons.mjs "la leçon"` pour prévenir aussi les agents).
+Mémoire commune de toutes les IA du projet. Une leçon par ligne : l'erreur, sa cause, la règle. Ajoute seulement un enseignement générique relu à chaque nouvelle erreur (ou `node scripts/partager-lecons.mjs "la leçon"` pour prévenir aussi les agents).
 
 - Un fichier, un propriétaire : avant de modifier le fichier d'un autre agent, lire son `git diff`.
 - Commiter uniquement ses propres fichiers (`git add <chemins>`), jamais `git add -A` : l'historique attribuerait le travail au mauvais auteur.
@@ -10,3 +10,5 @@ Mémoire commune de toutes les IA du projet. Une leçon par ligne : l'erreur, sa
 - Ne pas commiter quand les tests n'ont pas pu être lancés : laisser les fichiers modifiés et le dire au chef.
 - Un correctif n'est vérifié qu'après redémarrage du processus concerné et un essai réel.
 - Écrire les consignes dans la langue et la forme attendues : les agents imitent la forme de la consigne.
+
+Conserver les rapports bruts, conversations et détails personnels dans `.myteam-local/` ignoré.

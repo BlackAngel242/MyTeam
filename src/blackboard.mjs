@@ -55,14 +55,19 @@ export function parseBlackboard(texts) {
 
 export async function readBlackboard({root=projectDirectory}={}) {
   const texts={},files=[];
+  const local=await lstat(join(root,'.myteam-local')).catch(()=>null);
+  const localHandoff=local?.isDirectory()&&!local.isSymbolicLink()&&await lstat(join(root,'.myteam-local','HANDOFF.md')).catch(()=>null);
   for(const name of FILES) {
     try {
+      const chemin=name==='HANDOFF.md'&&localHandoff?'.myteam-local/HANDOFF.md':name;
       // lstat : un lien symbolique nommé comme un pilier ne doit pas faire lire un autre fichier.
-      const info=await lstat(join(root,name));
+      const info=await lstat(join(root,chemin));
       if(info.isSymbolicLink()||!info.isFile()||info.size>MAX_BYTES) continue;
-      texts[name]=await readFile(join(root,name),'utf8');
-      files.push({name,modified:info.mtime.toISOString()});
+      texts[name]=await readFile(join(root,chemin),'utf8');
+      files.push({name:chemin,modified:info.mtime.toISOString()});
     } catch {}
   }
-  return {...parseBlackboard(texts),files};
+  const board=parseBlackboard(texts);
+  if(board.focus&&localHandoff)board.focus.source='.myteam-local/HANDOFF.md';
+  return {...board,files};
 }

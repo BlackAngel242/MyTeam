@@ -91,18 +91,18 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.4.2 · Ọṣun
-    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
-    'nouveautes.titre': 'Les nouveautés de la version 0.4.2 · Ọṣun',
+    // Nouveautés 0.5.0
+    'nouveautes.badge': 'Version 0.5.0',
+    'nouveautes.titre': 'Les nouveautés de la version 0.5.0',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
-    'nouveautes.switch.title': 'Interrupteur Autonomie permanent',
-    'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.',
-    'nouveautes.sante.title': 'Santé du bureau et diagnostic',
-    'nouveautes.sante.desc': 'Ligne de santé dans l\'aide, pastille « Redémarrage à prévoir » et bouton de diagnostic copiable sans aucun chemin, secret ni message privé.',
-    'nouveautes.agents10.title': 'Scène lisible jusqu\'à 10 agents',
-    'nouveautes.agents10.desc': 'Atelier testé jusqu\'à 10 agents avec disposition responsive en 3 colonnes sur téléphone (390 px) pour garder les personnages immédiatement visibles.',
-    'nouveautes.capsule.title': 'Capsule animée et partage corrigé',
-    'nouveautes.capsule.desc': 'Capsule animée légère montrant la tournée du chef et la remise de dossier doré, et aperçu de partage Open Graph corrigé en haute fidélité.',
+    'nouveautes.switch.title': "Choix du projet dès le démarrage",
+    'nouveautes.switch.desc': "Améliorer MyTeam ou travailler dans un autre dossier : le contexte est choisi avant les commandes.",
+    'nouveautes.sante.title': "Données locales séparées",
+    'nouveautes.sante.desc': "Chaque projet possède son propre état local, hors du code. Les journaux du kit restent ignorés par Git.",
+    'nouveautes.agents10.title': "Interface harmonisée",
+    'nouveautes.agents10.desc': "Icônes Lucide et thèmes clair et sombre sur ordinateur comme sur téléphone.",
+    'nouveautes.capsule.title': "Animation et survol corrigés",
+    'nouveautes.capsule.desc': "Une seule boucle de dessin après reprise et aucun survol persistant après la sortie du canvas.",
 
     // Galerie
     'gallery.badge': 'Interface',
@@ -153,6 +153,8 @@ const I18N = {
     'alt.macos.title': 'Sous macOS et Linux',
     'alt.macos.desc': 'Ouvrez un terminal dans le dossier et lancez le script bash interactif :',
     'alt.git.title': 'Pour les développeurs (via Git)',
+    'alt.git.windows': 'Sous Windows :',
+    'alt.git.unix': 'Sous Linux et macOS :',
     'alt.git.desc': 'Clonez directement le dépôt public et démarrez :',
 
     // Compatibilité
@@ -192,7 +194,7 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
-    'footer.divinite': 'Chaque version porte le nom d\'une divinité ashanti ou yoruba : 0.4.2 · Ọṣun, la divinité des eaux douces.',
+    'footer.divinite': "MyTeam 0.5.0 · Version de référence",
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
@@ -289,18 +291,18 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.4.2 · Ọṣun
-    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
-    'nouveautes.titre': 'What\'s new in version 0.4.2 · Ọṣun',
+    // What's new 0.5.0
+    'nouveautes.badge': 'Version 0.5.0',
+    'nouveautes.titre': 'What\'s new in version 0.5.0',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
-    'nouveautes.switch.title': 'Permanent Autonomy toggle switch',
-    'nouveautes.switch.desc': 'Permanent OFF / ON toggle in the top bar displaying active state and remaining time, with a Summary button generating a factual Markdown report.',
-    'nouveautes.sante.title': 'Desk health and diagnostic',
-    'nouveautes.sante.desc': 'Health status line in help, "Restart needed" badge, and copyable diagnostic button without any private path, secret, or prompt content.',
-    'nouveautes.agents10.title': 'Readable scene up to 10 agents',
-    'nouveautes.agents10.desc': 'Workshop tested with up to 10 agents and a responsive 3-column layout on mobile (390 px) keeping agents immediately visible.',
-    'nouveautes.capsule.title': 'Animated capsule and corrected social preview',
-    'nouveautes.capsule.desc': 'Lightweight animated capsule showcasing the lead\'s tour and golden folder delivery, alongside a high-fidelity Open Graph social share preview.',
+    'nouveautes.switch.title': "Choose your project at startup",
+    'nouveautes.switch.desc': "Improve MyTeam or work in another folder: choose the context before sending commands.",
+    'nouveautes.sante.title': "Separate local data",
+    'nouveautes.sante.desc': "Each project has its own local state outside the code. Kit journals remain ignored by Git.",
+    'nouveautes.agents10.title': "Consistent interface",
+    'nouveautes.agents10.desc': "Lucide icons and light and dark themes on desktop and mobile.",
+    'nouveautes.capsule.title': "Animation and hover fixes",
+    'nouveautes.capsule.desc': "A single drawing loop after resuming and no lingering hover after leaving the canvas.",
 
     // Galerie
     'gallery.badge': 'Interface',
@@ -351,6 +353,8 @@ const I18N = {
     'alt.macos.title': 'On macOS and Linux',
     'alt.macos.desc': 'Open a terminal in the extracted folder and run the interactive bash script:',
     'alt.git.title': 'For developers (via Git)',
+    'alt.git.windows': 'On Windows:',
+    'alt.git.unix': 'On Linux and macOS:',
     'alt.git.desc': 'Clone the public repository directly and start up:',
 
     // Compatibilité
@@ -390,7 +394,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
-    'footer.divinite': 'Each version is named after an Ashanti or Yoruba deity: 0.4.2 · Ọṣun, the deity of fresh waters.',
+    'footer.divinite': "MyTeam 0.5.0 · Reference release",
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'

@@ -9,3 +9,6 @@ node_modules/
 .impeccable/hook.cache.json
 .playwright-mcp/
 dist/
+
+# Notes locales privées ; ne retire pas les fichiers déjà suivis.
+.myteam-local/

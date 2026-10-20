@@ -1,70 +1,30 @@
-# Guide et audit de publication GitHub de MyTeam (Bureau des agents)
+# Publication et confidentialité
 
-Ce document prépare la publication publique du projet sur GitHub, conformément aux souhaits de DrSmoke. Aucun élément n'est publié automatiquement : ce document sert de feuille de route et d'audit préalable.
+## Méthode
 
-## 1. Audit de partage : éléments spécifiques à la machine locale
+Avant publication, inventorier les fichiers suivis puis examiner leur contenu et l’archive réellement produite. Rechercher par motifs secrets, coordonnées, profils et données de session ; qualifier les correspondances pour distinguer exemples et données réelles. Examiner aussi les médias visibles et préciser la couverture. `git ls-files` est un inventaire, pas un scan de secrets ni un examen de l’historique.
 
-Cet audit recense les données propres à l'ordinateur de travail ou à la session locale de DrSmoke, qui doivent être adaptées ou isolées avant une mise à disposition publique.
+Le jeton du bureau est aléatoire et gardé en mémoire. L’écoute locale, les contrôles d’origine, de jeton et de projet, et le masquage des sorties sont complémentaires ; aucun masque ne garantit l’absence de toute information sensible.
 
-| Élément | Emplacement | Problème pour un utilisateur tiers | Correction proposée |
-| :--- | :--- | :--- | :--- |
-| Version Herdr en dur | `src/herdr.mjs` (ligne 17) | Recherche le chemin `0.9.5-x86_64-pc-windows-msvc`. Échoue sur Linux, macOS ou avec une autre version de Herdr si `BUREAU_HERDR_PATH` n'est pas défini. | Parcourir dynamiquement le dossier des versions `.herdr/packages/standalone/releases/*/herdr.exe`, ou documenter `BUREAU_HERDR_PATH`. |
-| Chemin absolu de test | `docs/mission-claude.md` (ligne 7) | Mentionnait un chemin local, remplacé par « le dossier du projet ». | Document interne de coordination : à conserver dans l'historique ou à exclure de l'archive publique. |
-| Identifiants de session Herdr | `HANDOFF.md`, `JOURNAL.md` | Mentionnent les panneaux de la session de développement (`w5:p1`, `w5:p4`, etc.). | Normal dans le journal de conception, mais à préciser comme exemples dans la documentation publique. L'application lit ces valeurs dynamiquement. |
-| Fichiers de journalisation locale | `bureau.log`, `bureau-erreurs.log` | Journaux locaux générés lors du lancement par le script PowerShell. | Déjà ignorés dans `.gitignore`. Vérifier qu'ils ne sont jamais ajoutés au suivi Git. |
-| Dossier de captures d'écran | `captures/` | Peut contenir des captures d'écrans avec des données de projets réels. | Déjà ignoré dans `.gitignore`. Captures d'illustration candidates prêtes dans le dossier public `docs/captures/`. |
-| Données d'identité de l'auteur | `public/index.html`, `README.md` | Une société et un numéro de téléphone personnels y figuraient. | Retirés du dépôt et du code (18 octobre) : le pied de page est facultatif et se règle dans `.bureau/pied.json`, local et non publié. |
+## Mémoire partageable
 
-### Vérification des secrets et données sensibles
+Conserver les guides, décisions techniques et enseignements relus. Les journaux bruts, conversations, tâches de session, configurations et pièces jointes personnelles restent privés. Le kit place ses journaux dans `.myteam-local/`, ignoré ; MyTeam garde son état d’exécution par projet dans les données locales du système sous `MyTeam`, hors checkout.
 
-- Clés API et jetons secrets : Aucun secret, mot de passe ou clé API n'est présent dans le code ou dans l'historique Git (`git ls-files` vérifié).
-- Jeton d'authentification du bureau : Le jeton `X-Bureau-Token` est généré aléatoirement en mémoire à chaque démarrage du serveur (`crypto.randomBytes(32)`). Il n'est jamais sauvegardé sur le disque.
-- Règle de vérité des faits : Tout ce qui apparaît à l'écran provient exclusivement de faits observés (processus Herdr, journaux locaux de Claude, Codex et OpenCode, fichiers réels). Aucun faux agent, faux statut, faux pourcentage ou fausse humeur n'est simulé.
+`.gitignore` ne retire pas un fichier déjà suivi ; `export-ignore` ne retire rien du dépôt public et ne s’applique qu’aux exports qui le respectent. Déplacer une note dans un autre dossier du même dépôt ne la rend pas privée. Contrôler la liste exacte du diff et de l’archive avant de publier.
 
-## 2. Configuration du dépôt GitHub
+Le nom public DrSmoke/BlackAngel242, les crédits officiels et les licences sont conservés par choix de l’auteur. Les captures de démonstration utilisent des états factices, sans consigne réelle ni informations personnelles.
 
-### Informations générales recommandées
+## Référence 0.5.0
 
-- Nom du dépôt : `MyTeam`
-- Description courte : « Tour de contrôle locale en pixel art pour surveiller et piloter ses équipes d'agents d'IA sous Herdr. »
-- Visibilité : Public
-- Licence choisie : Licence MIT (`LICENSE`) avec avis de marques (`NOTICE.md`)
-- Sauvegarde de référence : Version majeure stabilisée au commit `7817574`
-- Sujets (topics) : `ai-agents`, `multi-agent-systems`, `herdr`, `pixel-art`, `developer-tools`, `local-first`, `nodejs`, `claude`, `codex`, `opencode`, `antigravity`
+1. Vérifier le code et les guides FR/EN, les tests Node 22/24, puis les écrans ordinateur/téléphone avec états simulés.
+2. Produire le paquet depuis une révision identifiée ; vérifier son inventaire, ses textes, ses licences et son SHA-256.
+3. Publier la nouvelle release et aligner les liens du site ; vérifier le téléchargement effectif.
+4. Retirer ensuite les anciennes releases et leurs assets.
 
-### Fichiers inclus dans le socle public
+Ce chantier ne réécrit pas l’historique Git. Nettoyer les fichiers courants et retirer une archive distribuée ne supprime pas les anciennes révisions, clones, caches ou copies téléchargées. Les résultats et limites des contrôles doivent être annoncés factuellement, sans certification absolue d’absence de secrets.
 
-- Serveur et logique métier : `server.mjs`, `src/herdr.mjs`, `src/claude-activity.mjs`, `src/agent-activity.mjs`, `src/files.mjs`, `src/queue.mjs`, `src/direction.mjs`, `src/todos.mjs`, `src/delegations.mjs`, `src/terminal-status.mjs`, `src/blackboard.mjs`
-- Interface utilisateur pixel art : `public/index.html`, `public/style.css`, `public/app.js`, `public/logos.js`, `public/terminal.js`, `public/sounds.js`, `public/empty-icons.js`
-- Scripts de démarrage et d'installation : `Ouvrir le bureau.cmd`, `Ouvrir le bureau.ps1`, `scripts/installer.ps1`, `scripts/installer.sh`
-- Documentation publique : `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE`, `NOTICE.md`, `docs/INSTALLATION.md`, `docs/aide.md`, `docs/captures/`
-- Tests automatisés natifs : `package.json`, `test/*.mjs` (200 tests automatisés sans dépendance externe avec `node:test`)
-- Configuration et exclusion : `.gitignore`
+## Workflow de publication
 
-### Fichiers conservés pour la coordination interne
+`.github/workflows/release.yml` se déclenche sur `main` lorsque `package.json` change, ou manuellement. La version vient de `package.json` et doit avoir une entrée de changelog. Après les contrôles Node 22/24, le workflow crée un brouillon, joint ZIP et SHA-256, retélécharge les assets et vérifie leur intégrité avant publication comme référence. Après vérification du lien de téléchargement sur Pages, le retrait des anciennes releases arrive, sans supprimer les tags. Un échec de vérification arrête les étapes suivantes.
 
-- `bureau.log`, `bureau-erreurs.log` (exclus par `.gitignore`)
-- Notes de coordination spécifiques à la session locale : `docs/mission-claude.md`, `docs/avis-codex.md`, `docs/revue-opencode.md`, `docs/revue-codex-interface.md`, `docs/revue-antigravity.md`, `docs/revue-codex-delegations.md`
-
-## 3. Choix de la licence logicielle (Validé)
-
-DrSmoke a retenu la **Licence MIT** pour MyTeam (le Bureau des agents), offrant une liberté maximale d'utilisation, de modification et de distribution, tout en protégeant son attribution originale.
-Le fichier `LICENSE` contient le texte standard MIT, et `NOTICE.md` précise que les marques et emblèmes (Claude, Codex, Antigravity, OpenCode, Gemini, Herdr) restent la propriété exclusive de leurs éditeurs respectifs.
-
-## 4. Captures d'écran préparées pour la vitrine GitHub
-
-Le dossier `docs/captures/` rassemble les captures candidates réalisées avec des états simulés (aucun secret ni chemin personnel, requêtes réseau d'envoi bloquées) :
-
-1. `01-ordinateur-scene.png` : Vue complète sur ordinateur (1440x900) en journée avec le chef au bureau Direction, tableau mural, collaborateurs à leurs postes et salle de réflexion.
-2. `01-ordinateur-scene-soir.png` : Vue complète en soirée (21 h) avec éclairage d'ambiance, suspensions au plafond et lampes individuelles allumées.
-3. `02-ordinateur-poste.png` : Vue du poste ouvert avec barre d'état de l'outil et lecture directe du terminal Herdr.
-4. `03-ordinateur-equipe.png` : Onglet Équipe avec courrier du chef, file d'attente sécurisée avec priorités et envoi groupé armé.
-5. `04-ordinateur-palette.png` : Boîte modale de palette de commandes (Ctrl+K) ouverte au centre de l'écran.
-6. `05-ordinateur-aide.png` : Volet d'aide latérale avec guide en 5 étapes, légendes et tableau des raccourcis.
-7. Vues mobiles (`06-telephone-scene.png` à `10-telephone-aide.png`) : Adaptation responsive complète sur smartphone (390x844).
-
-## 5. Revue QA finale du 18 octobre (docs/revue-opencode-final.md) : décisions
-
-- Corrigés : chemin personnel dans un jeu d'essai, masque des réponses élargi (racines Unix usuelles, clés Google, jetons fins, empreintes), cache de 3 s des lectures de journaux, `/api/read` protégé par le jeton, `.impeccable/hook.cache.json` ignoré, `--herdr-chemin` de `installer.sh` limité à un exécutable nommé `herdr` ou `herdr.exe`.
-- Acceptés, documentés : l'historique Git public garde le chemin local du projet dans trois anciens documents (réécrire l'historique est irréversible et le gain est faible) ; une copie de fichier joint déjà faite reste dans le dossier de l'agent si l'envoi échoue ensuite (aucun écrasement, suffixe de copie) ; `/api/state` distribue le jeton par conception.
-- Publics par choix : `JOURNAL.md`, `HANDOFF.md`, `LESSONS.md`, `ERREURS.md` (reprise par une autre IA).
+`scripts/empaqueter-release.mjs` travaille sur un commit identifié, refuse les états privés suivis par erreur et produit le ZIP ainsi que son fichier `.sha256`. `scripts/garder-releases.mjs --reference v0.5.0` exige une référence publiée avec archive et checksum ; leur vérification d’intégrité doit précéder son appel, comme dans le workflow. `--dry-run` ne supprime rien.
