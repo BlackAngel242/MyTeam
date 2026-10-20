@@ -1,5 +1,10 @@
 // Dictionnaire anglais du bureau (la référence reste le français de public/i18n.js).
 window.DICTIONNAIRE_EN = {
+  "appearance.label": "Appearance",
+  "appearance.system": "System",
+  "appearance.light": "Light",
+  "appearance.dark": "Dark",
+
   "aide.delegation": "An agent receiving a delegation from the chief goes to fetch its folder at the Direction desk. When it finishes, an envelope joins the chief’s pile (click it). Subagents go to the reflection room and report back their folder.",
   "aide.etape1-texte": "The chief occupies the Direction desk; each agent shows its state through posture, bubble and colour.",
   "aide.etape1-titre": "Watch the scene.",
@@ -296,6 +301,7 @@ window.DICTIONNAIRE_EN = {
   "equipe.file.a_revoir": "to review",
   "equipe.file.annulee": "cancelled",
   "equipe.file.attente": "waiting",
+  "equipe.file.action_herdr": "Waiting: action required in Herdr.",
   "equipe.file.entete": "{nom} · {etat}",
   "equipe.file.envoyee": "sent",
   "equipe.file.normal": "Set back to normal",
@@ -357,6 +363,7 @@ window.DICTIONNAIRE_EN = {
   "etat.connexion_indisponible": "Connection unavailable",
   "etat.connexion_perdue": "Connection lost",
   "etat.disponible": "Available",
+  "etat.verifier_herdr": "Check in Herdr",
   "etat.herdr_connecte": "Herdr connected",
   "etat.herdr_deconnecte": "Herdr disconnected",
   "etat.herdr_hors_ligne": "Herdr is disconnected",

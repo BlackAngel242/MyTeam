@@ -5,7 +5,7 @@ Ce fichier s'applique à chaque IA qui travaille sur ce projet (Claude, Codex, O
 ## À lire avant de travailler
 
 1. `LESSONS.md` : erreurs déjà commises et comment les éviter. Ne jamais les répéter.
-2. `PRODUCT.md` (ce que fait le produit), puis `HANDOFF.md` (état actuel) et `TODO.md`.
+2. `PRODUCT.md` (ce que fait le produit), puis `.myteam-local/HANDOFF.md` (état actuel) et `TODO.md`.
 3. `docs/plan-travail.md` : le plan, les propriétaires et l'état de chaque case.
 4. Si tu es le chef : `CHEF.md`.
 
@@ -53,3 +53,7 @@ Ce fichier s'applique à chaque IA qui travaille sur ce projet (Claude, Codex, O
 ## Écriture
 
 Phrases simples, dans la langue du projet. Code : commentaires seulement pour la logique non évidente.
+
+## Mémoire privée
+
+Conserver les rapports bruts et conversations dans `.myteam-local/`, ignoré par Git. Seuls les enseignements génériques relus vont dans `LESSONS.md` public. Vérifier les fichiers suivis avant publication ; ignorer ne retire pas les fichiers déjà suivis. Le filtrage de projet MyTeam n’est pas un bac à sable système pour les outils externes.

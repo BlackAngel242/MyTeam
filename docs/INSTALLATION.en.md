@@ -2,7 +2,15 @@
 
 [Français](INSTALLATION.md) | **English**
 
-MyTeam · Agent desk (Bureau des agents) is a lightweight local application: it opens in your web browser, visualizes your Herdr agents at work, and allows you to send them instructions. Everything stays on your local machine at address `127.0.0.1`. No API keys or tokens are ever requested, read, or saved by the office or by its setup scripts.
+MyTeam · Agent desk (Bureau des agents) is a lightweight local application: it opens in your web browser, visualizes your Herdr agents at work, and allows you to send them instructions. The server listens on `127.0.0.1`; AI tools may use their own remote services. No API keys or tokens are ever requested, read, or saved by the office or by its setup scripts.
+
+## Choose your project before working (0.5.0)
+
+At startup, choose **Improve MyTeam** to work on the software, or **Create or resume another project** for your own folder. Select and confirm the folders before sending any instruction. The active project and folder remain visible; **Change project** returns to `/demarrage`, the startup screen and stops the previous context. Agents must work inside the selected folders: agents from another project are not authorized targets.
+
+Execution memory (queue, direction, autonomy and configuration) is private, separated by project in the operating system data folder under `MyTeam`, outside the checkout. Locations: Windows `%LOCALAPPDATA%/MyTeam`, macOS `~/Library/Application Support/MyTeam`, Linux `$XDG_DATA_HOME/MyTeam` or `~/.local/share/MyTeam`. Each project has its own `projects/<canonical-path hash>` subfolder. An older installation is never imported automatically. Changing projects does not replay old instructions.
+
+Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
 
 ## Prerequisites
 
@@ -34,7 +42,7 @@ MyTeam · Agent desk (Bureau des agents) is a lightweight local application: it 
 - **No external npm dependencies**: The project contains no `node_modules` and never runs `npm install`.
 - **No key or secret collection**: No password, token, or API key is requested or handled. Each AI manages its own credentials.
 - **No forced silent installation**: The `-Oui` / `--oui` flag NEVER auto-confirms software installations, integrations, agent launches, or team kit setup. Each sensitive action requires explicit interactive "y/n" consent.
-- **No file overwriting**: The scripts never overwrite existing skills or project documents without explicit user confirmation.
+- **No file overwriting**: The scripts never overwrite existing skills or project documents.
 - **No unauthorized external network requests**: The server strictly binds to the local interface `127.0.0.1`.
 
 ## Method 1: Installation from the Release Archive (Recommended)
@@ -134,7 +142,7 @@ The script can be rerun safely at any time: it inspects your system and only set
 Once setup completes, follow this 6-step walkthrough to start your working session:
 
 1. **Open the shortcut**: Double-click the "Herdr and desktop" shortcut created on your Desktop (or open Herdr in a terminal, then start `node server.mjs`).
-2. **See the 4 panes in a 2×2 grid and the animated office in your browser**: Verify that Herdr displays your 4 terminals (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) and open `http://127.0.0.1:4317` in your browser to view the animated office scene with desk emblems and real-time lighting matching your system clock.
+2. **See the 4 panes in a 2×2 grid and the animated office in your browser**: Verify that Herdr displays your 4 terminals (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) and open `http://127.0.0.1:4317` in your browser then choose and confirm the project before opening its office.
 3. **The lead reads CHEF.md**: In the lead pane (or via the Desk tab in the web office), the lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by to coordinate.
 4. **First delegation**: Send an initial prompt to the lead from the office form (Ctrl+Enter). When the lead delegates a task in their log, observe their physical round across the office scene: they step away from the Direction desk and walk over to hand the folder to their teammate.
 5. **Tasks tab**: Switch to the Tasks tab to monitor real-time factual progress of checked boxes in `TODO.md` and action plans published by agents, with zero invented percentages.
@@ -205,7 +213,7 @@ The installer script writes these configuration variables to user environment se
 
 1. `npm test`: The test suite must pass (verifies local modules and system integrity).
 2. `npm run check`: Validates syntax of all project JavaScript files via `node --check`.
-3. `node server.mjs` then `http://127.0.0.1:4317`: The office dashboard renders connected agents currently active in Herdr.
+3. `node server.mjs` then `http://127.0.0.1:4317`: Startup opens first; after confirmation, the office renders agents from the selected folders.
 
 ## Troubleshooting
 
@@ -218,7 +226,7 @@ The installer script writes these configuration variables to user environment se
 - **Node.js missing or outdated**: `node --version` must show v22 or higher. Install from https://nodejs.org/en/download, open a new terminal, and re-run the setup script.
 - **Antivirus blocks setup command**: This can occur with direct download-and-execute commands (`irm ... | iex`). Official Herdr and Claude Code docs provide alternative workflows with downloaded `install.cmd` files.
 - **Tests fail**: Verify your Node.js version, then re-run `npm test`.
-- **Complete uninstallation**: Delete the project directory (which also removes `.bureau/`, holding queued prompts), remove any desktop shortcut, and unset `BUREAU_PORT` and `BUREAU_HERDR_PATH`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
+- **Complete uninstallation**: Delete the software directory and any desktop shortcut; separately remove the system data folder `MyTeam` if you want to erase private execution states, and unset `BUREAU_PORT` and `BUREAU_HERDR_PATH`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
 
 ## Verified Sources
 

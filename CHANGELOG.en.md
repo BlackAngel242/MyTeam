@@ -4,9 +4,26 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
-## [Unreleased]
+## [0.5.0] - 2026-10-20
 
-_Nothing yet._
+### Projects and privacy
+
+- Startup choice: Improve MyTeam or create/resume another project; folders selected before instructions.
+- Project filtering for agents and operations, including shared lessons; changing projects stops the previous context.
+- Private execution memory per project in system data outside the checkout; no automatic import of an older installation.
+- Generic team kit with private handoff and journal in ignored `.myteam-local/`, preserving existing files.
+- Public technical documentation cleaned of personal session details. Previous releases are retired only after the new release is published and verified; Git history is unchanged.
+- Canvas scheduling and hover cleanup corrected while preserving local Lucide and dynamic translations.
+
+### Interface
+
+- Local Lucide controls with embedded license notices across the website and office; pixel characters and tool emblems preserved.
+- Persistent System / Light / Dark appearance per origin, system changes and denied storage supported.
+- Keyboard gallery using a native dialog, contained focus, focus restoration and FR/EN labels.
+- Prerequisites visible before downloading, recognized tools distinguished from enriched logs, consistent captions.
+- Contrast fixes for fields, destinations, Markdown code, active autonomy and alerts; responsive tablet toolbar.
+- Updated simulated screenshots and reproducible browser tests. VS Code extension deferred.
+
 
 ## [0.4.2] - October 19, 2026 · "Ọṣun"
 

@@ -21,8 +21,8 @@ node scripts/init-kit.mjs <project-folder> [--lang fr|en] [--dry-run]
 | `AGENTS.md` | Rules for all AI models: roles, one file one owner, factual truth, definition of "done", error loop, signature, and security. |
 | `CLAUDE.md`, `GEMINI.md` | Redirect to `AGENTS.md`: all tools read the same source of truth. Codex and OpenCode read `AGENTS.md` directly. |
 | `CHEF.md` | Lead's operational manual: listening to agents (`herdr agent list`, `herdr agent read`) and directing them (`herdr agent prompt`), plan-delegate-evaluate-correct-merge cycle. |
-| `LESSONS.md` | Shared memory of mistakes, one line per lesson. |
-| `HANDOFF.md`, `JOURNAL.md`, `TODO.md`, `PRODUCT.md` | Active stage, dated history, actionable checkboxes, product specifications. |
+| `LESSONS.md` | Reviewed generic lessons, one line per lesson; no raw session reports. |
+| `.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md`, `TODO.md`, `PRODUCT.md` | Active stage, dated history, actionable checkboxes, product specifications. |
 | `docs/plan-travail.md` | Work plan with assigned owners and tasks: the office calculates completion percentages directly from checked boxes. |
 | `docs/mission-modele.md` | Written mission template for dispatching work to agents. |
 | `docs/auto-evaluation.md` | Self-reflection checklist before declaring work complete, plus lead evaluation rubric. |
@@ -42,7 +42,7 @@ A report built exclusively from observable facts: present pillar files, checked 
 node scripts/partager-lecons.mjs "The lesson, in a single line." [folder] [--dry-run] [--lang fr|en]
 ```
 
-Appends the lesson to `LESSONS.md` (idempotent, single entry), then alerts all **available** Herdr agents (`idle` or `done`): sends a concise notification, followed by an Enter key in case text remains buffered in the prompt area. An agent at work is never interrupted: they are flagged "to be notified later". If Herdr is unreachable, the lesson is saved to disk without agent dispatches.
+Appends the lesson to `LESSONS.md` (idempotent, single entry), then alerts **available** Herdr agents from this project only (`idle` or `done`): sends a concise notification, followed by an Enter key in case text remains buffered in the prompt area. An agent at work is never interrupted: they are flagged "to be notified later". If Herdr is unreachable, the lesson is saved to disk without agent dispatches.
 
 ## The Lead Listens and Directs
 
@@ -51,3 +51,5 @@ The first agent started in Herdr acts as the team lead. `CHEF.md` provides their
 ## Signature
 
 All contributions are signed by the author's GitHub profile, never by an AI. AI models are credited once in `README.md` (under "Built with the Help of AI"). See `AGENTS.md`.
+
+The initializer creates a local `.gitignore` entry for `.myteam-local/` without replacing existing rules. Handoff and journal are private session notes; public root files are generic technical guides. Existing files are never overwritten. MyTeam runtime state is separate, in system data under `MyTeam`, outside the checkout.

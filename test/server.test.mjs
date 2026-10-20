@@ -42,6 +42,18 @@ test('le serveur refuse adresse étrangère, origine étrangère et accès exté
   }
 });
 
+test('un port personnalisé est indiqué dans le refus d’hôte et la provenance a un message distinct',async t=>{
+  const {send,origin}=await bureau(t);
+  const port=new URL(origin).port;
+  const denied=await send('/api/state',{headers:{Host:'localhost:'+port}});
+  assert.equal(denied.status,403);
+  assert.match(denied.data.error,new RegExp('127\\.0\\.0\\.1:'+port));
+  const {data:{token}}=await send('/api/state');
+  const noOrigin=await send('/api/sante',{headers:{'X-Bureau-Token':token}});
+  assert.equal(noOrigin.status,403);
+  assert.match(noOrigin.data.error,/origine|provenance|navigateur/i);
+});
+
 test('une consigne exige une origine exacte et le jeton courant',async t=>{
   const {send,origin,calls}=await bureau(t);
   const state=await send('/api/state');

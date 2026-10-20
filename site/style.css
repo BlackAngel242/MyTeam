@@ -73,7 +73,7 @@ button:focus-visible, a:focus-visible {
 
 ::selection {
   background: var(--mint);
-  color: var(--bg-deep);
+  color: var(--on-accent);
 }
 
 img {
@@ -94,7 +94,7 @@ img {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(12, 20, 35, 0.92);
+  background: var(--bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
@@ -281,12 +281,12 @@ img {
 
 .btn-primary {
   background: var(--mint);
-  color: var(--bg-deep);
+  color: var(--on-accent);
 }
 
 .btn-primary:hover {
   background: #bbf0d8;
-  color: var(--bg-deep);
+  color: var(--on-accent);
   transform: translateY(-1px);
 }
 
@@ -297,7 +297,7 @@ img {
 }
 
 .btn-secondary:hover {
-  background: #20314a;
+  background: var(--hover);
   border-color: var(--blue);
   color: var(--blue);
   transform: translateY(-1px);
@@ -347,7 +347,7 @@ img {
   image-rendering: pixelated;
 }
 
-.hero-preview video { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; display: block; background: #0b1426; }
+.hero-preview video { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; display: block; background: var(--input); }
 
 /* --- Section commune --- */
 .section {
@@ -484,6 +484,11 @@ img {
 }
 
 .gallery-item {
+  display: block;
+  padding: 0;
+  width: 100%;
+  color: var(--text);
+  text-align: left;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -507,16 +512,19 @@ img {
 }
 
 .gallery-caption {
+  display: block;
   padding: 14px 16px;
 }
 
 .gallery-title {
+  display: block;
   font-size: 14.5px;
   font-weight: 650;
   margin-bottom: 4px;
 }
 
 .gallery-desc {
+  display: block;
   font-size: 12.5px;
   color: var(--muted);
 }
@@ -570,7 +578,7 @@ img {
 }
 
 .smartscreen-alert {
-  background: #142233;
+  background: var(--blue-bg);
   border: 1px solid #224367;
   border-left: 4px solid var(--blue);
   border-radius: 8px;
@@ -591,7 +599,7 @@ img {
 .alert-body h4 {
   font-size: 14.5px;
   font-weight: 650;
-  color: #dce7f5;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
@@ -684,7 +692,7 @@ img {
   font-size: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
-  color: #dce7f5;
+  color: var(--text);
   font-family: ui-monospace, monospace;
 }
 
@@ -810,19 +818,26 @@ img {
 
 /* --- Modale Lightbox d'image --- */
 .lightbox {
+  margin: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(7, 10, 19, 0.94);
+  background: var(--bg);
+  color: var(--text);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 56px 20px 24px;
 }
 
-.lightbox.active {
+.lightbox[open] {
   display: flex;
 }
 
@@ -859,8 +874,8 @@ img {
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--text);
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 6px;
   font-size: 18px;
   display: flex;
@@ -917,4 +932,22 @@ img {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Les prérequis restent visibles avant le téléchargement. */
+.hero-requirements{max-width:680px;margin:0 auto 24px;color:var(--muted);font-size:14px}
+body:has(.lightbox[open]){overflow:hidden}
+.btn-primary:hover{background:var(--mint);filter:brightness(1.08);color:var(--on-accent)}
+.site-header .container{max-width:1440px}
+@media(max-width:1200px){.nav-menu{gap:12px}.nav-link{font-size:12px}}
+@media(max-width:1000px){
+  .nav-menu{display:none}
+  .nav-menu.active{display:flex;flex-direction:column;position:absolute;top:68px;left:0;right:0;background:var(--bg);border-bottom:1px solid var(--line);padding:20px 24px;gap:16px}
+  .nav-toggle{display:flex;align-items:center;justify-content:center;min-width:40px;min-height:40px}
+}
+@media(max-width:600px){
+  .nav-wrap{gap:8px}.nav-actions{gap:6px}.nav-actions .btn-github{display:none}
+  .brand-sub{display:none}.brand{gap:8px}.lang-btn{padding:6px 8px;min-height:40px}
+  .nav-actions .appearance-control select{max-width:78px}
+  .lightbox{padding-inline:12px}.lightbox-img{max-height:75dvh}
 }

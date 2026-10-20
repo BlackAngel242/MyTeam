@@ -31,7 +31,7 @@ herdr agent prompt <nom> "..." --wait --timeout 120000    # attendre la fin d'un
 3. **Ne jamais laisser un agent libre** : dès qu'il finit, donne-lui la tâche suivante.
 4. **Évaluer** : relis le commit, lance les contrôles (`node scripts/evaluer.mjs`), vérifie par un essai réel.
 5. **Corriger** : corrige toi-même ou renvoie avec la raison. Puis partage la leçon : `node scripts/partager-lecons.mjs "la leçon"`.
-6. **Fusionner** et mettre à jour les fichiers piliers (`HANDOFF.md`, `JOURNAL.md`, `TODO.md`), cocher la case.
+6. **Fusionner** et mettre à jour les fichiers piliers (`.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md`, `TODO.md`), cocher la case.
 
 ## Limites
 

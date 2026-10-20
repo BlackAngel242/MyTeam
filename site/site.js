@@ -1,6 +1,12 @@
 /* site/site.js - Logique d'interface et dictionnaire bilingue pour GitHub Pages */
 const I18N = {
   fr: {
+    "nav.menu": "Menu de navigation", "gallery.close": "Fermer la vue agrandie",
+    "appearance.label": "Apparence",
+    "appearance.system": "Système",
+    "appearance.light": "Clair",
+    "appearance.dark": "Sombre",
+
     // Navigation
     'nav.marque': 'MyTeam',
     'nav.sous-titre': 'Le Bureau des agents',
@@ -15,6 +21,7 @@ const I18N = {
     'nav.code': 'Code source',
     'nav.langue.aria': 'Changer la langue (FR / EN)',
 
+    "hero.requirements": "MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.",
     // Hero
     'hero.badge': '100% Local · Zéro Dépendance npm · Vérité des faits',
     'hero.titre': 'Surveillez, lisez et dirigez vos agents d\'IA dans un atelier vivant en pixel art',
@@ -84,27 +91,27 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.4.2 · Ọṣun
-    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
-    'nouveautes.titre': 'Les nouveautés de la version 0.4.2 · Ọṣun',
+    // Nouveautés 0.5.0
+    'nouveautes.badge': 'Version 0.5.0',
+    'nouveautes.titre': 'Les nouveautés de la version 0.5.0',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
-    'nouveautes.switch.title': 'Interrupteur Autonomie permanent',
-    'nouveautes.switch.desc': 'Bascule permanente OFF / ON dans la barre supérieure affichant l\'état actif et le temps restant, avec bouton Récapitulatif générant un bilan factuel au format Markdown.',
-    'nouveautes.sante.title': 'Santé du bureau et diagnostic',
-    'nouveautes.sante.desc': 'Ligne de santé dans l\'aide, pastille « Redémarrage à prévoir » et bouton de diagnostic copiable sans aucun chemin, secret ni message privé.',
-    'nouveautes.agents10.title': 'Scène lisible jusqu\'à 10 agents',
-    'nouveautes.agents10.desc': 'Atelier testé jusqu\'à 10 agents avec disposition responsive en 3 colonnes sur téléphone (390 px) pour garder les personnages immédiatement visibles.',
-    'nouveautes.capsule.title': 'Capsule animée et partage corrigé',
-    'nouveautes.capsule.desc': 'Capsule animée légère montrant la tournée du chef et la remise de dossier doré, et aperçu de partage Open Graph corrigé en haute fidélité.',
+    'nouveautes.switch.title': "Choix du projet dès le démarrage",
+    'nouveautes.switch.desc': "Améliorer MyTeam ou travailler dans un autre dossier : le contexte est choisi avant les commandes.",
+    'nouveautes.sante.title': "Données locales séparées",
+    'nouveautes.sante.desc': "Chaque projet possède son propre état local, hors du code. Les journaux du kit restent ignorés par Git.",
+    'nouveautes.agents10.title': "Interface harmonisée",
+    'nouveautes.agents10.desc': "Icônes Lucide et thèmes clair et sombre sur ordinateur comme sur téléphone.",
+    'nouveautes.capsule.title': "Animation et survol corrigés",
+    'nouveautes.capsule.desc': "Une seule boucle de dessin après reprise et aucun survol persistant après la sortie du canvas.",
 
     // Galerie
     'gallery.badge': 'Interface',
     'gallery.titre': 'L\'atelier sous tous les angles',
     'gallery.desc': 'Cliquez sur une capture pour l\'agrandir en haute définition.',
-    'gallery.scene.title': 'Scène principale de jour',
+    'gallery.scene.title': 'Scène principale',
     'gallery.scene.desc': 'Le chef au bureau Direction, les postes de travail et la salle de réflexion vitrée.',
     'gallery.soir.title': 'Ambiance de soirée',
-    'gallery.soir.desc': 'Éclairage tamisé automatique dès 19 h 00 avec suspensions et lampes de bureau allumées.',
+    'gallery.soir.desc': 'Éclairage intérieur progressif à partir de 17 h 30, à pleine puissance dès 19 h ; le coucher du soleil est fixé à 19 h 30.',
     'gallery.poste.title': 'Onglet Poste de travail',
     'gallery.poste.desc': 'Terminal interactif en direct avec filtres de couleurs et zone de consigne rapide.',
     'gallery.equipe.title': 'Onglet Équipe et file d\'attente',
@@ -146,6 +153,8 @@ const I18N = {
     'alt.macos.title': 'Sous macOS et Linux',
     'alt.macos.desc': 'Ouvrez un terminal dans le dossier et lancez le script bash interactif :',
     'alt.git.title': 'Pour les développeurs (via Git)',
+    'alt.git.windows': 'Sous Windows :',
+    'alt.git.unix': 'Sous Linux et macOS :',
     'alt.git.desc': 'Clonez directement le dépôt public et démarrez :',
 
     // Compatibilité
@@ -155,7 +164,7 @@ const I18N = {
     'tools.info.title': 'Détection automatique et emblèmes dédiés',
     'tools.info.p1': 'Lors de la préparation de votre grille Herdr 2x2, l\'installeur teste dans votre environnement la présence de chacun des 24 outils compatibles et vous propose de les lancer panneau par panneau.',
     'tools.info.p2': 'Chaque outil possède son propre emblème 16x16 sur le bureau. Claude, Codex et OpenCode bénéficient en plus d\'un lecteur de journaux locaux extrayant les réponses réelles, les jetons consommés et l\'historique.',
-    'tools.list.legend': 'Outils à télémétrie enrichie :',
+    'tools.list.legend': '24 outils reconnus ; journaux enrichis pour les trois outils en évidence :',
 
     // Contribuer
     'contrib.badge': 'Communauté',
@@ -185,13 +194,20 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
-    'footer.divinite': 'Chaque version porte le nom d\'une divinité ashanti ou yoruba : 0.4.2 · Ọṣun, la divinité des eaux douces.',
+    'footer.divinite': "MyTeam 0.5.0 · Version de référence",
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
   },
 
   en: {
+    "nav.menu": "Navigation menu", "gallery.close": "Close enlarged view",
+    "hero.requirements": "MyTeam runs on your computer and supervises agents launched in Herdr. Node.js 22 or newer and Herdr are required.",
+    "appearance.label": "Appearance",
+    "appearance.system": "System",
+    "appearance.light": "Light",
+    "appearance.dark": "Dark",
+
     // Navigation
     'nav.marque': 'MyTeam',
     'nav.sous-titre': 'Agent desk',
@@ -275,27 +291,27 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.4.2 · Ọṣun
-    'nouveautes.badge': 'Version 0.4.2 · Ọṣun',
-    'nouveautes.titre': 'What\'s new in version 0.4.2 · Ọṣun',
+    // What's new 0.5.0
+    'nouveautes.badge': 'Version 0.5.0',
+    'nouveautes.titre': 'What\'s new in version 0.5.0',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
-    'nouveautes.switch.title': 'Permanent Autonomy toggle switch',
-    'nouveautes.switch.desc': 'Permanent OFF / ON toggle in the top bar displaying active state and remaining time, with a Summary button generating a factual Markdown report.',
-    'nouveautes.sante.title': 'Desk health and diagnostic',
-    'nouveautes.sante.desc': 'Health status line in help, "Restart needed" badge, and copyable diagnostic button without any private path, secret, or prompt content.',
-    'nouveautes.agents10.title': 'Readable scene up to 10 agents',
-    'nouveautes.agents10.desc': 'Workshop tested with up to 10 agents and a responsive 3-column layout on mobile (390 px) keeping agents immediately visible.',
-    'nouveautes.capsule.title': 'Animated capsule and corrected social preview',
-    'nouveautes.capsule.desc': 'Lightweight animated capsule showcasing the lead\'s tour and golden folder delivery, alongside a high-fidelity Open Graph social share preview.',
+    'nouveautes.switch.title': "Choose your project at startup",
+    'nouveautes.switch.desc': "Improve MyTeam or work in another folder: choose the context before sending commands.",
+    'nouveautes.sante.title': "Separate local data",
+    'nouveautes.sante.desc': "Each project has its own local state outside the code. Kit journals remain ignored by Git.",
+    'nouveautes.agents10.title': "Consistent interface",
+    'nouveautes.agents10.desc': "Lucide icons and light and dark themes on desktop and mobile.",
+    'nouveautes.capsule.title': "Animation and hover fixes",
+    'nouveautes.capsule.desc': "A single drawing loop after resuming and no lingering hover after leaving the canvas.",
 
     // Galerie
     'gallery.badge': 'Interface',
     'gallery.titre': 'The Workshop in Pictures',
     'gallery.desc': 'Click any screenshot to view it in full high-definition resolution.',
-    'gallery.scene.title': 'Daytime scene overview',
+    'gallery.scene.title': 'Main scene',
     'gallery.scene.desc': 'Chief agent at the Direction desk, workstations, and glass reflection room.',
     'gallery.soir.title': 'Evening atmosphere',
-    'gallery.soir.desc': 'Automatic cozy illumination starting at 7:00 PM with ceiling pendants and desk lamps.',
+    'gallery.soir.desc': 'Indoor lighting gradually comes on from 5:30 PM, reaches full brightness at 7 PM, and sunset is set to 7:30 PM.',
     'gallery.poste.title': 'Workstation tab',
     'gallery.poste.desc': 'Live interactive terminal with error highlighting and quick prompt dispatch.',
     'gallery.equipe.title': 'Team tab and priority queue',
@@ -337,6 +353,8 @@ const I18N = {
     'alt.macos.title': 'On macOS and Linux',
     'alt.macos.desc': 'Open a terminal in the extracted folder and run the interactive bash script:',
     'alt.git.title': 'For developers (via Git)',
+    'alt.git.windows': 'On Windows:',
+    'alt.git.unix': 'On Linux and macOS:',
     'alt.git.desc': 'Clone the public repository directly and start up:',
 
     // Compatibilité
@@ -346,7 +364,7 @@ const I18N = {
     'tools.info.title': 'Automatic detection and dedicated pixel emblems',
     'tools.info.p1': 'During the 2x2 Herdr grid setup, the installer inspects your environment for each of the 24 compatible tools and offers pane-by-pane launch.',
     'tools.info.p2': 'Each tool displays its custom 16x16 pixel emblem on the desk. Claude, Codex, and OpenCode additionally feature a local log parser extracting final answers, token counts, and turn history.',
-    'tools.list.legend': 'Tools with deep telemetry:',
+    'tools.list.legend': '24 recognized tools; enriched logs for the three highlighted tools:',
 
     // Contribuer
     'contrib.badge': 'Community',
@@ -376,7 +394,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
-    'footer.divinite': 'Each version is named after an Ashanti or Yoruba deity: 0.4.2 · Ọṣun, the deity of fresh waters.',
+    'footer.divinite': "MyTeam 0.5.0 · Reference release",
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'
@@ -388,10 +406,10 @@ function t(key, lang = 'fr') {
 }
 
 function getStoredLanguage() {
-  if (typeof localStorage !== 'undefined') {
+  try {
     const stored = localStorage.getItem('myteam.site.lang');
     if (stored === 'fr' || stored === 'en') return stored;
-  }
+  } catch {}
   if (typeof navigator !== 'undefined') {
     const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
     return nav.startsWith('fr') ? 'fr' : 'en';
@@ -402,9 +420,7 @@ function getStoredLanguage() {
 function applyLanguage(lang) {
   if (typeof document === 'undefined') return;
   document.documentElement.lang = lang;
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('myteam.site.lang', lang);
-  }
+  try { localStorage.setItem('myteam.site.lang', lang); } catch {}
 
   // Mettre à jour le bouton de bascule
   const langBtn = document.getElementById('btn-lang');
@@ -443,33 +459,35 @@ function setupLightbox() {
 
   if (!lightbox || !lbImg || !lbClose) return;
 
-  function open(src, caption) {
+  let trigger;
+  function open(src, caption, item) {
+    trigger = item;
     lbImg.src = src;
+    lbImg.alt = item.querySelector('img')?.alt || caption;
     lbCaption.textContent = caption || '';
     lightbox.classList.add('active');
-    lightbox.setAttribute('aria-hidden', 'false');
+    lightbox.showModal();
     lbClose.focus();
-    document.body.style.overflow = 'hidden';
   }
 
   function close() {
-    lightbox.classList.remove('active');
-    lightbox.setAttribute('aria-hidden', 'true');
-    lbImg.src = '';
-    document.body.style.overflow = '';
+    lightbox.close();
   }
+  lightbox.addEventListener('close', () => {
+    lightbox.classList.remove('active');
+    lbImg.removeAttribute('src');
+    trigger?.focus({ preventScroll: true });
+  });
+  lightbox.addEventListener('cancel', event => { event.preventDefault(); close(); });
+  lightbox.addEventListener('keydown', event => {
+    if (event.key === 'Tab') { event.preventDefault(); lbClose.focus(); }
+  });
 
   document.querySelectorAll('[data-lightbox]').forEach(item => {
     item.addEventListener('click', () => {
       const src = item.getAttribute('data-lightbox');
       const caption = item.getAttribute('data-caption') || item.querySelector('.gallery-title')?.textContent || '';
-      open(src, caption);
-    });
-    item.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        item.click();
-      }
+      open(src, caption, item);
     });
   });
 
@@ -478,11 +496,6 @@ function setupLightbox() {
     if (e.target === lightbox) close();
   });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-      close();
-    }
-  });
 }
 
 function setupNavToggle() {

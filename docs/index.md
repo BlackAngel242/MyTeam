@@ -20,6 +20,6 @@ Ce répertoire recense l'ensemble des documents publics du projet MyTeam (le Bur
 | [credits-ia.md](credits-ia.md) | [credits-ia.en.md](credits-ia.en.md) | Détail des modèles et assistants d'IA ayant aidé au développement. |
 | [plugins-recommandes.md](plugins-recommandes.md) | [plugins-recommandes.en.md](plugins-recommandes.en.md) | Outils d'IA, intégrations Herdr et extensions recommandés par l'auteur. |
 
-## Notes de travail internes
+## Notes techniques publiques
 
-Les autres fichiers du dossier `docs/` (revues d'architecture, synthèses de design, missions quotidiennes, contrats d'interface et études techniques) sont des notes de travail internes rédigées en français au fil du développement de l'atelier.
+Les autres fichiers du dossier `docs/` (revues d'architecture, synthèses de design, missions quotidiennes, contrats d'interface et études techniques) sont des synthèses techniques publiques rédigées en français. Elles ne doivent pas contenir de rapports bruts de session.

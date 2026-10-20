@@ -296,10 +296,10 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       // page). Sans aucune preuve, le refus reste la règle.
       const origine=req.headers.origin;
       if(body) {
-        if(origine!==origin) {json(403,{error:'Session expirée. Actualise le bureau.'});return false;}
+        if(origine!==origin) {json(403,{error:'Origine du navigateur non reconnue. Ouvre le bureau depuis son adresse locale.'});return false;}
         if(!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
       } else if(!(origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin'))) {
-        json(403,{error:'Session expirée. Actualise le bureau.'});return false;
+        json(403,{error:'Provenance du navigateur absente. Actualise le bureau depuis son adresse locale.'});return false;
       }
       return true;
     };
@@ -320,7 +320,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         return value;
       } catch {json(400,{error:'Consigne illisible.'});return null;}
     };
-    if(req.headers.host!==`127.0.0.1:${port}`) return json(403,{error:'Ouvre le bureau avec http://127.0.0.1:4317'});
+    if(req.headers.host!==`127.0.0.1:${port}`) return json(403,{error:`Ouvre le bureau avec ${origin}`});
     if(req.headers.origin && req.headers.origin!==origin) return json(403,{error:'Origine non autorisée.'});
     if(req.headers['sec-fetch-site']==='cross-site') return json(403,{error:'Accès extérieur refusé.'});
     let url;
@@ -633,12 +633,12 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           }
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js','/appearance.js':'appearance.js','/appearance.css':'appearance.css','/icons.svg':'icons.svg'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;
       try {content=await readFile(join(publicDir,filename));} catch(error) {if(error.code==='ENOENT') return json(404,{error:'Page introuvable.'});throw error;}
-      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':'text/html';
+      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':'text/html';
       res.writeHead(200,{...headers,'Content-Type':`${type}; charset=utf-8`});res.end(content);
     } catch(error) {json(errorStatus(error),{error:error.message||'La demande n’a pas abouti.'});}
   });
@@ -653,13 +653,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
   const port=Number(process.env.BUREAU_PORT||4317);
-  const server=createBureauServer();
+  const {createProjectServer}=await import('./src/project-server.mjs');
+  const server=await createProjectServer({createBureauServer});
   server.on('error',error=>{console.error(error.code==='EADDRINUSE'?'Le port du bureau est déjà utilisé. Essayez un autre BUREAU_PORT.':'Le bureau n’a pas pu démarrer.');process.exitCode=1;});
   server.listen(port,'127.0.0.1',()=>{
     // Planificateur de la file d'attente : un tour toutes les 15 secondes.
-    server.queue.start(15000);
+
     // Pause de quota : lecture légère des terminaux toutes les 20 secondes.
-    server.pauses.start(20000);
+
     console.log(`Bureau des agents ouvert sur http://127.0.0.1:${port}`);
   });
 }

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,writeFile,symlink} from 'node:fs/promises';
+import {mkdtemp,rm,writeFile,symlink,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {parseBlackboard,readBlackboard} from '../src/blackboard.mjs';
@@ -59,4 +59,19 @@ test('lecture sur disque : fichiers absents ignorés, dates de modification four
   assert.deepEqual(board.files.map(f=>f.name),['TODO.md']);
   assert.ok(!Number.isNaN(Date.parse(board.files[0].modified)));
   assert.equal(board.focus,undefined);
+});
+
+
+test('le tableau lit le relais local en priorité sans suivre un dossier local lié',async t=>{
+  const root=await mkdtemp(join(tmpdir(),'tableau-local-'));t.after(()=>rm(root,{recursive:true,force:true}));
+  await writeFile(join(root,'HANDOFF.md'),'## Ancien\n- Ancien');
+  await mkdir(join(root,'.myteam-local'));
+  await writeFile(join(root,'.myteam-local/HANDOFF.md'),'## Actuel\n- Local');
+  const board=await readBlackboard({root});
+  assert.equal(board.focus.source,'.myteam-local/HANDOFF.md');assert.deepEqual(board.focus.items,['Local']);
+  await rm(join(root,'.myteam-local'),{recursive:true});
+  const outside=await mkdtemp(join(tmpdir(),'tableau-outside-'));t.after(()=>rm(outside,{recursive:true,force:true}));
+  await writeFile(join(outside,'HANDOFF.md'),'## Secret\n- Interdit');
+  await symlink(outside,join(root,'.myteam-local'),'dir');
+  assert.deepEqual((await readBlackboard({root})).focus.items,['Ancien']);
 });

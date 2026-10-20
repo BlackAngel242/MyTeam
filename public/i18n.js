@@ -7,6 +7,11 @@
 // HTML : data-i18n="cle" remplit le texte ; data-i18n-attr="aria-label:cle;title:cle" remplit les attributs.
 (() => {
   const FR = {
+  "appearance.label": "Apparence",
+  "appearance.system": "Système",
+  "appearance.light": "Clair",
+  "appearance.dark": "Sombre",
+
   "aide.delegation": "Un agent qui reçoit une délégation du chef va chercher son dossier au bureau Direction. Quand il termine, une enveloppe rejoint la pile du chef (clique-la). Les sous-agents partent en salle de réflexion et rapportent leur dossier.",
   "aide.etape1-texte": "Le chef occupe le bureau Direction ; chaque agent montre son état par sa posture, sa bulle et sa couleur.",
   "aide.etape1-titre": "Observe la scène.",
@@ -303,6 +308,7 @@
   "equipe.file.a_revoir": "à revoir",
   "equipe.file.annulee": "annulée",
   "equipe.file.attente": "en attente",
+  "equipe.file.action_herdr": "En attente : action requise dans Herdr.",
   "equipe.file.entete": "{nom} · {etat}",
   "equipe.file.envoyee": "envoyée",
   "equipe.file.normal": "Remettre en normal",
@@ -364,6 +370,7 @@
   "etat.connexion_indisponible": "Connexion indisponible",
   "etat.connexion_perdue": "Connexion perdue",
   "etat.disponible": "Disponible",
+  "etat.verifier_herdr": "À vérifier dans Herdr",
   "etat.herdr_connecte": "Herdr connecté",
   "etat.herdr_deconnecte": "Herdr déconnecté",
   "etat.herdr_hors_ligne": "Herdr est déconnecté",
@@ -685,7 +692,8 @@
   "La crise s’active ou se lève avec {\"active\":true} ou {\"active\":false}.": "erreur.serveur.crise_format",
   "Impossible de copier les fichiers joints. Aucun envoi effectué.": "erreur.serveur.fichiers_copie",
   "Impossible d’accéder aux fichiers pour le moment.": "erreur.serveur.fichiers_acces",
-  "Consigne transmise à Herdr.": "erreur.serveur.transmise"
+  "Consigne transmise à Herdr.": "erreur.serveur.transmise",
+  "En attente : action requise dans Herdr.": "equipe.file.action_herdr"
   };
   // i18n-en.js se charge après ce fichier : le dictionnaire anglais est lu à la demande.
   const anglais = () => window.DICTIONNAIRE_EN || {};

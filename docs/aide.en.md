@@ -6,6 +6,14 @@ This document contains integrated help documentation for MyTeam · Agent desk fo
 
 ---
 
+## Choose your project before working (0.5.0)
+
+At startup, choose **Improve MyTeam** to work on the software, or **Create or resume another project** for your own folder. Select and confirm the folders before sending any instruction. The active project and folder remain visible; **Change project** returns to `/demarrage`, the startup screen and stops the previous context. Agents must work inside the selected folders: agents from another project are not authorized targets.
+
+Execution memory (queue, direction, autonomy and configuration) is private, separated by project in the operating system data folder under `MyTeam`, outside the checkout. Locations: Windows `%LOCALAPPDATA%/MyTeam`, macOS `~/Library/Application Support/MyTeam`, Linux `$XDG_DATA_HOME/MyTeam` or `~/.local/share/MyTeam`. Each project has its own `projects/<canonical-path hash>` subfolder. An older installation is never imported automatically. Changing projects does not replay old instructions.
+
+Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
+
 ## 1. Welcome to Your Office
 
 MyTeam · Agent desk is your local control tower. It lets you monitor your AI agents connected in Herdr and send them instructions.
@@ -246,7 +254,7 @@ This tab coordinates multiple agents, the queue, direction, and task completion 
 
 #### Direction and Chief Handover
 - Active chief: the Direction desk hosts the team chief (default: first agent started in Herdr).
-- User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as chief or revert to default. Choice is persisted in `.bureau/direction.json`. If the assigned chief disappears from Herdr, default rule applies gracefully.
+- User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as chief or revert to default. Choice is persisted in `direction.json` (private project state). If the assigned chief disappears from Herdr, default rule applies gracefully.
 - Handover proposal banner: if the chief hits its quota limit, a banner proactively suggests passing the chief role to an available deputy.
 - Human confirmation and review: handover is never automatic. The user confirms, reviews the handover message, and sends it directly or via queue.
 - Delegation tracking: delegations (`herdr agent prompt`) and chief rounds are monitored in the active chief's local log.
@@ -259,7 +267,7 @@ This tab coordinates multiple agents, the queue, direction, and task completion 
 
 #### Chief Listening Relay
 - Dedicated section in the Team tab: "Notify the chief when an agent finishes" ("Prévenir le chef quand un agent termine") checkbox.
-- Optional feature, off by default, persisted on disk in `.bureau/relais.json`.
+- Optional feature, off by default, persisted on disk in `relais.json` (private project state).
 - Operation: whenever an agent transitions from "working" to "available" or "done", the server inserts a normal-priority instruction into the queue for the active chief: *"[Name] vient de terminer. Lis son panneau avant de lui confier la suite."*
 - Safety and throttling: only one notification per observed finish, at least 1 minute interval between alerts for the same agent, state persisted before enqueueing to prevent duplicates on dropped responses.
 - Never during crisis: if the Crisis Room is active, the relay is completely disabled; no message is generated or dispatched to the chief.
@@ -392,7 +400,7 @@ The Crisis Room is a safety mechanism designed to regain control during loops or
 - **Absolute direct send lock**: `/api/prompt` and `/api/broadcast` return HTTP 423 ("Crisis room active: sends are locked").
 - **Queue freeze**: instructions are received and stored safely, but no automatic dispatches occur while crisis is active.
 - **Handover and listening relay suspension**: chief handover dispatches and the chief listening relay are fully suspended.
-- **Atomic state**: saved in `.bureau/crise.json` outside Git. Defaults to active if file is corrupted.
+- **Atomic state**: saved in `crise.json` (private project state) outside Git. Defaults to active if file is corrupted.
 
 #### Calm Diagnostics and Polite Interruption
 - Modal lists each connected agent with observed status, Herdr pane ID, and the last 4 raw terminal lines.
@@ -474,3 +482,7 @@ MyTeam · Agent desk strictly enforces factual integrity:
 2. No completion percentage is invented if a tool does not calculate it.
 3. If a tool does not report token usage or subagents, "Not exposed by this tool" ("Non exposé par cet outil") is faithfully displayed.
 4. Detected errors are never concealed: they appear in outputs and enrich LESSONS.md to prevent future regressions.
+
+## Appearance and icons
+
+Use System, Light or Dark in the top toolbar. System follows your computer's appearance; an explicit choice takes precedence. Your browser remembers the choice separately for the public website and local office. The office sky still follows the actual time, and the terminal retains its dark background for highlighted output. Controls use locally bundled Lucide icons.

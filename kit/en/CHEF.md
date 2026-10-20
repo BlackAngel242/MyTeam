@@ -31,7 +31,7 @@ herdr agent prompt <name> "..." --wait --timeout 120000    # wait for a short in
 3. **Never leave an agent idle**: as soon as it finishes, give it the next task.
 4. **Evaluate**: read the commit, run the checks (`node scripts/evaluer.mjs`), verify with a real try.
 5. **Correct**: fix it yourself or send it back with the reason. Then share the lesson: `node scripts/partager-lecons.mjs "the lesson"`.
-6. **Merge** and update the pillar files (`HANDOFF.md`, `JOURNAL.md`, `TODO.md`), check the box.
+6. **Merge** and update the pillar files (`.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md`, `TODO.md`), check the box.
 
 ## Limits
 

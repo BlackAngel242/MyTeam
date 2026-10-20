@@ -12,8 +12,8 @@ const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 const readMotion=()=>{try{return localStorage.getItem('bureau.animation');}catch{return null;}};
 let paused = readMotion()==='off'||(readMotion()==null&&motionPreference.matches);
 const labels = { idle:()=>t('etat.disponible'), done:()=>t('etat.termine'), busy:()=>t('etat.au_travail'), working:()=>t('etat.au_travail'), running:()=>t('etat.au_travail'), waiting:()=>t('etat.attend_reponse'), blocked:()=>t('etat.attend_reponse'), unknown:()=>t('etat.inconnu'), stopped:()=>t('etat.arrete') };
-const label = a => quotaPause(a) ? t('etat.pause_limite') : (labels[a.status]||(()=>t('etat.inconnu')))();
-const tint = a => quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
+const label = a => a.needsUserAttention ? t('etat.verifier_herdr') : quotaPause(a) ? t('etat.pause_limite') : (labels[a.status]||(()=>t('etat.inconnu')))();
+const tint = a => a.needsUserAttention ? '#f4c780' : quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
 const activeAgent = () => state.agents.find(a => a.id === selected);
 // Un agent en pause de limite ne peut pas répondre : pas d'envoi direct, seulement la file d'attente.
 const crisisOn = () => crisisState?.active === true;
@@ -97,10 +97,10 @@ function renderDetail() {
 }
 // Résumé en tête de page et alerte : uniquement les états Herdr actuels.
 function renderSummary(){
-  const on=state.connected,count=list=>on?state.agents.filter(a=>list.includes(a.status)).length:0;
-  $('count-work').textContent=count(['busy','working','running']);$('count-wait').textContent=count(['waiting','blocked']);$('count-free').textContent=on?state.agents.filter(a=>['idle','done'].includes(a.status)&&!quotaPause(a)).length:0;
+  const on=state.connected,count=list=>on?state.agents.filter(a=>list.includes(a.status)&&!a.needsUserAttention).length:0;
+  $('count-work').textContent=count(['busy','working','running']);$('count-wait').textContent=on?state.agents.filter(a=>a.needsUserAttention||['waiting','blocked'].includes(a.status)).length:0;$('count-free').textContent=on?state.agents.filter(a=>a.ready&&['idle','done'].includes(a.status)&&!quotaPause(a)).length:0;
   $('chips').classList.toggle('offline',!on);
-  const waiting=on?state.agents.filter(a=>['waiting','blocked'].includes(a.status)):[];
+  const waiting=on?state.agents.filter(a=>a.needsUserAttention||['waiting','blocked'].includes(a.status)):[];
   $('attention').hidden=!waiting.length;
   if(waiting.length){
     $('attention-text').textContent=waiting.length===1?t('etat.attente.un',{nom:waiting[0].name}):t('etat.attente.autres',{noms:waiting.map(a=>a.name).join(', ')});
@@ -266,8 +266,9 @@ async function loadFiles(){
   finally{filesBusy=false;}
 }
 function fileIcon(item){
-  const span=document.createElement('span');span.className='file-icon'+(item.dir?' folder':'');span.setAttribute('aria-hidden','true');
-  span.textContent=item.dir?'':(item.ext||'?').slice(0,4).toUpperCase();return span;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','lucide file-icon'+(item.dir?' folder':''));svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','/icons.svg#'+(item.dir?'folder':'file'));svg.append(use);return svg;
 }
 function renderFileList(items){
   $('file-list').replaceChildren(...items.map(item=>{
@@ -746,7 +747,7 @@ $('attach').addEventListener('toggle',loadAttach);
 let tilesOn=false;
 function setTiles(on){
   if(on&&!window.Tiles)return;
-  tilesOn=on;$('tiles-open').dataset.actif=String(on);$('tiles-open').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
+  tilesOn=on;syncSceneLoop();$('tiles-open').dataset.actif=String(on);$('tiles-open').querySelector('span').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
   document.querySelector('.scene-wrap').hidden=on;$('tiles').hidden=!on;
   if(!on){if(window.Tiles)Tiles.unmount();return;}
   Tiles.mount($('tiles'),{
@@ -989,7 +990,7 @@ $('prompt-form').addEventListener('submit',async event=>{
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
-function syncMotion(){ $('motion').dataset.actif=String(paused);$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
+function syncMotion(){ const label=$('motion').querySelector('span');label.dataset.i18n=paused?'commandes.animer':'commandes.mettre_en_pause';label.textContent=t(label.dataset.i18n);$('motion').dataset.actif=String(paused);$('motion').querySelector('use').setAttribute('href',paused?'/icons.svg#play':'/icons.svg#pause');draw(0);syncSceneLoop(); }
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
 motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
@@ -1700,8 +1701,22 @@ addEventListener('keydown',e=>{
   else custom.stations[layoutKeyOf(a)]={fx:(d.cx+dx)/L.W,fy:(d.y0+dy-f.top)/f.h};
   saveLayout();draw(lastFrame);
 });
-canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';const onBoard=boardSpot&&(()=>{const p=toLogical(event);return p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h;})();if(onBoard&&!editLayout)canvas.style.cursor='pointer';canvas.title=mail?t('equipe.courrier_titre'):onBoard?t('equipe.tableau_titre'):'';if(id!==hovered){hovered=id;draw(lastFrame);}});
-canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFrame);}});
+let hoverFrame=null,hoverEvent=null;
+canvas.addEventListener('mousemove',event=>{
+  hoverEvent=event;
+  if(hoverFrame!==null)return;
+  hoverFrame=requestAnimationFrame(()=>{
+    hoverFrame=null;
+    const event=hoverEvent;hoverEvent=null;
+    const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';const onBoard=boardSpot&&(()=>{const p=toLogical(event);return p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h;})();if(onBoard&&!editLayout)canvas.style.cursor='pointer';canvas.title=mail?t('equipe.courrier_titre'):onBoard?t('equipe.tableau_titre'):'';if(id!==hovered){hovered=id;draw(lastFrame);}
+  });
+});
+canvas.addEventListener('mouseleave',()=>{
+  if(hoverFrame!==null)cancelAnimationFrame(hoverFrame);
+  hoverFrame=hoverEvent=null;
+  canvas.style.cursor='default';canvas.title='';
+  if(hovered){hovered=null;draw(lastFrame);}
+});
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
 $('fullscreen').hidden=!document.fullscreenEnabled;
 $('fullscreen').addEventListener('click',()=>{if(document.fullscreenElement)document.exitFullscreen();else document.querySelector('main').requestFullscreen().catch(()=>{});});
@@ -1709,7 +1724,21 @@ document.addEventListener('fullscreenchange',()=>{const on=Boolean(document.full
 // L'onglet signale les agents qui attendent DrSmoke, même quand la page est en arrière-plan.
 function attentionTitle(){const n=state.connected?state.agents.filter(a=>WAIT.includes(a.status)).length:0,title=(n?'('+n+') ':'')+t('etat.titre_document');if(document.title!==title)document.title=title;}
 // Figée, la scène se redessine encore chaque minute pour suivre l'heure et la lumière.
-function frame(time){if(!tilesOn&&time-lastFrame>(paused?60000:80)){draw(time);lastFrame=time;}requestAnimationFrame(frame);}
+let sceneFrame=null,sceneTimer=null,sceneImmediate=false;
+function syncSceneLoop(){
+  if(sceneFrame!==null)cancelAnimationFrame(sceneFrame);
+  if(sceneTimer!==null)clearTimeout(sceneTimer);
+  sceneFrame=sceneTimer=null;
+  sceneImmediate=true;
+  if(!tilesOn)sceneFrame=requestAnimationFrame(frame);
+}
+function frame(time){
+  sceneFrame=null;
+  if(tilesOn)return;
+  if(sceneImmediate||time-lastFrame>=(paused?60000:80)){sceneImmediate=false;draw(time);lastFrame=time;}
+  if(paused)sceneTimer=setTimeout(()=>{sceneTimer=null;sceneFrame=requestAnimationFrame(frame);},60000);
+  else sceneFrame=requestAnimationFrame(frame);
+}
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1917,7 +1946,7 @@ setInterval(()=>{if(document.hidden)return;loadQueue();renderMail();loadCrisis()
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
-termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});requestAnimationFrame(frame);
+termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});
 // En arrière-plan, avec les notifications activées, seul l'état des agents est relu (toutes les 15 s) :
 // draw(0) y repère les changements sans animer la scène. Le navigateur peut encore espacer ces relectures.
 let hiddenTicks=0;

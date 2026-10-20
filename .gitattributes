@@ -2,7 +2,7 @@
 *.png binary
 *.bat text eol=crlf
 *.cmd text eol=crlf
-# Notes de travail internes : hors du zip de release (elles restent dans le dépôt)
+# Notes techniques publiques : hors des exports Git ; toujours visibles dans le dépôt
 docs/revue-*.md export-ignore
 docs/missions-18-octobre.md export-ignore
 docs/propositions-*.md export-ignore
@@ -17,7 +17,7 @@ docs/idees-os.md export-ignore
 docs/github-pro.md export-ignore
 docs/performance.md export-ignore
 .githooks export-ignore
-# Historique et coordination internes du projet : hors du zip de release (le dépôt les garde)
+# Synthèses techniques publiques : hors des exports Git ; aucune confidentialité du dépôt
 /JOURNAL.md export-ignore
 /HANDOFF.md export-ignore
 /ERREURS.md export-ignore
@@ -25,3 +25,7 @@ docs/plan-travail.md export-ignore
 docs/publication-github.md export-ignore
 docs/contrat-*.md export-ignore
 docs/audit-*.md export-ignore
+
+# Défense complémentaire : les notes privées ne doivent jamais être suivies.
+.myteam-local export-ignore
+.myteam-local/** export-ignore

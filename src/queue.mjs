@@ -32,6 +32,7 @@ const MAX_FICHIER = 512 * 1024;
 const MAX_REPRISE = 8 * MAX_FICHIER;
 const MAX_CLES = 200;            // clés de demande conservées (distinct des éléments)
 const PRIORITES = ['haute', 'normale'];
+const ATTENTE_HUMAINE = 'En attente : action requise dans Herdr.';
 const DELAI_PRIORITE = 30 * 60 * 1000;  // une normale attendue depuis 30 min rejoint le rang des hautes
 
 const iso = ms => new Date(ms).toISOString();
@@ -415,10 +416,15 @@ export function createQueue({
       }
       for (const id of new Set(items.filter(candidate => candidate.state === 'attente').map(candidate => candidate.id))) {
         const agent = agents.get(id);
-        if (!agent || !['idle', 'done'].includes(agent.status) || agent.ready !== true) continue;
-        const pause = await pauseDe(id);
         const attente = items.filter(candidate => candidate.state === 'attente' && candidate.id === id)
           .sort(ordreEnvoi);
+        // Le motif décrit la dernière observation du panneau ; aucun envoi ne part tant que la cible n'est pas prête.
+        for (const element of attente) {
+          const raison = agent?.needsUserAttention ? ATTENTE_HUMAINE : element.reason === ATTENTE_HUMAINE ? null : element.reason;
+          if (raison !== element.reason) { element.reason = raison; element.updatedAt = iso(now()); modifie = true; }
+        }
+        if (!agent || !['idle', 'done'].includes(agent.status) || agent.ready !== true) continue;
+        const pause = await pauseDe(id);
         if (pause.incertain) continue;   // contrôle en panne : aucun envoi automatique
         if (pause.limitReached && Number.isNaN(pause.resetsAt)) continue;  // pause sans date : jamais forcée
         if (pause.limitReached && !Number.isNaN(pause.resetsAt)) {

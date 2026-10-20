@@ -4,7 +4,7 @@
 // Usage : node scripts/empaqueter-release.mjs <version> [--rev HEAD] [--sortie dist]
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -44,6 +44,8 @@ export async function empaqueter(version, { rev = 'HEAD', sortie = 'dist', depot
     commit = (await executer('git', ['-C', depot, 'rev-parse', '--verify', '--end-of-options', `${rev}^{commit}`], { windowsHide: true, env: envGit })).stdout.trim();
   } catch { throw new Error('Révision invalide : indiquez un commit ou une étiquette existante.'); }
   if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(commit)) throw new Error('Révision invalide.');
+  const suivis = (await executer('git', ['-C', depot, 'ls-tree', '-rz', '--name-only', commit], { windowsHide: true, env: envGit })).stdout.split('\0');
+  if (suivis.some(nom => /(^|\/)(?:\.myteam-local|\.bureau|\.env[^/]*)(?:\/|$)/.test(nom))) throw new Error('État privé suivi par Git : paquet refusé.');
   const dossier = resolve(depot, sortie);
   await mkdir(dossier, { recursive: true });
   const fichier = join(dossier, `MyTeam-${version}.zip`);
@@ -52,7 +54,9 @@ export async function empaqueter(version, { rev = 'HEAD', sortie = 'dist', depot
   const octets = await readFile(fichier);
   verifierZip(octets, prefixe);
   const sha = createHash('sha256').update(octets).digest('hex');
-  return { fichier, sha256: sha };
+  const checksum = `${fichier}.sha256`;
+  await writeFile(checksum, `${sha}  MyTeam-${version}.zip\n`);
+  return { fichier, checksum, sha256: sha, commit };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

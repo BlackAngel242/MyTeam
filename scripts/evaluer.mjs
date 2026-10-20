@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 const executer = promisify(execFile);
 // Un crochet Git exporte GIT_INDEX_FILE et d'autres variables GIT_* : sans les retirer, `git -C <dossier>` lirait le mauvais dépôt.
 const envGit = Object.fromEntries(Object.entries(process.env).filter(([cle]) => !cle.startsWith('GIT_')));
-const PILIERS = ['AGENTS.md', 'LESSONS.md', 'HANDOFF.md', 'TODO.md', 'JOURNAL.md'];
+const PILIERS = ['AGENTS.md', 'LESSONS.md', '.myteam-local/HANDOFF.md', 'TODO.md', '.myteam-local/JOURNAL.md'];
 const PLANS = ['TODO.md', join('docs', 'plan-travail.md')];
 const JOURS = 24 * 3600 * 1000;
 
@@ -55,7 +55,7 @@ export async function evaluer(dossier, { lancerTests = true, lancer = npm, maint
     const recents = await git(dossier, ['log', '--since=7.days', '--format=%h', '--', 'LESSONS.md']);
     rapport.lecons.ajoutees7j = recents ? recents.split('\n').length : 0;
     if (dernier) {
-      for (const nom of ['HANDOFF.md', 'JOURNAL.md']) {
+      for (const nom of ['.myteam-local/HANDOFF.md', '.myteam-local/JOURNAL.md']) {
         const info = await stat(join(dossier, nom)).catch(() => null);
         if (info && Date.parse(dernier) - info.mtimeMs > 3 * JOURS) rapport.anciens.push(nom);
       }

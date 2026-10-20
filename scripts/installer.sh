@@ -345,6 +345,7 @@ chercher_herdr() {
     return 1
   fi
   if command -v herdr >/dev/null 2>&1; then command -v herdr; return 0; fi
+  if [ -f "$HOME/.local/bin/herdr" ] && [ -x "$HOME/.local/bin/herdr" ]; then printf '%s\n' "$HOME/.local/bin/herdr"; return 0; fi
   if [ -d "$HOME/.herdr/packages" ]; then
     trouve=$(find "$HOME/.herdr/packages" -type f \( -name herdr -o -name herdr.exe \) 2>/dev/null | head -n 1)
     if [ -n "$trouve" ]; then echo "$trouve"; return 0; fi

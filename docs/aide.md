@@ -6,6 +6,14 @@ Ce document contient l'aide intégrée du bureau pour DrSmoke et ses agents. Il 
 
 ---
 
+## Choisir le projet avant de travailler (0.5.0)
+
+Au démarrage, choisissez **Améliorer MyTeam** pour travailler sur le logiciel, ou **Créer ou reprendre un autre projet** pour votre propre dossier. Sélectionnez et validez les dossiers avant toute consigne. Le dossier et le projet actifs restent visibles ; **Changer de projet** revient à l’écran de choix `/demarrage` et arrête l’ancien contexte. Les agents doivent travailler dans les dossiers sélectionnés : un agent d’un autre projet n’est pas une cible autorisée.
+
+La mémoire d’exécution (file, direction, autonomie et configuration) est privée, séparée par projet dans le dossier de données du système sous `MyTeam`, hors du checkout. Emplacements : Windows `%LOCALAPPDATA%/MyTeam`, macOS `~/Library/Application Support/MyTeam`, Linux `$XDG_DATA_HOME/MyTeam` ou `~/.local/share/MyTeam`. Chaque projet possède son sous-dossier `projects/<empreinte du chemin canonique>`. Une ancienne installation n’est pas importée automatiquement. Changer de projet ne rejoue pas les anciennes consignes.
+
+Les documents techniques relus peuvent être partagés volontairement. Le kit crée ses notes `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git, et n’écrase aucun fichier existant. `.gitignore` ne protège pas un fichier déjà suivi ou ajouté de force ; vérifiez les fichiers avant publication. Les outils d’IA conservent leurs propres journaux, droits et connexions : MyTeam ne fournit pas de bac à sable système pour ces outils.
+
 ## 1. Bienvenue sur votre bureau
 
 Le Bureau des agents est votre tour de contrôle locale. Il vous permet de surveiller vos agents d'intelligence artificielle connectés dans Herdr et de leur transmettre vos consignes.
@@ -246,7 +254,7 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 
 #### Direction de l'équipe et passation
 - Chef effectif : le bureau Direction est occupé par le chef de l'équipe. Par défaut, c'est le premier agent démarré dans Herdr (règle du plus petit panneau).
-- Choix explicite de DrSmoke : une section « Direction de l'équipe » dans l'onglet Équipe permet de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut. Ce choix est conservé sur le disque (`.bureau/direction.json`). Si l'agent choisi disparaît de Herdr, le serveur revient à la règle par défaut sans altérer le fichier.
+- Choix explicite de la personne qui utilise le bureau : une section « Direction de l'équipe » dans l'onglet Équipe permet de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut. Ce choix est conservé sur le disque (`direction.json` (état privé du projet)). Si l'agent choisi disparaît de Herdr, le serveur revient à la règle par défaut sans altérer le fichier.
 - Bandeau de proposition de passation : si le chef effectif atteint son plafond d'utilisation et entre en pause de limite, un bandeau apparaît en haut de l'onglet Équipe pour proposer proactivement de passer la direction à un suppléant disponible.
 - Confirmation et message de passation relu : la passation n'est jamais automatique. DrSmoke valide le changement, et le message de passation préparé est relu et validé avant d'être expédié à l'équipe (par envoi direct ou via la file d'attente).
 - Suivi des délégations : les missions déléguées (`herdr agent prompt`) et la tournée du chef sont suivies dans le journal du chef effectif (qu'il soit issu du choix ou de la règle).
@@ -259,7 +267,7 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 
 #### Relais d'écoute du chef
 - Section dédiée dans l'onglet Équipe : case à cocher « Prévenir le chef quand un agent termine ».
-- Option facultative, désactivée par défaut, conservée sur le disque dans `.bureau/relais.json`.
+- Option facultative, désactivée par défaut, conservée sur le disque dans `relais.json` (état privé du projet).
 - Fonctionnement : dès qu'un agent passe de l'état « au travail » à « disponible » ou « terminé », le serveur génère et insère dans la file d'attente une consigne de priorité normale pour le chef effectif : *« [Nom] vient de terminer. Lis son panneau avant de lui confier la suite. »*
 - Sécurité et anti-saturation : une seule notification par fin observée, au minimum une minute d'espacement entre deux avis pour le même agent, persistance de l'état avant la file pour éviter toute répétition automatique en cas de réponse réseau perdue.
 - Jamais en crise : si la salle de crise est enclenchée, le relais d'écoute est totalement neutralisé ; aucun message n'est généré ni envoyé au chef pendant toute la durée de la crise.
@@ -392,7 +400,7 @@ La salle de crise est un mécanisme de sûreté conçu pour reprendre la main en
 - **Verrouillage absolu des envois directs** : les routes `/api/prompt` et `/api/broadcast` répondent par le code HTTP 423 avec un message explicite (« Salle de crise active : les envois sont verrouillés »).
 - **Gel de la file d'attente** : les consignes continuent d'être reçues et enregistrées en file sans perte, mais aucun départ automatique n'a lieu tant que la crise reste active.
 - **Suspension de la passation et du relais d'écoute** : le message de passation de direction et le relais d'écoute du chef sont totalement suspendus pendant toute la durée de la crise.
-- **Persistance atomique** : l'état `{active, since, reason}` est conservé dans `.bureau/crise.json` hors Git. Si le fichier est corrompu ou illisible, la crise reste active par défaut par précaution.
+- **Persistance atomique** : l'état `{active, since, reason}` est conservé dans `crise.json` (état privé du projet) hors Git. Si le fichier est corrompu ou illisible, la crise reste active par défaut par précaution.
 
 #### Diagnostic calme et interruption polie
 - La modale liste chaque collaborateur connecté avec son état observé, son panneau Herdr et les 4 dernières lignes réelles de son terminal.
@@ -474,3 +482,7 @@ Le Bureau des agents applique une règle d'intégrité stricte :
 2. Aucun pourcentage d'avancement inventé n'est proposé lorsqu'un outil ne le calcule pas lui-même.
 3. Si un outil ne publie pas sa consommation de jetons ou ses sous-agents, la mention « Non exposé par cet outil » est fidèlement indiquée.
 4. Une erreur constatée n'est jamais masquée : elle est rapportée dans les sorties et vient enrichir le document LESSONS.md pour prémunir l'équipe contre toute récidive.
+
+## Apparence et icônes
+
+Dans la barre supérieure, choisis Système, Clair ou Sombre. Système suit l'apparence de ton ordinateur ; un choix explicite reste prioritaire. Le choix est mémorisé dans ce navigateur. Le site public et le bureau local conservent chacun leur préférence. Le ciel du bureau suit toujours l'heure réelle ; le terminal garde un fond sombre pour ses couleurs. Les contrôles utilisent des icônes Lucide livrées localement.

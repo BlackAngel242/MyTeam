@@ -4,9 +4,28 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
-## [Non publié]
+## [0.5.0] - 2026-10-20
 
-_Rien pour l’instant._
+### Projets et confidentialité
+
+- Choix initial : améliorer MyTeam ou créer/reprendre un autre projet ; dossiers sélectionnés avant toute consigne.
+- Filtrage des agents et des opérations par projet, y compris le partage des leçons ; changer de projet arrête l’ancien contexte.
+- Mémoire d’exécution privée par projet dans les données du système, hors checkout ; aucune importation automatique d’une ancienne installation.
+- Kit générique avec reprise et journal privés dans `.myteam-local/` ignoré, sans écrasement des fichiers existants.
+- Documentation technique publique nettoyée du contexte personnel des sessions. Les anciennes releases sont retirées après publication et vérification de la nouvelle ; l’historique Git reste inchangé.
+- Planification du canvas et sortie de survol corrigées en conservant Lucide local et les traductions dynamiques.
+- L’écran de confiance Codex est signalé comme une action humaine dans Herdr : aucune consigne n’est envoyée si sa lecture échoue ou si ce dialogue est présent.
+- Herdr installé dans `~/.local/bin` est détecté sans dépendre du PATH ; refus d’hôte adapté au port choisi et message de provenance distinct d’une expiration de session.
+
+### Interface
+
+- Icônes fonctionnelles Lucide locales et notices intégrées, sur la vitrine et le bureau ; personnages et emblèmes pixel art conservés.
+- Thèmes Système / Clair / Sombre mémorisés par origine, adaptation au système et fonctionnement quand le stockage est refusé.
+- Galerie au clavier : dialogue natif, focus confiné et retour à la vignette, libellés FR/EN.
+- Prérequis visibles avant téléchargement, distinction entre outils reconnus et journaux enrichis, légendes harmonisées.
+- Contrastes des champs, destinations, code Markdown, autonomie active et alertes ; barre d'actions adaptée aux tablettes.
+- Tests navigateur reproductibles. Extension VS Code reportée.
+
 
 ## [0.4.2] - 19 octobre 2026 · « Ọṣun »
 

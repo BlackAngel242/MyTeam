@@ -34,7 +34,7 @@ async function bureau(t, bridge) {
 test('les listes simultanées partagent une seule commande et son résultat',async()=>{
   let calls=0;
   const pending=deferred();
-  const bridge=createHerdr({run:async args=>{assert.deepEqual(args,['agent','list']);calls++;return pending.promise;}});
+  const bridge=createHerdr({run:async args=>{if(args[1]==='read')return '>_ OpenAI Codex';assert.deepEqual(args,['agent','list']);calls++;return pending.promise;}});
   const requests=[bridge.list(),bridge.list(),bridge.list()];
   assert.equal(calls,1);
   pending.resolve(listing);
@@ -47,7 +47,7 @@ test('les listes simultanées partagent une seule commande et son résultat',asy
 test('une panne de liste partagée libère la promesse pour la prochaine tentative',async()=>{
   const pending=deferred();
   let calls=0;
-  const bridge=createHerdr({run:async()=>++calls===1?pending.promise:listing});
+  const bridge=createHerdr({run:async args=>args[1]==='read'?'>_ OpenAI Codex':++calls===1?pending.promise:listing});
   const requests=[bridge.list(),bridge.list()];
   assert.equal(calls,1);
   pending.reject(new HerdrError('Herdr indisponible'));
@@ -135,10 +135,10 @@ test('lecture, envoi et état distinguent 400, 502 et 500 sans changer les messa
 });
 
 test('localhost reste refusé avec une adresse explicite pour ouvrir le bureau',async t=>{
-  const {send}=await bureau(t,{list:async()=>[]});
+  const {send,origin}=await bureau(t,{list:async()=>[]});
   const response=await send('/api/state',{headers:{Host:'localhost:4317'}});
   assert.equal(response.status,403);
-  assert.deepEqual(response.data,{error:'Ouvre le bureau avec http://127.0.0.1:4317'});
+  assert.deepEqual(response.data,{error:`Ouvre le bureau avec ${origin}`});
 });
 
 test('un corps de plus de 3 Mo reçoit un 413 complet puis le serveur répond encore', {timeout:10000},async t=>{

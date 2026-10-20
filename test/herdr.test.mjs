@@ -148,3 +148,69 @@ test('un envoi groupe signale les agents introuvables sans arrêter les suivants
   assert.match(results[0].error,/introuvable/);
   assert.equal(results[1].ok,true);
 });
+
+const trustScreen=['Do you trust the contents of this directory?','','› 1. Yes, continue','  2. No, quit','','Press enter to continue'].join('\n');
+function codexScreenBridge(screen){
+  const calls=[];
+  const bridge=createHerdr({run:async args=>{
+    calls.push(args);
+    if(args[0]==='agent'&&args[1]==='list')return JSON.stringify({result:{agents:[{...raw,interactive_ready:true}]}});
+    if(args[0]==='agent'&&args[1]==='read')return screen();
+    if(args[0]==='agent'&&args[1]==='prompt')return JSON.stringify({result:{type:'agent_prompted'}});
+    throw Error('Commande inattendue dans la simulation');
+  }});
+  return{bridge,calls};
+}
+test('Codex : la question de confiance reste une décision humaine malgré idle et interactive_ready',async()=>{
+  for(const screen of [trustScreen,trustScreen.replace('Do you trust the contents of this directory?','\u001b[1mDo you trust the contents\nof this directory?\u001b[0m')]){
+    const {bridge,calls}=codexScreenBridge(()=>screen);
+    const [agent]=await bridge.list();
+    assert.equal(agent.status,'idle','le statut observé de Herdr est conservé');
+    assert.equal(agent.ready,false,'le dialogue interdit de présenter une cible prête');
+    await assert.rejects(bridge.prompt(agent.id,'Bonjour'));
+    const result=await bridge.broadcast([agent.id],'Bonjour');
+    assert.equal(result.results[0].ok,false);
+    assert.equal(calls.some(args=>args[1]==='prompt'||args[1]==='send-keys'),false,'aucune consigne ni touche ne répond au dialogue');
+    const reads=calls.filter(args=>args[1]==='read');
+    assert.ok(reads.length>0);
+    assert.ok(reads.every(args=>args.includes('detection')),'la garde observe le panneau sans action interactive');
+  }
+});
+test('Codex : une lecture impossible ou vide bloque les envois sans répondre au terminal',async()=>{
+  for(const read of [()=>{throw Error('Lecture indisponible');},()=>'',()=> '   \n']){
+    const {bridge,calls}=codexScreenBridge(read);
+    await assert.rejects(bridge.prompt(normalizeAgent(raw).id,'Bonjour'));
+    const result=await bridge.broadcast([normalizeAgent(raw).id],'Bonjour');
+    assert.equal(result.results[0].ok,false);
+    assert.equal(calls.some(args=>args[1]==='prompt'||args[1]==='send-keys'),false);
+  }
+});
+test('Codex : un panneau disponible autorise la consigne intacte après contrôle',async()=>{
+  const {bridge,calls}=codexScreenBridge(()=>'>_ OpenAI Codex\n\n› Ask Codex to do anything');
+  const [agent]=await bridge.list();assert.equal(agent.ready,true);
+  const message='Une consigne sans validation de dialogue';
+  await bridge.prompt(agent.id,message);
+  assert.deepEqual(calls.filter(args=>args[1]==='prompt'),[['agent','prompt',raw.pane_id,message]]);
+  assert.equal(calls.some(args=>args[1]==='send-keys'),false);
+});
+test('Codex : le dernier écran remplace l’observation précédente avant chaque envoi',async()=>{
+  let screen='>_ OpenAI Codex\n\n› Ask Codex to do anything';
+  const {bridge,calls}=codexScreenBridge(()=>screen);
+  const [agent]=await bridge.list();assert.equal(agent.ready,true);
+  screen=trustScreen;
+  await assert.rejects(bridge.prompt(agent.id,'Bonjour'));
+  assert.equal(calls.some(args=>args[1]==='prompt'),false);
+  screen='>_ OpenAI Codex\n\n› Ask Codex to do anything';
+  assert.equal((await bridge.list())[0].ready,true,'le choix humain peut débloquer le panneau sans redémarrage');
+  await bridge.prompt(agent.id,'Bonjour');
+  assert.equal(calls.filter(args=>args[1]==='prompt').length,1);
+});
+
+test('Herdr : installation locale Unix détectée sans PATH, priorités explicite et Windows conservées',async t=>{
+  const home=await mkdtemp(join(tmpdir(),'herdr-local-'));t.after(()=>rm(home,{recursive:true,force:true}));
+  const directory=join(home,'.local','bin'),binary=join(directory,'herdr');await mkdir(directory,{recursive:true});
+  await writeFile(binary,'#!/bin/sh\nexit 99\n',{mode:0o700});
+  for(const platform of ['linux','darwin'])assert.equal(findHerdr({home,env:{PATH:''},platform}),binary);
+  assert.equal(findHerdr({home,env:{BUREAU_HERDR_PATH:'/explicit/herdr'},platform:'linux'}),'/explicit/herdr');
+  assert.equal(findHerdr({home,env:{},platform:'win32'}),'herdr');
+});

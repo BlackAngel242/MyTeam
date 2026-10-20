@@ -8,7 +8,7 @@ Before saying "done", each AI (and the lead before merging) answers these questi
 4. Did I change only my files? (`git status`, `git diff`.)
 5. Did I invent anything (value, state, percentage)? If so, remove it.
 6. Did a mistake happen? Does it have a line in `LESSONS.md`?
-7. Are `HANDOFF.md`, `JOURNAL.md` and the plan box up to date?
+7. Are `.myteam-local/HANDOFF.md`, `.myteam-local/JOURNAL.md` and the plan box up to date?
 
 ## For the lead: evaluating an agent's work
 
