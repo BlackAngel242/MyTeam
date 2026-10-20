@@ -1,5 +1,10 @@
 // Dictionnaire anglais du bureau (la référence reste le français de public/i18n.js).
 window.DICTIONNAIRE_EN = {
+  "appearance.label": "Appearance",
+  "appearance.system": "System",
+  "appearance.light": "Light",
+  "appearance.dark": "Dark",
+
   "aide.delegation": "An agent receiving a delegation from the chief goes to fetch its folder at the Direction desk. When it finishes, an envelope joins the chief’s pile (click it). Subagents go to the reflection room and report back their folder.",
   "aide.etape1-texte": "The chief occupies the Direction desk; each agent shows its state through posture, bubble and colour.",
   "aide.etape1-titre": "Watch the scene.",

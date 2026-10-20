@@ -13,7 +13,7 @@ test('chaque script de public/ est chargé par index.html et servi par le serveu
   const scripts = (await readdir(fileURLToPath(public_))).filter(nom => nom.endsWith('.js'));
   assert.ok(scripts.length >= 10);
   for (const nom of scripts) {
-    assert.ok(html.includes(`<script src="/${nom}" defer></script>`), `${nom} absent de index.html`);
+    assert.ok((html.includes(`<script src="/${nom}" defer></script>`) || (nom === 'appearance.js' && html.includes(`<script src="/${nom}"></script>`))), `${nom} absent de index.html`);
     assert.ok(serveur.includes(`'/${nom}':'${nom}'`), `${nom} absent des routes statiques du serveur`);
   }
 });

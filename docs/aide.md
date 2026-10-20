@@ -474,3 +474,7 @@ Le Bureau des agents applique une règle d'intégrité stricte :
 2. Aucun pourcentage d'avancement inventé n'est proposé lorsqu'un outil ne le calcule pas lui-même.
 3. Si un outil ne publie pas sa consommation de jetons ou ses sous-agents, la mention « Non exposé par cet outil » est fidèlement indiquée.
 4. Une erreur constatée n'est jamais masquée : elle est rapportée dans les sorties et vient enrichir le document LESSONS.md pour prémunir l'équipe contre toute récidive.
+
+## Apparence et icônes
+
+Dans la barre supérieure, choisis Système, Clair ou Sombre. Système suit l'apparence de ton ordinateur ; un choix explicite reste prioritaire. Le choix est mémorisé dans ce navigateur. Le site public et le bureau local conservent chacun leur préférence. Le ciel du bureau suit toujours l'heure réelle ; le terminal garde un fond sombre pour ses couleurs. Les contrôles utilisent des icônes Lucide livrées localement.

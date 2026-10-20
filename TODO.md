@@ -89,3 +89,11 @@ Détail, propriétaires et état de chaque case dans `docs/plan-travail.md` (lu 
 - [x] Capsule animée, scène à 10 agents sur téléphone, aperçu de partage corrigé.
 - [x] Plafond de temps par test, rapport de fin de tâche, protocole d'équipe et Fixit d'équipe.
 - [ ] En attente : propositions et améliorations des contributeurs (issues, discussions, pull requests).
+
+## Lot U : harmonisation de l'interface (20 octobre 2026)
+
+- [x] Lucide local, notices distribuées, contrôles et pictogrammes harmonisés.
+- [x] Thèmes Système / Clair / Sombre, persistance et mode système, sans altérer le cycle horaire.
+- [x] Galerie clavier et libellés corrigés, contrastes ciblés et responsive vérifiés.
+- [x] Captures simulées et documentation actualisées sur `codex_harmonisation-interface`.
+- [ ] Intégration de la branche, puis publication autorisée ; extension VS Code reportée.

@@ -633,12 +633,12 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           }
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js','/appearance.js':'appearance.js','/appearance.css':'appearance.css','/icons.svg':'icons.svg'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;
       try {content=await readFile(join(publicDir,filename));} catch(error) {if(error.code==='ENOENT') return json(404,{error:'Page introuvable.'});throw error;}
-      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':'text/html';
+      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':'text/html';
       res.writeHead(200,{...headers,'Content-Type':`${type}; charset=utf-8`});res.end(content);
     } catch(error) {json(errorStatus(error),{error:error.message||'La demande n’a pas abouti.'});}
   });

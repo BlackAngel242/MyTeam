@@ -6,7 +6,15 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 ## [Unreleased]
 
-_Nothing yet._
+### Interface
+
+- Local Lucide controls with embedded license notices across the website and office; pixel characters and tool emblems preserved.
+- Persistent System / Light / Dark appearance per origin, system changes and denied storage supported.
+- Keyboard gallery using a native dialog, contained focus, focus restoration and FR/EN labels.
+- Prerequisites visible before downloading, recognized tools distinguished from enriched logs, consistent captions.
+- Contrast fixes for fields, destinations, Markdown code, active autonomy and alerts; responsive tablet toolbar.
+- Updated simulated screenshots and reproducible browser tests. VS Code extension deferred.
+
 
 ## [0.4.2] - October 19, 2026 · "Ọṣun"
 

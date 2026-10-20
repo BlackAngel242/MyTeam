@@ -266,8 +266,9 @@ async function loadFiles(){
   finally{filesBusy=false;}
 }
 function fileIcon(item){
-  const span=document.createElement('span');span.className='file-icon'+(item.dir?' folder':'');span.setAttribute('aria-hidden','true');
-  span.textContent=item.dir?'':(item.ext||'?').slice(0,4).toUpperCase();return span;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','lucide file-icon'+(item.dir?' folder':''));svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');
+  const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','/icons.svg#'+(item.dir?'folder':'file'));svg.append(use);return svg;
 }
 function renderFileList(items){
   $('file-list').replaceChildren(...items.map(item=>{
@@ -746,7 +747,7 @@ $('attach').addEventListener('toggle',loadAttach);
 let tilesOn=false;
 function setTiles(on){
   if(on&&!window.Tiles)return;
-  tilesOn=on;$('tiles-open').dataset.actif=String(on);$('tiles-open').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
+  tilesOn=on;$('tiles-open').dataset.actif=String(on);$('tiles-open').querySelector('span').textContent=on?t('commandes.vue_scene'):t('commandes.mosaique');
   document.querySelector('.scene-wrap').hidden=on;$('tiles').hidden=!on;
   if(!on){if(window.Tiles)Tiles.unmount();return;}
   Tiles.mount($('tiles'),{
@@ -989,7 +990,7 @@ $('prompt-form').addEventListener('submit',async event=>{
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
-function syncMotion(){ $('motion').dataset.actif=String(paused);$('motion').querySelector('span').textContent=paused?t('commandes.animer'):t('commandes.mettre_en_pause');$('motion').querySelector('path').setAttribute('d',paused?'m8 5 11 7-11 7V5':'M8 5v14M16 5v14');draw(0); }
+function syncMotion(){ const label=$('motion').querySelector('span');label.dataset.i18n=paused?'commandes.animer':'commandes.mettre_en_pause';label.textContent=t(label.dataset.i18n);$('motion').dataset.actif=String(paused);$('motion').querySelector('use').setAttribute('href',paused?'/icons.svg#play':'/icons.svg#pause');draw(0); }
 $('motion').addEventListener('click',()=>{paused=!paused;try{localStorage.setItem('bureau.animation',paused?'off':'on');}catch{}syncMotion();});
 motionPreference.addEventListener('change',()=>{if(readMotion()==null){paused=motionPreference.matches;syncMotion();}});
 // Scène dessinée en basse résolution puis agrandie : chaque pixel du décor reste net à toutes les tailles.
