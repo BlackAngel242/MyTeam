@@ -1700,7 +1700,25 @@ addEventListener('keydown',e=>{
   else custom.stations[layoutKeyOf(a)]={fx:(d.cx+dx)/L.W,fy:(d.y0+dy-f.top)/f.h};
   saveLayout();draw(lastFrame);
 });
-canvas.addEventListener('mousemove',event=>{const id=spotAt(event)?.id||null,mail=onMail(event);canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';const onBoard=boardSpot&&(()=>{const p=toLogical(event);return p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h;})();if(onBoard&&!editLayout)canvas.style.cursor='pointer';canvas.title=mail?t('equipe.courrier_titre'):onBoard?t('equipe.tableau_titre'):'';if(id!==hovered){hovered=id;draw(lastFrame);}});
+let canvasTicking=false,lastMouseEvent=null;
+canvas.addEventListener('mousemove',event=>{
+  lastMouseEvent=event;
+  if(!canvasTicking){
+    requestAnimationFrame(()=>{
+      const e=lastMouseEvent;
+      if(e){
+        const id=spotAt(e)?.id||null,mail=onMail(e);
+        canvas.style.cursor=editLayout?'move':id||mail?'pointer':'default';
+        const onBoard=boardSpot&&(()=>{const p=toLogical(e);return p.x>=boardSpot.x&&p.x<=boardSpot.x+boardSpot.w&&p.y>=boardSpot.y&&p.y<=boardSpot.y+boardSpot.h;})();
+        if(onBoard&&!editLayout)canvas.style.cursor='pointer';
+        canvas.title=mail?t('equipe.courrier_titre'):onBoard?t('equipe.tableau_titre'):'';
+        if(id!==hovered){hovered=id;draw(lastFrame);}
+      }
+      canvasTicking=false;
+    });
+    canvasTicking=true;
+  }
+});
 canvas.addEventListener('mouseleave',()=>{if(hovered){hovered=null;draw(lastFrame);}});
 new ResizeObserver(()=>draw(lastFrame)).observe(canvas.parentElement);
 $('fullscreen').hidden=!document.fullscreenEnabled;
