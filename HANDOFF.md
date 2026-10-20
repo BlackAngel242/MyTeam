@@ -7,7 +7,7 @@ Lire `AGENTS.md`, `LESSONS.md`, `PRODUCT.md`, `DESIGN.md`, `TODO.md` et le plan 
 - `main` est en version 0.5.0. Dernier commit : `123a161`, qui fusionne la PR #7 (raison d'une consigne en attente) et la leçon sur le 403 de la PR #6, en « squash » pour que l'auteur soit DrSmoke.
 - Aucune PR n'est ouverte. Les PR #2 et #3 (Bolt, générées automatiquement) ont été fermées : elles partaient de l'ancienne base, et leur code a été réécrit en 0.5.0. Une nouvelle proposition sur le code actuel reste bienvenue, avec une mesure.
 - Tests lancés le 20 octobre sur le commit `2589ed5`, dont le contenu est identique à `main` : `npm run check` passe, `npm test` donne 495 tests, 468 réussis, 0 échec, 27 ignorés.
-- Le nom de la version 0.5.0 n'est pas choisi : DrSmoke décide, à partir des propositions de `docs/noms-de-versions.md`.
+- La version 0.5.0 porte le nom Ṣàngó, choisi par DrSmoke le 20 octobre (voir `docs/noms-de-versions.md`).
 - À faire par DrSmoke : supprimer les branches `bolt-*` sur GitHub, qui ne servent plus.
 
 ## Socle conservé
