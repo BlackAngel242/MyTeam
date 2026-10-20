@@ -4,7 +4,7 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
-## [0.5.0] - 2026-10-20
+## [0.5.0] - 2026-10-20 · "Ṣàngó"
 
 ### Projects and privacy
 
