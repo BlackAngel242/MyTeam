@@ -567,7 +567,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         return json(404,{error:'Page introuvable.'});
       }
       if(url.pathname==='/api/update') {
-        if(req.method==='GET') {if(!guard(req,{body:false}))return;try{return json(200,await updater.check());}catch{return json(502,{error:'Vérification des mises à jour indisponible.'});}}
+        if(req.method==='GET') {if(!guard(req,{body:false}))return;try{return json(200,await updater.check({force:url.searchParams.get('force')==='1'}));}catch{return json(502,{error:'Vérification des mises à jour indisponible.'});}}
         if(req.method==='POST') {if(!guard(req))return;const parsed=await readJson(req);if(parsed===null)return;try{
           if(parsed.action==='prepare')return json(200,await updater.prepare());
           if(parsed.action==='install') {if(typeof stopForUpdate!=='function')return json(409,{error:'Relance automatique indisponible dans cette session.'});const result=await updater.install();json(200,result);setImmediate(()=>stopForUpdate());return;}

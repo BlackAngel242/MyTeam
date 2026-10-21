@@ -791,17 +791,17 @@ async function copierDiagnostic(){
 }
 $('sante-copier').addEventListener('click',copierDiagnostic);
 let updateBusy=false;
-async function checkUpdate(){
+async function checkUpdate(force=false){
  if(!state.token)return;
  try{
-  const d=await request('/api/update',{headers:{'X-Bureau-Token':state.token}});
+  const d=await request('/api/update'+(force?'?force=1':''),{headers:{'X-Bureau-Token':state.token}});
   $('update-open').hidden=!d.available;
   $('update-label').textContent=t('update.available',{version:d.latest});
   $('update-install').hidden=!d.available;
   $('update-status').textContent=d.available?t('update.available',{version:d.latest}):t('update.current',{version:d.installed});
  }catch(error){$('update-status').textContent=errorText(error);}
 }
-$('update-check').addEventListener('click',checkUpdate);
+$('update-check').addEventListener('click',()=>checkUpdate(true));
 $('update-open').addEventListener('click',()=>{toggleHelp(true);$('update-install').focus();});
 $('update-install').addEventListener('click',async()=>{
  if(updateBusy)return;updateBusy=true;$('update-install').disabled=true;
