@@ -1,9 +1,9 @@
 import {createHash,randomBytes} from 'node:crypto';
-import {readFile,writeFile,mkdir,rm,lstat,cp,rename,realpath} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,rm,lstat,cp,rename} from 'node:fs/promises';
 import {readFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {spawn} from 'node:child_process';
-import {dirname,join,basename,resolve} from 'node:path';
+import {dirname,join} from 'node:path';
 import {inflateRawSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 const dataDirectory=()=>process.platform==='win32'?join(process.env.LOCALAPPDATA||join(homedir(),'AppData','Local'),'MyTeam'):process.platform==='darwin'?join(homedir(),'Library','Application Support','MyTeam'):join(process.env.XDG_DATA_HOME||join(homedir(),'.local','share'),'MyTeam');
@@ -71,7 +71,7 @@ export function createUpdater({root=fileURLToPath(new URL('../',import.meta.url)
   try{
    await check({force:true});
    if(!status().available)throw fail('Aucune nouvelle version disponible.',409);
-   if((await lstat(root)).isSymbolicLink()||(await realpath(root)).toLowerCase()!==resolve(root).toLowerCase())throw fail('Dossier d’installation non pris en charge.',409);
+   if((await lstat(root)).isSymbolicLink())throw fail('Dossier d’installation non pris en charge.',409);
    try{await lstat(join(root,'.git'));throw fail('Copie Git : mettez à jour avec Git pour préserver votre travail.',409);}catch(e){if(e.code!=='ENOENT')throw e;}
    const v=cached.version;
    const [archive,checksum]=await Promise.all([
