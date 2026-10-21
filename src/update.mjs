@@ -71,7 +71,7 @@ export function createUpdater({root=fileURLToPath(new URL('../',import.meta.url)
   try{
    await check({force:true});
    if(!status().available)throw fail('Aucune nouvelle version disponible.',409);
-   if((await lstat(root)).isSymbolicLink()||await realpath(root)!==resolve(root))throw fail('Dossier d’installation non pris en charge.',409);
+   if((await lstat(root)).isSymbolicLink()||(await realpath(root)).toLowerCase()!==resolve(root).toLowerCase())throw fail('Dossier d’installation non pris en charge.',409);
    try{await lstat(join(root,'.git'));throw fail('Copie Git : mettez à jour avec Git pour préserver votre travail.',409);}catch(e){if(e.code!=='ENOENT')throw e;}
    const v=cached.version;
    const [archive,checksum]=await Promise.all([
