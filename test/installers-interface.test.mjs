@@ -168,7 +168,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L
   assert.doesNotMatch(lines[2],/Personne|Prive|client\.txt/);
 });
 if(process.platform==='win32') {
-  for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, faux winget et accord individuel avec Oui`,async t=>{
+  for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, prérequis automatique avec Oui`,async t=>{
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction)
@@ -183,13 +183,12 @@ if(process.platform==='win32') {
     `,{answer:()=>result==='refus'?'n':'o'});
     assert.equal(data.code,result==='fail'?1:0,data.errors);
     assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
-    if(['ok','fail'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
+    if(['ok','fail','refus'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
     else assert.doesNotMatch(data.output,/CALL:/);
-    const expected=result==='present'?'ok':['ok','fail'].includes(result)?result:'skip';
+    const expected=result==='present'?'ok':result==='refus'?'ok':['ok','fail'].includes(result)?result:'skip';
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+expected+'\t')));
     if(result==='present')assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
-    if(result==='refus')assert.ok(data.records.includes('@@DONE clink\tskip\tRefusé.'));
-    if(result==='refus')assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
+    if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
