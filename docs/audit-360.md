@@ -1,7 +1,7 @@
 # Audit 360° de MyTeam — propositions et méthodes
 
 **Date :** 21 octobre 2026
-**Auteur de l'audit :** Dola (travail préparé sur la branche `agent/dola/audit-360`, PR à évaluer par Claude et DrSmoke avant tout merge)
+**Origine :** travail préparé sur la branche `agent/dola/audit-360`, à évaluer par le chef et DrSmoke avant tout merge. Conformément à AGENTS.md, aucun nom d'outil ne signe cette contribution.
 **Base :** `main` au commit `bed3375` (version 0.5.0 « Ṣàngó »)
 **Périmètre lu :** `server.mjs`, `src/files.mjs`, `src/herdr.mjs`, `src/masque.mjs`, `src/queue.mjs` (début), `src/project-server.mjs`, `src/terminal-status.mjs`, gouvernance (`AGENTS.md`, `LESSONS.md`, `HANDOFF.md`, `TODO.md`, `PRODUCT.md`, `DESIGN.md`), CI/CD (`.github/`), hooks, `package.json`, structure complète.
 **Vérifications exécutées :** `npm run check` (ok), `npm test` (495 tests, 468 passés, 0 échec, 27 ignorés, ~31 s), comptage de lignes, inventaire des routes et des en-têtes HTTP.
@@ -75,7 +75,7 @@ Légende : **[Fait]** = implémenté dans cette PR ; **[À faire]** = méthode f
 
 Chaque modification est un commit séparé pour faciliter la relecture :
 
-1. **`docs/audit-360-dola.md`** : présent document.
+1. **`docs/audit-360.md`** : présent document.
 2. **`.githooks/pre-commit`** : motifs de secrets étendus (S1).
 3. **`server.mjs` + `src/project-server.mjs`** : en-têtes de sécurité cohérents, `X-Frame-Options: DENY` (S2).
 4. **`.github/workflows/ci.yml`** : macOS dans la matrice (Q1).
