@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -o pipefail
 # Installe les prerequis du Bureau des agents sur macOS et Linux.
 #
 # Vérifie et installe Node.js et Herdr si nécessaire ; propose une sélection groupée
@@ -321,7 +322,7 @@ else
     fi
   else
     dire "$(texte 'Installez Node 22 ou plus depuis la page officielle : https://nodejs.org/en/download' 'Install Node 22 or later from the official page: https://nodejs.org/en/download')"
-    noter "$(texte 'Node.js : non installe (refuse ou gestionnaire absent).' 'Node.js: not installed (declined or no package manager).')"
+    noter "$(texte 'Node.js : non installe (gestionnaire absent).' 'Node.js: not installed (no package manager).')"
   fi
 fi
 NODE_OK=0
@@ -377,13 +378,14 @@ else
   dire "$(texte "Methode d'installation officielle (documentation Herdr) :" "Official installation method (Herdr documentation):")"
   dire "$(texte '  macOS et Linux : curl -fsSL https://herdr.dev/install.sh | sh' '  macOS and Linux: curl -fsSL https://herdr.dev/install.sh | sh')"
   dire "$(texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')"
-  if [ "$DRY_RUN" = 1 ] || [ "$NODE_OK" = 1 ]; then
+  if true; then
     executer "$(texte 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' 'Installing Herdr (official script https://herdr.dev/install.sh).')" installer_outil herdr
     if [ "$DRY_RUN" != "1" ]; then
       HERDR_TROUVE=$(chercher_herdr || true)
       if [ -n "$HERDR_TROUVE" ]; then
         dire "$(texte "Herdr est maintenant installe : $HERDR_TROUVE" "Herdr is now installed: $HERDR_TROUVE")"
         noter "$(texte 'Herdr : installe.' 'Herdr: installed.')"
+        if ! command -v herdr >/dev/null 2>&1; then HERDR_A_ENREGISTRER="$HERDR_TROUVE"; fi
       else
         dire "$(texte "Herdr n'a pas ete detecte. Consultez https://herdr.dev/docs/install/ puis relancez ce script." "Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.")"
         noter "$(texte 'Herdr : a verifier.' 'Herdr: check required.')"
@@ -394,7 +396,7 @@ else
   else
     dire "$(texte 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')"
     dire "$(texte 'Le bureau ne fonctionnera pas sans Herdr ouvert.' 'The desktop requires Herdr to be open.')"
-    noter "$(texte 'Herdr : non installe (refuse).' 'Herdr: not installed (declined).')"
+    noter "$(texte 'Herdr : non installe (installation impossible).' 'Herdr: not installed (installation unavailable).')"
   fi
 fi
 dire ''
@@ -461,7 +463,9 @@ proposer_agents() {
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
       type="${outils[$((10#$choix-1))]}"
       if command -v "$type" >/dev/null 2>&1 && confirmer "$(texte "Lancer $type dans le panneau ${noms[$i]} ?" "Start $type in pane ${noms[$i]}?")" individuel; then
-        if "$HERDR_TROUVE" agent start "${noms[$i]}" --kind "$type" --pane "$pane" >/dev/null; then
+        local agent_nom
+        if [ "$i" -eq 0 ]; then agent_nom=chef; else agent_nom="agent$((i+1))"; fi
+        if "$HERDR_TROUVE" agent start "$agent_nom" --kind "$type" --pane "$pane" >/dev/null; then
           [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
           if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
           if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils lancés : $TOTAL_ETAPE." "Tools started: $TOTAL_ETAPE.")";fi
@@ -580,7 +584,7 @@ OUTILS_DISPONIBLES=0
 OUTILS_MANQUANTS=()
 for fiche in 'Claude Code|claude' 'Codex (OpenAI)|codex' 'OpenCode|opencode' 'Pi|pi' 'Gemini CLI|gemini' 'Antigravity|antigravity-cli'; do
   nom=${fiche%%|*}; commande=${fiche#*|}
-  if command -v "$commande" >/dev/null 2>&1; then
+  if command -v "$commande" >/dev/null 2>&1 || { [ "$commande" = antigravity-cli ] && command -v agy >/dev/null 2>&1; }; then
     dire "$(texte "$nom : déjà présent." "$nom: already available.")"
     noter "$nom : déjà présent."
     OUTILS_DISPONIBLES=$((OUTILS_DISPONIBLES+1))
@@ -598,11 +602,7 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     else selection=0; fi
     selection=${selection// /}
     if [ "$selection" = 0 ] || [ -z "$selection" ]; then
-      if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ] && [ "${ENTREE_FERMEE:-0}" != 1 ]; then
-        dire "$(texte 'Au moins une IA compatible est nécessaire : choisissez un outil.' 'At least one compatible AI is required: choose a tool.')"
-        [ "$OUI" = 1 ] && break
-        continue
-      fi
+      if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ]; then dire "$(texte 'Aucune IA choisie : vous pourrez en installer une avant votre première mission.' 'No AI selected: you can install one before your first mission.')"; fi
       break
     fi
     if [[ ! "$selection" =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]]; then dire "$(texte 'Sélection invalide.' 'Invalid selection.')";continue;fi
@@ -614,7 +614,8 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
       [[ " ${choisis[*]} " == *" $fiche "* ]] || choisis+=("$fiche")
     done
     if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
-    dire "$(texte "Sélection : ${choisis[*]}" "Selection: ${choisis[*]}")"
+    noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
+    dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
     if [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
@@ -877,10 +878,17 @@ dire ''
 [ "$INTERFACE" = 1 ] || proposer_kit
 
 # --- Resume -------------------------------------------------------------
+INSTALLATION_INCOMPLETE=0
+if [ "$DRY_RUN" != 1 ] && { [ "$NODE_OK" != 1 ] || [ -z "$HERDR_TROUVE" ]; }; then
+  INSTALLATION_INCOMPLETE=1
+  dire "$(texte 'Installation incomplète : Node.js 22+ et Herdr sont requis.' 'Incomplete installation: Node.js 22+ and Herdr are required.')"
+  [ "$INTERFACE" != 1 ] || ECHEC_INTERFACE=1
+fi
 dire "$(texte '=== Resume ===' '=== Summary ===')"
 if [ -z "$RAPPORT" ]; then dire "$(texte 'Rien a signaler.' 'Nothing to report.')"; else printf '%s\n' "$RAPPORT" | sed '/^ *$/d'; fi
 dire ''
 dire "$(texte "Pour ouvrir le bureau : lancez 'node server.mjs' dans $RACINE" "To open the desktop: run node server.mjs in $RACINE")"
 dire "$(texte "puis ouvrez http://127.0.0.1:$PORT_CHOISI (ou utilisez le raccourci cree)." "then open http://127.0.0.1:$PORT_CHOISI (or use the shortcut).")"
 dire "$(texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')"
+[ "$INSTALLATION_INCOMPLETE" = 0 ] || exit 1
 if [ "$INTERFACE" = 1 ] && [ "$ECHEC_INTERFACE" = 1 ]; then exit 1;fi

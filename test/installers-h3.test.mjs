@@ -111,7 +111,7 @@ Proposer-Agents @('w9:p1','w9:p2')
 if($starts.Count -ne 0 -or $reads -ne 0){throw 'Oui a lance un agent'}
 $Oui=$false
 Proposer-Agents @('w9:p1')
-if(($starts[0] -join ' ') -ne 'agent start Chef --kind codex --pane w9:p1'){throw 'mauvaise cible ou outil'}
+if(($starts[0] -join ' ') -ne 'agent start chef --kind codex --pane w9:p1'){throw 'mauvaise cible ou outil'}
 if($chefOutil -ne 'codex' -or $chefPane -ne 'w9:p1'){throw 'chef non memorise'}
 'ok'`);
   if(result)assert.equal(result.stdout.trim(),'ok');
@@ -132,7 +132,7 @@ OUI=0
 proposer_agents 'w9:p1' <<< 1
 [ "$CHEF_TYPE:$CHEF_PANE" = 'codex:w9:p1' ]
 printf 'START:%s\n' "$STARTED"`);
-  assert.match(result.stdout,/START:agent start Chef --kind codex --pane w9:p1/);
+  assert.match(result.stdout,/START:agent start chef --kind codex --pane w9:p1/);
   assert.equal((result.stdout.match(/START:/g)||[]).length,1);
 });
 

@@ -254,7 +254,7 @@ w9:p2';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
   const names=platform==='ps'?[...psFunctions,'Choisir','Detecter-Outils','Proposer-Agents','Appeler-Herdr','Noter']:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','choisir','dire','simuler','noter','confirmer','detecter_outils','proposer_agents'];
   const data=await functions(t,platform,names,body,{answer:line=>line.startsWith('@@CHOICE')?'2':'o'});
   assert.equal(data.code,0,data.errors);
-  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|Chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start Chef --kind codex --pane w9:p1/);
+  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start chef --kind codex --pane w9:p1/);
   assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
   assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));

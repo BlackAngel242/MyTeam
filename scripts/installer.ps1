@@ -185,10 +185,10 @@ function Executer([string]$description, [scriptblock]$action) {
   if ($Interface -and $script:entreeFermee) { Etat-Etape 'skip' (Texte 'Entrée fermée.' 'Input closed.'); Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
-  if ($Interface) { $global:LASTEXITCODE = 0 }
+  $global:LASTEXITCODE = 0
   try {
     & $action
-    if ($Interface -and $LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
+    if ($LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
     if ($Interface) {
       $fait = switch ($script:etape) {
         'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
@@ -287,7 +287,12 @@ function Proposer-Clink {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
       } | Out-Null
-    } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.') }
+      if (-not $DryRun) {
+        Rafraichir-Path
+        if (Get-Command clink -CommandType Application -ErrorAction SilentlyContinue) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
+        else { Dire (Texte 'Clink : installation à vérifier dans un nouveau terminal.' 'Clink: check installation in a new terminal.'); Noter (Texte 'Clink : à vérifier.' 'Clink: check required.') }
+      }
+    } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.'); Noter (Texte 'Clink : installation échouée.' 'Clink: installation failed.') }
   }
 }
 Etape 'clink'
@@ -335,7 +340,7 @@ if ($herdrTrouve) {
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire (Texte '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd' '  If an antivirus blocks it: curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd')
   Dire (Texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
-  if ($DryRun -or $nodeOk) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' 'Installing Herdr (official script https://herdr.dev/install.ps1).') {
         powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"
@@ -343,7 +348,16 @@ if ($herdrTrouve) {
       if (-not $DryRun) {
         Rafraichir-Path
         $herdrTrouve = Chercher-Herdr
-        if ($herdrTrouve) { Dire (Texte "Herdr est maintenant installe : $herdrTrouve" "Herdr is now installed: $herdrTrouve"); Noter (Texte 'Herdr : installe.' 'Herdr: installed.') }
+        if ($herdrTrouve) {
+          Dire (Texte "Herdr est maintenant installe : $herdrTrouve" "Herdr is now installed: $herdrTrouve")
+          Noter (Texte 'Herdr : installe.' 'Herdr: installed.')
+          if (-not (Get-Command herdr -ErrorAction SilentlyContinue)) {
+            Executer (Texte 'Enregistrement du chemin Herdr utilisateur.' 'Saving user Herdr path.') {
+              [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
+            } | Out-Null
+            Noter (Texte 'BUREAU_HERDR_PATH : enregistré.' 'BUREAU_HERDR_PATH: saved.')
+          }
+        }
         else { Dire (Texte 'Herdr n''a pas ete detecte. Consultez https://herdr.dev/docs/install/ puis relancez ce script.' 'Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.'); Noter (Texte 'Herdr : a verifier.' 'Herdr: check required.') }
       } else { Noter (Texte 'Herdr : simulation de l''installation officielle.' 'Herdr: preview of official installation.') }
     } catch {
@@ -354,7 +368,7 @@ if ($herdrTrouve) {
   } else {
     Dire (Texte 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')
     Dire (Texte 'Le bureau ne fonctionnera pas sans Herdr ouvert.' 'The desktop requires Herdr to be open.')
-    Noter (Texte 'Herdr : non installe (refuse).' 'Herdr: not installed (declined).')
+    Noter (Texte 'Herdr : installation impossible.' 'Herdr: installation unavailable.')
   }
 }
 Dire ''
@@ -437,7 +451,8 @@ function Proposer-Agents([string[]]$Panneaux) {
     if (-not (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue)) { Dire (Texte "Cet outil n'est plus disponible." "This tool is no longer available."); continue }
     if (Confirmer (Texte "Lancer $type dans le panneau $($noms[$i]) ?" "Start $type in pane $($noms[$i])?") -Individuel) {
       try {
-        Appeler-Herdr @('agent','start',$noms[$i],'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
+        $nomAgent = if ($i -eq 0) { 'chef' } else { "agent$($i+1)" }
+        Appeler-Herdr @('agent','start',$nomAgent,'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
         if (-not $script:chefPane) { $script:chefPane=$Panneaux[$i]; $script:chefOutil=$type }
         if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils lancés : $($script:totalEtape)." "Tools started: $($script:totalEtape).") }
         Noter (Texte "$type : lancement confirme par Herdr." "${type}: launch confirmed by Herdr.")
@@ -560,8 +575,12 @@ $catalogue = @(
   @{ Nom = 'Gemini CLI'; Commande = 'gemini'; Installation = 'npm install -g @google/gemini-cli' },
   @{ Nom = 'Antigravity'; Commande = 'antigravity-cli'; Installation = $null }
 )
-$manquants = @($catalogue | Where-Object { -not (Get-Command $_.Commande -ErrorAction SilentlyContinue) })
-$disponibles = @($catalogue | Where-Object { Get-Command $_.Commande -ErrorAction SilentlyContinue })
+function Outil-Present($outil) {
+  return ([bool](Get-Command $outil.Commande -ErrorAction SilentlyContinue) -or
+    ($outil.Commande -eq 'antigravity-cli' -and [bool](Get-Command agy -ErrorAction SilentlyContinue)))
+}
+$manquants = @($catalogue | Where-Object { -not (Outil-Present $_) })
+$disponibles = @($catalogue | Where-Object { Outil-Present $_ })
 foreach ($outil in $disponibles) { Dire (Texte "$($outil.Nom) : déjà présent." "$($outil.Nom): already available."); Noter "$($outil.Nom) : déjà présent." }
 if ($disponibles.Count -gt 0) { Etat-Etape 'ok' (Texte "Outils disponibles : $($disponibles.Count)." "Available tools: $($disponibles.Count).") }
 if ($manquants.Count -gt 0) {
@@ -574,7 +593,7 @@ if ($manquants.Count -gt 0) {
     if ($null -eq $selection) { break }
     $selection = $selection -replace '\s',''
     if ($selection -eq '0' -or $selection -eq '') {
-      if ($disponibles.Count -eq 0 -and -not ($Oui -or $DryRun)) { Dire (Texte 'Choisissez au moins une IA compatible.' 'Choose at least one compatible AI.'); continue }
+      if ($disponibles.Count -eq 0 -and -not $DryRun) { Dire (Texte 'Aucune IA choisie : vous pourrez en installer une avant votre première mission.' 'No AI selected: you can install one before your first mission.') }
       break
     }
     if ($selection -notmatch '^[1-9][0-9]*(,[1-9][0-9]*)*$') { Dire (Texte 'Sélection invalide.' 'Invalid selection.'); continue }
@@ -787,6 +806,11 @@ Dire ''
 if (-not $Interface) { Proposer-Kit }
 
 # --- Resume -------------------------------------------------------------
+$installationIncomplete = -not $DryRun -and (-not $nodeOk -or -not $herdrTrouve)
+if ($installationIncomplete) {
+  Dire (Texte 'Installation incomplète : Node.js 22+ et Herdr sont requis.' 'Incomplete installation: Node.js 22+ and Herdr are required.')
+  if ($Interface) { $script:echecInterface = $true }
+}
 Dire (Texte '=== Resume ===' '=== Summary ===')
 if ($rapport.Count -eq 0) { Dire (Texte 'Rien a signaler.' 'Nothing to report.') }
 else { foreach ($ligne in $rapport) { Dire " - $ligne" } }
@@ -795,4 +819,4 @@ Dire (Texte "Pour ouvrir le bureau : double-cliquez sur 'Ouvrir le bureau.cmd' d
 Dire (Texte "ou lancez 'node server.mjs' puis ouvrez http://127.0.0.1:$portChoisi" "or run node server.mjs, then open http://127.0.0.1:$portChoisi")
 Dire (Texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
 Terminer-Interface
-if ($Interface -and $script:echecInterface) { exit 1 }
+if ($installationIncomplete -or ($Interface -and $script:echecInterface)) { exit 1 }
