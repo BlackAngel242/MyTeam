@@ -133,6 +133,8 @@ const I18N = {
     'install.badge': 'Démarrage immédiat',
     'install.titre': 'Installation en trois gestes',
     'install.desc': 'Aucun outil de compilation requis. Node.js (>= 22) et Herdr suffisent.',
+    'install.npm.title': 'Installation par commande',
+    'install.npm.desc': 'Si Node.js 22+ est déjà installé, cette commande place MyTeam dans votre dossier utilisateur et lance l’assistant. Il propose un raccourci MyTeam, Herdr ou les deux. Sinon, utilisez le ZIP et son installateur.',
     
     'step1.badge': 'Geste 1',
     'step1.title': 'Télécharger l\'archive',
@@ -335,6 +337,8 @@ const I18N = {
     'install.badge': 'Quick Start',
     'install.titre': 'Installation in Three Simple Steps',
     'install.desc': 'No compiler or build tool required. Only Node.js (>= 22) and Herdr are needed.',
+    'install.npm.title': 'Install with one command',
+    'install.npm.desc': 'If Node.js 22+ is already installed, this command copies MyTeam into your user folder and launches the setup assistant. It offers a MyTeam, Herdr or combined shortcut. Otherwise, use the ZIP installer.',
     
     'step1.badge': 'Step 1',
     'step1.title': 'Download release archive',

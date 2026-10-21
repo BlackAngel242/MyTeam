@@ -74,6 +74,16 @@ test('une version ou une révision invalide est refusée', async () => {
   for(const rev of ['--list','--help','-o',null,{},''])await assert.rejects(empaqueter('1.0.0',{rev}),/Révision invalide/);
 });
 
+test('le ZIP de distribution garde une racine courte et écarte les notes de session', async () => {
+  const attributs = await readFile(new URL('../.gitattributes', import.meta.url), 'utf8');
+  for (const nom of ['AGENTS.md', 'CLAUDE.md', 'LESSONS.md', 'HANDOFF.md', 'JOURNAL.md', 'TODO.md', 'PRODUCT.md', 'DESIGN.md']) {
+    assert.match(attributs, new RegExp(`^/${nom.replace('.', '\\.')} export-ignore$`, 'm'), `${nom} reste dans Git mais pas dans le ZIP`);
+  }
+  assert.match(attributs, /^docs\/\*\.md export-ignore$/m);
+  assert.match(attributs, /^docs\/INSTALLATION\.md -export-ignore$/m);
+  assert.doesNotMatch(attributs, /^\/README\.md export-ignore$/m);
+});
+
 test('un journal privé suivi par erreur bloque la production du paquet', async t => {
   const depot = await mkdtemp(join(tmpdir(), 'release-prive-'));
   t.after(() => rm(depot, { recursive: true, force: true }));

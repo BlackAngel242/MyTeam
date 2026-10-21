@@ -757,7 +757,10 @@ Etape 'tests'
 
 # --- 7. Tests -----------------------------------------------------------
 Dire (Texte '--- 7. Tests du projet ---' '--- 7. Project tests ---')
-if (-not $nodeOk) {
+if (-not (Test-Path (Join-Path $racine 'test') -PathType Container)) {
+  Etat-Etape 'skip' (Texte 'Paquet utilisateur sans tests.' 'User package without tests.')
+  Dire (Texte 'Les tests de développement sont dans le dépôt source.' 'Development tests are in the source repository.')
+} elseif (-not $nodeOk) {
   Etat-Etape 'skip' (Texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')
   Dire (Texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
   Noter (Texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')
