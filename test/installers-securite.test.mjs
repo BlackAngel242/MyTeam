@@ -78,10 +78,10 @@ test('B1/B2 : les chemins ne sont plus interpolés dans une commande shell', () 
   assert.match(sh, /FICHIERS_PROFIL=\("\$HOME\/\.profile"\)/);
 });
 
-test('B3 : Herdr et chaque extension exigent leur confirmation particulière', () => {
-  assert.match(sh, /confirmer .*Installer Herdr[^\n]+ individuel; then/);
+test('B3 : Herdr automatique et chaque extension exige sa confirmation particulière', () => {
+  assert.doesNotMatch(sh, /confirmer .*Installer Herdr[^\n]+ individuel; then/);
   assert.match(sh, /confirmer .*Installer l'extension[^\n]+ individuel; then/);
-  assert.match(ps, /Confirmer .*Installer Herdr[^\n]+ -Individuel\)/);
+  assert.doesNotMatch(ps, /Confirmer .*Installer Herdr[^\n]+ -Individuel\)/);
   assert.match(ps, /Confirmer .*Installer l'extension[^\n]+ -Individuel\)/);
 });
 

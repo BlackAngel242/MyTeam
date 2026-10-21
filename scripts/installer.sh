@@ -243,6 +243,7 @@ installer_outil() {
     codex) curl -fsSL https://chatgpt.com/codex/install.sh | sh ;;
     opencode) curl -fsSL https://opencode.ai/install | bash ;;
     gemini) npm install -g @google/gemini-cli ;;
+    pi) npm install -g @mariozechner/pi-coding-agent ;;
     *) return 1 ;;
   esac
 }
@@ -303,7 +304,7 @@ else
   if [ -z "$MAJEURE" ]; then dire "$(texte 'Node.js est absent de cet ordinateur.' 'Node.js is missing from this computer.')"
   else dire "$(texte "Node.js est present mais trop ancien (version majeure $MAJEURE) : il faut la version 22 ou plus." "Node.js is available but too old (major version $MAJEURE): version 22 or later is required.")"; fi
   CMD_NODE=$(commande_node)
-  if [ -n "$CMD_NODE" ] && confirmer "$(texte "Installer Node.js avec votre gestionnaire de paquets ($CMD_NODE) ?" "Install Node.js with your package manager ($CMD_NODE)?")" individuel; then
+  if [ -n "$CMD_NODE" ]; then
     executer "$(texte "Installation de Node.js : $CMD_NODE" "Installing Node.js: $CMD_NODE")" installer_node
     if [ "$DRY_RUN" != "1" ]; then
       MAJEURE=$(version_node_majeure || true)
@@ -359,7 +360,7 @@ if [ -n "$HERDR_TROUVE" ]; then
   noter "$(texte 'Herdr : deja present.' 'Herdr: already available.')"
   if ! command -v herdr >/dev/null 2>&1; then
     dire "$(texte "Herdr n'est pas dans le PATH : le bureau a besoin de la variable BUREAU_HERDR_PATH." "Herdr is not in PATH: the desktop needs the BUREAU_HERDR_PATH variable.")"
-    if confirmer "$(texte 'Enregistrer BUREAU_HERDR_PATH avec ce chemin ?' 'Save BUREAU_HERDR_PATH with this path?')"; then
+    if true; then
       HERDR_A_ENREGISTRER="$HERDR_TROUVE"
       dire "$(texte "BUREAU_HERDR_PATH sera enregistre dans votre profil : $HERDR_TROUVE" "BUREAU_HERDR_PATH will be saved in your profile: $HERDR_TROUVE")"
       noter "$(texte 'BUREAU_HERDR_PATH : a enregistrer (voir etape 4).' 'BUREAU_HERDR_PATH: pending (see configuration step).')"
@@ -376,7 +377,7 @@ else
   dire "$(texte "Methode d'installation officielle (documentation Herdr) :" "Official installation method (Herdr documentation):")"
   dire "$(texte '  macOS et Linux : curl -fsSL https://herdr.dev/install.sh | sh' '  macOS and Linux: curl -fsSL https://herdr.dev/install.sh | sh')"
   dire "$(texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')"
-  if confirmer "$(texte 'Installer Herdr maintenant avec la commande officielle ci-dessus ?' 'Install Herdr now using the official command above?')" individuel; then
+  if [ "$DRY_RUN" = 1 ] || [ "$NODE_OK" = 1 ]; then
     executer "$(texte 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' 'Installing Herdr (official script https://herdr.dev/install.sh).')" installer_outil herdr
     if [ "$DRY_RUN" != "1" ]; then
       HERDR_TROUVE=$(chercher_herdr || true)
@@ -574,55 +575,64 @@ dire "$(texte "Aucune cle ni aucun jeton n'est demande ici. Si un outil vous dem
 dire "$(texte 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.' 'use its own interface when you first open it, never this script.')"
 dire ''
 
-proposer_outil() {
-  nom="$1"; detection="$2"; installation="$3"; lien="$4"; lien2="${5:-}"
-  dire "### $nom"
-  if command -v "$detection" >/dev/null 2>&1; then
-    if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils disponibles : $TOTAL_ETAPE." "Available tools: $TOTAL_ETAPE.")";fi
-    dire "$(texte "$nom est deja installe (commande '$detection')." "$nom is already installed (command $detection).")"
-    noter "$(texte "$nom : deja installe." "$nom: already installed.")"
-    dire ''
-    return
-  fi
-  dire "$(texte "Commande d'installation officielle : $installation" "Official installation command: $installation")"
-  [ -n "$lien" ] && dire "$(texte "Documentation : $lien" "Documentation: $lien")"
-  [ -n "$lien2" ] && dire "$(texte "Documentation complémentaire : $lien2" "Additional documentation: $lien2")"
-  if confirmer "$(texte "Installer $nom ?" "Install $nom?")" individuel; then
-    executer "$(texte "Installation de $nom : $installation" "Installing $nom: $installation")" installer_outil "$detection"
-    if [ "$DRY_RUN" != "1" ]; then
-      if command -v "$detection" >/dev/null 2>&1; then
-        if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils disponibles : $TOTAL_ETAPE." "Available tools: $TOTAL_ETAPE.")";fi
-        dire "$(texte "$nom est installe." "$nom is installed.")"
-        noter "$(texte "$nom : installe." "$nom: installed.")"
-      else
-        dire "$(texte "$nom n'a pas ete detecte tout de suite. Ouvrez un nouveau terminal pour verifier." "$nom was not detected yet. Open a new terminal to check.")"
-        noter "$(texte "$nom : a verifier." "$nom: check required.")"
+# Une seule saisie pour tous les outils absents. Aucun outil déjà présent n'est réinstallé.
+OUTILS_DISPONIBLES=0
+OUTILS_MANQUANTS=()
+for fiche in 'Claude Code|claude' 'Codex (OpenAI)|codex' 'OpenCode|opencode' 'Pi|pi' 'Gemini CLI|gemini' 'Antigravity|antigravity-cli'; do
+  nom=${fiche%%|*}; commande=${fiche#*|}
+  if command -v "$commande" >/dev/null 2>&1; then
+    dire "$(texte "$nom : déjà présent." "$nom: already available.")"
+    noter "$nom : déjà présent."
+    OUTILS_DISPONIBLES=$((OUTILS_DISPONIBLES+1))
+  else OUTILS_MANQUANTS+=("$fiche"); fi
+done
+if [ "$OUTILS_DISPONIBLES" -gt 0 ]; then etat_etape ok "$(texte "Outils disponibles : $OUTILS_DISPONIBLES." "Available tools: $OUTILS_DISPONIBLES.")"; fi
+if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
+  dire "$(texte 'Outils absents proposés :' 'Missing tools available for selection:')"
+  for i in "${!OUTILS_MANQUANTS[@]}"; do dire "$((i+1)). ${OUTILS_MANQUANTS[i]%%|*}"; done
+  dire "$(texte 'Antigravity : ouverture de la documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')"
+  while :; do
+    if [ "$OUI" = 1 ] && [ "$DRY_RUN" != 1 ]; then selection=0
+    elif [ "$DRY_RUN" = 1 ]; then selection=0
+    elif lire_saisie "$(texte 'Numéros des outils à installer (ex. 1,3 ; 0 = aucun)' 'Tool numbers to install (e.g. 1,3; 0 = none)')" 0; then selection=$REPONSE_INTERFACE
+    else selection=0; fi
+    selection=${selection// /}
+    if [ "$selection" = 0 ] || [ -z "$selection" ]; then
+      if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ] && [ "${ENTREE_FERMEE:-0}" != 1 ]; then
+        dire "$(texte 'Au moins une IA compatible est nécessaire : choisissez un outil.' 'At least one compatible AI is required: choose a tool.')"
+        [ "$OUI" = 1 ] && break
+        continue
       fi
-    else
-      noter "$(texte "$nom : simulation de l'installation." "$nom: preview of installation.")"
+      break
     fi
-  else
-    dire "$(texte "$nom : non installe (refuse)." "$nom: not installed (declined).")"
-    noter "$(texte "$nom : non installe (refuse)." "$nom: not installed (declined).")"
-  fi
-  dire ''
-}
-
-proposer_outil 'Claude Code' 'claude' 'curl -fsSL https://claude.ai/install.sh | bash' 'https://code.claude.com/docs'
-proposer_outil 'Codex (OpenAI)' 'codex' 'curl -fsSL https://chatgpt.com/codex/install.sh | sh' 'https://developers.openai.com/codex'
-proposer_outil 'OpenCode' 'opencode' 'curl -fsSL https://opencode.ai/install | bash' 'https://opencode.ai/docs' 'Alternative avec Node.js : npm install -g opencode-ai'
-proposer_outil 'Gemini CLI (Google)' 'gemini' 'npm install -g @google/gemini-cli' 'https://www.geminicli.com/docs/get-started/installation' 'Alternative : brew install gemini-cli'
-
-dire '### Antigravity (Google)'
-dire "$(texte "La commande d'installation d'Antigravity CLI n'a pas pu etre verifiee :" "The Antigravity CLI installation command could not be verified:")"
-dire "$(texte 'nous ne la donnons donc pas. Suivez sa documentation officielle :' 'it is not provided here. Follow the official documentation:')"
-dire '  https://antigravity.google/product/antigravity-cli'
-dire '  https://antigravity.google/docs/cli/getting-started'
-dire "$(texte 'Note : Google annonce que Gemini CLI cede la place a Antigravity CLI pour les' 'Note: Google announces a transition from Gemini CLI to Antigravity CLI for')"
-dire "$(texte 'comptes gratuits et Google One :' 'free and Google One accounts:')"
-dire '  https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli'
-noter "$(texte 'Antigravity : documentation seule (methode non verifiee).' 'Antigravity: documentation only (method not verified).')"
-dire ''
+    if [[ ! "$selection" =~ ^[1-9][0-9]*(,[1-9][0-9]*)*$ ]]; then dire "$(texte 'Sélection invalide.' 'Invalid selection.')";continue;fi
+    IFS=, read -ra indices <<< "$selection"
+    valide=1; choisis=()
+    for indice in "${indices[@]}"; do
+      if [ "$indice" -gt "${#OUTILS_MANQUANTS[@]}" ]; then valide=0;break;fi
+      fiche=${OUTILS_MANQUANTS[indice-1]}
+      [[ " ${choisis[*]} " == *" $fiche "* ]] || choisis+=("$fiche")
+    done
+    if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
+    dire "$(texte "Sélection : ${choisis[*]}" "Selection: ${choisis[*]}")"
+    if [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    for fiche in "${choisis[@]}"; do
+      nom=${fiche%%|*}; commande=${fiche#*|}
+      if [ "$commande" = antigravity-cli ]; then
+        dire 'https://antigravity.google/docs/cli/getting-started'
+        noter 'Antigravity : installation manuelle requise.'
+      else
+        executer "$(texte "Installation de $nom." "Installing $nom.")" installer_outil "$commande"
+        if [ "$DRY_RUN" != 1 ] && command -v "$commande" >/dev/null 2>&1; then OUTILS_DISPONIBLES=$((OUTILS_DISPONIBLES+1));noter "$nom : installé."
+        elif [ "$DRY_RUN" != 1 ]; then noter "$nom : installation à vérifier.";fi
+      fi
+    done
+    break
+  done
+fi
+if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ]; then
+  dire "$(texte 'Aucun outil IA détecté : configurez au moins un outil avant de démarrer une mission.' 'No AI tool detected: set up one before starting a mission.')"
+fi
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
 if [ "$INTERFACE" = 1 ]; then etape chef;proposer_chef;fi

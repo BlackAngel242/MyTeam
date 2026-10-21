@@ -97,7 +97,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
   test(`J1 ${platform} : EOF refuse et Oui ne valide pas les installations`,async t=>{
     const result=await run(t,platform,{yes:true,eof:true,lang:'en'});
     checkProtocol(result,platform==='ps');
-    assert.ok(result.records.some(x=>/^@@CONFIRM .*Install .*\?/.test(x)));
+    assert.ok(result.records.some(x=>x.startsWith('@@CONFIRM '))); // les choix facultatifs restent explicites
     assert.ok(result.records.some(x=>x.startsWith('@@PLAN tests\tChecks')));
     assert.deepEqual(result.records.filter(x=>/^@@DONE [a-z]+\tok\t/.test(x)).map(x=>x.split(' ')[1].split('\t')[0]),['herdr'],'seul le prérequis réellement présent est satisfait');
   });

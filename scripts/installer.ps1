@@ -243,7 +243,7 @@ if ($null -ne $majeur -and $majeur -ge 22) {
 } else {
   if ($null -eq $majeur) { Dire (Texte 'Node.js est absent de cet ordinateur.' 'Node.js is missing from this computer.') }
   else { Dire (Texte "Node.js est present mais trop ancien (version majeure $majeur) : il faut la version 22 ou plus." "Node.js is available but too old (major version $majeur): version 22 or later is required.") }
-  if (Confirmer (Texte 'Installer Node.js (version LTS) avec winget ?' 'Install Node.js (LTS version) with winget?') -Individuel) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' 'Installing Node.js with winget (OpenJS.NodeJS.LTS package).') {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
@@ -282,7 +282,7 @@ function Proposer-Clink {
   $wingetClink = @(Get-Command winget -CommandType Application -ErrorAction SilentlyContinue)[0]
   if (-not $wingetClink) { Etat-Etape 'skip' (Texte 'Winget absent.' 'Winget missing.'); Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
   Dire (Texte 'Clink ajoute couleurs, complétion et historique à cmd.exe.' 'Clink adds colors, completion and history to cmd.exe.')
-  if (Confirmer (Texte 'Installer Clink ?' 'Install Clink?') -Individuel) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
@@ -322,7 +322,7 @@ if ($herdrTrouve) {
   $dansPath = [bool](Get-Command herdr -ErrorAction SilentlyContinue)
   if (-not $dansPath) {
     Dire (Texte 'Herdr n''est pas dans le PATH : le bureau a besoin de la variable BUREAU_HERDR_PATH.' 'Herdr is not in PATH: the desktop needs the BUREAU_HERDR_PATH variable.')
-    if (Confirmer (Texte 'Enregistrer BUREAU_HERDR_PATH avec ce chemin ?' 'Save BUREAU_HERDR_PATH with this path?')) {
+    if ($true) {
       Executer (Texte "Enregistrement de BUREAU_HERDR_PATH = $herdrTrouve (variable de l'utilisateur)." "Saving BUREAU_HERDR_PATH = $herdrTrouve (user environment variable).") {
         [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
       } | Out-Null
@@ -335,7 +335,7 @@ if ($herdrTrouve) {
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire (Texte '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd' '  If an antivirus blocks it: curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd')
   Dire (Texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
-  if (Confirmer (Texte 'Installer Herdr maintenant avec la commande officielle ci-dessus ?' 'Install Herdr now using the official command above?') -Individuel) {
+  if ($DryRun -or $nodeOk) {
     try {
       Executer (Texte 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' 'Installing Herdr (official script https://herdr.dev/install.ps1).') {
         powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"
@@ -551,53 +551,49 @@ Dire (Texte 'Aucune cle ni aucun jeton n''est demande ici. Si un outil vous dema
 Dire (Texte 'connecter, faites-le dans son interface au premier lancement, jamais dans ce script.' 'use its own interface when you first open it, never this script.')
 Dire ''
 
-function Proposer-Outil([string]$nom, [string]$commande, [string]$detection, [string]$installation, [string]$lien) {
-  Dire "### $nom"
-  if (Get-Command $detection -ErrorAction SilentlyContinue) {
-    if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils disponibles : $($script:totalEtape)." "Available tools: $($script:totalEtape).") }
-    Dire (Texte "$nom est deja installe (commande '$detection')." "$nom is already installed (command $detection).")
-    Noter (Texte "$nom : deja installe." "${nom}: already installed.")
-    Dire ''
-    return
-  }
-  Dire (Texte "Commande d'installation officielle : $installation" "Official installation command: $installation")
-  if ($lien) { Dire (Texte "Documentation : $lien" "Documentation: $lien") }
-  if (Confirmer (Texte "Installer $nom ?" "Install $nom?") -Individuel) {
-    try {
-      Executer (Texte "Installation de $nom." "Installing $nom..") ([scriptblock]::Create($installation)) | Out-Null
-      if (-not $DryRun) {
-        Rafraichir-Path
-        if (Get-Command $detection -ErrorAction SilentlyContinue) {
-          if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils disponibles : $($script:totalEtape)." "Available tools: $($script:totalEtape).") }
-          Dire (Texte "$nom est installe." "$nom is installed."); Noter (Texte "$nom : installe." "${nom}: installed.")
-        }
-        else { Dire (Texte "$nom n'a pas ete detecte tout de suite. Ouvrez un nouveau terminal pour verifier." "$nom was not detected yet. Open a new terminal to check."); Noter (Texte "$nom : a verifier." "${nom}: check required.") }
-      } else { Noter (Texte "$nom : simulation de l'installation." "${nom}: preview of installation.") }
-    } catch {
-      Dire (Texte "L'installation de $nom a echoue : $($_.Exception.Message)" "Installation of $nom failed: $($_.Exception.Message)")
-      Noter (Texte "$nom : installation echouee." "${nom}: installation failed.")
+# Sélection unique des outils absents ; la confirmation porte sur la liste entière.
+$catalogue = @(
+  @{ Nom = 'Claude Code'; Commande = 'claude'; Installation = 'irm https://claude.ai/install.ps1 | iex' },
+  @{ Nom = 'Codex (OpenAI)'; Commande = 'codex'; Installation = 'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"' },
+  @{ Nom = 'OpenCode'; Commande = 'opencode'; Installation = 'npm install -g opencode-ai' },
+  @{ Nom = 'Pi'; Commande = 'pi'; Installation = 'npm install -g @mariozechner/pi-coding-agent' },
+  @{ Nom = 'Gemini CLI'; Commande = 'gemini'; Installation = 'npm install -g @google/gemini-cli' },
+  @{ Nom = 'Antigravity'; Commande = 'antigravity-cli'; Installation = $null }
+)
+$manquants = @($catalogue | Where-Object { -not (Get-Command $_.Commande -ErrorAction SilentlyContinue) })
+$disponibles = @($catalogue | Where-Object { Get-Command $_.Commande -ErrorAction SilentlyContinue })
+foreach ($outil in $disponibles) { Dire (Texte "$($outil.Nom) : déjà présent." "$($outil.Nom): already available."); Noter "$($outil.Nom) : déjà présent." }
+if ($disponibles.Count -gt 0) { Etat-Etape 'ok' (Texte "Outils disponibles : $($disponibles.Count)." "Available tools: $($disponibles.Count).") }
+if ($manquants.Count -gt 0) {
+  Dire (Texte 'Outils absents proposés :' 'Missing tools available for selection:')
+  for ($i=0; $i -lt $manquants.Count; $i++) { Dire "$($i+1). $($manquants[$i].Nom)" }
+  Dire (Texte 'Antigravity : documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')
+  while ($true) {
+    if ($Oui -or $DryRun) { $selection = '0' }
+    else { $selection = Lire-Saisie (Texte 'Numéros à installer (ex. 1,3 ; 0 = aucun)' 'Numbers to install (e.g. 1,3; 0 = none)') '0' }
+    if ($null -eq $selection) { break }
+    $selection = $selection -replace '\s',''
+    if ($selection -eq '0' -or $selection -eq '') {
+      if ($disponibles.Count -eq 0 -and -not ($Oui -or $DryRun)) { Dire (Texte 'Choisissez au moins une IA compatible.' 'Choose at least one compatible AI.'); continue }
+      break
     }
-  } else {
-    Dire (Texte "$nom : non installe (refuse)." "${nom}: not installed (declined).")
-    Noter (Texte "$nom : non installe (refuse)." "${nom}: not installed (declined).")
+    if ($selection -notmatch '^[1-9][0-9]*(,[1-9][0-9]*)*$') { Dire (Texte 'Sélection invalide.' 'Invalid selection.'); continue }
+    $indices = @($selection.Split(',') | ForEach-Object { [int]$_ } | Select-Object -Unique)
+    if (@($indices | Where-Object { $_ -gt $manquants.Count }).Count -gt 0) { Dire (Texte 'Numéro hors liste.' 'Number out of range.'); continue }
+    $choisis = @($indices | ForEach-Object { $manquants[$_-1] })
+    Dire (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')")
+    if (-not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    foreach ($outil in $choisis) {
+      if (-not $outil.Installation) { Dire 'https://antigravity.google/docs/cli/getting-started'; Noter 'Antigravity : installation manuelle requise.'; continue }
+      try {
+        Executer (Texte "Installation de $($outil.Nom)." "Installing $($outil.Nom).") ([scriptblock]::Create($outil.Installation)) | Out-Null
+        if (-not $DryRun) { Rafraichir-Path; if (Get-Command $outil.Commande -ErrorAction SilentlyContinue) { $disponibles += $outil; Noter "$($outil.Nom) : installé." } else { Noter "$($outil.Nom) : à vérifier." } }
+      } catch { Dire (Texte "Installation de $($outil.Nom) échouée." "Installation of $($outil.Nom) failed.") }
+    }
+    break
   }
-  Dire ''
 }
-
-Proposer-Outil 'Claude Code' 'claude' 'claude' 'irm https://claude.ai/install.ps1 | iex' 'https://code.claude.com/docs'
-Proposer-Outil 'Codex (OpenAI)' 'codex' 'codex' 'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"' 'https://developers.openai.com/codex'
-Proposer-Outil 'OpenCode' 'opencode' 'opencode' 'npm install -g opencode-ai' 'https://opencode.ai/docs'
-Proposer-Outil 'Gemini CLI (Google)' 'gemini' 'gemini' 'npm install -g @google/gemini-cli' 'https://www.geminicli.com/docs/get-started/installation'
-
-Dire '### Antigravity (Google)'
-Dire (Texte 'La commande d''installation d''Antigravity CLI n''a pas pu etre verifiee :' 'The Antigravity CLI installation command could not be verified:')
-Dire (Texte 'nous ne la donnons donc pas. Suivez sa documentation officielle :' 'it is not provided here. Follow the official documentation:')
-Dire '  https://antigravity.google/product/antigravity-cli'
-Dire '  https://antigravity.google/docs/cli/getting-started'
-Dire (Texte 'Note : Google annonce que Gemini CLI cede la place a Antigravity CLI pour les' 'Note: Google announces a transition from Gemini CLI to Antigravity CLI for')
-Dire (Texte 'comptes gratuits et Google One : https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli' 'free and Google One accounts: https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli')
-Noter (Texte 'Antigravity : documentation seule (methode non verifiee).' 'Antigravity: documentation only (method not verified).')
-Dire ''
+if ($disponibles.Count -eq 0 -and -not $DryRun) { Dire (Texte 'Aucune IA détectée : configurez un outil avant une mission.' 'No AI detected: set up a tool before starting a mission.') }
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
 if ($Interface) { Etape 'chef'; Proposer-Chef }
