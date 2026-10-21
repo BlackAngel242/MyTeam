@@ -36,7 +36,7 @@ export async function createProjectServer({createBureauServer,myteamRoot=install
  };
  const server=createServer(async(req,res)=>{
   const origin=`http://127.0.0.1:${server.address()?.port}`;
-  const json=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(value));};
+  const json=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'});res.end(JSON.stringify(value));};
   try{
    if(req.headers.host!==new URL(origin).host||req.headers['sec-fetch-site']==='cross-site')return json(403,{error:'Origine refusée.'});
    const url=new URL(req.url,origin);
@@ -60,7 +60,7 @@ export async function createProjectServer({createBureauServer,myteamRoot=install
    const files={'/demarrage':'start.html','/start.js':'start.js','/start.css':'start.css','/project-context.js':'project-context.js'};
    if(!runtime&&url.pathname==='/')files['/']='start.html';
    if(files[url.pathname]&&req.method==='GET'){
-    const name=files[url.pathname],content=await readFile(new URL('../public/'+name,import.meta.url));res.writeHead(200,{'Content-Type':name.endsWith('.js')?'text/javascript; charset=utf-8':name.endsWith('.css')?'text/css; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store','Content-Security-Policy':"default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});return res.end(content);
+    const name=files[url.pathname],content=await readFile(new URL('../public/'+name,import.meta.url));res.writeHead(200,{'Content-Type':name.endsWith('.js')?'text/javascript; charset=utf-8':name.endsWith('.css')?'text/css; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"});return res.end(content);
    }
    if(!runtime||changing)return json(409,{error:'Choisis le projet avant de démarrer.',url:'/demarrage'});
    runtime.core.emit('request',req,res);
