@@ -1018,7 +1018,9 @@ const rng=seed=>()=>(seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
 function px(x,y,w,h,c,a=1){g.globalAlpha=a;g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));g.globalAlpha=1;}
 const pixelCase=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .:_\-+?!/'%]/g,'?');
 const textWidth=s=>Math.max(0,s.length*4-1);
-function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;while(s.length>1&&textWidth(s+'.')>max)s=s.slice(0,-1);return s.trimEnd()+'.';}
+// Performance: Replace O(n) while loop string slicing with direct O(1) mathematical calculation.
+// Since each character has a fixed width of 4px (with -1 total offset), max-3 / 4 gets exact fit.
+function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;const keep=Math.floor((max-3)/4);return (keep>0?s.slice(0,keep):s.slice(0,1)).trimEnd()+'.';}
 function text(s,x,y,c,a=1){[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')px(x+i*4+b%3,y+Math.floor(b/3),1,1,c,a);});}
 // Halo en pixels autour d'une enseigne : reste dans le langage pixel, pas de flou.
 function neon(s,x,y,c){for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])text(s,x+dx,y+dy,c,.22);text(s,x,y,c);}
