@@ -14,3 +14,5 @@ Les deux rapports reçus testaient la tête `589876c`, avant l'allègement du ZI
 | Sortie 0 avec Node/Herdr manquant | Confirmé | Finir avec un code non nul hors simulation ; garder la sélection IA facultative. |
 
 À retester après ce commit : Windows et Linux avec zéro IA et réponse `0` ; Herdr fraîchement installé hors PATH ; échec réel ou simulé de Clink ; lancement effectif d'un agent dans un panneau avec alias `chef` ; installation npm depuis le tag publié ; ZIP réduit de la nouvelle release. La CI vérifie la syntaxe et les tests mais ne remplace pas ces recettes réelles.
+
+La documentation Herdr impose un nom d'agent conforme à `[a-z][a-z0-9_-]{0,31}` ; « Chef » reste un libellé de panneau, `chef` devient l'alias de l'agent.
