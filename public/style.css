@@ -1044,3 +1044,5 @@ kbd{display:inline-block;font:11px/1 Consolas,monospace;padding:3px 5px 4px;bord
 .page-footer[hidden]{display:none}
 .icon-button[data-actif="true"]{color:var(--mint)}
 @media(max-width:520px){.mode-switch{grid-column:span 2;width:100%;justify-content:center}}
+#update-open { cursor:pointer; gap:.4rem; align-items:center; }
+#update-open .lucide { width:1rem; height:1rem; }

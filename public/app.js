@@ -22,7 +22,7 @@ const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].
 const DEMANDE_EC='La demande a échoué. Réessaie dans un instant.';
 async function request(url, options = {}) {
   // Délais au moins égaux au pire cas du serveur (liste puis lecture Herdr) pour ne pas abandonner une réponse en route.
-  const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:30000), cache:'no-store' });
+  const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:url==='/api/update'&&options.method==='POST'?180000:30000), cache:'no-store' });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || DEMANDE_EC);
   return data;
@@ -790,6 +790,32 @@ async function copierDiagnostic(){
   catch{pre.textContent=texte;pre.hidden=false;$('sante-ligne').textContent=t('sante.copie_impossible');}
 }
 $('sante-copier').addEventListener('click',copierDiagnostic);
+let updateBusy=false;
+async function checkUpdate(){
+ if(!state.token)return;
+ try{
+  const d=await request('/api/update',{headers:{'X-Bureau-Token':state.token}});
+  $('update-open').hidden=!d.available;
+  $('update-label').textContent=t('update.available',{version:d.latest});
+  $('update-install').hidden=!d.available;
+  $('update-status').textContent=d.available?t('update.available',{version:d.latest}):t('update.current',{version:d.installed});
+ }catch(error){$('update-status').textContent=errorText(error);}
+}
+$('update-check').addEventListener('click',checkUpdate);
+$('update-open').addEventListener('click',()=>{toggleHelp(true);$('update-install').focus();});
+$('update-install').addEventListener('click',async()=>{
+ if(updateBusy)return;updateBusy=true;$('update-install').disabled=true;
+ const status=$('update-status'),post=action=>request('/api/update',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({action})});
+ try{
+  status.textContent=t('update.downloading');const prepared=await post('prepare');
+  status.textContent=t('update.restarting');await post('install');
+  for(let i=0;i<60;i++){
+   await new Promise(resolve=>setTimeout(resolve,1000));
+   try{const response=await fetch('/api/projet',{cache:'no-store',signal:AbortSignal.timeout(900)});if(response.ok&&((await response.json()).version===prepared.ready)){location.reload();return;}}catch{}
+  }
+  status.textContent=t('update.restart_failed');
+ }catch(error){status.textContent=errorText(error);}finally{updateBusy=false;$('update-install').disabled=false;}
+});
 async function loadFooter(){
   if(!state.connected||!state.token)return;
   try{
@@ -1955,3 +1981,6 @@ setInterval(()=>{
   if(prefs.get('bureau.notifs')==='on'&&++hiddenTicks%5===0)refreshState();
 },3000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();readOutput();}});
+
+// La recherche de release est légère et mise en cache côté serveur.
+setTimeout(checkUpdate,3000);

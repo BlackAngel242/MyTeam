@@ -231,3 +231,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 ## Sources vérifiées
 
 Les commandes ci-dessus ont été relevées le 17 octobre 2026 sur les pages officielles : nodejs.org, le dépôt winget local (`OpenJS.NodeJS.LTS`), herdr.dev (guide d'agent et documentation d'installation), code.claude.com/docs, github.com/openai/codex, opencode.ai/docs, github.com/google-gemini/gemini-cli. La commande d'Antigravity CLI est la seule non vérifiée : seul son lien officiel est donné.
+
+## Mises à jour intégrées
+
+À partir de 0.5.1, une installation issue du ZIP officiel peut détecter la dernière release depuis son interface. Le bouton **Mettre à jour et redémarrer** télécharge et vérifie l’archive officielle, prépare les nouveaux fichiers puis relance le bureau au même port. Une sauvegarde de l’ancienne installation reste à côté du dossier ; les états privés du projet sont dans le dossier de données du système. Les dossiers locaux `.bureau/` et `.myteam-local/` sont recopiés. Les clones Git doivent être mis à jour avec Git. Les installations 0.5.0 nécessitent un dernier téléchargement manuel pour activer cette fonction.

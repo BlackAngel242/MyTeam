@@ -21,13 +21,14 @@ const installation=fileURLToPath(new URL('../',import.meta.url));
 export async function createProjectServer({createBureauServer,myteamRoot=installation,dataRoot=localDataRoot(),places={home:homedir()},bridge,readTerminal=createTerminalStatusReader(),startTimers=true}={}){
  const token=randomBytes(32).toString('hex');let runtime=null,changing=false;
  const config=join(dataRoot,'project.json');
+ const installedVersion=JSON.parse(await readFile(join(myteamRoot,'package.json'),'utf8').catch(()=>'{}')).version??null;
  const select=async (selection,{persist=true}={})=>{
   const project=await resolveProject(selection,places,myteamRoot);
   if(selection.prepareKit===true&&project.mode==='project')await initKit(project.root,{lang:selection.lang==='en'?'en':'fr'});
   const stateDir=projectStateDir(dataRoot,project.root);await mkdir(stateDir,{recursive:true,mode:0o700});
   let scoped;const base=bridge||createHerdr({allowAgent:agent=>scoped.allowed(agent)});scoped=scopedBridge(base,project.root);
   const bySession=async(sessionId,reader)=>{const agent=(await scoped.list()).find(a=>a.sessionId===sessionId);if(!agent)throw new ProjectError('Cet agent ne travaille plus dans le projet actif.');return scoped.run(agent.id,current=>reader(current.sessionId));};
-  const core=createBureauServer({bridge:scoped,lireEtat:agent=>scoped.run(agent.id,readTerminal),readActivity:id=>bySession(id,readClaudeActivity),readOtherActivity:(agent,agents)=>scoped.run(agent.id,current=>readAgentActivity(current,agents)),getResponses:id=>bySession(id,readClaudeResponses),getOtherResponses:(agent,agents)=>scoped.run(agent.id,current=>readAgentResponses(current,agents)),delegations:id=>bySession(id,readDelegations),getPlaces:()=>({bureau:{label:'Projet actif',path:project.root}}),getBlackboard:()=>readBlackboard({root:project.root}),getTodos:createTodosReader({projectRoot:project.root}),queueFile:join(stateDir,'file-attente.json'),criseFile:join(stateDir,'crise.json'),directionFile:join(stateDir,'direction.json'),piedFile:join(stateDir,'pied.json')});
+  const core=createBureauServer({bridge:scoped,lireEtat:agent=>scoped.run(agent.id,readTerminal),readActivity:id=>bySession(id,readClaudeActivity),readOtherActivity:(agent,agents)=>scoped.run(agent.id,current=>readAgentActivity(current,agents)),getResponses:id=>bySession(id,readClaudeResponses),getOtherResponses:(agent,agents)=>scoped.run(agent.id,current=>readAgentResponses(current,agents)),delegations:id=>bySession(id,readDelegations),getPlaces:()=>({bureau:{label:'Projet actif',path:project.root}}),getBlackboard:()=>readBlackboard({root:project.root}),getTodos:createTodosReader({projectRoot:project.root}),stopForUpdate:()=>{server.close(()=>{process.exit(0);});},queueFile:join(stateDir,'file-attente.json'),criseFile:join(stateDir,'crise.json'),directionFile:join(stateDir,'direction.json'),piedFile:join(stateDir,'pied.json')});
   core.address=()=>server.address();
   if(persist){const temporary=config+'.tmp';await writeFile(temporary,JSON.stringify({mode:selection.mode,place:selection.place,path:selection.path}),{mode:0o600});await rename(temporary,config);}
   if(runtime){runtime.core.queue.stop();runtime.core.pauses.stop();await runtime.bridge.deactivate();}
@@ -41,7 +42,7 @@ export async function createProjectServer({createBureauServer,myteamRoot=install
    if(req.headers.host!==new URL(origin).host||req.headers['sec-fetch-site']==='cross-site')return json(403,{error:'Origine refusée.'});
    const url=new URL(req.url,origin);
    if(url.pathname==='/api/projet'){
-    if(req.method==='GET')return json(200,{token,project:runtime?{mode:runtime.mode,root:runtime.root}:null,places:Object.keys(places)});
+    if(req.method==='GET')return json(200,{token,version:installedVersion,project:runtime?{mode:runtime.mode,root:runtime.root}:null,places:Object.keys(places)});
     if(req.method!=='POST')return json(405,{error:'Méthode refusée.'});
     if(req.headers.origin!==origin||req.headers['x-myteam-token']!==token||!req.headers['content-type']?.startsWith('application/json'))return json(403,{error:'Origine ou jeton refusé.'});
     if(changing)return json(409,{error:'Un changement est en cours.'});

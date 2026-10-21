@@ -20,6 +20,7 @@ import {createCrise} from './src/crisis.mjs';
 import {createRelais,RelaisError} from './src/relais.mjs';
 import {createAutonomie,AutonomieError} from './src/autonomie.mjs';
 import {createSante} from './src/sante.mjs';
+import {createUpdater} from './src/update.mjs';
 import {masque} from './src/masque.mjs';
 import {recapAutonomie} from './src/autonomie-recap.mjs';
 
@@ -27,7 +28,7 @@ const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const errorStatus=error=>[400,502].includes(error?.statusCode)?error.statusCode:500;
 const execute=promisify(execFile);
 const empreinte=value=>createHash('sha256').update(value).digest('hex');
-export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),piedFile=fileURLToPath(new URL('./.bureau/pied.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais,autonomieFile=join(dirname(queueFile),'autonomie.json'),autonomie:autonomieInjectee,sante:santeInjectee}={}) {
+export function createBureauServer({bridge=createHerdr(),readActivity=readClaudeActivity,readOtherActivity=readAgentActivity,getTodos=readTodos,getBlackboard=readBlackboard,getResponses=readClaudeResponses,getOtherResponses=readAgentResponses,cacheReponsesMs=3000,getPlaces=standardPlaces,executeFile=execute,platform=process.platform,delegations=readDelegations,now=()=>Date.now(),lireEtat=createTerminalStatusReader({now}),queueFile=fileURLToPath(new URL('./.bureau/file-attente.json',import.meta.url)),queue,criseFile=fileURLToPath(new URL('./.bureau/crise.json',import.meta.url)),crise,directionFile=fileURLToPath(new URL('./.bureau/direction.json',import.meta.url)),piedFile=fileURLToPath(new URL('./.bureau/pied.json',import.meta.url)),direction,relaisFile=join(dirname(queueFile),'relais.json'),relais,autonomieFile=join(dirname(queueFile),'autonomie.json'),autonomie:autonomieInjectee,sante:santeInjectee,updater:updaterInjectee,stopForUpdate}={}) {
   const token=randomBytes(32).toString('hex');
   let transferPending=Promise.resolve();
   const etats=new Map();
@@ -149,6 +150,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),cancel:itemId=>fileAttente.cancel(itemId),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive()});
   // Santé du bureau (N7) : instantané de diagnostic, muet sur les chemins, les
   // clés, les objectifs et les messages. La route observe : aucun redémarrage.
+  const updater=updaterInjectee??createUpdater({port:()=>server.address()?.port});
   const sante=santeInjectee??createSante({bridge,criseActive:()=>salleDeCrise.isActive(),autonomieActive:()=>autonomie.get().actif===true,maintenant:now});
   // L'autonomie expose son objectif et son journal : ce sont des textes libres,
   // qui peuvent citer un chemin ou un secret. Ils passent par le masque public
@@ -563,6 +565,15 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           catch(error) {return json(error instanceof AutonomieError?error.status:500,{error:error instanceof AutonomieError?error.message:'L’autonomie n’a pas pu être changée.'});}
         }
         return json(404,{error:'Page introuvable.'});
+      }
+      if(url.pathname==='/api/update') {
+        if(req.method==='GET') {if(!guard(req,{body:false}))return;try{return json(200,await updater.check());}catch{return json(502,{error:'Vérification des mises à jour indisponible.'});}}
+        if(req.method==='POST') {if(!guard(req))return;const parsed=await readJson(req);if(parsed===null)return;try{
+          if(parsed.action==='prepare')return json(200,await updater.prepare());
+          if(parsed.action==='install') {if(typeof stopForUpdate!=='function')return json(409,{error:'Relance automatique indisponible dans cette session.'});const result=await updater.install();json(200,result);setImmediate(()=>stopForUpdate());return;}
+          return json(400,{error:'Action de mise à jour inconnue.'});
+        }catch(error){return json(error.statusCode??500,{error:error.statusCode?error.message:'Mise à jour impossible.'});}}
+        return json(405,{error:'Méthode refusée.'});
       }
       // Santé du bureau : jeton exigé, réponse muette (ni chemin, ni clé, ni
       // objectif, ni message). La route n'agit pas : pas de redémarrage ici.
