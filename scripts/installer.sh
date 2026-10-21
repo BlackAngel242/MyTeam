@@ -441,7 +441,11 @@ creer_grille_herdr() {
 detecter_outils() {
   local type
   for type in pi claude codex gemini cursor devin agy cline omp mastracode opencode copilot kimi kiro droid amp grok hermes kilo qodercli qwen letta maki muse; do
-    command -v "$type" >/dev/null 2>&1 && printf '%s\n' "$type"
+    if [ "$type" = agy ]; then
+      { command -v agy >/dev/null 2>&1 || command -v antigravity-cli >/dev/null 2>&1; } && printf '%s\n' agy
+    else
+      command -v "$type" >/dev/null 2>&1 && printf '%s\n' "$type"
+    fi
   done
   return 0
 }

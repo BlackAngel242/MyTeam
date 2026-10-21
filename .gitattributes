@@ -51,6 +51,7 @@ docs/plan-travail.md export-ignore
 docs/publication-github.md export-ignore
 docs/contrat-*.md export-ignore
 docs/audit-*.md export-ignore
+/test export-ignore
 
 # Défense complémentaire : les notes privées ne doivent jamais être suivies.
 .myteam-local export-ignore

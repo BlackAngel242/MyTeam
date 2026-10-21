@@ -4,8 +4,8 @@
   Installe les prerequis du Bureau des agents sur Windows.
 
 .DESCRIPTION
-  Verifie Node.js, Herdr et les outils d'IA en ligne de commande, propose chaque
-  installation avec une confirmation (o/n), prepare un espace Herdr a 4 panneaux
+  Verifie et installe automatiquement Node.js et Herdr, puis laisse les outils
+  d'IA au choix de l'utilisateur. Prepare un espace Herdr a 4 panneaux
   (le premier = chef), propose les extensions utiles du projet, configure le port
   et le chemin de Herdr, peut creer le raccourci « Ouvrir le bureau » (au choix :
   Herdr ou le bureau dans le navigateur), puis lance npm test et npm run check.
@@ -16,7 +16,7 @@
   Affiche les actions sans rien executer (simulation).
 
 .PARAMETER Oui
-  Accepte sauf toute installation (Node.js, Herdr, outils, extensions), qui exigent un o/n individuel.
+  Installe les prerequis manquants, sans choisir d'IA ni lancer d'agent.
 
 .PARAMETER Port
   Port du bureau (variable BUREAU_PORT). Sinon, question pendant l'installation.
@@ -79,7 +79,8 @@ Options :
   -Interface       Dialogue avec l'interface animée.
   -Aide            Affiche cette aide.
 
-Chaque installation est confirmee par o/n. Aucune cle n'est demandee.
+Les prérequis Node.js et Herdr sont installés automatiquement. Les outils d’IA restent au choix.
+Aucune cle n'est demandee.
 '@
   exit 0
 }
@@ -430,7 +431,10 @@ function Creer-GrilleHerdr {
 
 function Detecter-Outils {
   foreach ($type in @('pi','claude','codex','gemini','cursor','devin','agy','cline','omp','mastracode','opencode','copilot','kimi','kiro','droid','amp','grok','hermes','kilo','qodercli','qwen','letta','maki','muse')) {
-    if (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue) { $type }
+    if ($type -eq 'agy') {
+      if ((Get-Command agy -CommandType Application -ErrorAction SilentlyContinue) -or
+          (Get-Command antigravity-cli -CommandType Application -ErrorAction SilentlyContinue)) { 'agy' }
+    } elseif (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue) { $type }
   }
 }
 

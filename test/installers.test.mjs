@@ -29,6 +29,13 @@ test('les deux installeurs annoncent simulation, option oui et aide', async () =
   }
 });
 
+test("l'aide Windows annonce les prérequis automatiques et les IA facultatives", async () => {
+  const { ps1: texte } = await textes();
+  assert.doesNotMatch(texte, /Chaque installation est confirmee par o\/n/);
+  assert.match(texte, /prérequis[^\r\n]+automatiquement/i);
+  assert.match(texte, /outils d[’']IA[^\r\n]+choix/i);
+});
+
 test('les commandes d\'installation sont celles vérifiées, Antigravity reste un lien', async () => {
   const { ps1: t1, sh: t2 } = await textes();
   for (const attendu of ['winget install --id OpenJS.NodeJS.LTS', 'https://herdr.dev/install.ps1', 'https://claude.ai/install.ps1', 'https://chatgpt.com/codex/install.ps1', 'opencode-ai', '@google/gemini-cli']) {

@@ -81,6 +81,7 @@ test('le ZIP de distribution garde une racine courte et écarte les notes de ses
   }
   assert.match(attributs, /^docs\/\*\.md export-ignore$/m);
   assert.match(attributs, /^docs\/INSTALLATION\.md -export-ignore$/m);
+  assert.match(attributs, /^\/test export-ignore$/m);
   assert.doesNotMatch(attributs, /^\/README\.md export-ignore$/m);
 });
 
