@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Archive zip d'une release : les fichiers suivis par Git à la révision donnée (jamais le dossier de travail),
-// dans un dossier racine MyTeam-<version>/. Les fichiers marqués export-ignore dans .gitattributes restent dehors.
+// dans un dossier racine MyTeam-<version>/. Les fichiers marqués export-ignore dans .gitattributes restent dehors,
+// ainsi que les dossiers de DOSSIERS_EXCLUS, sans intérêt pour la personne qui reçoit le paquet.
 // Usage : node scripts/empaqueter-release.mjs <version> [--rev HEAD] [--sortie dist]
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -13,6 +14,27 @@ const executer = promisify(execFile);
 // Un crochet Git exporte GIT_INDEX_FILE et d'autres variables GIT_* : sans les retirer, `git -C <dépôt>` lirait le mauvais index.
 const envGit = Object.fromEntries(Object.entries(process.env).filter(([cle]) => !cle.startsWith('GIT_')));
 const racine = fileURLToPath(new URL('../', import.meta.url));
+
+// Dossiers suivis par Git mais exclus du paquet : le site vitrine (déployé par ailleurs),
+// les réglages du dépôt et les notes d'outils tiers. `test` est déjà écarté par .gitattributes ;
+// il est répété ici pour que le contenu du paquet ne dépende pas que d'elle.
+const DOSSIERS_EXCLUS = ['site', '.github', '.impeccable', '.jules', 'test'];
+
+// Noms des entrées d'un ZIP dont la structure a déjà été validée, lus dans son répertoire central.
+function nomsEntrees(octets) {
+  let fin = octets.length - 22;
+  const minimum = Math.max(0, fin - 65535);
+  while (fin >= minimum && octets.readUInt32LE(fin) !== 0x06054b50) fin--;
+  const total = octets.readUInt16LE(fin + 10);
+  let p = octets.readUInt32LE(fin + 16);
+  const noms = [];
+  for (let i = 0; i < total; i++) {
+    const nom = octets.readUInt16LE(p + 28), extra = octets.readUInt16LE(p + 30), commentaire = octets.readUInt16LE(p + 32);
+    noms.push(octets.toString('utf8', p + 46, p + 46 + nom));
+    p += 46 + nom + extra + commentaire;
+  }
+  return noms;
+}
 
 export function verifierZip(octets, prefixe) {
   const invalide = () => { throw new Error('Archive ZIP invalide.'); };
@@ -50,9 +72,15 @@ export async function empaqueter(version, { rev = 'HEAD', sortie = 'dist', depot
   await mkdir(dossier, { recursive: true });
   const fichier = join(dossier, `MyTeam-${version}.zip`);
   const prefixe = `MyTeam-${version}/`;
-  await executer('git', ['-C', depot, 'archive', '--format=zip', `--prefix=${prefixe}`, '-o', fichier, commit], { windowsHide: true, env: envGit });
+  await executer('git', ['-C', depot, 'archive', '--format=zip', `--prefix=${prefixe}`, '-o', fichier, commit, '--', '.', ...DOSSIERS_EXCLUS.map(dossier => `:(exclude)${dossier}`)], { windowsHide: true, env: envGit });
   const octets = await readFile(fichier);
   verifierZip(octets, prefixe);
+  // Contrôle du produit fini : si un dossier exclu réapparaît (attributs ou git différents),
+  // la construction échoue au lieu de livrer un paquet trop rempli.
+  for (const nom of nomsEntrees(octets)) {
+    const premier = nom.slice(prefixe.length).split('/')[0];
+    if (DOSSIERS_EXCLUS.includes(premier)) throw new Error(`Dossier exclu présent dans le paquet : ${premier}/`);
+  }
   const sha = createHash('sha256').update(octets).digest('hex');
   const checksum = `${fichier}.sha256`;
   await writeFile(checksum, `${sha}  MyTeam-${version}.zip\n`);
