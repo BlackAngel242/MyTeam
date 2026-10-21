@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Installe les prerequis du Bureau des agents sur macOS et Linux.
 #
-# Verifie Node.js, Herdr et les outils d'IA en ligne de commande, propose chaque
-# installation avec une confirmation (o/n), prepare un espace Herdr a 4 panneaux
+# Vérifie et installe Node.js et Herdr si nécessaire ; propose une sélection groupée
+# des outils IA absents, puis prépare un espace Herdr à 4 panneaux
 # (le premier = chef), propose les extensions utiles du projet, configure le port
 # et le chemin de Herdr, peut creer le raccourci « Ouvrir le bureau » (au choix :
 # Herdr ou le bureau dans le navigateur), puis lance npm test et npm run check.
@@ -11,7 +11,7 @@
 #
 # Usage : bash scripts/installer.sh [options]
 #   --dry-run            Simulation : affiche les actions sans rien executer.
-#   --oui                Accepte sauf toute installation (Node.js, Herdr, outils, extensions) (o/n obligatoire).
+#   --oui                Installe les prérequis manquants, sans choisir d’IA ni lancer d’agent.
 #   --port <numero>      Port du bureau (defaut : 4317 ou valeur existante).
 #   --herdr-chemin <fichier>  Chemin de herdr s'il n'est pas dans le PATH.
 #   --sans-raccourci     Ne propose pas le raccourci « Ouvrir le bureau ».
@@ -50,7 +50,7 @@ while [ $# -gt 0 ]; do
     --lang)
       case "${2:-}" in fr|en) LANGUE="$2"; shift ;; *) printf 'Langue invalide / Invalid language: fr|en\n'; exit 1 ;; esac ;;
     --aide)
-      if [ "$LANGUE" = en ]; then printf '%s\n' 'Agent desktop installer: --dry-run (preview), --oui (never confirms installations or agent launches), --port <1024..65535>, --herdr-chemin <file>, --sans-raccourci, --interface, --lang fr|en, --aide. Each installation needs individual confirmation.'; exit 0; fi
+      if [ "$LANGUE" = en ]; then printf '%s\n' 'Agent desktop installer: --dry-run (preview), --oui (installs missing prerequisites but never selects AI tools or launches agents), --port <1024..65535>, --herdr-chemin <file>, --sans-raccourci, --interface, --lang fr|en, --aide.'; exit 0; fi
       sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;

@@ -60,7 +60,7 @@ try {
 
 if ($Aide) {
   if ($Lang -eq 'en') {
-    Write-Host 'Agent desktop installer: -DryRun (preview), -Oui (does not confirm installations or agent launches), -Port <1024..65535>, -HerdrChemin <exe>, -SansRaccourci, -Interface, -Lang fr|en, -Aide. Each installation requires individual confirmation.'
+    Write-Host 'Agent desktop installer: -DryRun (preview), -Oui (installs missing prerequisites but never selects AI tools or launches agents), -Port <1024..65535>, -HerdrChemin <exe>, -SansRaccourci, -Interface, -Lang fr|en, -Aide.'
     exit 0
   }
   Write-Host @'
@@ -71,7 +71,7 @@ Usage :
 
 Options :
   -DryRun          Simulation : affiche les actions sans rien executer.
-  -Oui             Accepte sauf toute installation (Node.js, Herdr, outils, extensions) (o/n obligatoire).
+  -Oui             Installe les prérequis manquants, sans choisir d’IA ni lancer d’agent.
   -Port <numero>   Port du bureau (defaut : 4317 ou valeur existante).
   -HerdrChemin <fichier>  Chemin de herdr.exe si absent du PATH.
   -SansRaccourci   Ne propose pas le raccourci « Ouvrir le bureau ».

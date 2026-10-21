@@ -24,7 +24,7 @@ test('les deux installeurs annoncent simulation, option oui et aide', async () =
     assert.match(texte, /DryRun|dry-run/, `${nom} : mode simulation`);
     assert.match(texte, /Oui|--oui|OUI=/, `${nom} : option oui`);
     assert.match(texte, /Aide|--aide/, `${nom} : aide`);
-    assert.match(texte, /\(o\/n\)/, `${nom} : confirmation o/n`);
+    assert.match(texte, /[Cc]onfirmer\(/, `${nom} : confirmations facultatives disponibles`);
     assert.ok(!texte.includes('—'), `${nom} : pas de tiret cadratin`);
   }
 });
