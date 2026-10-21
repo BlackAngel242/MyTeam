@@ -21,9 +21,9 @@ async function fixture(t) {
   await writeFile(join(path,'herdr'),'#!/bin/bash\nexit 77\n');await chmod(join(path,'herdr'),0o755);
   return path;
 }
-function dialogue(t,file,args,{answer=()=> 'n',eof=false}={}) {
+function dialogue(t,file,args,{answer=()=> 'n',eof=false,env={}}={}) {
   return new Promise((resolve,reject)=>{
-    const child=spawn(file,args,{windowsHide:true,env:{...process.env,BASH_ENV:''},stdio:['pipe','pipe','pipe']});
+    const child=spawn(file,args,{windowsHide:true,env:{...process.env,BASH_ENV:'',...env},stdio:['pipe','pipe','pipe']});
     const timer=setTimeout(()=>{child.kill();reject(new Error('Dialogue bloqué'));},120000);
     t.after(()=>{clearTimeout(timer);if(child.exitCode===null)child.kill();});
     let output='',errors='',partial='';const records=[];
@@ -107,6 +107,24 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     assert.match(result.output,/Bureau des agents : installation/);
   });
 }
+if (process.platform !== 'win32') test('installation Bash réelle : zéro IA et choix 0 terminent sans boucle', async t => {
+  const path = await fixture(t);
+  const home = join(path, 'home'); await mkdir(home);
+  const script = join(path, 'run-live.sh');
+  await writeFile(script, `command() {
+    if [ "$1" = -v ]; then case "$2" in claude|codex|opencode|pi|gemini|agy|antigravity-cli) return 1;; esac; fi
+    builtin command "$@"
+  }
+  . ${shellLiteral(join(path, 'scripts/installer.sh'))} --interface --lang fr --port 4317 --herdr-chemin ${shellLiteral(join(path, 'herdr'))}
+  `);
+  const result = await dialogue(t, bash, ['--noprofile','--norc',script], {
+    env: { HOME: home }, answer: line => line.startsWith('@@INPUT ') ? '0' : 'n',
+  });
+  assert.equal(result.code, 0, result.errors);
+  assert.equal(result.records.filter(x => /Numéros des outils à installer/.test(x)).length, 1);
+  assert.match(result.output, /Aucune IA choisie/);
+  assert.equal(result.records.at(-1), '@@END ok');
+});
 if(process.platform==='win32')test('J1 PowerShell : erreur fatale annonce DONE fail et END fail',async t=>{
   const result=await run(t,'ps',{badHerdr:true,eof:true});
   assert.equal(result.code,1);
