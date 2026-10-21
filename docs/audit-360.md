@@ -53,7 +53,7 @@ Légende : **[Fait]** = implémenté dans cette PR ; **[À faire]** = méthode f
 
 | # | Proposition | État | Méthode |
 |---|---|---|---|
-| Q1 | Ajouter `macos-latest` à la matrice CI (dépôt public = gratuit). Les installateurs `.sh` et les chemins Unix/macOS n'étaient testés que sur Ubuntu. | **[Fait]** | `.github/workflows/ci.yml` : `os: [ubuntu-latest, windows-latest, macos-latest]`. Les tests environnementaux (PowerShell, bash, symlinks) s'ignorent proprement sur macOS. |
+| Q1 | Ajouter `macos-latest` à la matrice CI (dépôt public = gratuit). Les installateurs `.sh` et les chemins Unix/macOS n'étaient testés que sur Ubuntu. | **[Retiré de la matrice]** | Le test `H3 chef bash` (`test/installers-h3.test.mjs:213`) échoue sur macOS : le `SKILL.md` attendu n'apparaît pas dans le dossier temporaire (cause probable : `/var` lien vers `/private/var`, non confirmée). macOS est retiré de la matrice pour garder la CI verte ; à réintroduire après correction du test dans une PR séparée. |
 | Q2 | Mesure de couverture avec `node --test --experimental-test-coverage` (natif, sans dépendance), en job optionnel. | [À faire] | Ajouter un workflow séparé (ou un step conditionnel) qui publie le pourcentage en résumé de run. Ne pas bloquer la CI sur un seuil tant que la cible n'est pas définie. |
 | Q3 | Les 27 tests ignorés sont environnementaux (PowerShell/bash/symlinks absents) — acceptable. Leur liste pourrait être affichée dans le résumé CI. | [À faire] | Parser la sortie TAP ou utiliser `--test-reporter=spec` + un résumé `skipped`. |
 
@@ -68,7 +68,7 @@ Légende : **[Fait]** = implémenté dans cette PR ; **[À faire]** = méthode f
 
 | # | Proposition | État | Méthode |
 |---|---|---|---|
-| G1 | Supprimer les branches `bolt-*` distantes (HANDOFF.md l'indique déjà comme « à faire par DrSmoke »). | [À faire] | Action de maintenance réservée à DrSmoke. Commande : `git push origin --delete bolt-throttle-canvas-mousemove-9353058314495662181 bolt-throttle-request-animation-frame-4009775728670992235 bolt/perf-fit-optimization-3593258377254832117 ccr-f7825547-u0hf6e`. |
+| G1 | Supprimer les branches `bolt-*` distantes (HANDOFF.md l'indique déjà comme « à faire par DrSmoke »). | [À faire] | Action de maintenance réservée à DrSmoke. À vérifier avant suppression : `claude` et `codex_update-in-app` (branches présentes sur GitHub, non analysées ici). Commande pour les seules branches Bolt : `git push origin --delete bolt-throttle-canvas-mousemove-9353058314495662181 bolt-throttle-request-animation-frame-4009775728670992235 bolt/perf-fit-optimization-3593258377254832117`. |
 | G2 | Intégrer ou fermer la branche du Lot U (harmonisation de l'interface, en attente d'autorisation dans TODO.md). | [À faire] | Décision produit par DrSmoke. |
 
 ## 4. Modifications implémentées dans cette PR (détail)
@@ -78,7 +78,7 @@ Chaque modification est un commit séparé pour faciliter la relecture :
 1. **`docs/audit-360.md`** : présent document.
 2. **`.githooks/pre-commit`** : motifs de secrets étendus (S1).
 3. **`server.mjs` + `src/project-server.mjs`** : en-têtes de sécurité cohérents, `X-Frame-Options: DENY` (S2).
-4. **`.github/workflows/ci.yml`** : macOS dans la matrice (Q1).
+4. **`.github/workflows/ci.yml`** : tentative d'ajout de macOS à la matrice (Q1), retirée après échec du test H3 sur macOS.
 
 **Deux propositions ont été abandonnées en cours de route (S3 et P1, voir §3) :** elles contredisaient des garanties délibérées et couvertes par des tests. Ceci est présenté volontairement dans la PR : c'est la démonstration que la suite de tests remplit son rôle de garde-fou, et que le design conservateur du projet (fraîcheur absolue avant envoi, conservation des copies partielles pour revue humaine) est assumé. Aucune des deux ne sera rouverte sans l'accord explicite de DrSmoke.
 
@@ -97,5 +97,5 @@ Chaque modification est un commit séparé pour faciliter la relecture :
 ## 6. Risques à surveiller (pas des bugs, des dépendances externes)
 
 - **Herdr CLI** : tout repose sur `parseResult` et un format JSON précis. Voir R1.
-- **Windows** : la gestion des chemins (`posix` vs `win32`, lecteur `C:`, `fold()` insensible à la casse) est la zone où une régression est la plus probable. La matrice CI Windows (et maintenant macOS) est critique : ne jamais la retirer.
+- **Windows** : la gestion des chemins (`posix` vs `win32`, lecteur `C:`, `fold()` insensible à la casse) est la zone où une régression est la plus probable. La matrice CI Windows est critique : ne jamais la retirer.
 - **Node 22/24** : l'usage de fonctionnalités récentes (`--test`, `timingSafeEqual` avec buffers de longueurs différentes géré) est couvert par la CI. Une montée de version majeure de Node doit être validée par la suite complète.
