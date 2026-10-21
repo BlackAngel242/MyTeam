@@ -154,7 +154,7 @@ async function functions(t,platform,names,body,options={}) {
   await writeFile(script,definitions+'\n'+body);
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
-const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Executer','Proposer-Clink'];
+const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Proposer-Clink'];
 test('L C-CD-16 bash : port invalide refusé clairement avant toute étape',async t=>{
   for(const [port,lang] of [['999999999999999999999999999999','fr'],['65536','en'],['1023','fr'],['','fr'],['4317; commande','en']]) {
     const data=await run(t,'bash',{port,lang,eof:true});
