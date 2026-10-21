@@ -21,10 +21,37 @@ docs/performance.md export-ignore
 /JOURNAL.md export-ignore
 /HANDOFF.md export-ignore
 /ERREURS.md export-ignore
+/AGENTS.md export-ignore
+/CLAUDE.md export-ignore
+/DESIGN.md export-ignore
+/LESSONS.md export-ignore
+/PRODUCT.md export-ignore
+/TODO.md export-ignore
+/CHANGELOG.md export-ignore
+/CHANGELOG.en.md export-ignore
+/CODE_OF_CONDUCT.md export-ignore
+/CODE_OF_CONDUCT.en.md export-ignore
+/CONTRIBUTING.md export-ignore
+/CONTRIBUTING.en.md export-ignore
+/NOTICE.md export-ignore
+/NOTICE.en.md export-ignore
+/SECURITY.md export-ignore
+/SECURITY.en.md export-ignore
+/README.en.md export-ignore
+docs/*.md export-ignore
+docs/INSTALLATION.md -export-ignore
+docs/INSTALLATION.en.md -export-ignore
+docs/aide.md -export-ignore
+docs/aide.en.md -export-ignore
+docs/kit.md -export-ignore
+docs/kit.en.md -export-ignore
+docs/installeur-protocole.md -export-ignore
+docs/superpowers/** export-ignore
 docs/plan-travail.md export-ignore
 docs/publication-github.md export-ignore
 docs/contrat-*.md export-ignore
 docs/audit-*.md export-ignore
+/test export-ignore
 
 # Défense complémentaire : les notes privées ne doivent jamais être suivies.
 .myteam-local export-ignore

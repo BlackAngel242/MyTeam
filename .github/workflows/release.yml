@@ -52,13 +52,15 @@ jobs:
           if (start === -1) throw new Error('Missing changelog');
           const end = text.indexOf('\n## [', start + 1);
           writeFileSync('release-notes.md', text.slice(start, end === -1 ? undefined : end));
-          appendFileSync(process.env.GITHUB_ENV, `VERSION=${version}\n`);
+          const title = text.slice(start).split('\n', 1)[0];
+          const name = title.match(/·\s*[«"]([^»"]+)[»"]/u)?.[1];
+          appendFileSync(process.env.GITHUB_ENV, `VERSION=${version}\nRELEASE_TITLE=MyTeam ${version}${name ? ' « ' + name + ' »' : ''}\n`);
           JS
       - name: Build verified archive and checksum
         run: node scripts/empaqueter-release.mjs "$VERSION" --rev "$GITHUB_SHA"
       - name: Create draft and upload assets
         run: |
-          gh release create "v$VERSION" "dist/MyTeam-$VERSION.zip" "dist/MyTeam-$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "MyTeam $VERSION" --notes-file release-notes.md --draft
+          gh release create "v$VERSION" "dist/MyTeam-$VERSION.zip" "dist/MyTeam-$VERSION.zip.sha256" --target "$GITHUB_SHA" --title "$RELEASE_TITLE" --notes-file release-notes.md --draft
       - name: Verify downloaded draft assets
         run: |
           mkdir verification

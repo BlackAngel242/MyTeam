@@ -27,3 +27,7 @@ L’état d’exécution est privé, par projet, dans les données locales du sy
 Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi pour l’avancement de la livraison. Exécuter `npm run check`, `npm test`, puis les essais navigateur FR/EN sur ordinateur et téléphone avec états simulés. Aucun envoi réel pendant ces essais. Les résultats de la nouvelle référence doivent être constatés avant publication.
 
 Publier et vérifier la nouvelle release avant de retirer les anciennes releases et leurs archives. L’historique Git n’est pas réécrit. Le filtrage MyTeam n’est pas un bac à sable du système ni une restriction des droits propres aux outils d’IA externes.
+
+## Mise à jour intégrée (branche codex_update-in-app, en revue)
+
+Le bureau vérifie la dernière release officielle, contrôle le ZIP et son SHA-256, prépare un dossier frère puis déclenche un assistant externe pour arrêter, remplacer et relancer le serveur. L'ancien dossier est conservé. Les copies Git sont refusées. La version préparée est 0.5.1 ; valider les tests Linux et Windows avant fusion/publication. Depuis 0.5.0, une mise à niveau manuelle initiale reste nécessaire.

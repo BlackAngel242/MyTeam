@@ -101,3 +101,8 @@ Détail, propriétaires et état de chaque case dans `docs/plan-travail.md` (lu 
 ## Référence 0.5.0
 
 Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage public, choix et séparation des projets, correction du canvas, vérifications puis publication de la nouvelle référence avant retrait des anciennes releases.
+
+## Version 0.5.1 : mise à jour intégrée (PR à valider)
+
+- [ ] Vérifier le parcours dans une installation ZIP Linux et sur `windows-latest`, dont redémarrage et conservation de l'état local.
+- [ ] Fusionner la PR après revue et publier la release 0.5.1 ; vérifier que le site propose son archive.

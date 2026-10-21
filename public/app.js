@@ -22,7 +22,7 @@ const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].
 const DEMANDE_EC='La demande a échoué. Réessaie dans un instant.';
 async function request(url, options = {}) {
   // Délais au moins égaux au pire cas du serveur (liste puis lecture Herdr) pour ne pas abandonner une réponse en route.
-  const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:30000), cache:'no-store' });
+  const response = await fetch(url, { ...options, signal:AbortSignal.timeout(url==='/api/broadcast'?120000:url==='/api/update'&&options.method==='POST'?180000:30000), cache:'no-store' });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || DEMANDE_EC);
   return data;
@@ -790,6 +790,32 @@ async function copierDiagnostic(){
   catch{pre.textContent=texte;pre.hidden=false;$('sante-ligne').textContent=t('sante.copie_impossible');}
 }
 $('sante-copier').addEventListener('click',copierDiagnostic);
+let updateBusy=false;
+async function checkUpdate(force=false){
+ if(!state.token)return;
+ try{
+  const d=await request('/api/update'+(force?'?force=1':''),{headers:{'X-Bureau-Token':state.token}});
+  $('update-open').hidden=!d.available;
+  $('update-label').textContent=t('update.available',{version:d.latest});
+  $('update-install').hidden=!d.available;
+  $('update-status').textContent=d.available?t('update.available',{version:d.latest}):t('update.current',{version:d.installed});
+ }catch(error){$('update-status').textContent=errorText(error);}
+}
+$('update-check').addEventListener('click',()=>checkUpdate(true));
+$('update-open').addEventListener('click',()=>{toggleHelp(true);$('update-install').focus();});
+$('update-install').addEventListener('click',async()=>{
+ if(updateBusy)return;updateBusy=true;$('update-install').disabled=true;
+ const status=$('update-status'),post=action=>request('/api/update',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({action})});
+ try{
+  status.textContent=t('update.downloading');const prepared=await post('prepare');
+  status.textContent=t('update.restarting');await post('install');
+  for(let i=0;i<60;i++){
+   await new Promise(resolve=>setTimeout(resolve,1000));
+   try{const response=await fetch('/api/projet',{cache:'no-store',signal:AbortSignal.timeout(900)});if(response.ok&&((await response.json()).version===prepared.ready)){location.reload();return;}}catch{}
+  }
+  status.textContent=t('update.restart_failed');
+ }catch(error){status.textContent=errorText(error);}finally{updateBusy=false;$('update-install').disabled=false;}
+});
 async function loadFooter(){
   if(!state.connected||!state.token)return;
   try{
@@ -1018,7 +1044,9 @@ const rng=seed=>()=>(seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296;
 function px(x,y,w,h,c,a=1){g.globalAlpha=a;g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));g.globalAlpha=1;}
 const pixelCase=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .:_\-+?!/'%]/g,'?');
 const textWidth=s=>Math.max(0,s.length*4-1);
-function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;while(s.length>1&&textWidth(s+'.')>max)s=s.slice(0,-1);return s.trimEnd()+'.';}
+// Performance: Replace O(n) while loop string slicing with direct O(1) mathematical calculation.
+// Since each character has a fixed width of 4px (with -1 total offset), max-3 / 4 gets exact fit.
+function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;const keep=Math.floor((max-3)/4);return (keep>0?s.slice(0,keep):s.slice(0,1)).trimEnd()+'.';}
 function text(s,x,y,c,a=1){[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')px(x+i*4+b%3,y+Math.floor(b/3),1,1,c,a);});}
 // Halo en pixels autour d'une enseigne : reste dans le langage pixel, pas de flou.
 function neon(s,x,y,c){for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])text(s,x+dx,y+dy,c,.22);text(s,x,y,c);}
@@ -1955,3 +1983,6 @@ setInterval(()=>{
   if(prefs.get('bureau.notifs')==='on'&&++hiddenTicks%5===0)refreshState();
 },3000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshState();readOutput();}});
+
+// La recherche de release est légère et mise en cache côté serveur.
+setTimeout(checkUpdate,3000);

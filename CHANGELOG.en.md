@@ -4,6 +4,11 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
+## [0.5.1] - 2026-10-21 · "Ṣàngó"
+
+- Integrated release updates: notification, verified ZIP download, preparation and automatic restart.
+- Previous installation backup, local folders retained, Git checkouts excluded.
+
 ## [0.5.0] - 2026-10-20 · "Ṣàngó"
 
 ### Projects and privacy

@@ -87,7 +87,7 @@
         
         <p class="hero-requirements" data-i18n="hero.requirements">MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.0/MyTeam-0.5.0.zip" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
+          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.1/MyTeam-0.5.1.zip" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
           <a class="btn btn-secondary" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-github">Voir le projet sur GitHub</a>
         </div>
 
@@ -228,16 +228,21 @@
       </div>
     </section>
 
-    <!-- Nouveautés de la version 0.5.0 -->
+    <!-- Nouveautés de la version 0.5.1 -->
     <section id="nouveautes" class="section">
       <div class="container">
         <div class="section-head">
-          <span class="section-pill" data-i18n="nouveautes.badge">Version 0.5.0</span>
-          <h2 class="section-title" data-i18n="nouveautes.titre">Les nouveautés de la version 0.5.0</h2>
+          <span class="section-pill" data-i18n="nouveautes.badge">Version 0.5.1</span>
+          <h2 class="section-title" data-i18n="nouveautes.titre">Les nouveautés de la version 0.5.1</h2>
           <p class="section-desc" data-i18n="nouveautes.desc">Des fonctionnalités concrètes, testées et observées sur votre poste.</p>
         </div>
 
         <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#download"></use></svg></div>
+            <h3 class="feature-title" data-i18n="nouveautes.update.title">Mise à jour dans MyTeam</h3>
+            <p class="feature-desc" data-i18n="nouveautes.update.desc">Une nouvelle release est signalée dans le bureau. Téléchargement vérifié puis redémarrage automatique en un clic.</p>
+          </div>
           <div class="feature-card">
             <div class="feature-icon" aria-hidden="true"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="icons.svg#power"></use></svg></div>
             <h3 class="feature-title" data-i18n="nouveautes.switch.title">Choix du projet dès le démarrage</h3>
@@ -357,6 +362,12 @@
           <span class="section-pill" data-i18n="install.badge">Démarrage immédiat</span>
           <h2 class="section-title" data-i18n="install.titre">Installation en trois gestes</h2>
           <p class="section-desc" data-i18n="install.desc">Aucun outil de compilation requis. Node.js (>= 22) et Herdr suffisent.</p>
+        </div>
+
+        <div class="step-card">
+          <h3 class="step-title" data-i18n="install.npm.title">Installation par commande</h3>
+          <p class="step-desc" data-i18n="install.npm.desc">Si Node.js 22+ est déjà installé, cette commande place MyTeam dans votre dossier utilisateur et lance l'assistant. Il peut créer un raccourci MyTeam, Herdr, ou les deux. Sinon, utilisez le ZIP et son installateur.</p>
+          <div class="step-snippet"><code>npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install</code></div>
         </div>
 
         <div class="install-steps">
@@ -548,7 +559,7 @@ cd MyTeam</code></pre>
       </div>
 
       <div class="footer-bottom">
-        <p data-i18n="footer.divinite">MyTeam 0.5.0 · Version de référence</p>
+        <p data-i18n="footer.divinite">MyTeam 0.5.1 · Version de référence</p>
         <p data-i18n="footer.credit">Réalisé avec l'aide de l'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).</p>
         <p><span data-i18n="footer.license">Distribué sous licence libre MIT.</span> · <a href="#presentation" data-i18n="footer.top">Haut de page</a></p>
       </div>

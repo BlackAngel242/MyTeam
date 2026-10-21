@@ -95,23 +95,34 @@ test('H3 : les 24 types Herdr ont un nom propre sans changer les noms personnali
   }
 });
 
+test('H3 bash : antigravity-cli est détecté sous le type Herdr agy',async t=>{
+  const result=await bash(t,['detecter_outils'],`
+command() {
+  if [ "$1" = -v ]; then [ "$2" = antigravity-cli ]; return; fi
+  builtin command "$@"
+}
+[ "$(detecter_outils)" = agy ]
+`);
+  assert.equal(result.stdout.trim(),'');
+});
+
 test('H3 PowerShell : applications seules, outil absent ignoré et Oui sans lancement',async t=>{
   const result=await ps(t,['Detecter-Outils','Proposer-Agents'],`
 function Get-Command {param($Name,$CommandType,$ErrorAction)
  if($CommandType -ne 'Application'){throw 'detection non native'}
- if($Name -in @('codex','qwen')){return @{Source='factice.exe'}}
+ if($Name -in @('codex','antigravity-cli','qwen')){return @{Source='factice.exe'}}
 }
 function Dire($texte) {};function Noter($texte) {};function Simuler($texte) {}
 $script:reads=0;$script:starts=@();$DryRun=$false;$Oui=$true
 function Read-Host($texte){$script:reads++;return '1'}
 function Confirmer($question,[switch]$Individuel){if(-not $Individuel){throw 'accord non individuel'};return $true}
 function Appeler-Herdr($Arguments){$script:starts+=,@($Arguments);return @{result=@{}}}
-if((@(Detecter-Outils) -join ',') -ne 'codex,qwen'){throw 'detection incorrecte'}
+if((@(Detecter-Outils) -join ',') -ne 'codex,agy,qwen'){throw 'detection incorrecte'}
 Proposer-Agents @('w9:p1','w9:p2')
 if($starts.Count -ne 0 -or $reads -ne 0){throw 'Oui a lance un agent'}
 $Oui=$false
 Proposer-Agents @('w9:p1')
-if(($starts[0] -join ' ') -ne 'agent start Chef --kind codex --pane w9:p1'){throw 'mauvaise cible ou outil'}
+if(($starts[0] -join ' ') -ne 'agent start chef --kind codex --pane w9:p1'){throw 'mauvaise cible ou outil'}
 if($chefOutil -ne 'codex' -or $chefPane -ne 'w9:p1'){throw 'chef non memorise'}
 'ok'`);
   if(result)assert.equal(result.stdout.trim(),'ok');
@@ -132,7 +143,7 @@ OUI=0
 proposer_agents 'w9:p1' <<< 1
 [ "$CHEF_TYPE:$CHEF_PANE" = 'codex:w9:p1' ]
 printf 'START:%s\n' "$STARTED"`);
-  assert.match(result.stdout,/START:agent start Chef --kind codex --pane w9:p1/);
+  assert.match(result.stdout,/START:agent start chef --kind codex --pane w9:p1/);
   assert.equal((result.stdout.match(/START:/g)||[]).length,1);
 });
 

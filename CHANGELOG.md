@@ -4,6 +4,11 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
+## [0.5.1] - 2026-10-21 · « Ṣàngó »
+
+- Mise à jour intégrée depuis les releases GitHub : notification, téléchargement, SHA-256, préparation et redémarrage automatique.
+- Sauvegarde de l’ancienne installation, conservation des dossiers locaux et refus des clones Git.
+
 ## [0.5.0] - 2026-10-20 · « Ṣàngó »
 
 ### Projets et confidentialité
