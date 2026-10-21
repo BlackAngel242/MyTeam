@@ -6,6 +6,7 @@ Chaque version de MyTeam porte le nom d'une divinité ashanti ou yoruba, choisi 
 |---|---|---|---|
 | 0.4.2 | Ọṣun | Yoruba : les eaux douces, la beauté, l'abondance | Le flux de travail rendu visible : autonomie, santé du bureau, capsule animée |
 | 0.5.0 | Ṣàngó | Yoruba : le tonnerre, la justice | Ce qui attend une décision humaine est signalé clairement, et la décision reste à DrSmoke |
+| 0.5.1 | Ṣàngó | Même nom que la 0.5.0 | Mise à jour intégrée, vérifiée et relancée depuis le bureau |
 
 ## Règle de nommage
 

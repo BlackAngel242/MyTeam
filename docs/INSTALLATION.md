@@ -47,6 +47,14 @@ Les documents techniques relus peuvent être partagés volontairement. Le kit cr
 
 ## Méthode 1 : Installation par la release (recommandée)
 
+Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la version identifiée par le tag dans le dossier utilisateur, puis lance l'assistant :
+
+```sh
+npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install
+```
+
+La cible est `~/.local/share/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\MyTeam` sous Windows. Une installation existante n'est pas écrasée : utilisez sa mise à jour intégrée. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
+
 Cette méthode est la plus simple et ne nécessite aucun outil de développement préalable (ni Git, ni compilateur).
 
 1. **Télécharger l'archive** : Rendez-vous sur la page des [Releases du projet sur GitHub](https://github.com/BlackAngel242/MyTeam/releases) et téléchargez le fichier ZIP de la dernière version stable.
@@ -231,3 +239,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 ## Sources vérifiées
 
 Les commandes ci-dessus ont été relevées le 17 octobre 2026 sur les pages officielles : nodejs.org, le dépôt winget local (`OpenJS.NodeJS.LTS`), herdr.dev (guide d'agent et documentation d'installation), code.claude.com/docs, github.com/openai/codex, opencode.ai/docs, github.com/google-gemini/gemini-cli. La commande d'Antigravity CLI est la seule non vérifiée : seul son lien officiel est donné.
+
+## Mises à jour intégrées
+
+À partir de 0.5.1, une installation issue du ZIP officiel peut détecter la dernière release depuis son interface. Le bouton **Mettre à jour et redémarrer** télécharge et vérifie l’archive officielle, prépare les nouveaux fichiers puis relance le bureau au même port. Une sauvegarde de l’ancienne installation reste à côté du dossier ; les états privés du projet sont dans le dossier de données du système. Les dossiers locaux `.bureau/` et `.myteam-local/` sont recopiés. Les clones Git doivent être mis à jour avec Git. Les installations 0.5.0 nécessitent un dernier téléchargement manuel pour activer cette fonction.

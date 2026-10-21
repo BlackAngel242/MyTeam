@@ -21,9 +21,9 @@ async function fixture(t) {
   await writeFile(join(path,'herdr'),'#!/bin/bash\nexit 77\n');await chmod(join(path,'herdr'),0o755);
   return path;
 }
-function dialogue(t,file,args,{answer=()=> 'n',eof=false}={}) {
+function dialogue(t,file,args,{answer=()=> 'n',eof=false,env={}}={}) {
   return new Promise((resolve,reject)=>{
-    const child=spawn(file,args,{windowsHide:true,env:{...process.env,BASH_ENV:''},stdio:['pipe','pipe','pipe']});
+    const child=spawn(file,args,{windowsHide:true,env:{...process.env,BASH_ENV:'',...env},stdio:['pipe','pipe','pipe']});
     const timer=setTimeout(()=>{child.kill();reject(new Error('Dialogue bloqué'));},120000);
     t.after(()=>{clearTimeout(timer);if(child.exitCode===null)child.kill();});
     let output='',errors='',partial='';const records=[];
@@ -97,7 +97,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
   test(`J1 ${platform} : EOF refuse et Oui ne valide pas les installations`,async t=>{
     const result=await run(t,platform,{yes:true,eof:true,lang:'en'});
     checkProtocol(result,platform==='ps');
-    assert.ok(result.records.some(x=>/^@@CONFIRM .*Install .*\?/.test(x)));
+    assert.ok(result.records.some(x=>x.startsWith('@@CONFIRM '))); // les choix facultatifs restent explicites
     assert.ok(result.records.some(x=>x.startsWith('@@PLAN tests\tChecks')));
     assert.deepEqual(result.records.filter(x=>/^@@DONE [a-z]+\tok\t/.test(x)).map(x=>x.split(' ')[1].split('\t')[0]),['herdr'],'seul le prérequis réellement présent est satisfait');
   });
@@ -107,6 +107,24 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     assert.match(result.output,/Bureau des agents : installation/);
   });
 }
+if (process.platform !== 'win32') test('installation Bash réelle : zéro IA et choix 0 terminent sans boucle', async t => {
+  const path = await fixture(t);
+  const home = join(path, 'home'); await mkdir(home);
+  const script = join(path, 'run-live.sh');
+  await writeFile(script, `command() {
+    if [ "$1" = -v ]; then case "$2" in claude|codex|opencode|pi|gemini|agy|antigravity-cli) return 1;; esac; fi
+    builtin command "$@"
+  }
+  . ${shellLiteral(join(path, 'scripts/installer.sh'))} --interface --lang fr --port 4317 --herdr-chemin ${shellLiteral(join(path, 'herdr'))}
+  `);
+  const result = await dialogue(t, bash, ['--noprofile','--norc',script], {
+    env: { HOME: home }, answer: line => line.startsWith('@@INPUT ') ? '0' : 'n',
+  });
+  assert.equal(result.code, 0, result.errors);
+  assert.equal(result.records.filter(x => /Numéros des outils à installer/.test(x)).length, 1);
+  assert.match(result.output, /Aucune IA choisie/);
+  assert.equal(result.records.at(-1), '@@END ok');
+});
 if(process.platform==='win32')test('J1 PowerShell : erreur fatale annonce DONE fail et END fail',async t=>{
   const result=await run(t,'ps',{badHerdr:true,eof:true});
   assert.equal(result.code,1);
@@ -136,7 +154,7 @@ async function functions(t,platform,names,body,options={}) {
   await writeFile(script,definitions+'\n'+body);
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
-const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Executer','Proposer-Clink'];
+const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Proposer-Clink'];
 test('L C-CD-16 bash : port invalide refusé clairement avant toute étape',async t=>{
   for(const [port,lang] of [['999999999999999999999999999999','fr'],['65536','en'],['1023','fr'],['','fr'],['4317; commande','en']]) {
     const data=await run(t,'bash',{port,lang,eof:true});
@@ -168,7 +186,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L
   assert.doesNotMatch(lines[2],/Personne|Prive|client\.txt/);
 });
 if(process.platform==='win32') {
-  for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, faux winget et accord individuel avec Oui`,async t=>{
+  for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, prérequis automatique avec Oui`,async t=>{
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction)
@@ -183,13 +201,12 @@ if(process.platform==='win32') {
     `,{answer:()=>result==='refus'?'n':'o'});
     assert.equal(data.code,result==='fail'?1:0,data.errors);
     assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
-    if(['ok','fail'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
+    if(['ok','fail','refus'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
     else assert.doesNotMatch(data.output,/CALL:/);
-    const expected=result==='present'?'ok':['ok','fail'].includes(result)?result:'skip';
+    const expected=result==='present'?'ok':result==='refus'?'ok':['ok','fail'].includes(result)?result:'skip';
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+expected+'\t')));
     if(result==='present')assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
-    if(result==='refus')assert.ok(data.records.includes('@@DONE clink\tskip\tRefusé.'));
-    if(result==='refus')assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
+    if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
@@ -255,7 +272,7 @@ w9:p2';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
   const names=platform==='ps'?[...psFunctions,'Choisir','Detecter-Outils','Proposer-Agents','Appeler-Herdr','Noter']:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','choisir','dire','simuler','noter','confirmer','detecter_outils','proposer_agents'];
   const data=await functions(t,platform,names,body,{answer:line=>line.startsWith('@@CHOICE')?'2':'o'});
   assert.equal(data.code,0,data.errors);
-  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|Chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start Chef --kind codex --pane w9:p1/);
+  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start chef --kind codex --pane w9:p1/);
   assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
   assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));

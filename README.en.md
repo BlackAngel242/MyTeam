@@ -23,7 +23,11 @@ Execution memory (queue, direction, autonomy and configuration) is private, sepa
 
 Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
 
-[Download MyTeam 0.5.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.0/MyTeam-0.5.0.zip)
+[Download MyTeam 0.5.1](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.1/MyTeam-0.5.1.zip)
+
+## Built-in updates
+
+From an official ZIP installation, MyTeam announces a new release in the desk. Use **Update and restart** in Help: the app downloads and verifies the SHA-256, stages the files and restarts automatically. The previous installation is kept as a backup alongside the app, while project data remains in the system data directory. Git checkouts must be updated with Git. Upgrading from 0.5.0 requires one manual download.
 
 ## Quick start
 

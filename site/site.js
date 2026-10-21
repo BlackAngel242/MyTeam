@@ -91,10 +91,12 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.5.0
-    'nouveautes.badge': 'Version 0.5.0',
-    'nouveautes.titre': 'Les nouveautés de la version 0.5.0',
+    // Nouveautés 0.5.1
+    'nouveautes.badge': 'Version 0.5.1',
+    'nouveautes.titre': 'Les nouveautés de la version 0.5.1',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
+    'nouveautes.update.title': 'Mise à jour dans MyTeam',
+    'nouveautes.update.desc': 'Une nouvelle release est signalée dans le bureau. Téléchargement vérifié puis redémarrage automatique en un clic.',
     'nouveautes.switch.title': "Choix du projet dès le démarrage",
     'nouveautes.switch.desc': "Améliorer MyTeam ou travailler dans un autre dossier : le contexte est choisi avant les commandes.",
     'nouveautes.sante.title': "Données locales séparées",
@@ -131,6 +133,8 @@ const I18N = {
     'install.badge': 'Démarrage immédiat',
     'install.titre': 'Installation en trois gestes',
     'install.desc': 'Aucun outil de compilation requis. Node.js (>= 22) et Herdr suffisent.',
+    'install.npm.title': 'Installation par commande',
+    'install.npm.desc': 'Si Node.js 22+ est déjà installé, cette commande place MyTeam dans votre dossier utilisateur et lance l’assistant. Il propose un raccourci MyTeam, Herdr ou les deux. Sinon, utilisez le ZIP et son installateur.',
     
     'step1.badge': 'Geste 1',
     'step1.title': 'Télécharger l\'archive',
@@ -194,7 +198,7 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
-    'footer.divinite': "MyTeam 0.5.0 · Version de référence",
+    'footer.divinite': "MyTeam 0.5.1 · Version de référence",
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
@@ -291,10 +295,12 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.5.0
-    'nouveautes.badge': 'Version 0.5.0',
-    'nouveautes.titre': 'What\'s new in version 0.5.0',
+    // What's new 0.5.1
+    'nouveautes.badge': 'Version 0.5.1',
+    'nouveautes.titre': 'What\'s new in version 0.5.1',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
+    'nouveautes.update.title': 'Updates inside MyTeam',
+    'nouveautes.update.desc': 'New releases appear in the desk. One click downloads, verifies and automatically restarts the app.',
     'nouveautes.switch.title': "Choose your project at startup",
     'nouveautes.switch.desc': "Improve MyTeam or work in another folder: choose the context before sending commands.",
     'nouveautes.sante.title': "Separate local data",
@@ -331,6 +337,8 @@ const I18N = {
     'install.badge': 'Quick Start',
     'install.titre': 'Installation in Three Simple Steps',
     'install.desc': 'No compiler or build tool required. Only Node.js (>= 22) and Herdr are needed.',
+    'install.npm.title': 'Install with one command',
+    'install.npm.desc': 'If Node.js 22+ is already installed, this command copies MyTeam into your user folder and launches the setup assistant. It offers a MyTeam, Herdr or combined shortcut. Otherwise, use the ZIP installer.',
     
     'step1.badge': 'Step 1',
     'step1.title': 'Download release archive',
@@ -394,7 +402,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
-    'footer.divinite': "MyTeam 0.5.0 · Reference release",
+    'footer.divinite': "MyTeam 0.5.1 · Reference release",
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'

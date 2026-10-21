@@ -24,9 +24,16 @@ test('les deux installeurs annoncent simulation, option oui et aide', async () =
     assert.match(texte, /DryRun|dry-run/, `${nom} : mode simulation`);
     assert.match(texte, /Oui|--oui|OUI=/, `${nom} : option oui`);
     assert.match(texte, /Aide|--aide/, `${nom} : aide`);
-    assert.match(texte, /\(o\/n\)/, `${nom} : confirmation o/n`);
+    assert.match(texte, /[Cc]onfirmer\(/, `${nom} : confirmations facultatives disponibles`);
     assert.ok(!texte.includes('—'), `${nom} : pas de tiret cadratin`);
   }
+});
+
+test("l'aide Windows annonce les prérequis automatiques et les IA facultatives", async () => {
+  const { ps1: texte } = await textes();
+  assert.doesNotMatch(texte, /Chaque installation est confirmee par o\/n/);
+  assert.match(texte, /prérequis[^\r\n]+automatiquement/i);
+  assert.match(texte, /outils d[’']IA[^\r\n]+choix/i);
 });
 
 test('les commandes d\'installation sont celles vérifiées, Antigravity reste un lien', async () => {

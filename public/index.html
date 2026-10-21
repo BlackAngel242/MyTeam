@@ -31,6 +31,7 @@
       <li class="chip idle"><i></i><b id="count-free">0</b> <span data-i18n="header.disponibles">disponibles</span></li>
       <li class="chip warn" id="sante-chip" hidden><i></i><span data-i18n="sante.redemarrage">Redémarrage à prévoir</span></li>
     </ul>
+    <button id="update-open" class="chip" type="button" hidden><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg#download"></use></svg><span id="update-label">Mise à jour disponible</span></button>
     <div class="connection" id="connection" role="status"><span class="signal"></span><span id="connection-text" data-i18n="header.connexion">Connexion à Herdr…</span></div>
     <div class="top-actions">
       <label class="appearance-control"><svg class="lucide" viewBox="0 0 24 24" aria-hidden="true"><use href="/icons.svg#sun"></use></svg><select data-appearance-select aria-label="Apparence" data-i18n-attr="aria-label:appearance.label"><option value="system" data-i18n="appearance.system">Système</option><option value="light" data-i18n="appearance.light">Clair</option><option value="dark" data-i18n="appearance.dark">Sombre</option></select></label>
@@ -152,6 +153,9 @@
         <tr><td><kbd data-i18n="aide.kbd-echap">Échap</kbd></td><td data-i18n="aide.racc-fermer">Fermer l’aide, la palette ou le mode Disposer</td></tr>
         <tr><td><kbd data-i18n="aide.kbd-maj">Maj</kbd> <span data-i18n="aide.glisser">+ glisser</span></td><td data-i18n="aide.racc-deplacer">Déplacer un fichier (confirmation demandée)</td></tr>
       </tbody></table>
+      <h3 data-i18n="update.title">Mises à jour de MyTeam</h3>
+      <p class="help-foot" id="update-status" role="status" data-i18n="update.checking">Vérification de la version…</p>
+      <div class="help-toggles"><button type="button" class="tool-button" id="update-check" data-i18n="update.check">Vérifier</button><button type="button" class="tool-button" id="update-install" hidden data-i18n="update.install">Mettre à jour et redémarrer</button></div>
       <h3 data-i18n="sante.titre">Santé du bureau</h3>
       <p class="help-foot" id="sante-ligne" role="status"></p>
       <div class="help-toggles"><button type="button" class="tool-button" id="sante-copier" data-i18n="sante.copier">Copier le diagnostic</button></div>
