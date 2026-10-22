@@ -78,3 +78,7 @@ Français accentué et simple, sans tiret cadratin. Code : commentaires seulemen
 ## Mémoire publique et privée
 
 Les fichiers racine suivis contiennent seulement les décisions techniques relues du produit. Les rapports bruts, conversations et détails de session restent privés. `LESSONS.md` reçoit des enseignements génériques relus, jamais un rapport brut. Le kit crée `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git ; l’état d’exécution MyTeam est conservé hors checkout, séparément pour chaque projet.
+
+## Branches par outil
+
+Chaque outil travaille sur sa propre branche, nommée d'après l'outil et la tâche (par exemple `muse/T4`). Jamais directement sur `main`. Les règles complètes, annoncées au démarrage de chaque session, sont dans `docs/regles-agents.md`.
