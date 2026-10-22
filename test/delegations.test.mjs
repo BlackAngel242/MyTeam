@@ -318,6 +318,34 @@ test('bossOf choisit le plus petit numéro de panneau de son espace', () => {
   assert.equal(bossOf([p10, p2]), p2, 'le numéro compare comme un nombre');
 });
 
+// F1 (reproduction, plan du 22 octobre 2026) : le directeur doit être le
+// premier agent LANCÉ, pas le panneau au plus petit numéro. Dans ces tests,
+// la liste est donnée dans l'ordre de lancement. Deux de ces tests échouent
+// avec la règle actuelle (plus petit numéro de panneau) : ils sont conservés
+// tels quels comme reproduction, jusqu'à la correction de F1.
+// Blocage relevé par ailleurs : Herdr ne fournit aucune heure de lancement
+// (schéma officiel du binaire 0.9.5, objets AgentInfo et PaneInfo sans champ
+// d'heure), donc l'ordre de lancement n'existe dans aucune donnée d'entrée.
+test('F1 (reproduction) : le directeur est le premier agent lancé, pas le plus petit panneau', () => {
+  const p2 = { id: 'w5:p2@aaaa', paneId: 'w5:p2', name: 'Claude', kind: 'Claude' };
+  const p1 = { id: 'w5:p1@bbbb', paneId: 'w5:p1', name: 'Claude', kind: 'Claude' };
+  // Ordre de lancement : w5:p2 d'abord, w5:p1 ensuite.
+  assert.equal(bossOf([p2, p1]), p2, 'le premier lancé (w5:p2) doit être directeur');
+});
+
+test('F1 : un seul agent est directeur, quel que soit son panneau', () => {
+  const seul = { id: 'w5:p2@aaaa', paneId: 'w5:p2', name: 'Claude', kind: 'Claude' };
+  assert.equal(bossOf([seul]), seul);
+});
+
+test('F1 (reproduction) : quand le premier lancé disparaît, le suivant lancé devient directeur', () => {
+  const p3 = { id: 'w5:p3@cccc', paneId: 'w5:p3', name: 'Claude', kind: 'Claude' };
+  const p1 = { id: 'w5:p1@bbbb', paneId: 'w5:p1', name: 'Claude', kind: 'Claude' };
+  // Ordre de lancement initial : w5:p2, puis w5:p3, puis w5:p1.
+  // w5:p2 a disparu : il reste, dans l'ordre de lancement, w5:p3 puis w5:p1.
+  assert.equal(bossOf([p3, p1]), p3, 'le plus anciennement lancé des présents (w5:p3) doit devenir directeur');
+});
+
 test('bossOf ignore les identifiants illisibles et renvoie null sans candidat', () => {
   assert.equal(bossOf([]), null);
   assert.equal(bossOf(null), null);
