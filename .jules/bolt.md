@@ -1,7 +1,3 @@
 ## 2024-10-21 - O(n) text fitting optimization
 **Learning:** Found a hot path in `public/app.js` where the function `fit(s, max)` used a `while` loop to iteratively shorten a string character by character and recalculate its pixel width via `textWidth`. This effectively resulted in O(n^2) behavior on string length because `s.slice` and `textWidth` run in a loop based on the difference between string length and the target fit.
 **Action:** Replaced the iterative `while` loop with direct mathematical calculation `keep = Math.floor((max - 3) / 4)`. Because each character is mapped to a fixed width of `4` pixels (with a trailing offset of `-1`), calculating the max characters directly is much faster. Measured 2x speedup in isolated string truncations and this reduces JS time spent during Canvas painting loop where strings are rendered.
-
-## 2024-06-25 - Canvas 2D State Mutation Overhead
-**Learning:** Frequent assignments to `CanvasRenderingContext2D` properties like `fillStyle` and `globalAlpha` within a `requestAnimationFrame` loop cause severe performance overhead (up to a ~30% performance penalty in simple drawing loops) because they force the browser context to parse colors and update internal state repeatedly.
-**Action:** Always hoist canvas state mutations outside of tight character/pixel rendering loops. Use direct `fillRect` calls instead of wrapping them in a utility function that redundantly resets context state.
