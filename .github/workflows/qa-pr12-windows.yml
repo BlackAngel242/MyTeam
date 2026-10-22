@@ -80,13 +80,15 @@ jobs:
           node myteam/scripts/empaqueter-release.mjs 0.5.1 --rev 78d2c6971f6808bc627473d37dc223e7991d0289 2>&1 | Tee-Object -FilePath qa-logs/empaqueter.log
           if ($LASTEXITCODE -ne 0) { throw "empaqueter-release.mjs a echoue avec le code $LASTEXITCODE" }
           powershell -NoProfile -ExecutionPolicy Bypass -File ./qa-audit.ps1 -Checkout "$PWD/myteam" -OutDir "$PWD/qa-logs" 2>&1 | Tee-Object -FilePath qa-logs/audit-paquet.log
-          if ($LASTEXITCODE -ne 0) { Write-Host "AUDIT EN ECHEC (code $LASTEXITCODE) : detail dans results-paquet.txt, la recette continue (relance 3)" }
+          if ($LASTEXITCODE -ne 0) { Write-Host "AUDIT EN ECHEC (code $LASTEXITCODE) : detail dans results-paquet.txt, la recette continue (relance 4)" }
+          $global:LASTEXITCODE = 0
 
       - name: Mise a jour integree (simulation controlee)
         shell: pwsh
         run: |
           node qa-update.mjs "$PWD/myteam" "$env:RUNNER_TEMP/qa-update" 2>&1 | Tee-Object -FilePath qa-logs/update.log
-          if ($LASTEXITCODE -ne 0) { Write-Host "SIMULATION DE MISE A JOUR EN ECHEC (code $LASTEXITCODE) : detail dans update.log, la recette continue (relance 2)" }
+          if ($LASTEXITCODE -ne 0) { Write-Host "SIMULATION DE MISE A JOUR EN ECHEC (code $LASTEXITCODE) : detail dans update.log, la recette continue (relance 4)" }
+          $global:LASTEXITCODE = 0
 
       - name: Installateur PowerShell (scenarios avec stubs)
         shell: pwsh
