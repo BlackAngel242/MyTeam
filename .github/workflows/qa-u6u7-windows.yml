@@ -36,7 +36,7 @@ jobs:
           $app = Join-Path $env:RUNNER_TEMP 'appsrv'
           New-Item -ItemType Directory -Force $app | Out-Null
           Copy-Item server.mjs, package.json -Destination $app
-          Copy-Item src, public -Destination $app -Recurse
+          Copy-Item src, public, scripts -Destination $app -Recurse
           $env:BUREAU_PORT = '4899'
           $out = Join-Path $PWD 'qa-logs/serveur-out.log'
           $err = Join-Path $PWD 'qa-logs/serveur-err.log'
