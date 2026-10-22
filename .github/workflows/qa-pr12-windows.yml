@@ -1,0 +1,103 @@
+name: QA PR12 Windows (recette jetable)
+
+on:
+  push:
+    branches: [Muse]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa-windows:
+    name: Recette Windows PR 12 au commit impose
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Recuperer le depot (workflow et harnais)
+        uses: actions/checkout@v4
+
+      - name: Preparer le dossier des journaux
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path qa-logs | Out-Null
+
+      - name: Recuperer MyTeam au commit impose 78d2c69
+        shell: pwsh
+        run: |
+          git clone --quiet https://github.com/BlackAngel242/MyTeam.git myteam
+          git -C myteam fetch --quiet origin refs/pull/12/head
+          git -C myteam checkout --quiet 78d2c6971f6808bc627473d37dc223e7991d0289
+          $sha = (git -C myteam rev-parse HEAD).Trim()
+          "SHA teste : $sha" | Tee-Object -FilePath qa-logs/sha.log
+          if ($sha -ne '78d2c6971f6808bc627473d37dc223e7991d0289') { throw "SHA inattendu : $sha" }
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Versions de l'environnement
+        shell: pwsh
+        run: |
+          $os = Get-CimInstance Win32_OperatingSystem
+          $lignes = @(
+            "ImageOS : $env:ImageOS"
+            "ImageVersion : $env:ImageVersion"
+            "Windows : $($os.Caption) (version $($os.Version), build $($os.BuildNumber))"
+            "PowerShell (pwsh, harnais) : $($PSVersionTable.PSVersion)"
+            "Windows PowerShell (installateur) : $(powershell -NoProfile -Command '$PSVersionTable.PSVersion.ToString()')"
+            "Node.js : $(node --version)"
+            "npm : $(npm --version)"
+          )
+          $lignes | Tee-Object -FilePath qa-logs/versions.log
+
+      - name: npm run check (obligatoire)
+        shell: pwsh
+        working-directory: myteam
+        run: |
+          npm run check 2>&1 | Tee-Object -FilePath ../qa-logs/npm-check.log
+          if ($LASTEXITCODE -ne 0) { throw "npm run check a echoue avec le code $LASTEXITCODE" }
+
+      - name: npm test (obligatoire)
+        shell: pwsh
+        working-directory: myteam
+        run: |
+          npm test 2>&1 | Tee-Object -FilePath ../qa-logs/npm-test.log
+          if ($LASTEXITCODE -ne 0) { throw "npm test a echoue avec le code $LASTEXITCODE" }
+
+      - name: Analyse syntaxique de scripts/installer.ps1
+        shell: pwsh
+        run: |
+          $jetons = $null; $erreurs = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile("$PWD/myteam/scripts/installer.ps1", [ref]$jetons, [ref]$erreurs)
+          "Erreurs de syntaxe : $($erreurs.Count)" | Tee-Object -FilePath qa-logs/parse-installer.log
+          $erreurs | ForEach-Object { $_.Message } | Add-Content qa-logs/parse-installer.log
+          if ($erreurs.Count -gt 0) { throw "installer.ps1 contient $($erreurs.Count) erreur(s) de syntaxe" }
+
+      - name: Paquet npm et ZIP de release (audit)
+        shell: pwsh
+        run: |
+          node myteam/scripts/empaqueter-release.mjs 0.5.1 --rev 78d2c6971f6808bc627473d37dc223e7991d0289 2>&1 | Tee-Object -FilePath qa-logs/empaqueter.log
+          if ($LASTEXITCODE -ne 0) { throw "empaqueter-release.mjs a echoue avec le code $LASTEXITCODE" }
+          ./qa-audit.ps1 -Checkout "$PWD/myteam" -OutDir "$PWD/qa-logs" 2>&1 | Tee-Object -FilePath qa-logs/audit-paquet.log
+          if ($LASTEXITCODE -ne 0) { throw "L'audit du paquet a echoue" }
+
+      - name: Mise a jour integree (simulation controlee)
+        shell: pwsh
+        run: |
+          node qa-update.mjs "$PWD/myteam" "$env:RUNNER_TEMP/qa-update" 2>&1 | Tee-Object -FilePath qa-logs/update.log
+          if ($LASTEXITCODE -ne 0) { throw "La simulation de mise a jour a signale des echecs" }
+
+      - name: Installateur PowerShell (scenarios avec stubs)
+        shell: pwsh
+        run: |
+          ./qa-harness.ps1 -Source "$PWD/myteam" -OutDir "$PWD/qa-logs" 2>&1 | Tee-Object -FilePath qa-logs/harness.log
+          if ($LASTEXITCODE -ne 0) { throw "Le harnais d'installation a signale des echecs" }
+
+      - name: Televerser les journaux en artefact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-pr12-journaux
+          path: qa-logs
+          retention-days: 7
