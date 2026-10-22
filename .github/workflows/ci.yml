@@ -23,3 +23,25 @@ jobs:
           node-version: 22
       - run: npm run check
       - run: npm test
+      - name: Résumé des tests ignorés
+        if: always()
+        shell: bash
+        env:
+          MATRIX_OS: ${{ matrix.os }}
+        run: |
+          node --test --test-timeout=90000 --test-reporter=tap --test-reporter-destination=tap-results.tap || true
+          node -e '
+            const fs = require("fs");
+            const p = process.env.GITHUB_STEP_SUMMARY;
+            if (!p) process.exit(0);
+            let t = "";
+            try { t = fs.readFileSync("tap-results.tap", "utf8"); } catch { process.exit(0); }
+            const skips = t.split("\n").filter(l => /^ok\s+\d+.*#\s*SKIP/i.test(l));
+            let out = "## Tests ignorés — " + process.env.MATRIX_OS + "\n\n";
+            out += "**Total : " + skips.length + "**\n\n";
+            skips.slice(0, 60).forEach(l => {
+              out += "- " + l.replace(/^ok\s+\d+\s+-\s+/, "").replace(/\s*#\s*SKIP\b\s*/i, " — ignoré : ").trim() + "\n";
+            });
+            if (skips.length > 60) out += "- … et " + (skips.length - 60) + " autres\n";
+            fs.appendFileSync(p, out + "\n");
+          '
