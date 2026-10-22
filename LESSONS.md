@@ -153,6 +153,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 - Confidentialité documentaire : les synthèses techniques publiques excluent profils, quotas, horaires et configurations personnelles. Les rapports bruts restent privés ; `.gitignore` et `export-ignore` ne retirent rien de l’historique déjà publié.
 
 - Rétention des releases : vérifier le nouveau ZIP, son checksum et le lien Pages avant tout retrait. Supprimer une release ne doit pas supprimer son tag ; garder les deux opérations distinctes.
+- Contenu du paquet : `git archive` ne retire que ce que `.gitattributes` marque `export-ignore` ; un dossier suivi sans cet attribut (`site/`, `.github/`, `.impeccable/`, `.jules/`) partait dans le ZIP de release. Les exclusions du paquet vivent dans `scripts/empaqueter-release.mjs`, avec un contrôle du ZIP produit qui fait échouer la construction si un dossier exclu réapparaît.
 
 - Isolation : revalider le dossier de l’agent avant chaque lecture ou commande différée et attendre les opérations engagées avant un changement de projet. Une ancienne liste ne constitue pas une autorisation.
 - Initialisation du kit : contrôler les liens symboliques de chaque segment avant écriture, y compris `.gitignore`. Canonicaliser le dossier final avant d’autoriser une sélection de projet.

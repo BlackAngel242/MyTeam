@@ -100,3 +100,26 @@ test('un journal privé suivi par erreur bloque la production du paquet', async 
     await git('commit', '-q', '-m', 'fixture retirée');
   }
 });
+
+test('le paquet exclut les dossiers sans intérêt pour l\u2019utilisateur final', async t => {
+  const depot = await mkdtemp(join(tmpdir(), 'release-exclusions-'));
+  t.after(() => rm(depot, { recursive: true, force: true }));
+  const git = (...a) => executer('git', ['-C', depot, '-c', 'user.name=T', '-c', 'user.email=t@example.invalid', ...a], { env: envGit });
+  try { await git('init', '-q'); } catch { t.skip('git indisponible'); return; }
+  // Aucun .gitattributes dans ce dépôt factice : l'exclusion doit venir du script d'empaquetage lui-même.
+  for (const nom of ['README.md', 'server.mjs', 'Installer MyTeam.bat', 'Ouvrir le bureau.cmd',
+    'site/index.html', '.github/workflows/ci.yml', '.impeccable/notes.md', '.jules/notes.md', 'test/essai.test.mjs']) {
+    await mkdir(join(depot, nom, '..'), { recursive: true });
+    await writeFile(join(depot, nom), 'factice');
+  }
+  await git('add', '-A');
+  await git('commit', '-q', '-m', 'fixture');
+  const r = await empaqueter('1.2.3', { depot });
+  const noms = nomsZip(await readFile(r.fichier));
+  assert.ok(noms.every(n => n.startsWith('MyTeam-1.2.3')), 'une seule racine MyTeam-1.2.3/');
+  assert.ok(noms.includes('MyTeam-1.2.3/Installer MyTeam.bat'), 'lanceur .bat présent');
+  assert.ok(noms.includes('MyTeam-1.2.3/Ouvrir le bureau.cmd'), 'lanceur .cmd présent');
+  for (const dossier of ['site', '.github', '.impeccable', '.jules', 'test']) {
+    assert.ok(!noms.some(n => n === `MyTeam-1.2.3/${dossier}` || n.startsWith(`MyTeam-1.2.3/${dossier}/`)), `${dossier}/ absent du paquet`);
+  }
+});
