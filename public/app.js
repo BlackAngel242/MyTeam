@@ -563,6 +563,7 @@ function renderActivity(a){
   $('agent-since').textContent=change?t('poste.depuis_temps',{etat:label(a),duree:since(performance.now()-change.at)}):t('poste.depuis',{etat:label(a)});
   const act=a.activity;
   if(!act){$('agent-tokens').textContent=t('poste.non_expose');$('agent-subagents').textContent=t('poste.non_expose');return;}
+  if(act.match==='activité non attribuable'){$('agent-tokens').textContent=t('poste.non_attribuable');$('agent-subagents').textContent='';return;}
   const tok=act.tokens||{};
   $('agent-tokens').textContent=t('poste.tokens',{produits:compact(tok.output||0),lus:compact((tok.input||0)+(tok.cacheCreation||0)),cache:compact(tok.cacheRead||0)});
   const subs=act.subagents||[];

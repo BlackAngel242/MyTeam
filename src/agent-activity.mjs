@@ -45,7 +45,7 @@ export function normalizeActivity(value, { claude = false } = {}) {
     effort: effortName(value.effort),
     limitReached: value.limitReached === true,
     source: 'journal local',
-    match: claude ? 'session exacte' : 'dossier et activité récente',
+    match: value?.match === 'activité non attribuable' ? 'activité non attribuable' : (claude ? 'session exacte' : 'dossier et activité récente'),
   };
   if (claude || Array.isArray(value.subagents)) result.subagents = (Array.isArray(value.subagents) ? value.subagents : []).filter(agent =>
     agent && typeof agent.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(agent.id)
