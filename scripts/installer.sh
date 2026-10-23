@@ -145,6 +145,11 @@ dire() {
 simuler() {
   if [ "${INTERFACE:-0}" = 1 ];then etat_etape skip "$(texte Simulation. Preview.)";dire "[simulation] $1";else echo "[simulation] $1";fi
 }
+
+# Résumé : en simulation, on dit ce qui serait fait, jamais ce qui a été fait.
+noter_simule() {
+  if [ "$DRY_RUN" = "1" ]; then noter "$2"; else noter "$1"; fi
+}
 noter() { RAPPORT="$RAPPORT
  - $1"; }
 
@@ -730,8 +735,8 @@ export BUREAU_HERDR_PATH=$(literal_shell "$HERDR_A_ENREGISTRER")"
 }
 ecrire_profil || { etat_etape fail;exit 1; }
 if [ "$INTERFACE" != 1 ] || [ "$ENTREE_FERMEE" != 1 ]; then
-  noter "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")"
-  if [ -n "$HERDR_A_ENREGISTRER" ]; then noter "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")"; fi
+  noter_simule "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")" "$(texte "BUREAU_PORT : $PORT_CHOISI (simulation, rien écrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (preview, nothing written to profile).")"
+  if [ -n "$HERDR_A_ENREGISTRER" ]; then noter_simule "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")" "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (simulation, rien écrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (preview, nothing written to profile).")"; fi
 fi
 
 if [ "$SANS_RACCOURCI" != "1" ]; then
@@ -786,7 +791,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
           dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
         fi
       fi
-      noter "$(texte 'Raccourci : créé (lance Herdr).' 'Shortcut: created (starts Herdr).')"
+      noter_simule "$(texte 'Raccourci : créé (lance Herdr).' 'Shortcut: created (starts Herdr).')" "$(texte 'Raccourci : simulé (lance Herdr), rien créé.' 'Shortcut: simulated (starts Herdr), nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -814,7 +819,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
         ecrire_lanceur "$RACCOURCI" bureau
         dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
       fi
-      noter "$(texte 'Raccourci : créé.' 'Shortcut: created.')"
+      noter_simule "$(texte 'Raccourci : créé.' 'Shortcut: created.')" "$(texte 'Raccourci : simulé, rien créé.' 'Shortcut: simulated, nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -831,7 +836,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
         ecrire_desktop "$RACCOURCI" "$LANCEUR" false || exit 1
         dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
       fi
-      noter "$(texte 'Raccourci : créé.' 'Shortcut: created.')"
+      noter_simule "$(texte 'Raccourci : créé.' 'Shortcut: created.')" "$(texte 'Raccourci : simulé, rien créé.' 'Shortcut: simulated, nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -873,7 +878,7 @@ elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail
   if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ]; then etat_etape ok "$(texte 'Vérifications réussies.' 'Checks passed.')";fi
-  noter "$(texte 'Tests : executes.' 'Tests: completed.')"
+  noter_simule "$(texte 'Tests : executes.' 'Tests: completed.')" "$(texte 'Tests : simules, non executes.' 'Tests: simulated, not run.')"
 else
   noter "$(texte 'Tests : non executes (refuse).' 'Tests: not run (declined).')"
 fi
