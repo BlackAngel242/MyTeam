@@ -725,7 +725,7 @@ if (-not $SansRaccourci) {
         $raccourci.WorkingDirectory = $racine
         $raccourci.Save()
       } | Out-Null
-      Noter (Texte 'Raccourci : cree sur le Bureau (lance Herdr).' 'Shortcut: created on Desktop (starts Herdr).')
+      if ($DryRun) { Noter (Texte 'Raccourci : simule (lance Herdr), rien cree.' 'Shortcut: simulated (starts Herdr), nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau (lance Herdr).' 'Shortcut: created on Desktop (starts Herdr).') }
     } else { Noter (Texte 'Raccourci : non cree (refuse).' 'Shortcut: not created (declined).') }
   } else {
     $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
@@ -751,7 +751,7 @@ if (-not $SansRaccourci) {
           $raccourci.WorkingDirectory = $racine
           $raccourci.Save()
         } | Out-Null
-        Noter (Texte 'Raccourci : cree sur le Bureau.' 'Shortcut: created on Desktop.')
+        if ($DryRun) { Noter (Texte 'Raccourci : simule, rien cree.' 'Shortcut: simulated, nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau.' 'Shortcut: created on Desktop.') }
       } else { Noter (Texte 'Raccourci : non cree (refuse).' 'Shortcut: not created (declined).') }
     }
   }
@@ -798,7 +798,7 @@ if (-not (Test-Path (Join-Path $racine 'test') -PathType Container)) {
         Push-Location $racine
         try { npm run check } finally { Pop-Location }
       } | Out-Null
-      Noter (Texte 'Tests : executes.' 'Tests: completed.')
+      if ($DryRun) { Noter (Texte 'Tests : simules, non executes.' 'Tests: simulated, not run.') } else { Noter (Texte 'Tests : executes.' 'Tests: completed.') }
     } catch {
       Dire (Texte "Les tests ont echoue : $($_.Exception.Message)" "Tests failed: $($_.Exception.Message)")
       Noter (Texte 'Tests : echec.' 'Tests: failed.')
