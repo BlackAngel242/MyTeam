@@ -111,3 +111,8 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 
 - [x] Option B : « activité non attribuable » au lieu d'une attribution fausse (PR #26, `a4d9d30`).
 - [ ] Nommage « OpenCode · fenêtre N » après la mémoire d'ordre de C1 (phase C4).
+
+## F3 : confidentialité
+
+- [x] Inventaire de ce qui sort de la machine (PR #31, `20349f8`).
+- [ ] Masque incomplet : `AIza`, `github_pat_`, racines `workspace`, `data`, `srv` (voir `docs/revue-opencode-final.md`).
