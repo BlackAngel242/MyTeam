@@ -31,6 +31,12 @@ Lis aussi `AGENTS.md`, `LESSONS.md`, `HANDOFF.md` et `TODO.md` avant toute propo
 - **Direction d'équipe** : le premier outil lancé est le directeur par défaut, quel que soit l'outil. Plusieurs panneaux du même outil avec des modèles différents forment un cas normal. L'identité d'un agent est panneau + modèle.
 - **Release** : la 0.5.1 a été publiée automatiquement à la fusion de la PR #12. SmokeSama décide de la passer en brouillon et de restaurer la 0.5.0. Cette action est la sienne.
 - **Recette Windows de 0.5.1** : bloquée par la facturation GitHub du compte, pas par le code. Ne rien promettre sur Windows.
+- **Permissions du chef (choix de SmokeSama, 23 octobre 2026)** :
+  - Fusion dans `main` : le chef fusionne seulement si la CI est verte sur Ubuntu et Windows, sans conflit, et il le dit ensuite à SmokeSama.
+  - Commentaire ou fermeture publics : seulement sur les pull requests créées par le chef dans la session en cours.
+  - Push sur la branche d'un autre outil : interdit. Pour un conflit, le chef crée une nouvelle branche et une nouvelle pull request, comme pour la reprise de la PR #22 en #39.
+  - Suppression de branche ou de pull request : interdite sans accord de SmokeSama.
+  - Contournement d'une vérification de sécurité : interdit, même avec un accord oral dans la session.
 
 ## Journal de reprise
 
