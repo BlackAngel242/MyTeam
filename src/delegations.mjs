@@ -375,30 +375,40 @@ export async function readDelegations(sessionId, { root = join(homedir(), '.clau
   try { return await pending; } finally { inflight.delete(key); }
 }
 
-// Choix du chef : le panneau <espace>:p<numéro> au plus petit numéro, dans le
-// plus petit espace, avec l'identifiant complet comme dernier critère.
+// Clé de panneau d'un agent : { espace, numero } lu dans paneId (ou, à
+// défaut, dans la partie avant « @ » de l'identifiant complet). Null quand
+// l'identifiant est illisible : un tel agent ne peut pas être directeur.
+export function clePanneau(agent) {
+  if (!agent || typeof agent !== 'object') return null;
+  const raw = typeof agent.paneId === 'string' ? agent.paneId
+    : typeof agent.id === 'string' ? agent.id.split('@')[0]
+      : '';
+  const match = /^([^:]+):p(\d+)$/.exec(raw.trim());
+  return match ? { espace: match[1], numero: Number(match[2]) } : null;
+}
+
+// Choix du chef : le PREMIER candidat lisible de la liste reçue (option A,
+// tranchée par DrSmoke). bossOf ne trie plus : l'ordre de la liste est la
+// responsabilité de l'appelant. La direction (src/direction.mjs) lui donne
+// la liste triée par première apparition mémorisée ; au premier démarrage,
+// sans mémoire, elle la trie par numéro de panneau.
 //
-// APPROXIMATION : Herdr ne fournit pas l'heure de démarrage des panneaux. Le
-// « premier agent démarré » ne peut donc pas être prouvé ; on prend le panneau
-// le plus bas numéroté, qui correspond en pratique au premier créé dans l'espace.
+// Herdr ne fournit pas l'heure de démarrage des panneaux : le « premier
+// démarré » n'existe dans aucune donnée d'entrée, seul l'ordre observé par
+// MyTeam fait foi. Un même panneau listé deux fois (deux empreintes) garde
+// un représentant stable : le plus petit identifiant complet.
 export function bossOf(agents) {
   if (!Array.isArray(agents)) return null;
   let best = null;
-  let bestKey = null;
+  let bestCle = null;
+  let bestId = '';
   for (const agent of agents) {
-    if (!agent || typeof agent !== 'object') continue;
-    const raw = typeof agent.paneId === 'string' ? agent.paneId
-      : typeof agent.id === 'string' ? agent.id.split('@')[0]
-        : '';
-    const match = /^([^:]+):p(\d+)$/.exec(raw.trim());
-    if (!match) continue;
-    const key = [match[1], Number(match[2]), typeof agent.id === 'string' ? agent.id : ''];
-    if (bestKey === null
-      || key[0] < bestKey[0]
-      || (key[0] === bestKey[0] && key[1] < bestKey[1])
-      || (key[0] === bestKey[0] && key[1] === bestKey[1] && key[2] < bestKey[2])) {
-      bestKey = key;
-      best = agent;
+    const cle = clePanneau(agent);
+    if (!cle) continue;
+    const id = typeof agent.id === 'string' ? agent.id : '';
+    if (!best) { best = agent; bestCle = cle; bestId = id; continue; }
+    if (cle.espace === bestCle.espace && cle.numero === bestCle.numero && id < bestId) {
+      best = agent; bestId = id;
     }
   }
   return best;
