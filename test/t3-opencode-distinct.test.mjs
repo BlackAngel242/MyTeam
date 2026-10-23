@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { normalizeAgent } from '../src/herdr.mjs';
-import { createAgentActivityReader } from '../src/agent-activity.mjs';
+import { createAgentActivityReader, normalizeActivity } from '../src/agent-activity.mjs';
 
 const dossier = 'C:/projet-commun';
 
@@ -89,4 +89,16 @@ test('T3-D : horodatages identiques => null (seule egalite exacte protege)', asy
   // src/agent-activity.mjs : egalite exacte d'horodatage => null (garde conservee).
   // Horodatages differents => activite non attribuable (voir T3-C, option B).
   assert.equal(await f.reader(unSeul[0], unSeul), null);
+});
+
+test('T3-E : normalizeActivity preserve le motif « activité non attribuable » et aucun chiffre', () => {
+  // server.mjs repasse l'activite dans normalizeActivity : le motif doit survivre,
+  // et toute autre valeur de match reste ecrasee (securite, test server.test.mjs:242).
+  const preserve = normalizeActivity({ match: 'activité non attribuable', tokens: null, model: null, effort: null, limits: [] });
+  assert.equal(preserve.match, 'activité non attribuable');
+  assert.equal(preserve.tokens, null);
+  assert.equal(preserve.model, null);
+  assert.equal(preserve.effort, null);
+  const ecrase = normalizeActivity({ match: 'SECRET', tokens: null, model: null, effort: null, limits: [] });
+  assert.notEqual(ecrase.match, 'SECRET', 'toute autre valeur de match est ecrasee');
 });
