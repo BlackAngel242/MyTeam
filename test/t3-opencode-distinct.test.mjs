@@ -1,5 +1,5 @@
 // T3 (F2) : deux OpenCode dans deux panneaux = deux agents distincts.
-// Reproduction uniquement, aucune correction. Preuves par fichier et ligne.
+// Reproduction (T3-A, T3-B, T3-D) + correction C3 option B (T3-C). Preuves par fichier et ligne.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, rm } from 'node:fs/promises';
@@ -55,7 +55,7 @@ test('T3-B : les deux dans la liste, meme dossier => aucune activite (garde)', a
   assert.equal(await f.reader(agents[1], agents), null);
 });
 
-test('T3-C : un seul dans la liste mais deux sessions en base => la plus recente est attribuee (defaut de confusion)', async t => {
+test('T3-C : un seul dans la liste mais deux sessions en base => activite non attribuable (option B)', async t => {
   const f = await fixture(t);
   const db = new DatabaseSync(join(f.openCodeRoot, 'opencode.db'));
   const schema = '(id TEXT PRIMARY KEY,parent_id TEXT,directory TEXT,time_updated INTEGER,model TEXT,tokens_input INTEGER,tokens_output INTEGER,tokens_reasoning INTEGER,tokens_cache_read INTEGER,tokens_cache_write INTEGER)';
@@ -69,14 +69,12 @@ test('T3-C : un seul dans la liste mais deux sessions en base => la plus recente
   // contexte projet). La garde de la ligne 309 passe (length === 1).
   const unSeul = [{ kind: 'OpenCode', cwd: dossier }];
   const activite = await f.reader(unSeul[0], unSeul);
-  // src/agent-activity.mjs lignes 301-302 : readOpenCode retourne la session la
-  // plus recente (candidates[0]). Les compteurs correspondent au panneau B,
-  // pas au panneau A interroge. C'est la confusion : l'activite de B est
-  // attribuee a A.
-  assert.ok(activite, 'une activite est retournee alors qu elle appartient peut-etre a l autre panneau');
-  assert.equal(activite.tokens.input, 999, 'ce sont les tokens du panneau B (recent), pas ceux de A');
-  assert.equal(activite.model, 'modele-b', 'c est le modele du panneau B');
-  assert.equal(activite.match, 'dossier et activité récente');
+  // Option B (docs/phase-correction-f2.md) : aucun chiffre, motif explicite.
+  assert.ok(activite, 'un etat est retourne');
+  assert.equal(activite.match, 'activité non attribuable');
+  assert.equal(activite.tokens, null, 'aucun chiffre de tokens');
+  assert.equal(activite.model, null, 'aucun modele');
+  assert.equal(activite.effort, null, 'aucun effort');
 });
 
 test('T3-D : horodatages identiques => null (seule egalite exacte protege)', async t => {
@@ -88,7 +86,7 @@ test('T3-D : horodatages identiques => null (seule egalite exacte protege)', asy
   db.prepare('INSERT INTO session_v2 VALUES (?,?,?,?,?,?,?,?,?,?)').run('session-B', null, dossier, 150, 'modele-b', 999, 999, 0, 0, 0);
   db.close();
   const unSeul = [{ kind: 'OpenCode', cwd: dossier }];
-  // src/agent-activity.mjs ligne 302 : seul candidates[1].updated === result.updated
-  // protege. Deux horodatages differents (cas normal) => confusion (voir T3-C).
+  // src/agent-activity.mjs : egalite exacte d'horodatage => null (garde conservee).
+  // Horodatages differents => activite non attribuable (voir T3-C, option B).
   assert.equal(await f.reader(unSeul[0], unSeul), null);
 });
