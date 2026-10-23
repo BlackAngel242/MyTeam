@@ -303,3 +303,57 @@ test('installeur bash : Herdr dans local/bin est détecté sans PATH et sans ex�
   const result=await execute(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash',['--noprofile','--norc',script.replaceAll('\\','/')],{...options,env:{...process.env,herdr_test_home:path}});
   assert.equal(result.stdout.trim().replaceAll('\\','/'),binary.replaceAll('\\','/'));
 });
+
+test('QA-L1 grille bash : la création de l\'espace transmet le dossier du projet (--cwd)',async t=>{
+  const result=await bash(t,['lire_panneaux','creer_grille_herdr'],`
+set -e
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+printf 'w9:p1\n' > "$work/panes"
+fake_herdr() {
+ printf '<%s>\n' "$@" >> "$work/calls"
+ case "$1 $2" in
+  'workspace create') printf '{"result":{"workspace_id":"w9"}}\n' ;;
+  'pane list')
+   printf '{"result":{"panes":['
+   sep='';while read -r id;do printf '%s{"pane_id":"%s"}' "$sep" "$id";sep=',';done < "$work/panes"
+   printf ']}}\n' ;;
+  'pane split') n=$(wc -l < "$work/panes");printf 'w9:p%s\n' "$((n+1))" >> "$work/panes";printf '{"result":{}}\n' ;;
+  *) printf '{"result":{}}\n' ;;
+ esac
+}
+HERDR_TROUVE=fake_herdr
+RACINE='/dossier/projet qa-l1'
+ids=$(creer_grille_herdr)
+[ "$(printf '%s' "$ids"|tr '\n' ',')" = 'w9:p1,w9:p2,w9:p3,w9:p4' ]
+head -n 6 "$work/calls"`);
+  assert.deepEqual(result.stdout.trim().split(/\r?\n/),[
+    '<workspace>',
+    '<create>',
+    '<--label>',
+    '<Bureau des agents>',
+    '<--cwd>',
+    '</dossier/projet qa-l1>',
+  ]);
+});
+
+test('QA-L1 grille PowerShell : la création de l\'espace transmet le dossier du projet (--cwd)',async t=>{
+  const result=await ps(t,['Appeler-Herdr','Lire-Panneaux','Creer-GrilleHerdr'],`
+$script:panes=@('w9:p1');$script:calls=@()
+function FauxHerdr {
+ $script:calls+=,@($args);$global:LASTEXITCODE=0
+ if($args[0] -eq 'workspace'){return '{"result":{"workspace_id":"w9"}}'}
+ if($args[1] -eq 'list') {
+  return @{result=@{panes=@($script:panes|ForEach-Object {@{pane_id=$_}})}}|ConvertTo-Json -Depth 5 -Compress
+ }
+ if($args[1] -eq 'split'){$script:panes+=('w9:p'+($script:panes.Count+1))}
+ return '{"result":{}}'
+}
+$herdrTrouve='FauxHerdr'
+$racine='C:\dossier\projet qa-l1'
+$ids=@(Creer-GrilleHerdr)
+$creation=@($calls|Where-Object {$_[0] -eq 'workspace'})[0]
+if(($creation -join '|') -ne 'workspace|create|--label|Bureau des agents|--cwd|C:\dossier\projet qa-l1'){throw "creation sans le dossier du projet : $($creation -join ' ')"}
+'ok'`);
+  if(result)assert.equal(result.stdout.trim(),'ok');
+});
