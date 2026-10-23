@@ -403,7 +403,7 @@ function Lire-Panneaux([string]$espace) {
 }
 
 function Creer-GrilleHerdr {
-  $creation = Appeler-Herdr @('workspace','create','--label','Bureau des agents')
+  $creation = Appeler-Herdr @('workspace','create','--label','Bureau des agents','--cwd',$racine)
   $espace = $creation.result.workspace_id
   if (-not $espace) { $espace = $creation.result.workspace.workspace_id }
   if ($espace -notmatch '^[A-Za-z0-9_-]+$') { throw (Texte 'Le nouvel espace est illisible.' 'Cannot read the new workspace.') }
@@ -492,7 +492,7 @@ if ($herdrTrouve) {
         if ($Interface) { Etat-Etape 'fail' }
         Dire (Texte "La creation automatique n'a pas abouti : $($_.Exception.Message)" "Automatic creation failed: $($_.Exception.Message)")
         Dire (Texte 'Procedure manuelle (commandes verifiees de Herdr) :' 'Manual procedure (verified Herdr commands):')
-        Dire '  herdr workspace create --label "Bureau des agents"'
+        Dire ('  herdr workspace create --label "Bureau des agents" --cwd "' + $racine + '"')
         Dire (Texte '  herdr pane list                      # reperer les identifiants, ex. w6:p1' '  herdr pane list                      # find pane identifiers, e.g. w6:p1')
         Dire '  herdr pane split --pane w6:p1 --direction right'
         Dire '  herdr pane split --pane w6:p1 --direction down'

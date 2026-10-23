@@ -414,7 +414,7 @@ lire_panneaux() {
 creer_grille_herdr() {
   local creation espace avant apres nouveau gauche droite colonne id i
   local ids=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4')
-  creation=$("$HERDR_TROUVE" workspace create --label 'Bureau des agents') || return 1
+  creation=$("$HERDR_TROUVE" workspace create --label 'Bureau des agents' --cwd "$RACINE") || return 1
   espace=$(printf '%s' "$creation" | grep -oE '"workspace_id"[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]+"' | sed 's/.*"\([^"]*\)"$/\1/' | sort -u)
   [ -n "$espace" ] && [ "$(printf '%s\n' "$espace" | wc -l)" -eq 1 ] || return 1
   avant=$(lire_panneaux "$espace") || return 1
@@ -508,7 +508,7 @@ if [ -n "$HERDR_TROUVE" ]; then
         [ "$INTERFACE" != 1 ] || etat_etape fail
         dire "$(texte "La création automatique n'a pas abouti." "Automatic creation failed.")"
         dire "$(texte 'Procédure manuelle (commandes vérifiées de Herdr) :' 'Manual procedure (verified Herdr commands):')"
-        dire '  herdr workspace create --label "Bureau des agents"'
+        dire "  herdr workspace create --label \"Bureau des agents\" --cwd \"$RACINE\""
         dire "$(texte '  herdr pane list                      # repérer les identifiants, ex. w6:p1' '  herdr pane list                      # find pane identifiers, e.g. w6:p1')"
         dire '  herdr pane split --pane w6:p1 --direction right'
         dire '  herdr pane split --pane w6:p1 --direction down'
