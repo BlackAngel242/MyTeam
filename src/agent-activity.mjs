@@ -45,7 +45,7 @@ export function normalizeActivity(value, { claude = false } = {}) {
     effort: effortName(value.effort),
     limitReached: value.limitReached === true,
     source: 'journal local',
-    match: claude ? 'session exacte' : 'dossier et activité récente',
+    match: value?.match === 'activité non attribuable' ? 'activité non attribuable' : (claude ? 'session exacte' : 'dossier et activité récente'),
   };
   if (claude || Array.isArray(value.subagents)) result.subagents = (Array.isArray(value.subagents) ? value.subagents : []).filter(agent =>
     agent && typeof agent.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(agent.id)
@@ -299,7 +299,11 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     }
     candidates.sort((a, b) => b.updated - a.updated);
     const result = candidates[0];
-    if (!result || candidates[1]?.updated === result.updated) return null;
+    if (!result) return null;
+    if (candidates[1]?.updated === result.updated) return null;
+    // Plusieurs sessions du meme dossier avec des horodatages differents :
+    // aucune ne peut etre attribuee a un panneau avec certitude (option B).
+    if (candidates.length > 1) return { nonAttribuable: true };
     return result;
   }
   const reader=async function readAgentActivity(agent, agents = [agent], {planOnly=false,sourceOnly=false}={}) {
@@ -312,9 +316,10 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     pending.set(key, promise);
     try {
       const result=await promise;
-      if(sourceOnly) return result && (agent.kind !== 'Codex' || result.offset >= result.size) ? result : null;
+      if(sourceOnly) return result && !result.nonAttribuable && (agent.kind !== 'Codex' || result.offset >= result.size) ? result : null;
       if(planOnly) return result&&result.offset>=result.size?structuredClone(result.plan):null;
       if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length||result.subagents)?normalizeActivity(result):null;
+      if(result?.nonAttribuable) return {source:'journal local',match:'activité non attribuable',tokens:null,limits:[],model:null,effort:null,limitReached:false};
       const activity=normalizeActivity(result);
       return activity&&(activity.tokens||activity.model||activity.effort)?activity:null;
     } finally {if(pending.get(key)===promise) pending.delete(key);}

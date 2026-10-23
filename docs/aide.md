@@ -253,7 +253,7 @@ Cet onglet gère les échanges avec plusieurs agents, la file d'attente, la dire
 - Consulter le journal des transmissions de la session.
 
 #### Direction de l'équipe et passation
-- Chef effectif : le bureau Direction est occupé par le chef de l'équipe. Par défaut, c'est le premier agent démarré dans Herdr (règle du plus petit panneau).
+- Chef effectif : le bureau Direction est occupé par le chef de l'équipe. Par défaut, c'est l'agent présent que MyTeam a vu apparaître le premier : MyTeam mémorise la date de première apparition de chaque agent dans son état privé (`apparitions.json`, à côté de `direction.json`) et l'oublie quand l'agent disparaît. Limite à connaître : au premier démarrage de MyTeam, les agents déjà présents n'ont pas d'heure d'apparition connue ; leur ordre de départ est alors le numéro de panneau.
 - Choix explicite de la personne qui utilise le bureau : une section « Direction de l'équipe » dans l'onglet Équipe permet de désigner n'importe quel autre agent connecté comme chef ou de rétablir la règle par défaut. Ce choix est conservé sur le disque (`direction.json` (état privé du projet)). Si l'agent choisi disparaît de Herdr, le serveur revient à la règle par défaut sans altérer le fichier.
 - Bandeau de proposition de passation : si le chef effectif atteint son plafond d'utilisation et entre en pause de limite, un bandeau apparaît en haut de l'onglet Équipe pour proposer proactivement de passer la direction à un suppléant disponible.
 - Confirmation et message de passation relu : la passation n'est jamais automatique. DrSmoke valide le changement, et le message de passation préparé est relu et validé avant d'être expédié à l'équipe (par envoi direct ou via la file d'attente).

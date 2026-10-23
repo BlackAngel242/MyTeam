@@ -563,6 +563,7 @@ function renderActivity(a){
   $('agent-since').textContent=change?t('poste.depuis_temps',{etat:label(a),duree:since(performance.now()-change.at)}):t('poste.depuis',{etat:label(a)});
   const act=a.activity;
   if(!act){$('agent-tokens').textContent=t('poste.non_expose');$('agent-subagents').textContent=t('poste.non_expose');return;}
+  if(act.match==='activité non attribuable'){$('agent-tokens').textContent=t('poste.non_attribuable');$('agent-subagents').textContent='';return;}
   const tok=act.tokens||{};
   $('agent-tokens').textContent=t('poste.tokens',{produits:compact(tok.output||0),lus:compact((tok.input||0)+(tok.cacheCreation||0)),cache:compact(tok.cacheRead||0)});
   const subs=act.subagents||[];
@@ -1055,12 +1056,11 @@ function pool(cx,cy,rx,ry,c,a){for(let dy=-ry;dy<=ry;dy++){const hw=Math.round(r
 // Lumière par paliers successifs : effet de dégradé sans lissage.
 function glow(cx,cy,r,c,s){pool(cx,cy,Math.round(r*1.9),Math.round(r*.7),c,.045*s);pool(cx,cy,Math.round(r*1.3),Math.round(r*.48),c,.06*s);pool(cx,cy,Math.round(r*.75),Math.round(r*.28),c,.08*s);}
 
-// Le chef : le premier agent démarré. Herdr ne donne pas l'heure de démarrage ; on retient le plus petit
-// numéro de panneau de l'espace (w5:p1 avant w5:p4), approximation documentée.
+// Le chef : celui que le serveur désigne (drapeau boss, calculé par src/direction.mjs). L'écran ne choisit
+// jamais à la place du serveur : sans drapeau, il n'y a pas de chef affiché.
 function bossOf(agents){
-  const chosen=agents.find(a=>a.boss===true);if(chosen&&agents.length>1)return chosen;
-  const num=a=>{const m=/:p(\d+)$/.exec(a.paneId||'');return m?Number(m[1]):Infinity;};
-  return agents.length>1?agents.reduce((b,a)=>num(a)<num(b)?a:b):null;
+  const chosen=agents.find(a=>a.boss===true);
+  return chosen&&agents.length>1?chosen:null;
 }
 const fitMode=matchMedia('(min-width:1100px) and (min-height:620px)');
 function layout(){

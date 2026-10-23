@@ -106,3 +106,14 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 
 - [ ] Vérifier le parcours dans une installation ZIP Linux et sur `windows-latest`, dont redémarrage et conservation de l'état local.
 - [ ] Fusionner la PR après revue et publier la release 0.5.1 ; vérifier que le site propose son archive.
+
+## F2 : deux OpenCode dans deux panneaux
+
+- [x] Option B : « activité non attribuable » au lieu d'une attribution fausse (PR #26, `a4d9d30`).
+- [ ] Nommage « OpenCode · fenêtre N » après la mémoire d'ordre de C1 (phase C4).
+
+## F3 : confidentialité
+
+- [x] Inventaire de ce qui sort de la machine (PR #31, `20349f8`).
+- [x] Masque incomplet : `AIza`, `github_pat_`, racines `workspace`, `data`, `srv` (voir `docs/revue-opencode-final.md`). Vérifié le 23 octobre 2026 sur `main` : ces six exemples sont masqués (`clé [secret masqué]`, `jeton [secret masqué]`, `fichier [chemin masqué]`), et `https://exemple.test/api/todos` reste intact.
+- [x] Règle de secours de l'écran alignée sur le serveur : sans drapeau `boss`, aucun chef n'est affiché (`public/app.js`, `bossOf`).

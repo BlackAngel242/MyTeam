@@ -145,6 +145,11 @@ dire() {
 simuler() {
   if [ "${INTERFACE:-0}" = 1 ];then etat_etape skip "$(texte Simulation. Preview.)";dire "[simulation] $1";else echo "[simulation] $1";fi
 }
+
+# Résumé : en simulation, on dit ce qui serait fait, jamais ce qui a été fait.
+noter_simule() {
+  if [ "$DRY_RUN" = "1" ]; then noter "$2"; else noter "$1"; fi
+}
 noter() { RAPPORT="$RAPPORT
  - $1"; }
 
@@ -414,7 +419,7 @@ lire_panneaux() {
 creer_grille_herdr() {
   local creation espace avant apres nouveau gauche droite colonne id i
   local ids=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4')
-  creation=$("$HERDR_TROUVE" workspace create --label 'Bureau des agents') || return 1
+  creation=$("$HERDR_TROUVE" workspace create --label 'Bureau des agents' --cwd "$RACINE") || return 1
   espace=$(printf '%s' "$creation" | grep -oE '"workspace_id"[[:space:]]*:[[:space:]]*"[A-Za-z0-9_-]+"' | sed 's/.*"\([^"]*\)"$/\1/' | sort -u)
   [ -n "$espace" ] && [ "$(printf '%s\n' "$espace" | wc -l)" -eq 1 ] || return 1
   avant=$(lire_panneaux "$espace") || return 1
@@ -508,7 +513,7 @@ if [ -n "$HERDR_TROUVE" ]; then
         [ "$INTERFACE" != 1 ] || etat_etape fail
         dire "$(texte "La création automatique n'a pas abouti." "Automatic creation failed.")"
         dire "$(texte 'Procédure manuelle (commandes vérifiées de Herdr) :' 'Manual procedure (verified Herdr commands):')"
-        dire '  herdr workspace create --label "Bureau des agents"'
+        dire "  herdr workspace create --label \"Bureau des agents\" --cwd \"$RACINE\""
         dire "$(texte '  herdr pane list                      # repérer les identifiants, ex. w6:p1' '  herdr pane list                      # find pane identifiers, e.g. w6:p1')"
         dire '  herdr pane split --pane w6:p1 --direction right'
         dire '  herdr pane split --pane w6:p1 --direction down'
@@ -730,8 +735,8 @@ export BUREAU_HERDR_PATH=$(literal_shell "$HERDR_A_ENREGISTRER")"
 }
 ecrire_profil || { etat_etape fail;exit 1; }
 if [ "$INTERFACE" != 1 ] || [ "$ENTREE_FERMEE" != 1 ]; then
-  noter "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")"
-  if [ -n "$HERDR_A_ENREGISTRER" ]; then noter "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")"; fi
+  noter_simule "$(texte "BUREAU_PORT : $PORT_CHOISI (ecrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (saved in profile).")" "$(texte "BUREAU_PORT : $PORT_CHOISI (simulation, rien écrit dans le profil)." "BUREAU_PORT: $PORT_CHOISI (preview, nothing written to profile).")"
+  if [ -n "$HERDR_A_ENREGISTRER" ]; then noter_simule "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (ecrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (saved in profile).")" "$(texte "BUREAU_HERDR_PATH : $HERDR_A_ENREGISTRER (simulation, rien écrit dans le profil)." "BUREAU_HERDR_PATH: $HERDR_A_ENREGISTRER (preview, nothing written to profile).")"; fi
 fi
 
 if [ "$SANS_RACCOURCI" != "1" ]; then
@@ -786,7 +791,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
           dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
         fi
       fi
-      noter "$(texte 'Raccourci : créé (lance Herdr).' 'Shortcut: created (starts Herdr).')"
+      noter_simule "$(texte 'Raccourci : créé (lance Herdr).' 'Shortcut: created (starts Herdr).')" "$(texte 'Raccourci : simulé (lance Herdr), rien créé.' 'Shortcut: simulated (starts Herdr), nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -814,7 +819,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
         ecrire_lanceur "$RACCOURCI" bureau
         dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
       fi
-      noter "$(texte 'Raccourci : créé.' 'Shortcut: created.')"
+      noter_simule "$(texte 'Raccourci : créé.' 'Shortcut: created.')" "$(texte 'Raccourci : simulé, rien créé.' 'Shortcut: simulated, nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -831,7 +836,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
         ecrire_desktop "$RACCOURCI" "$LANCEUR" false || exit 1
         dire "$(texte "Raccourci créé : $RACCOURCI" "Shortcut created: $RACCOURCI")"
       fi
-      noter "$(texte 'Raccourci : créé.' 'Shortcut: created.')"
+      noter_simule "$(texte 'Raccourci : créé.' 'Shortcut: created.')" "$(texte 'Raccourci : simulé, rien créé.' 'Shortcut: simulated, nothing created.')"
     else
       noter "$(texte 'Raccourci : non créé (refus).' 'Shortcut: not created (declined).')"
     fi
@@ -873,7 +878,7 @@ elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail
   if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ]; then etat_etape ok "$(texte 'Vérifications réussies.' 'Checks passed.')";fi
-  noter "$(texte 'Tests : executes.' 'Tests: completed.')"
+  noter_simule "$(texte 'Tests : executes.' 'Tests: completed.')" "$(texte 'Tests : simules, non executes.' 'Tests: simulated, not run.')"
 else
   noter "$(texte 'Tests : non executes (refuse).' 'Tests: not run (declined).')"
 fi

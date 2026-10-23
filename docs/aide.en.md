@@ -253,7 +253,7 @@ This tab coordinates multiple agents, the queue, direction, and task completion 
 - Inspect the session transmission journal.
 
 #### Direction and Chief Handover
-- Active chief: the Direction desk hosts the team chief (default: first agent started in Herdr).
+- Active chief: the Direction desk hosts the team chief (default: the present agent MyTeam saw appear first; MyTeam remembers each agent's first appearance date in its private state, `apparitions.json` next to `direction.json`, and forgets it when the agent disappears. Limit to know: at MyTeam's first start, agents already present have no known appearance time, so their starting order is the pane number).
 - User selection: the "Team direction" ("Direction de l'équipe") section lets you assign any connected agent as chief or revert to default. Choice is persisted in `direction.json` (private project state). If the assigned chief disappears from Herdr, default rule applies gracefully.
 - Handover proposal banner: if the chief hits its quota limit, a banner proactively suggests passing the chief role to an available deputy.
 - Human confirmation and review: handover is never automatic. The user confirms, reviews the handover message, and sends it directly or via queue.

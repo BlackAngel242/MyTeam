@@ -531,6 +531,7 @@
   "poste.limite_reset": "Limite restante · remise à zéro {heure}",
   "poste.lu_dans_barre": "Lu dans la barre de l’outil à {heure}",
   "poste.non_expose": "Non exposé par cet outil",
+  "poste.non_attribuable": "Activité non attribuable à un panneau",
   "poste.non_precise": "Non précisé",
   "poste.panneau_herdr": "Panneau Herdr",
   "poste.plan": "Plan publié : {fait}/{total} cases · {pct} %",
