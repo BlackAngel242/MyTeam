@@ -10,14 +10,14 @@ Inventaire de tout ce qui peut quitter la machine vers d'autres personnes. Pour 
 - **Statut** : testé (lecture du code). Conforme à la règle d'`AGENTS.md` (« Serveur sur 127.0.0.1 uniquement »).
 
 ## 2. Site GitHub Pages (`site/`)
-- **Contenu** : `site/index.html`, `site/style.css`, `site/appearance.css`, `site/site.js`, `site/appearance.js`, `site/icons.svg`, et `site/assets/` (17 captures PNG + 3 médias : `tournee-du-chef.gif`/`.mp4`/`.webm`).
+- **Contenu** : `site/index.html`, `site/style.css`, `site/appearance.css`, `site/site.js`, `site/appearance.js`, `site/icons.svg`, et `site/assets/` (14 PNG + 1 GIF + 1 MP4 + 1 WebM, 17 fichiers au total).
 - **Publication** : `.github/workflows/pages.yml` publie `site/` sur GitHub Pages à chaque push sur `main` (chemin `site/**`). URL publique : `https://blackangel242.github.io/MyTeam/` (champ `homepage` du dépôt, `has_pages: true`).
 - **Qui peut voir** : tout le monde (site public).
 - **Statut** : testé (liste des fichiers + workflow + API GitHub). Les captures sont faites avec des états simulés (`AGENTS.md` : « captures de vérification se font avec Playwright et des états simulés »), mais leur contenu réel n'est pas vérifié ici (pas d'OCR). À vérifier visuellement par SmokeSama.
 
 ## 3. Captures (`docs/captures/`, `site/assets/`)
-- **`docs/captures/`** : 18 fichiers PNG (01-ordinateur-scene.png … 18-ordinateur-autonomie-en.png). Suivis par Git.
-- **`site/assets/`** : 17 captures PNG + 3 médias. Suivis par Git, publiés sur GitHub Pages (voir 2).
+- **`docs/captures/`** : 29 PNG + 1 GIF + 1 fichier `.md` (31 fichiers au total). Suivis par Git.
+- **`site/assets/`** : 14 PNG + 1 GIF + 1 MP4 + 1 WebM (17 fichiers). Suivis par Git, publiés sur GitHub Pages (voir 2).
 - **`.gitignore` ligne 8** : `/captures/` est ancré à la racine — il n'ignore que `captures/` à la racine, pas `docs/captures/`. Ce point est déjà une leçon dans `LESSONS.md` (« Dans .gitignore, ancrer /captures/ avec un slash initial : sans slash, la règle ignore aussi docs/captures/ »). Ici le slash initial est présent, donc `docs/captures/` est bien suivi.
 - **Qui peut voir** : tout le monde (dépôt Git public, et `site/assets/` en plus sur GitHub Pages).
 - **Statut** : testé (liste des fichiers + .gitignore). Contenu des images : non vérifié (pas d'OCR dans cet environnement).
@@ -32,11 +32,11 @@ Inventaire de tout ce qui peut quitter la machine vers d'autres personnes. Pour 
 Le dépôt est public (`visibility: public`). Tous les fichiers suivis sont visibles par tous.
 
 ### 5.1 Secrets et jetons
-- **Aucun secret réel** trouvé : `git grep` sur `ghp_`, `github_pat_`, `sk-`, `password`, `api_key` ne renvoie que des mentions documentaires (explications dans la doc, pas de valeurs).
+- **Aucun secret réel** trouvé. Les occurrences de `ghp_`, `github_pat_`, `sk-` repérées par `git grep` sont des valeurs factices dans les jeux d'essai des tests (`test/agent-activity.test.mjs` ligne 246, `test/responses.test.mjs` ligne 34) et dans un commentaire de `src/masque.mjs` ligne 9 (liste des motifs protégés). Aucune valeur réelle n'est présente dans les fichiers suivis.
 - **Statut** : testé.
 
 ### 5.2 Chemins personnels et noms d'utilisateur
-- **Aucun chemin personnel réel** trouvé. Seuls des exemples génériques : `C:\Users\vous` (`docs/INSTALLATION.md` ligne 180), `C:\Users\you` (`docs/INSTALLATION.en.md` ligne 180), `~/.herdr/...`.
+- **Aucun chemin personnel réel** trouvé. Seuls des exemples génériques : `C:\Users\vous` (dans `docs/INSTALLATION.md` ligne 180, phrase décrivant `BUREAU_HERDR_PATH`), `C:\Users\you` (`docs/INSTALLATION.en.md`), `~/.herdr/...`.
 - **Statut** : testé.
 
 ### 5.3 Emails et identités
