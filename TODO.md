@@ -106,3 +106,8 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 
 - [ ] Vérifier le parcours dans une installation ZIP Linux et sur `windows-latest`, dont redémarrage et conservation de l'état local.
 - [ ] Fusionner la PR après revue et publier la release 0.5.1 ; vérifier que le site propose son archive.
+
+## F2 : deux OpenCode dans deux panneaux
+
+- [x] Option B : « activité non attribuable » au lieu d'une attribution fausse (PR #26, `a4d9d30`).
+- [ ] Nommage « OpenCode · fenêtre N » après la mémoire d'ordre de C1 (phase C4).
