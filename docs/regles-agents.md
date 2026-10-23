@@ -21,6 +21,10 @@ Lis aussi `AGENTS.md`, `LESSONS.md`, `HANDOFF.md` et `TODO.md` avant toute propo
 10. **Une tâche à la fois**, dans l'ordre du programme. Arrête-toi au premier blocage, consigne-le dans le journal de reprise et dis-le à SmokeSama.
 11. **Ne réorganise pas le projet** (branches, gouvernance, processus) de ta propre initiative.
 
+## Quand tu corriges le travail d'une autre IA
+
+12 bis. **Le prompt de reprise dit ce que tu as corrigé.** Quand tu corriges une pull request ou le travail d'un autre outil, le prompt que tu lui donnes indique : (a) ce qui a été corrigé, avec le fichier et le commit ; (b) ce qu'il ne doit pas faire, en lien avec cette correction ; (c) qu'il relit la méthode dans `LESSONS.md` et la garde en mémoire avant sa prochaine mission.
+
 ## Décisions déjà tranchées (ne pas les rouvrir sans SmokeSama)
 
 - **Installation 0.5.1** : prérequis automatiques (Node.js 22 ou plus, revérifié après installation ; Herdr par la méthode officielle ; Clink sous Windows seulement via winget). Outils IA en choix groupé : seuls les absents sont proposés, sélection multiple, confirmation unique, choix 0 accepté, aucun téléchargement d'IA en mode automatique. Antigravity en choix guidé par sa documentation officielle. Le mode simulation ne télécharge, n'installe et n'écrit rien. Les noms corrects sont Clink et Herdr.
