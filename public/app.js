@@ -116,12 +116,10 @@ function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
   if(name==='taches')loadTodos();
-  if(name==='equipe'){loadRelais();loadQueue();loadTreatments();loadDiscussion();Scene.renderMail();Scene.acknowledgeMail();}
+  if(name==='equipe'){loadRelais();QueueUi.load();loadTreatments();loadDiscussion();Scene.renderMail();Scene.acknowledgeMail();}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
-// File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
-const queueLabels={attente:()=>t('equipe.file.attente'),envoyee:()=>t('equipe.file.envoyee'),annulee:()=>t('equipe.file.annulee'),a_revoir:()=>t('equipe.file.a_revoir')};
-let queueItems=[],queueGen=0,queueShown='',todosGen=0,todosShown='',todosData=null,attached=[];
+let todosGen=0,todosShown='',todosData=null,attached=[];
 function errorBlock(container,message,icon='erreur',retry=null){
   // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
   // Le message est affiché tel quel : aucune liste vide ne remplace jamais une erreur.
@@ -130,53 +128,13 @@ function errorBlock(container,message,icon='erreur',retry=null){
   const pic=iconCanvas(icon);if(pic)box.append(pic);
   const p=document.createElement('p');p.textContent=message;
   const btn=document.createElement('button');btn.type='button';btn.className='tool-button';btn.textContent=t('commandes.actualiser_bureau');
-  btn.addEventListener('click',async()=>{await refreshState();if(retry)return retry();const t=currentTab();if(t==='equipe')loadQueue();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
+  btn.addEventListener('click',async()=>{await refreshState();if(retry)return retry();const t=currentTab();if(t==='equipe')QueueUi.load();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
   box.append(p,btn);container.replaceChildren(box);
 }
 function iconCanvas(name){
   const icon=window.EMPTY_ICONS?.[name];if(!icon)return null;
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='empty-icon';c.setAttribute('aria-hidden','true');const g3=c.getContext('2d');
   icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(icon.palette[ch]){g3.fillStyle=icon.palette[ch];g3.fillRect(x,y,1,1);}}));return c;
-}
-async function loadQueue(){
-  if(!state.connected||!state.token){queueShown='';errorBlock($('queue-list'),t('equipe.file_herdr_off'),'file');return;}
-  // Seule la lecture la plus récente s'affiche : une réponse lente ne remplace jamais une plus récente.
-  const gen=++queueGen;let items;
-  try{const lu=await request('/api/queue',{headers:{'X-Bureau-Token':state.token}});items=lu.items||[];
-    // Récupération d'un fichier de file devenu trop gros : le serveur la signale, le bureau l'affiche telle quelle.
-    const alerte=typeof lu.alerte?.message==='string'?lu.alerte.message:'';$('queue-alerte').hidden=!alerte;$('queue-alerte').textContent=alerte;}catch(error){if(gen===queueGen){queueShown='';errorBlock($('queue-list'),errorText(error),'file');}return;}
-  if(gen!==queueGen)return;
-  queueItems=items;renderQueue();renderStatusbar(activeAgent());
-}
-function renderQueue(){
-  const list=$('queue-list'),visible=queueItems.filter(q=>q.state!=='annulee').slice(-20).reverse(),waitingN=queueItems.filter(q=>q.state==='attente').length;
-  $('queue-count').textContent=waitingN?t('equipe.file_en_attente',{n:waitingN}):'';
-  const shown=JSON.stringify([visible,state.agents.map(a=>a.id+a.name)]);if(shown===queueShown)return;queueShown=shown;
-  if(!visible.length){const li=document.createElement('li');li.className='list-placeholder';li.textContent=t('equipe.file_vide');list.replaceChildren(li);return;}
-  const focusedItem=document.activeElement?.closest?.('#queue-list [data-item]')?.dataset.item,focusedIndex=focusedItem?[...document.activeElement.parentElement.children].indexOf(document.activeElement)+1:1;
-  list.replaceChildren(...visible.map(q=>{
-    const agent=state.agents.find(a=>a.id===q.id),li=document.createElement('li');li.className='queue-item '+q.state;li.dataset.item=q.itemId;
-    const head=document.createElement('span');head.className='log-head';
-    const headParts=[t('equipe.file.entete',{nom:agent?.name||t('equipe.agent_disparu'),etat:(queueLabels[q.state]||(()=>undefined))()})];
-    if(q.state==='attente'&&q.notBefore&&new Date(q.notBefore)>Date.now())headParts.push(t('equipe.file.pas_avant',{heure:hhmm(new Date(q.notBefore))}));
-    if(q.sentAt)headParts.push(hhmm(new Date(q.sentAt)));
-    head.textContent=headParts.join(' · ');
-    const body=document.createElement('span');body.className='log-body';body.textContent=q.message.length>140?q.message.slice(0,140)+'…':q.message;
-    if(q.priority==='haute'){const tag=document.createElement('span');tag.className='prio';tag.textContent=t('equipe.prioritaire');head.prepend(tag,' · ');}
-    li.append(head,body);
-    if(q.files?.length){const names=q.copiedFiles?.length?q.copiedFiles.map(f=>f.name).join(', '):q.files.map(f=>f.path.split(/[/\\]/).pop()).join(', ');const att=document.createElement('span');att.className='log-why';att.textContent=q.files.length>1?(q.copiedFiles?.length?t('equipe.joint.autres',{liste:names}):t('equipe.joint.autres_depart',{liste:names})):(q.copiedFiles?.length?t('equipe.joint.un',{liste:names}):t('equipe.joint.un_depart',{liste:names}));li.append(att);}
-    if(q.reason){const why=document.createElement('span');why.className='log-why';why.textContent=tServeur(q.reason);li.append(why);}
-    if(q.state==='attente'){
-      const tools=document.createElement('div');tools.className='queue-tools';
-      const high=q.priority==='haute',prio=document.createElement('button');prio.type='button';prio.className='tool-button';prio.textContent=high?t('equipe.file.normal'):t('equipe.file.tete');
-      prio.addEventListener('click',async()=>{try{await request('/api/queue/priority',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId,priority:high?'normale':'haute'})});}catch(error){head.textContent=errorText(error);}loadQueue();});
-      const cancel=document.createElement('button');cancel.type='button';cancel.className='tool-button';cancel.textContent=t('equipe.file.retirer');
-      cancel.addEventListener('click',async()=>{try{await request('/api/queue/cancel',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({itemId:q.itemId})});}catch(error){head.textContent=errorText(error,'envoi');}loadQueue();});
-      tools.append(prio,cancel);li.append(tools);
-    }
-    return li;
-  }));
-  if(focusedItem)(list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button:nth-of-type('+focusedIndex+')')||list.querySelector('[data-item="'+CSS.escape(focusedItem)+'"] button'))?.focus({preventScroll:true});
 }
 // Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
 // Le pourcentage est un simple rapport de cases cochées sur cases totales, jamais une estimation.
@@ -193,7 +151,7 @@ function demandes(){
     out.push({at:Date.parse(at),text:t('taches.demande',{nom:agent.name,titre:texte.length>110?texte.slice(0,110)+'…':texte}),done:fini(agent.id,at),source:t('taches.demandes_source')});
   };
   for(const a of state.agents)for(const d of Array.isArray(a.delegations)?a.delegations:[])if(d&&d.title)ajoute('d'+d.id,agentByTarget(d.target),d.title,d.at);
-  for(const q of queueItems){if(q.state==='annulee'||typeof q.message!=='string')continue;ajoute('q'+q.itemId,state.agents.find(a=>a.id===q.id),q.message,q.sentAt||q.createdAt||q.notBefore);}
+  for(const q of QueueUi.items){if(q.state==='annulee'||typeof q.message!=='string')continue;ajoute('q'+q.itemId,state.agents.find(a=>a.id===q.id),q.message,q.sentAt||q.createdAt||q.notBefore);}
   return out.sort((x,y)=>y.at-x.at).slice(0,15).map(({at,...rest})=>rest);
 }
 async function loadTodos(){
@@ -401,7 +359,7 @@ function quotaPause(a){
 // P3 : la pause de quota tient en une seule ligne, avec sa source et l'heure de
 // relance ; la relance vient de holdUntil quand la file la donne, sinon +5 min.
 function holdUntilOf(a){
-  const dates=queueItems.filter(q=>q.id===a.id&&q.holdUntil).map(q=>new Date(q.holdUntil)).filter(d=>!Number.isNaN(d));
+  const dates=QueueUi.items.filter(q=>q.id===a.id&&q.holdUntil).map(q=>new Date(q.holdUntil)).filter(d=>!Number.isNaN(d));
   return dates.length?new Date(Math.max(...dates)):null;
 }
 function pauseBanner(a,pause){
@@ -411,6 +369,8 @@ function pauseBanner(a,pause){
   return t('pause.quota_retour',{retour:hhmm(pause.until),reste:until(pause.until),relance:hhmm(relance),source});
 }
 const hhmm=d=>d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+// File d'attente : lecture du serveur, annulation possible tant que la consigne n'est pas partie.
+window.QueueUi = createQueueUi({ getState: () => state, api: request, t, tServeur, $, errorBlock, errorText, renderStatusbar, activeAgent, hhmm });
 function renderStatusbar(a){
   const bar=$('statusbar'),s=a&&statusCache.get(a.id),pause=a&&quotaPause(a);
   const st=s?.status&&Object.keys(s.status).length?s.status:null;
@@ -874,7 +834,7 @@ function renderCrisis(){
   $('crise-state').textContent=on?t('equipe.crise.active'):t('equipe.crise.aucune');
   const main=$('crise-main');main.disabled=criseBusy;main.className='tool-button'+(on?'':' danger');
   main.textContent=on?t('equipe.crise.lever'):criseArmed?t('equipe.crise.confirmer'):t('equipe.crise.enclencher');
-  const waiting=queueItems.filter(q=>q.state==='attente').length;
+  const waiting=QueueUi.items.filter(q=>q.state==='attente').length;
   $('crise-queue').textContent=waiting?(waiting>1?t('equipe.crise.file.autres',{n:waiting}):t('equipe.crise.file.un',{n:waiting})):t('equipe.crise.file_vide');
   $('crise-agents').replaceChildren(...state.agents.map(a=>{
     const li=document.createElement('li'),head=document.createElement('span');head.className='crise-agent';head.textContent=[t('equipe.choix',{nom:a.name,etat:label(a).toLowerCase()}),a.paneId].filter(Boolean).join(' · ');
@@ -960,7 +920,7 @@ async function autoSet(){
     const body=autoState.actif?{actif:false}:{actif:true,objectif:$('auto-objectif').value,minutes:Number($('auto-minutes').value),echanges:Number($('auto-echanges').value)};
     autoState=await request('/api/autonomie',{method:'POST',headers:{'X-Bureau-Token':state.token,'Content-Type':'application/json'},body:JSON.stringify(body)});
     $('auto-result').textContent='';if(!autoState.actif)$('mail-live').textContent=t('auto.annonce_arret',{motif:autoState.arret||''});
-    loadQueue();
+    QueueUi.load();
   }catch(error){$('auto-result').textContent=errorText(error,'envoi');}
   finally{autoBusy=false;syncAuto();renderAuto();}
 }
@@ -1000,7 +960,7 @@ $('prompt-form').addEventListener('submit',async event=>{
     const target=a.id;sending=true;updateForm();$('send-result').hidden=true;
     try{
       await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:target,message,priority:$('priority').checked?'haute':'normale',...(attached.length?{files:attached.map(({root,path})=>({root,path}))}:{})})});
-      drafts.delete(target);$('priority').checked=false;resetAttach();loadAttach();loadQueue();
+      drafts.delete(target);$('priority').checked=false;resetAttach();loadAttach();QueueUi.load();
       if(target===selected){$('message').value='';$('send-result').className='';$('send-result').textContent=t('consigne.mise_en_file',{nom:a.name});$('send-result').hidden=false;}
     }catch(error){if(target===selected){$('send-result').className='error';$('send-result').textContent=errorText(error,'envoi');$('send-result').hidden=false;}}
     finally{sending=false;updateForm();}
@@ -1023,7 +983,7 @@ motionPreference.addEventListener('change',()=>{if(readMotion()==null){Scene.set
 function agentByTarget(target){
   return state.agents.find(a=>a.paneId===target||a.name?.toLowerCase()===String(target).toLowerCase());
 }
-window.Scene = createScene({ canvas, getState: () => state, getSelected: () => selected, getQueueItems: () => queueItems, getBoardData: () => boardData, getEnseigne: () => enseigne, getTodosData: () => todosData, isTilesOn: () => tilesOn, initialPaused, colors, label, tint, compte, showTab, selectAgent, openBoard, copyText, logoFor, activeAgent, quotaPause, signal, hhmm, agentByTarget });
+window.Scene = createScene({ canvas, getState: () => state, getSelected: () => selected, getQueueItems: () => QueueUi.items, getBoardData: () => boardData, getEnseigne: () => enseigne, getTodosData: () => todosData, isTilesOn: () => tilesOn, initialPaused, colors, label, tint, compte, showTab, selectAgent, openBoard, copyText, logoFor, activeAgent, quotaPause, signal, hhmm, agentByTarget });
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1148,7 +1108,7 @@ $('direction-send').addEventListener('click',async()=>{
     // Agent disponible : envoi direct ; sinon la passation attend dans la file, en tête.
     const direct=canSend(a),data=direct?await request('/api/prompt',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message})})
       :await request('/api/queue',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:a.id,message,priority:'haute'})});
-    if(direct)logSend([a.name],message,'sent',tServeur(data.message||'')||t('consigne.transmise_herdr'));else loadQueue();
+    if(direct)logSend([a.name],message,'sent',tServeur(data.message||'')||t('consigne.transmise_herdr'));else QueueUi.load();
     $('direction-result').className='files-result';$('direction-result').textContent=direct?t('direction.transmise',{nom:a.name}):t('direction.en_file',{nom:a.name});$('direction-result').hidden=false;
     handoff=null;$('direction-handoff').hidden=true;
   }catch(error){if(canSend(a))logSend([a.name],message,outcomeOf(error),errorText(error));$('direction-result').className='files-result error';$('direction-result').textContent=errorText(error);$('direction-result').hidden=false;}
@@ -1227,7 +1187,7 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 let cycleLent=0;
-setInterval(()=>{if(document.hidden)return;loadQueue();Scene.renderMail();loadCrisis();loadAuto();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
+setInterval(()=>{if(document.hidden)return;QueueUi.load();Scene.renderMail();loadCrisis();loadAuto();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
 setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
