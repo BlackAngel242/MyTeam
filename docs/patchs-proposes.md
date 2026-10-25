@@ -8,11 +8,11 @@ Contexte : les analyses complètes sont dans [`revue-360-exhaustive.md`](revue-3
 
 | Correctif | État |
 |---|---|
-| P1 — sécurité `/api/state` | ⬜ Proposé, à décider |
+| P1 — sécurité `/api/state` | ✅ Livré, commit 63e324a |
 | P2 — factoriser la lecture JSONL | ✅ Livré, commit `abd65dd` |
 | P3 — nourrir la consigne | ✅ Livré, commit `97c8fa2` |
-| P4 — arrêt « aucune progression » | ⬜ Proposé, à décider |
-| P5 — centraliser la version | ⬜ Proposé, à décider |
+| P4 — arrêt « aucune progression » | ✅ Livré, commit 264aaf9 (critère des délégations en échec non implémenté) |
+| P5 — centraliser la version | ✅ Livré, commit 187a888 (point d'entrée seul ; textes publics inchangés) |
 
 ---
 
