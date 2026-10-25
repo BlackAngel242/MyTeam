@@ -1,8 +1,18 @@
-# Correctifs proposés (à intégrer par Claude)
+# Correctifs proposés (état au 25/10/2026)
 
 Ce document liste les correctifs concrets issus de la revue. Chaque correctif est décrit avec sa justification, le code exact, l'impact sur les tests et son niveau de risque. L'ordre est celui de priorité recommandé.
 
 Contexte : les analyses complètes sont dans [`revue-360-exhaustive.md`](revue-360-exhaustive.md), [`reflexion-patterns.md`](reflexion-patterns.md) et [`synthese-experts.md`](synthese-experts.md).
+
+## État d'avancement
+
+| Correctif | État |
+|---|---|
+| P1 — sécurité `/api/state` | ⬜ Proposé, à décider |
+| P2 — factoriser la lecture JSONL | ✅ Livré, commit `abd65dd` |
+| P3 — nourrir la consigne | ✅ Livré, commit `97c8fa2` |
+| P4 — arrêt « aucune progression » | ⬜ Proposé, à décider |
+| P5 — centraliser la version | ⬜ Proposé, à décider |
 
 ---
 
@@ -56,6 +66,8 @@ Fichiers concernés : `test/server.test.mjs` (helper + 3 assertions), `test/resp
 
 **Risque.** Faible (extraction pure, les tests existants doivent rester verts sans modification).
 
+**État.** ✅ Livré dans le commit `abd65dd`. Le module `src/jsonl.mjs` est créé et les quatre fichiers importent désormais `completeLines`, `resumePossible` et `findTranscript`.
+
 ---
 
 ## P3 — Orchestration : nourrir la consigne avec l'état réel
@@ -68,6 +80,8 @@ Fichiers concernés : `test/server.test.mjs` (helper + 3 assertions), `test/resp
 2. Injecter `board.focus`, `board.todo` et `board.lessons` dans la consigne construite par `autonomie.passer()`, en remplaçant la phrase générique par un bref résumé (moins de 900 caractères).
 
 **Risque.** Moyen (changement de comportement de la consigne ; à valider par un test de parité de consigne).
+
+**État.** ✅ Livré dans le commit `97c8fa2`. `docs/plan-travail.md` est ajouté à `FILES`, et `autonomie.passer()` injecte désormais un résumé du tableau mural (`focus`, `todo`, `plan`, `leçons`) borné à 600 caractères, avec lecture tolérante en cas d'absence.
 
 ---
 
@@ -91,10 +105,11 @@ Fichiers concernés : `test/server.test.mjs` (helper + 3 assertions), `test/resp
 
 ---
 
-## Ordre conseillé
+## Ordre conseillé pour le reste
 
-1. **P1** (sécurité) puis **P2** (maintenabilité, faible risque) en premier.
-2. **P3** et **P4** (orchestration) ensuite, chacun avec son test dédié.
+P2 et P3 sont déjà livrés. Restent à décider, dans cet ordre :
+1. **P1** (sécurité) en premier.
+2. **P4** (orchestration) ensuite, avec son test dédié.
 3. **P5** en dernier, car il touche au plus de fichiers.
 
-Chaque correctif doit être livré en petits commits séparés, avec `npm run check` et `npm test` verts avant chaque commit, conformément aux règles du dépôt.
+Chaque correctif restant doit être livré en petits commits séparés, avec `npm run check` et `npm test` verts avant chaque commit, conformément aux règles du dépôt.
