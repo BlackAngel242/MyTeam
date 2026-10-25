@@ -136,7 +136,9 @@ function errorBlock(container,message,icon='erreur',retry=null){
 function iconCanvas(name){
   const icon=window.EMPTY_ICONS?.[name];if(!icon)return null;
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='empty-icon';c.setAttribute('aria-hidden','true');const g3=c.getContext('2d');
-  icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(icon.palette[ch]){g3.fillStyle=icon.palette[ch];g3.fillRect(x,y,1,1);}}));return c;
+  // Performance: Batch rect() calls by color within beginPath/fill instead of repeated fillRect() to reduce rendering overhead.
+  for (const p in icon.palette) { g3.fillStyle=icon.palette[p]; g3.beginPath(); icon.rows.forEach((row,y)=>{ for (let x=0; x<16; x++) if (row[x]===p) g3.rect(x,y,1,1); }); g3.fill(); }
+  return c;
 }
 async function loadQueue(){
   if(!state.connected||!state.token){queueShown='';errorBlock($('queue-list'),t('equipe.file_herdr_off'),'file');return;}
@@ -577,7 +579,8 @@ function logoCanvas(a){
   const logo=logoFor(a);if(!logo)return null;
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='agent-logo';
   const g2=c.getContext('2d');
-  logo.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(logo.palette[ch]){g2.fillStyle=logo.palette[ch];g2.fillRect(x,y,1,1);}}));
+  // Performance: Batch rect() calls by color within beginPath/fill instead of repeated fillRect() to reduce rendering overhead.
+  for (const p in logo.palette) { g2.fillStyle=logo.palette[p]; g2.beginPath(); logo.rows.forEach((row,y)=>{ for (let x=0; x<16; x++) if (row[x]===p) g2.rect(x,y,1,1); }); g2.fill(); }
   return c;
 }
 // Envoi groupé : seuls les agents disponibles peuvent être cochés, et un second clic confirme la liste exacte.
@@ -1049,7 +1052,8 @@ const textWidth=s=>Math.max(0,s.length*4-1);
 // Since each character has a fixed width of 4px (with -1 total offset), max-3 / 4 gets exact fit.
 function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;const keep=Math.floor((max-3)/4);return (keep>0?s.slice(0,keep):s.slice(0,1)).trimEnd()+'.';}
 // Performance: Hoist canvas state (fillStyle, globalAlpha) out of the character/pixel loop to avoid massive overhead.
-function text(s,x,y,c,a=1){g.globalAlpha=a;g.fillStyle=c;[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.fillRect(Math.round(x+i*4+b%3),Math.round(y+Math.floor(b/3)),1,1);});g.globalAlpha=1;}
+// Performance: Batch rect() calls within beginPath/fill instead of repeated fillRect() to reduce rendering overhead.
+function text(s,x,y,c,a=1){g.globalAlpha=a;g.fillStyle=c;g.beginPath();const len=s.length;for(let i=0;i<len;i++){const ch=s[i],bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.rect(Math.round(x+i*4+b%3),Math.round(y+Math.floor(b/3)),1,1);}g.fill();g.globalAlpha=1;}
 // Halo en pixels autour d'une enseigne : reste dans le langage pixel, pas de flou.
 function neon(s,x,y,c){for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])text(s,x+dx,y+dy,c,.22);text(s,x,y,c);}
 function pool(cx,cy,rx,ry,c,a){for(let dy=-ry;dy<=ry;dy++){const hw=Math.round(rx*Math.sqrt(1-(dy/ry)**2));if(hw>0)px(cx-hw,cy+dy,hw*2,1,c,a);}}
@@ -1160,7 +1164,8 @@ function clock(x,y){
 let boardSpot=null,boardData=null,enseigne='';
 // Lettres agrandies (chaque pixel d'une lettre devient k x k) : gros pourcentage de l'écran de projection.
 // Performance: Hoist canvas state (fillStyle) out of the character/pixel loop.
-function textBig(s,x,y,c,k){g.globalAlpha=1;g.fillStyle=c;[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.fillRect(Math.round(x+i*4*k+(b%3)*k),Math.round(y+Math.floor(b/3)*k),k,k);});}
+// Performance: Batch rect() calls within beginPath/fill instead of repeated fillRect() to reduce rendering overhead.
+function textBig(s,x,y,c,k){g.globalAlpha=1;g.fillStyle=c;g.beginPath();const len=s.length;for(let i=0;i<len;i++){const ch=s[i],bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.rect(Math.round(x+i*4*k+(b%3)*k),Math.round(y+Math.floor(b/3)*k),k,k);}g.fill();}
 // Tableau de liège : la todo réelle du projet (cases de TODO.md et des plans), jamais une valeur inventée.
 // Les cases ouvertes d'abord ; quand tout est fait, les dernières cases réalisées.
 let screenSpot=null;
