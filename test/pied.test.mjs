@@ -14,7 +14,7 @@ async function bureau(t, piedFile) {
   t.after(() => new Promise(r => server.close(r)));
   const port = server.address().port, origin = `http://127.0.0.1:${port}`;
   const send = (path, headers = {}) => new Promise((resolve, reject) => {
-    const req = request({ hostname: '127.0.0.1', port, path, headers: { Host: `127.0.0.1:${port}`, ...headers } }, res => { let s = ''; res.on('data', c => s += c); res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(s) })); });
+    const req = request({ hostname: '127.0.0.1', port, path, headers: { Host: `127.0.0.1:${port}`, 'Sec-Fetch-Site': 'same-origin', ...headers } }, res => { let s = ''; res.on('data', c => s += c); res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(s) })); });
     req.on('error', reject); req.end();
   });
   const { data: { token } } = await send('/api/state');

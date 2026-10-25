@@ -288,6 +288,9 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
     const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY',
       'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"};
     const json=(status,data)=>{res.writeHead(status,{...headers,'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));};
+    // Preuve de provenance seule (sans jeton) : origine exacte, ou Sec-Fetch-Site = same-origin
+    // posé par le navigateur quand Origin est absent. Sert aussi à /api/state, qui remet le jeton.
+    const provenanceOk=req=>{const origine=req.headers.origin;return origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin');};
     const guard=(req,{body=true}={})=>{
       const sent=Buffer.from(req.headers['x-bureau-token']||'');
       const expected=Buffer.from(token);
@@ -300,7 +303,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(body) {
         if(origine!==origin) {json(403,{error:'Origine du navigateur non reconnue. Ouvre le bureau depuis son adresse locale.'});return false;}
         if(!req.headers['content-type']?.startsWith('application/json')) {json(415,{error:'Format de consigne invalide.'});return false;}
-      } else if(!(origine===origin||(!origine&&req.headers['sec-fetch-site']==='same-origin'))) {
+      } else if(!provenanceOk(req)) {
         json(403,{error:'Provenance du navigateur absente. Actualise le bureau depuis son adresse locale.'});return false;
       }
       return true;
@@ -392,6 +395,8 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         }
       }
       if(req.method==='GET'&&url.pathname==='/api/state') {
+        // Le jeton est remis ici : même preuve de provenance que les autres lectures (P1).
+        if(!provenanceOk(req)) return json(403,{error:'Provenance du navigateur absente. Actualise le bureau depuis son adresse locale.'});
         try {
           const listed=await bridge.list();
           // Chef effectif : choix de DrSmoke s'il vaut encore, sinon la règle.

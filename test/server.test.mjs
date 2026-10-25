@@ -23,7 +23,7 @@ async function bureau(t, overrides={}, options={}) {
   const port=server.address().port;
   const origin=`http://127.0.0.1:${port}`;
   const send=(path,{method='GET',headers={},body}={})=>new Promise((resolve,reject)=>{
-    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{
+    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}},res=>{
       let text='';
       res.setEncoding('utf8');
       res.on('data',chunk=>text+=chunk);
@@ -42,6 +42,13 @@ test('le serveur refuse adresse étrangère, origine étrangère et accès exté
   }
 });
 
+test('/api/state refuse sans preuve de provenance et remet le jeton seulement à une origine locale',async t=>{
+  const {send}=await bureau(t);
+  assert.equal((await send('/api/state',{headers:{'Sec-Fetch-Site':'none'}})).status,403);
+  assert.equal((await send('/api/state',{headers:{Origin:'http://localhost:4317'}})).status,403);
+  assert.equal((await send('/api/state')).status,200);
+});
+
 test('un port personnalisé est indiqué dans le refus d’hôte et la provenance a un message distinct',async t=>{
   const {send,origin}=await bureau(t);
   const port=new URL(origin).port;
@@ -49,7 +56,7 @@ test('un port personnalisé est indiqué dans le refus d’hôte et la provenanc
   assert.equal(denied.status,403);
   assert.match(denied.data.error,new RegExp('127\\.0\\.0\\.1:'+port));
   const {data:{token}}=await send('/api/state');
-  const noOrigin=await send('/api/sante',{headers:{'X-Bureau-Token':token}});
+  const noOrigin=await send('/api/sante',{headers:{'X-Bureau-Token':token,'Sec-Fetch-Site':'none'}});
   assert.equal(noOrigin.status,403);
   assert.match(noOrigin.data.error,/origine|provenance|navigateur/i);
 });
@@ -131,7 +138,7 @@ test('les GET du navigateur prouvent leur provenance sans en-tête Origin',async
   assert.equal((await send('/api/queue',{headers:{...jeton,Origin:origin}})).status,200);
   assert.equal((await send('/api/queue',{headers:{...jeton,Origin:origin,'Sec-Fetch-Site':'same-origin'}})).status,200);
   // Sans aucune preuve de provenance, refus.
-  assert.equal((await send('/api/queue',{headers:jeton})).status,403);
+  assert.equal((await send('/api/queue',{headers:{...jeton,'Sec-Fetch-Site':'none'}})).status,403);
   assert.equal((await send('/api/queue',{headers:{...jeton,'Sec-Fetch-Site':'none'}})).status,403);
   // Un POST garde l'exigence stricte d'origine, même en provenance same-origin.
   assert.equal((await send('/api/queue',{method:'POST',headers:{...jeton,'Content-Type':'application/json','Sec-Fetch-Site':'same-origin'},body:'{}'})).status,403);
@@ -276,7 +283,7 @@ test('/api/todos exige origine et jeton puis ne retourne que le contrat public',
     return {project:[{text:'Vérifier',done:false,source:'TODO.md',path:'C:/SECRET'}],agents:{'agent-1':[{text:'Tester',status:'in_progress',creator_user_id:'SECRET_USER'}]},sessionId:'SECRET_SESSION'};
   }});
   const {data:{token}}=await send('/api/state');
-  for(const headers of [{},{Origin:origin},{'X-Bureau-Token':token},{Origin:'http://localhost:4317','X-Bureau-Token':token}]) assert.equal((await send('/api/todos',{headers})).status,403);
+  for(const headers of [{'Sec-Fetch-Site':'none'},{Origin:origin,'Sec-Fetch-Site':'none'},{'X-Bureau-Token':token,'Sec-Fetch-Site':'none'},{Origin:'http://localhost:4317','X-Bureau-Token':token,'Sec-Fetch-Site':'none'}]) assert.equal((await send('/api/todos',{headers})).status,403);
   assert.equal(reads,0);
   const response=await send('/api/todos',{headers:{Origin:origin,'X-Bureau-Token':token}});
   assert.equal(response.status,200);
@@ -288,7 +295,7 @@ test('/api/tableau exige origine et jeton, puis renvoie le tableau en lecture se
   let reads=0;
   const {send,origin}=await bureau(t,{}, {getBlackboard:async()=>{reads++;return {todo:{source:'TODO.md',done:1,total:2,remaining:['Reste']},files:[]};}});
   const {data:{token}}=await send('/api/state');
-  for(const headers of [{},{Origin:origin},{'X-Bureau-Token':token},{Origin:'http://localhost:4317','X-Bureau-Token':token}]) assert.equal((await send('/api/tableau',{headers})).status,403);
+  for(const headers of [{'Sec-Fetch-Site':'none'},{Origin:origin,'Sec-Fetch-Site':'none'},{'X-Bureau-Token':token,'Sec-Fetch-Site':'none'},{Origin:'http://localhost:4317','X-Bureau-Token':token,'Sec-Fetch-Site':'none'}]) assert.equal((await send('/api/tableau',{headers})).status,403);
   assert.equal(reads,0);
   const response=await send('/api/tableau',{headers:{'X-Bureau-Token':token,'Sec-Fetch-Site':'same-origin'}});
   assert.equal(response.status,200);

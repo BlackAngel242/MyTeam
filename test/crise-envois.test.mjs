@@ -67,7 +67,7 @@ async function bureau(t) {
   server.address = () => ({port: PORT, family: 'IPv4', address: '127.0.0.1'});
   const handler = server.listeners('request')[0];
   const etat = reponse();
-  await handler(requete({method: 'GET', url: '/api/state', headers: {host: `127.0.0.1:${PORT}`}}), etat);
+  await handler(requete({method: 'GET', url: '/api/state', headers: {host: `127.0.0.1:${PORT}`, 'sec-fetch-site': 'same-origin'}}), etat);
   assert.equal(etat.statusCode, 200, 'jeton de session récupéré sans port ouvert');
   const token = etat.data().token;
   const headers = {
