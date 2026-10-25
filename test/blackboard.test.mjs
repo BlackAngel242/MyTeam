@@ -18,6 +18,13 @@ test('le tableau retient la dernière section du relais, les cases ouvertes, les
   assert.deepEqual(board.lessons,{source:'LESSONS.md',total:6,latest:['L6','L5','L4','L3','L2']});
 });
 
+test('le plan de travail est lu et ses phases remontées', () => {
+  const board=parseBlackboard({
+    'docs/plan-travail.md':'# Plan\n## Phase 1 - Socle\n- base\n## Phase 2 - Moteur\n- suite\n## Phase 3 - Interface\n- fin\n',
+  });
+  assert.deepEqual(board.plan,{source:'docs/plan-travail.md',phases:['Phase 1 - Socle','Phase 2 - Moteur','Phase 3 - Interface']});
+});
+
 test('les trois défauts du masque relevés par la table ronde sont corrigés (C-CD-06, C-CD-12)', () => {
   const entree='- Lire C:/Users/Personne/Projet Prive/client.txt et https://exemple.test/a et token=abcdef123456 puis route /api/tableau\n';
   const texte=parseBlackboard({'LESSONS.md':entree}).lessons.latest[0];

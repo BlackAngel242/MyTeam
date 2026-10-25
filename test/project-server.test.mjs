@@ -12,7 +12,7 @@ test('startup gates APIs, validates selection, isolates projects and persists ou
  const sent=[];const bridge={list:async()=>[{id:'a',cwd:join(home,'a'),kind:'Codex',status:'idle',ready:true},{id:'b',cwd:join(home,'b'),kind:'Codex',status:'idle',ready:true}],prompt:async(id)=>{sent.push(id);return{};}};
  server=await createProjectServer({createBureauServer,myteamRoot:myteam,dataRoot,places:{home},bridge,startTimers:false});await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const base=`http://127.0.0.1:${server.address().port}`;
- assert.equal((await fetch(base+'/api/state')).status,409);assert.match(await(await fetch(base)).text(),/Améliorer MyTeam/);
+ assert.equal((await fetch(base+'/api/state',{headers:{'Sec-Fetch-Site':'same-origin'}})).status,409);assert.match(await(await fetch(base)).text(),/Améliorer MyTeam/);
  await writeFile(join(home,'a','TODO.md'),'- [ ] EXTERNAL_PROJECT_TASK\n');
  const state=await(await fetch(base+'/api/projet')).json();
  const choose=body=>fetch(base+'/api/projet',{method:'POST',headers:{Origin:base,'Content-Type':'application/json','X-MyTeam-Token':state.token},body:JSON.stringify(body)});
@@ -20,7 +20,7 @@ test('startup gates APIs, validates selection, isolates projects and persists ou
  assert.equal((await choose({mode:'project',place:'home',path:'../'})).status,400);
  assert.equal((await choose({mode:'project',place:'home',path:'a'})).status,200);
  assert.deepEqual((await server.context.bridge.list()).map(a=>a.id),['a']);
- const bureauState=await(await fetch(base+'/api/state')).json();
+ const bureauState=await(await fetch(base+'/api/state',{headers:{'Sec-Fetch-Site':'same-origin'}})).json();
  const todos=await(await fetch(base+'/api/todos',{headers:{Origin:base,'X-Bureau-Token':bureauState.token}})).text();
  assert.match(todos,/EXTERNAL_PROJECT_TASK/);
 const first=server.context.stateDir,old=server.context.bridge;

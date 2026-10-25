@@ -22,7 +22,7 @@ async function fixture(t) {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const origin=`http://127.0.0.1:${server.address().port}`;
-  const {token}=await (await fetch(origin+'/api/state')).json();
+  const {token}=await (await fetch(origin+'/api/state',{headers:{'Sec-Fetch-Site':'same-origin'}})).json();
   const headers={Origin:origin,'X-Bureau-Token':token};
   const get=async(id='c',auth=headers)=>{
     const response=await fetch(origin+'/api/traitement?id='+encodeURIComponent(id),{headers:auth});

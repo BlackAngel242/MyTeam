@@ -53,7 +53,7 @@ test('/api/reponses exige origine et jeton et ne renvoie aucun identifiant',asyn
   const server=createBureauServer({bridge,getResponses:async id=>{reads++;assert.equal(id,SESSION);return {found:true,complete:true,responses:[{key:'abc',state:'terminée',blocks:[{text:'ok'}]}]};}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
   const port=server.address().port,origin=`http://127.0.0.1:${port}`;
-  const send=(path,headers={})=>new Promise((resolve,reject)=>{const req=request({hostname:'127.0.0.1',port,path,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{let s='';res.on('data',c=>s+=c);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(s)}));});req.on('error',reject);req.end();});
+  const send=(path,headers={})=>new Promise((resolve,reject)=>{const req=request({hostname:'127.0.0.1',port,path,headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}},res=>{let s='';res.on('data',c=>s+=c);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(s)}));});req.on('error',reject);req.end();});
   const {data:{token}}=await send('/api/state');
   assert.equal((await send('/api/reponses?id=c')).status,403);
   assert.equal(reads,0);
@@ -76,7 +76,7 @@ test('/api/discussion fusionne les réponses lisibles, du plus récent au plus a
     getOtherResponses:async agent=>agent.kind==='Codex'?{found:true,complete:true,responses:[{key:'k2',startedAt:'2026-10-18T11:00:00Z',endedAt:null,state:'fin non déterminée',blocks:[{text:'Codex écrit'}]}]}:{found:false,complete:false,responses:[]}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
   const port=server.address().port,origin=`http://127.0.0.1:${port}`;
-  const send=(path,headers={})=>new Promise((resolve,reject)=>{const req=request({hostname:'127.0.0.1',port,path,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{let s='';res.on('data',c=>s+=c);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(s)}));});req.on('error',reject);req.end();});
+  const send=(path,headers={})=>new Promise((resolve,reject)=>{const req=request({hostname:'127.0.0.1',port,path,headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}},res=>{let s='';res.on('data',c=>s+=c);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(s)}));});req.on('error',reject);req.end();});
   const {data:{token}}=await send('/api/state');
   assert.equal((await send('/api/discussion')).status,403);
   const r=await send('/api/discussion',{Origin:origin,'X-Bureau-Token':token});

@@ -118,7 +118,7 @@ test('update API requires session token and same origin before preparing',async 
  const server=createBureauServer({bridge:{list:async()=>[]},updater:fake,stopForUpdate:()=>{}});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(()=>new Promise(resolve=>server.close(resolve)));
  const origin=`http://127.0.0.1:${server.address().port}`;
- const token=(await (await fetch(origin+'/api/state')).json()).token;
+ const token=(await (await fetch(origin+'/api/state',{headers:{'Sec-Fetch-Site':'same-origin'}})).json()).token;
  const send=(headers={})=>fetch(origin+'/api/update',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...headers},body:'{"action":"prepare"}'});
  assert.equal((await send()).status,403);
  assert.equal((await send({'X-Bureau-Token':token,Origin:'http://evil.invalid'})).status,403);

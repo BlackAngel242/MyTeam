@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { Readable } from 'node:stream';
 import { masque } from './masque.mjs';
+import { completeLines, findTranscript, resumePossible } from './jsonl.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 // Chemin et etat partagent une seule politique d'eviction.
@@ -26,39 +27,6 @@ const CONTINUITY_BYTES = 4096;
 
 function freshState() {
   return { offset: 0, partial: Buffer.alloc(0), skipping: false, exhausted: false, retained: 0, counted: new Set(), active: new Map(), tokens: { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 } };
-}
-
-// Continuite des octets avant de reprendre un offset (constat C-CD-07) : une
-// reecriture plus longue sur le meme fichier garde l'ancien decalage et fait
-// relire le journal en milieu de ligne, ce qui perd la fin du fichier.
-// Le point de reprise doit toujours etre celui ou l'on s'est arrete :
-//   - ligne partielle conservee : ses octets doivent toujours occuper la place
-//     juste avant l'offset (sinon le debut a change) ;
-//   - sinon la lecture s'est arretee juste apres un saut de ligne, qui doit
-//     toujours se trouver la ;
-//   - une ligne geante en cours d'ignorance n'a rien de conserve : le saut
-//     se poursuit, sans relecture du journal deja parcouru.
-// Un changement d'octets AVANT ce point (uniquement un ajout en tete, comme le
-// test « lit seulement les octets ajoutes ») n'est pas relu : c'est le principe
-// de la lecture incremental bornee.
-async function resumePossible(path, state) {
-  if (state.offset <= 0) return true;
-  if (state.skipping) return true;
-  const conserve = state.partial.length
-    ? state.partial.subarray(Math.max(0, state.partial.length - CONTINUITY_BYTES))
-    : null;
-  const longueur = conserve ? conserve.length : 1;
-  const depart = state.offset - longueur;
-  if (depart < 0) return false;
-  try {
-    const handle = await open(path, 'r');
-    try {
-      const octets = Buffer.allocUnsafe(longueur);
-      const { bytesRead } = await handle.read(octets, 0, longueur, depart);
-      if (bytesRead !== longueur) return false;
-      return conserve ? octets.equals(conserve) : octets[0] === 10;
-    } finally { await handle.close(); }
-  } catch { return false; }
 }
 
 async function transcriptInfo(path, root) {
@@ -151,54 +119,6 @@ function consumeLine(state, line) {
     }
     endFromNotifications(state, textOf(message.content));
   }
-}
-
-async function* completeLines(stream, state) {
-  let partial = state.partial;
-  let skipping = state.skipping;
-  for await (const chunk of stream) {
-    state.offset += chunk.length;
-    let start = 0;
-    for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
-      const segment = chunk.subarray(start, end + 1);
-      if (!skipping && partial.length + segment.length <= MAX_RETAINED_BYTES) {
-        yield partial.length ? Buffer.concat([partial, segment]) : segment;
-      }
-      skipping = false;
-      partial = Buffer.alloc(0);
-      start = end + 1;
-    }
-    if (start < chunk.length) {
-      if (!skipping && partial.length + chunk.length - start <= MAX_RETAINED_BYTES) {
-        partial = Buffer.concat([partial, chunk.subarray(start)]);
-      } else {
-        partial = Buffer.alloc(0);
-        skipping = true;
-      }
-    }
-  }
-  state.partial = partial;
-  state.skipping = skipping;
-}
-
-async function findTranscript(root, filename) {
-  const pending = [root];
-  while (pending.length) {
-    const directory = pending.pop();
-    try {
-      const info = await lstat(directory);
-      if (!info.isDirectory() || info.isSymbolicLink()) continue;
-      for await (const entry of await opendir(directory)) {
-        if (entry.isSymbolicLink()) continue;
-        const path = join(directory, entry.name);
-        if (entry.isDirectory()) pending.push(path);
-        else if (entry.isFile() && entry.name === filename) return path;
-      }
-    } catch {
-      // Un dossier inaccessible ne doit pas masquer les autres sessions.
-    }
-  }
-  return undefined;
 }
 
 async function readSession(sessionId, root, key) {
