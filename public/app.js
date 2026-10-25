@@ -115,11 +115,11 @@ const tabs=['poste','equipe','fichiers','taches'];
 function showTab(name){
   for(const t of tabs){const on=t===name,tab=$('tab-'+t);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;$('panel-'+t).hidden=!on;}
   if(name==='fichiers')loadFiles();
-  if(name==='taches')loadTodos();
+  if(name==='taches')TodosUi.load();
   if(name==='equipe'){loadRelais();QueueUi.load();loadTreatments();loadDiscussion();Scene.renderMail();Scene.acknowledgeMail();}
 }
 const currentTab=()=>tabs.find(t=>$('tab-'+t).getAttribute('aria-selected')==='true');
-let todosGen=0,todosShown='',todosData=null,attached=[];
+let attached=[];
 function errorBlock(container,message,icon='erreur',retry=null){
   // La même panne n'est ni redessinée ni réannoncée : le bouton garde le focus et l'alerte reste unique.
   // Le message est affiché tel quel : aucune liste vide ne remplace jamais une erreur.
@@ -128,7 +128,7 @@ function errorBlock(container,message,icon='erreur',retry=null){
   const pic=iconCanvas(icon);if(pic)box.append(pic);
   const p=document.createElement('p');p.textContent=message;
   const btn=document.createElement('button');btn.type='button';btn.className='tool-button';btn.textContent=t('commandes.actualiser_bureau');
-  btn.addEventListener('click',async()=>{await refreshState();if(retry)return retry();const t=currentTab();if(t==='equipe')QueueUi.load();if(t==='taches')loadTodos();if(t==='fichiers')loadFiles();});
+  btn.addEventListener('click',async()=>{await refreshState();if(retry)return retry();const t=currentTab();if(t==='equipe')QueueUi.load();if(t==='taches')TodosUi.load();if(t==='fichiers')loadFiles();});
   box.append(p,btn);container.replaceChildren(box);
 }
 function iconCanvas(name){
@@ -136,63 +136,8 @@ function iconCanvas(name){
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='empty-icon';c.setAttribute('aria-hidden','true');const g3=c.getContext('2d');
   icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(icon.palette[ch]){g3.fillStyle=icon.palette[ch];g3.fillRect(x,y,1,1);}}));return c;
 }
-// Tâches : cases réelles des fichiers du projet et plans publiés par les agents.
-// Le pourcentage est un simple rapport de cases cochées sur cases totales, jamais une estimation.
-const pct=(done,total)=>total?Math.round(done/total*100):0;
-function planOf(id){const steps=todosData?.agents?.[id];if(!steps?.length)return null;const done=steps.filter(s=>s.status==='completed').length;return{done,total:steps.length,pct:pct(done,steps.length)};}
-// Demandes envoyées aux agents (courrier du chef et file d'attente) : à faire tant que l'agent n'a pas rendu
-// de réponse terminée après l'envoi, réalisée ensuite. Rien n'est coché sans cette preuve.
 let discData=null;
-function demandes(){
-  const bulles=discData?.bulles||[],limite=Date.now()-12*3600000,vues=new Set(),out=[];
-  const fini=(id,at)=>bulles.some(b=>b.id===id&&b.state==='terminée'&&Date.parse(b.at)>Date.parse(at));
-  const ajoute=(clef,agent,texte,at)=>{
-    if(!agent||!at||vues.has(clef)||Date.parse(at)<limite)return;vues.add(clef);
-    out.push({at:Date.parse(at),text:t('taches.demande',{nom:agent.name,titre:texte.length>110?texte.slice(0,110)+'…':texte}),done:fini(agent.id,at),source:t('taches.demandes_source')});
-  };
-  for(const a of state.agents)for(const d of Array.isArray(a.delegations)?a.delegations:[])if(d&&d.title)ajoute('d'+d.id,agentByTarget(d.target),d.title,d.at);
-  for(const q of QueueUi.items){if(q.state==='annulee'||typeof q.message!=='string')continue;ajoute('q'+q.itemId,state.agents.find(a=>a.id===q.id),q.message,q.sentAt||q.createdAt||q.notBefore);}
-  return out.sort((x,y)=>y.at-x.at).slice(0,15).map(({at,...rest})=>rest);
-}
-async function loadTodos(){
-  if(!state.connected||!state.token){todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),t('taches.herdr_off'),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:t('taches.plans_non_charges')}));return;}
-  const gen=++todosGen;let data;
-  try{data=await request('/api/todos',{headers:{'X-Bureau-Token':state.token}});}catch(error){if(gen!==todosGen)return;todosData=null;todosShown='';$('tasks-progress').replaceChildren();errorBlock($('tasks-project'),errorText(error),'taches');$('tasks-agents').replaceChildren(Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:t('taches.plans_non_charges')}));return;}
-  data.project=[...demandes(),...(data.project||[])];
-  const shown=JSON.stringify([data,state.agents.map(a=>a.id+a.name)]);if(gen!==todosGen||shown===todosShown)return;todosShown=shown;todosData=data;renderStatusbar(activeAgent());
-  const project=data.project||[],done=project.filter(t=>t.done).length;
-  const prog=$('tasks-progress');prog.replaceChildren();
-  if(project.length){
-    const label=document.createElement('div');label.className='limit-head';
-    const l1=document.createElement('span');l1.textContent=t('taches.cases_projet');const l2=document.createElement('b');l2.textContent=t('taches.projet_progression',{coches:done,total:project.length,pct:pct(done,project.length)});label.append(l1,l2);
-    const track=document.createElement('div');track.className='limit-track';const bar=document.createElement('i');bar.style.width=(done/project.length*100)+'%';track.append(bar);prog.append(label,track);
-  }
-  const groups=new Map();for(const t of project){if(!groups.has(t.source))groups.set(t.source,[]);groups.get(t.source).push(t);}
-  $('tasks-project').replaceChildren(...[...groups].map(([source,items])=>{
-    const sec=document.createElement('section');sec.className='task-group';
-    const d=items.filter(t=>t.done).length;
-    const h=document.createElement('h3');h.textContent=t('taches.groupe',{source,fait:d,total:items.length,pct:pct(d,items.length)});
-    const track=document.createElement('div');track.className='limit-track';track.setAttribute('role','img');track.setAttribute('aria-label',t('taches.groupe_aria',{source,pct:pct(d,items.length)}));const bar=document.createElement('i');bar.style.width=pct(d,items.length)+'%';track.append(bar);
-    sec.append(h,track);
-    for(const [title,list] of [[t('taches.a_faire'),items.filter(t=>!t.done)],[t('taches.realisees'),items.filter(t=>t.done)]]){
-      if(!list.length)continue;
-      const sub=document.createElement('h4');sub.className='task-sub';sub.textContent=t('taches.compte',{titre:title,n:list.length});
-      const ul=document.createElement('ul');ul.className='task-list';
-      for(const item of list){const li=document.createElement('li');li.className=item.done?'done':'';const box=document.createElement('span');box.className='box';box.setAttribute('aria-hidden','true');const tx=document.createElement('span');tx.textContent=item.text;li.append(box,tx);li.setAttribute('aria-label',item.done?t('taches.aria_fait',{texte:item.text}):t('taches.aria_a_faire',{texte:item.text}));ul.append(li);}
-      sec.append(sub,ul);
-    }
-    return sec;
-  }));
-  if(!project.length)$('tasks-project').textContent=t('taches.aucune_case');
-  const agents=Object.entries(data.agents||{}).filter(([,steps])=>steps?.length);
-  const statusLabel={pending:()=>t('taches.statut.a_faire'),in_progress:()=>t('taches.statut.en_cours'),completed:()=>t('taches.statut.fait')};
-  $('tasks-agents').replaceChildren(...(agents.length?agents.map(([id,steps])=>{
-    const sec=document.createElement('section');sec.className='task-group';const h=document.createElement('h3');const dn=steps.filter(s=>s.status==='completed').length;h.textContent=t('taches.groupe_agent',{nom:(state.agents.find(a=>a.id===id)?.name)||t('taches.agent'),fait:dn,total:steps.length,pct:pct(dn,steps.length)});
-    const ul=document.createElement('ul');ul.className='task-list';
-    for(const s of steps){const li=document.createElement('li');li.className=s.status==='completed'?'done':s.status==='in_progress'?'doing':'';const box=document.createElement('span');box.className='box';const tx=document.createElement('span');tx.textContent=t('taches.etape',{texte:s.text,statut:(statusLabel[s.status]||(()=>s.status))()});li.append(box,tx);ul.append(li);}
-    sec.append(h,ul);return sec;
-  }):[Object.assign(document.createElement('p'),{className:'list-placeholder',textContent:t('taches.aucun_plan')})]));
-}
+window.TodosUi = createTodosUi({ getState: () => state, api: request, t, $, errorBlock, errorText, renderStatusbar, activeAgent, agentByTarget, getQueueItems: () => QueueUi.items, getDiscData: () => discData });
 // Fichiers : récents dans le dossier de l'agent, ou navigation. Copier par glisser-déposer, déplacer avec Maj.
 // Le serveur seul connaît les chemins réels ; ici on ne manipule que des clés de lieu et des chemins relatifs.
 let filesView='recent',filesRoot=null,filesPath='',places=[],dragged=null,filesBusy=false;
@@ -374,7 +319,7 @@ window.QueueUi = createQueueUi({ getState: () => state, api: request, t, tServeu
 function renderStatusbar(a){
   const bar=$('statusbar'),s=a&&statusCache.get(a.id),pause=a&&quotaPause(a);
   const st=s?.status&&Object.keys(s.status).length?s.status:null;
-  const plan=a&&planOf(a.id);
+  const plan=a&&TodosUi.planOf(a.id);
   if(!a||(!st&&!pause&&!plan)){bar.hidden=true;return;}
   bar.hidden=false;
   const head=st?.title||(st?.thought?t('poste.en_cours',{texte:st.thought}):'');
@@ -983,7 +928,7 @@ motionPreference.addEventListener('change',()=>{if(readMotion()==null){Scene.set
 function agentByTarget(target){
   return state.agents.find(a=>a.paneId===target||a.name?.toLowerCase()===String(target).toLowerCase());
 }
-window.Scene = createScene({ canvas, getState: () => state, getSelected: () => selected, getQueueItems: () => QueueUi.items, getBoardData: () => boardData, getEnseigne: () => enseigne, getTodosData: () => todosData, isTilesOn: () => tilesOn, initialPaused, colors, label, tint, compte, showTab, selectAgent, openBoard, copyText, logoFor, activeAgent, quotaPause, signal, hhmm, agentByTarget });
+window.Scene = createScene({ canvas, getState: () => state, getSelected: () => selected, getQueueItems: () => QueueUi.items, getBoardData: () => boardData, getEnseigne: () => enseigne, getTodosData: () => TodosUi.data, isTilesOn: () => tilesOn, initialPaused, colors, label, tint, compte, showTab, selectAgent, openBoard, copyText, logoFor, activeAgent, quotaPause, signal, hhmm, agentByTarget });
 // Signaux : notification Windows quand la page est en arrière-plan, son 8 bits si DrSmoke l'a activé (public/sounds.js).
 const prefs={get:k=>{try{return localStorage.getItem(k);}catch{return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}};
 function signal(kind,title,body){
@@ -1187,8 +1132,8 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 let cycleLent=0;
-setInterval(()=>{if(document.hidden)return;QueueUi.load();Scene.renderMail();loadCrisis();loadAuto();loadTodos();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
-setTimeout(loadTodos,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
+setInterval(()=>{if(document.hidden)return;QueueUi.load();Scene.renderMail();loadCrisis();loadAuto();TodosUi.load();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
+setTimeout(TodosUi.load,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});
