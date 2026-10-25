@@ -3,7 +3,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir, copyFile } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const enabled = process.env.MYTEAM_BROWSER_TESTS === '1';
@@ -36,7 +36,7 @@ before(async () => {
     const base = resolve(root, path.startsWith('/site/') ? 'site' : 'public');
     const name = path.startsWith('/site/') ? path.slice(6) : path.slice(1);
     const file = resolve(base, name || 'index.html');
-    if (!file.startsWith(base + '/')) { res.writeHead(403); return res.end(); }
+    if (!file.startsWith(base + sep)) { res.writeHead(403); return res.end(); }
     try {
       const data = await readFile(file);
       res.setHeader('Content-Type', ({ '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webm': 'video/webm', '.mp4': 'video/mp4' })[extname(file)] || 'application/octet-stream');
