@@ -5,6 +5,17 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createProjectServer} from '../src/project-server.mjs';
 import {createBureauServer} from '../server.mjs';
+import {VERSION} from '../src/version.mjs';
+test('/api/projet renvoie la version du code en cours',async()=>{
+ const temp=await mkdtemp(join(tmpdir(),'myteam-version-'));let server;
+ try{
+ server=await createProjectServer({createBureauServer,myteamRoot:temp,dataRoot:join(temp,'data'),places:{home:temp},bridge:{list:async()=>[],prompt:async()=>({})},startTimers:false});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const state=await(await fetch(`http://127.0.0.1:${server.address().port}/api/projet`)).json();
+ assert.equal(state.version,VERSION);
+ assert.match(state.version,/^\d+\.\d+\.\d+$/);
+ }finally{if(server)await new Promise(r=>server.close(r));await rm(temp,{recursive:true,force:true});}
+});
 test('startup gates APIs, validates selection, isolates projects and persists outside checkout',async()=>{
  const temp=await mkdtemp(join(tmpdir(),'myteam-project-'));let server;
  try{
