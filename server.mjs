@@ -147,7 +147,7 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   const equipe=direction??createDirection({file:directionFile,now});
   // Le relais d'écoute passe par l'autonomie : sans mode actif, la consigne part telle quelle ; sinon elle rappelle l'objectif.
   const relaisEcoute=relais??createRelais({file:relaisFile,enqueue:(item,meta)=>autonomie.passer(item,meta),now,locked:()=>salleDeCrise.isActive()});
-  const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),cancel:itemId=>fileAttente.cancel(itemId),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive()});
+  const autonomie=autonomieInjectee??createAutonomie({file:autonomieFile,enqueue:item=>fileAttente.enqueue(item,{allowRepeatedMessage:true}),cancel:itemId=>fileAttente.cancel(itemId),relais:relaisEcoute,now,locked:()=>salleDeCrise.isActive(),blackboard:getBlackboard});
   // Santé du bureau (N7) : instantané de diagnostic, muet sur les chemins, les
   // clés, les objectifs et les messages. La route observe : aucun redémarrage.
   const updater=updaterInjectee??createUpdater({port:()=>server.address()?.port});
