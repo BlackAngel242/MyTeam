@@ -7,6 +7,7 @@ import {createInterface} from 'node:readline';
 import {Readable} from 'node:stream';
 import {createAgentActivityReader,readAgentActivity} from './agent-activity.mjs';
 import {masque} from './masque.mjs';
+import {completeLines,resumePossible} from './jsonl.mjs';
 
 const STATUSES=new Set(['pending','in_progress','completed']);
 const MAX_BYTES=50*1024*1024,MAX_LINE=4*1024*1024;
@@ -28,24 +29,6 @@ export function normalizeTodos(value) {
     Object.defineProperty(result.agents,id,{enumerable:true,configurable:true,value:tasks.filter(task=>task&&typeof task.text==='string'&&STATUSES.has(task.status)).slice(0,200).map(task=>({text:textOf(task.text),status:task.status}))});
   }
   return result;
-}
-
-async function* completeLines(stream,state) {
-  let partial=state.partial,skipping=state.skipping;
-  for await(const chunk of stream) {
-    state.offset+=chunk.length;
-    let start=0;
-    for(let end=chunk.indexOf(10);end!==-1;end=chunk.indexOf(10,start)) {
-      const segment=chunk.subarray(start,end+1);
-      if(!skipping&&partial.length+segment.length<=MAX_LINE) yield partial.length?Buffer.concat([partial,segment]):segment;
-      partial=Buffer.alloc(0);skipping=false;start=end+1;
-    }
-    if(start<chunk.length) {
-      if(!skipping&&partial.length+chunk.length-start<=MAX_LINE) partial=Buffer.concat([partial,chunk.subarray(start)]);
-      else {partial=Buffer.alloc(0);skipping=true;}
-    }
-  }
-  state.partial=partial;state.skipping=skipping;
 }
 
 async function readLines(path,state,size,consume) {
@@ -189,29 +172,6 @@ const CONTINUITY_BYTES=4096;
 
 function freshClaudeState() {
   return {offset:0,partial:Buffer.alloc(0),skipping:false,exhausted:false,tasks:new Map(),creates:new Map(),seen:new Set(),published:false,reliable:true};
-}
-
-// Les transcripts Claude ne se relient qu'a un point de reprise intact : la
-// ligne conservee occupe toujours sa place, ou la lecture s'est arretee juste
-// apres un saut de ligne. Une reecriture plus longue sur le meme fichier garde
-// sinon l'ancien decalage et fait perdre la fin du journal. Une ligne geante
-// en cours d'ignorance n'a rien de conserve : le saut se poursuit.
-async function resumePossible(path,state) {
-  if(state.offset<=0) return true;
-  if(state.skipping) return true;
-  const conserve=state.partial.length?state.partial.subarray(Math.max(0,state.partial.length-CONTINUITY_BYTES)):null;
-  const longueur=conserve?conserve.length:1;
-  const depart=state.offset-longueur;
-  if(depart<0) return false;
-  try {
-    const handle=await open(path,'r');
-    try {
-      const octets=Buffer.allocUnsafe(longueur);
-      const {bytesRead}=await handle.read(octets,0,longueur,depart);
-      if(bytesRead!==longueur) return false;
-      return conserve?octets.equals(conserve):octets[0]===10;
-    } finally {await handle.close();}
-  } catch {return false;}
 }
 
 export function createTodosReader({projectRoot=projectDirectory,claudeRoot=join(homedir(),'.claude','projects'),codexRoot}={}) {

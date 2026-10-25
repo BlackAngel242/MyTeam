@@ -5,6 +5,7 @@ import { join, posix, win32 } from 'node:path';
 import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
 import { masque } from './masque.mjs';
+import { completeLines } from './jsonl.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 const MAX_LINE = 4 * 1024 * 1024;
@@ -73,28 +74,6 @@ async function* files(root) {
       }
     } catch { /* Un journal inaccessible ne rend pas Herdr indisponible. */ }
   }
-}
-
-async function* completeLines(stream, state) {
-  let partial = state.partial;
-  let skipping = state.skipping;
-  for await (const chunk of stream) {
-    state.offset += chunk.length;
-    let start = 0;
-    for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
-      const segment = chunk.subarray(start, end + 1);
-      if (!skipping && partial.length + segment.length <= MAX_LINE) yield partial.length ? Buffer.concat([partial, segment]) : segment;
-      partial = Buffer.alloc(0);
-      skipping = false;
-      start = end + 1;
-    }
-    if (start < chunk.length) {
-      if (!skipping && partial.length + chunk.length - start <= MAX_LINE) partial = Buffer.concat([partial, chunk.subarray(start)]);
-      else { partial = Buffer.alloc(0); skipping = true; }
-    }
-  }
-  state.partial = partial;
-  state.skipping = skipping;
 }
 
 function consumeCodex(state, entry) {
