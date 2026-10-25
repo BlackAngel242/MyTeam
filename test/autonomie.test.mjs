@@ -217,3 +217,27 @@ test('un tableau mural absent ou en erreur laisse la consigne inchangée', async
   assert.match(envoyes[0].message, /objectif : « Finir le lot L »/);
   assert.match(envoyes[0].message, /jamais de git push/);
 });
+
+test('aucune progression : un plan inchangé pendant trois échanges arrête le mode avant le quatrième message', async t => {
+  const plan = { todo: { total: 5, done: 2, remaining: ['brancher le moteur'] } };
+  const { creer, envoyes } = await banc(t, { blackboard: async () => plan });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 10 });
+  for (const [id, nom] of [['a', 'Claude'], ['b', 'Codex'], ['c', 'Dola'], ['d', 'Muse']]) await a.passer(...fin(id, nom));
+  assert.equal(envoyes.length, 3);
+  assert.equal(a.get().actif, false);
+  assert.match(a.get().arret, /aucune progression/);
+});
+
+test('aucune progression : un plan qui avance remet le compteur à zéro', async t => {
+  let fait = 0;
+  const { creer, envoyes } = await banc(t, { blackboard: async () => ({ todo: { total: 9, done: fait, remaining: ['x'] } }) });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 10 });
+  for (const [id, nom] of [['a', 'Claude'], ['b', 'Codex'], ['c', 'Dola'], ['d', 'Muse'], ['e', 'Gemini']]) {
+    fait += 1;
+    await a.passer(...fin(id, nom));
+  }
+  assert.equal(envoyes.length, 5);
+  assert.equal(a.get().actif, true);
+});

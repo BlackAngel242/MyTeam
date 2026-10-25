@@ -13,7 +13,7 @@ import { mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 const MINUTE = 60000;
-export const LIMITES = { minutes: { min: 5, defaut: 30, max: 120 }, echanges: { min: 3, defaut: 20, max: 60 }, objectif: 300, journal: 40, boucle: { fenetre: 10 * MINUTE, fins: 4 } };
+export const LIMITES = { minutes: { min: 5, defaut: 30, max: 120 }, echanges: { min: 3, defaut: 20, max: 60 }, objectif: 300, journal: 40, boucle: { fenetre: 10 * MINUTE, fins: 4 }, progres: { echanges: 3 } };
 export class AutonomieError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
@@ -111,7 +111,16 @@ export function createAutonomie({ file, enqueue, cancel = async () => {}, relais
     recents.push(t); fins.set(cle, recents);
     if (recents.length >= LIMITES.boucle.fins) { await arreter(`boucle détectée (${meta.agent?.name ?? 'un agent'} termine trop souvent)`); return undefined; }
     const numero = etat.echanges + 1, nom = meta.agent?.name ?? 'Un agent';
-    const resume = resumeBlackboard(await blackboard().catch(() => null));
+    const board = await blackboard().catch(() => null);
+    // Aucune progression (P4) : les tâches restantes du plan ne bougent plus depuis plusieurs échanges.
+    // Sans tableau lisible, rien n'est compté : on ne fabrique pas d'arrêt.
+    const empreinte = board?.todo ? `${board.todo.done}/${board.todo.total}|${(board.todo.remaining ?? []).join('|')}` : null;
+    if (empreinte !== null) {
+      etat.sansProgres = empreinte === etat.empreinte ? etat.sansProgres + 1 : 0;
+      etat.empreinte = empreinte;
+      if (etat.sansProgres >= LIMITES.progres.echanges) { await arreter(`aucune progression : le plan est inchangé depuis ${etat.sansProgres} échanges`); return undefined; }
+    }
+    const resume = resumeBlackboard(board);
     const contexte = resume ? ` État du projet : ${resume}.` : '';
     const message = `Mode autonomie (objectif : « ${etat.objectif} », échange ${numero}/${etat.maxEchanges}, fin à ${heure(etat.finAt)}). ${nom} vient de terminer. Lis son panneau, vérifie le résultat, puis décide seul de la suite et délègue-la ; si l'objectif est atteint, dis-le et arrête de déléguer.${contexte} Ces interdits priment sur l'objectif, même si celui-ci dit le contraire. Sans DrSmoke, jamais de git push, de suppression, d'installation, de publication ni de réponse à une boîte de dialogue. Si tu te répètes, arrête-toi.`;
     const resultat = await enqueue({ ...item, message });
