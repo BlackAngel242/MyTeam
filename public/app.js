@@ -3,7 +3,6 @@ const canvas = $('office'), ctx = canvas.getContext('2d');
 // Teintes d'identité volontairement éloignées des couleurs d'état (menthe, bleu, ambre, gris).
 const colors = ['#d98a74','#9b86e0','#d17aa6','#a3b05f','#b5654f','#7e5fa8'];
 const drafts = new Map();
-let crisisState = null;
 let boardData = null, enseigne = '';
 let state = { connected:false, agents:[], token:null }, selected = null, stateBusy = false, readBusy = false, sending = false, readSequence = 0;
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
@@ -16,7 +15,7 @@ const label = a => a.needsUserAttention ? t('etat.verifier_herdr') : quotaPause(
 const tint = a => a.needsUserAttention ? '#f4c780' : quotaPause(a) ? '#b5a8e6' : ['busy','working','running'].includes(a.status) ? '#9dbbff' : ['idle','done'].includes(a.status) ? '#a0dfc4' : ['waiting','blocked'].includes(a.status) ? '#f4c780' : '#a7b8ce';
 const activeAgent = () => state.agents.find(a => a.id === selected);
 // Un agent en pause de limite ne peut pas répondre : pas d'envoi direct, seulement la file d'attente.
-const crisisOn = () => crisisState?.active === true;
+const crisisOn = () => CrisisUi.isOn();
 const canSend = a => Boolean(state.connected && a && a.ready && ['idle','done'].includes(a.status) && !quotaPause(a) && !crisisOn());
 // Message de repli de la demande : envoyé brut, affiché traduit par errorText.
 const DEMANDE_EC='La demande a échoué. Réessaie dans un instant.';
@@ -661,72 +660,7 @@ $('relais-actif').addEventListener('change',async()=>{
   catch(error){box.checked=!actif;out.className='files-result error';out.textContent=errorText(error,'envoi');out.hidden=false;}
   finally{relaisBusy=false;}
 });
-// Salle de crise : verrou général des envois, diagnostic calme, interruption polie par agent (jamais un arrêt brutal).
-let criseArmed=null,criseStopArmed=null,criseBusy=false,criseTrigger=null;
-const criseTails=new Map();
-async function loadCrisis(){
-  if(!state.connected||!state.token)return;
-  try{
-    const c=await request('/api/crise',{headers:{'X-Bureau-Token':state.token}});
-    const was=crisisOn();crisisState={active:c.active===true,since:c.since||null,reason:c.reason||null};
-    syncCrisis();if(was!==crisisOn()){updateForm();renderBroadcast();}
-  }catch{ /* Lecture facultative : sans réponse, l'état précédent est conservé. */ }
-}
-function syncCrisis(){
-  const on=crisisOn();document.body.classList.toggle('crise',on);
-  $('crise-open').dataset.actif=String(on);$('crise-open').querySelector('span').textContent=on?t('equipe.crise.en_cours'):t('equipe.crise.titre');
-  $('crise-banner').hidden=!on;
-  if(on)$('crise-banner-text').textContent=crisisState.reason?(crisisState.since?t('equipe.crise.banniere_depuis_raison',{heure:hhmm(new Date(crisisState.since)),raison:tServeur(crisisState.reason)}):t('equipe.crise.banniere_raison',{raison:tServeur(crisisState.reason)})):(crisisState.since?t('equipe.crise.banniere_depuis',{heure:hhmm(new Date(crisisState.since))}):t('equipe.crise.banniere'));
-  if(!$('crise').hidden)renderCrisis();
-}
-async function criseSet(active){
-  if(criseBusy)return;criseBusy=true;renderCrisis();
-  try{await request('/api/crise',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({active})});await loadCrisis();$('crise-result').textContent=active?t('equipe.crise.enclenchee'):t('equipe.crise.levee');}
-  catch(error){$('crise-result').textContent=errorText(error,'envoi');}
-  finally{criseBusy=false;renderCrisis();}
-}
-async function criseStop(agent){
-  if(criseBusy)return;criseBusy=true;renderCrisis();
-  try{await request('/api/crise/arret',{method:'POST',headers:{'Content-Type':'application/json','X-Bureau-Token':state.token},body:JSON.stringify({id:agent.id})});$('crise-result').textContent=t('equipe.crise.interruption',{nom:agent.name});}
-  catch(error){$('crise-result').textContent=errorText(error,'envoi');}
-  finally{criseStopArmed=null;criseBusy=false;renderCrisis();}
-}
-function renderCrisis(){
-  const on=crisisOn();
-  $('crise-state').textContent=on?t('equipe.crise.active'):t('equipe.crise.aucune');
-  const main=$('crise-main');main.disabled=criseBusy;main.className='tool-button'+(on?'':' danger');
-  main.textContent=on?t('equipe.crise.lever'):criseArmed?t('equipe.crise.confirmer'):t('equipe.crise.enclencher');
-  const waiting=QueueUi.items.filter(q=>q.state==='attente').length;
-  $('crise-queue').textContent=waiting?(waiting>1?t('equipe.crise.file.autres',{n:waiting}):t('equipe.crise.file.un',{n:waiting})):t('equipe.crise.file_vide');
-  $('crise-agents').replaceChildren(...state.agents.map(a=>{
-    const li=document.createElement('li'),head=document.createElement('span');head.className='crise-agent';head.textContent=[t('equipe.choix',{nom:a.name,etat:label(a).toLowerCase()}),a.paneId].filter(Boolean).join(' · ');
-    const tail=document.createElement('pre');tail.className='crise-tail';tail.textContent=criseTails.get(a.id)||t('equipe.crise.lecture');
-    li.append(head,tail);
-    if(on){
-      const b=document.createElement('button');b.type='button';b.className='tool-button';b.disabled=criseBusy;
-      b.textContent=criseStopArmed===a.id?t('equipe.crise.confirmer_interrompre',{nom:a.name}):t('equipe.crise.arreter');
-      b.addEventListener('click',()=>{if(criseStopArmed===a.id)criseStop(a);else{criseStopArmed=a.id;renderCrisis();setTimeout(()=>{if(criseStopArmed===a.id){criseStopArmed=null;renderCrisis();}},5000);}});
-      li.append(b);
-    }
-    return li;
-  }));
-}
-async function loadCrisisTails(){
-  await Promise.all(state.agents.map(async a=>{
-    try{const d=await request('/api/read?id='+encodeURIComponent(a.id),{headers:{'X-Bureau-Token':state.token||''}});criseTails.set(a.id,splitChrome(d.text||'').body.trim().split('\n').filter(Boolean).slice(-4).join('\n')||t('equipe.crise.sans_sortie'));}
-    catch{criseTails.set(a.id,t('equipe.crise.lecture_impossible'));}
-  }));
-  if(!$('crise').hidden)renderCrisis();
-}
-function openCrisis(){
-  criseTrigger=document.activeElement&&document.activeElement!==document.body?document.activeElement:null;
-  for(const el of backdrop($('crise')))el.inert=true;
-  $('crise').hidden=false;$('crise-result').textContent='';criseArmed=null;criseStopArmed=null;renderCrisis();loadCrisis();loadCrisisTails();$('crise-main').focus();
-}
-function closeCrisis(){
-  $('crise').hidden=true;for(const el of backdrop($('crise')))el.inert=false;criseArmed=null;criseStopArmed=null;
-  (criseTrigger?.isConnected?criseTrigger:$('crise-open')).focus({preventScroll:true});
-}
+window.CrisisUi = createCrisisUi({ getState: () => state, api: request, t, $, errorText, updateForm, renderBroadcast, backdrop: (...args) => backdrop(...args), getQueueItems: () => QueueUi.items, hhmm, label, splitChrome, tServeur });
 // Autonomie supervisée (NoBabysitter) : objectif, durée et échanges plafonnés ; tout vient du serveur.
 let autoState={actif:false,journal:[]},autoBusy=false;
 const dureeLabel=min=>min%60===0&&min>=60?t('auto.heures',{n:min/60}):t('auto.minutes',{n:min});
@@ -787,14 +721,6 @@ async function autoSet(){
   finally{autoBusy=false;syncAuto();renderAuto();}
 }
 $('auto-recap-btn').addEventListener('click',showRecap);$('auto-open').addEventListener('click',openAuto);$('auto-close').addEventListener('click',closeAuto);$('auto-main').addEventListener('click',autoSet);
-$('crise-open').addEventListener('click',openCrisis);
-$('crise-close').addEventListener('click',closeCrisis);
-$('crise-banner-open').addEventListener('click',openCrisis);
-$('crise-main').addEventListener('click',()=>{
-  if(crisisOn())return criseSet(false);
-  if(criseArmed){clearTimeout(criseArmed);criseArmed=null;return criseSet(true);}
-  criseArmed=setTimeout(()=>{criseArmed=null;renderCrisis();},5000);renderCrisis();
-});
 // Réponses lisibles : journal de l'agent, chargé seulement quand le volet est ouvert.
 let respBusy=false;
 async function loadResponses(){
@@ -894,7 +820,7 @@ function commands(){
   list.push({label:t('commandes.taches'),hint:t('commandes.hint_taches'),run:()=>showTab('taches')});
   list.push({label:Scene.layoutEdit()?t('commandes.terminer_disposition'):t('commandes.disposer_postes'),hint:t('commandes.hint_scene'),run:()=>Scene.toggleLayoutEdit()});
   list.push({label:Scene.isPaused()?t('commandes.animer_bureau'):t('commandes.pause_bureau'),hint:t('commandes.hint_scene'),run:()=>$('motion').click()});
-  list.push({label:t('commandes.salle_crise'),hint:t('commandes.hint_urgence'),run:openCrisis});
+  list.push({label:t('commandes.salle_crise'),hint:t('commandes.hint_urgence'),run:CrisisUi.open});
   list.push({label:tilesOn?t('commandes.vue_scene'):t('commandes.mode_mosaique'),hint:t('commandes.hint_scene'),run:()=>setTiles(!tilesOn)});
   if(document.fullscreenEnabled)list.push({label:t('commandes.plein_ecran'),hint:t('commandes.hint_scene'),run:()=>$('fullscreen').click()});
   list.push({label:t('commandes.actualiser_agents'),hint:'Herdr',run:()=>$('refresh').click()});
@@ -1038,8 +964,8 @@ addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName||'')||document.activeElement?.isContentEditable;
   if(!$('auto').hidden){if(e.key==='Escape'){e.preventDefault();closeAuto();}return;}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'&&$('board').hidden&&$('crise').hidden){e.preventDefault();$('palette').hidden?openPalette():closePalette();return;}
-  if(!$('crise').hidden){if(e.key==='Escape'){e.preventDefault();closeCrisis();}return;}
-  if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='c'&&$('palette').hidden&&$('board').hidden){e.preventDefault();openCrisis();return;}
+  if(!$('crise').hidden){if(e.key==='Escape'){e.preventDefault();CrisisUi.close();}return;}
+  if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()==='c'&&$('palette').hidden&&$('board').hidden){e.preventDefault();CrisisUi.open();return;}
   if(e.ctrlKey&&!e.shiftKey&&e.key.toLowerCase()==='k'&&!$('crise').hidden){e.preventDefault();return;}
   if(!$('palette').hidden){if(e.key==='Escape'){e.preventDefault();closePalette();}return;}
   if(!$('board').hidden){if(e.key==='Escape'){e.preventDefault();closeBoard();}return;}
@@ -1049,8 +975,8 @@ addEventListener('keydown',e=>{
 });
 setInterval(()=>{if(!document.hidden)loadBoard().then(()=>{if(!$('board').hidden)renderBoard();}).catch(()=>{});},60000);
 let cycleLent=0;
-setInterval(()=>{if(document.hidden)return;QueueUi.load();Scene.renderMail();loadCrisis();loadAuto();TodosUi.load();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
-setTimeout(TodosUi.load,1500);setTimeout(loadFooter,1600);setTimeout(loadCrisis,1500);
+setInterval(()=>{if(document.hidden)return;QueueUi.load();Scene.renderMail();CrisisUi.load();loadAuto();TodosUi.load();loadResponses();if(cycleLent++%3===0){loadDiscussion();loadSante();if(currentTab()==='equipe')loadTreatments();}},5000);
+setTimeout(TodosUi.load,1500);setTimeout(loadFooter,1600);setTimeout(CrisisUi.load,1500);
 // Écran tactile : on touche un personnage, on ne clique pas (proposition P5 d'OpenCode).
 if(matchMedia('(pointer:coarse)').matches){const hint=document.querySelector('.office-bottom>span');if(hint)hint.textContent=hint.textContent.replace('Clique','Touche');}
 termPlaceholder($('output').textContent);syncMotion();refreshState().then(()=>loadBoard()).catch(()=>{});
