@@ -14,6 +14,7 @@ import {readDelegations} from './delegations.mjs';
 import {createTodosReader} from './todos.mjs';
 import {readBlackboard} from './blackboard.mjs';
 import {initKit} from '../scripts/init-kit.mjs';
+import {VERSION} from './version.mjs';
 export function localDataRoot({home=homedir(),env=process.env,platform=process.platform}={}){
  return platform==='win32'?join(env.LOCALAPPDATA||join(home,'AppData','Local'),'MyTeam'):platform==='darwin'?join(home,'Library','Application Support','MyTeam'):join(env.XDG_DATA_HOME||join(home,'.local','share'),'MyTeam');
 }
@@ -21,7 +22,7 @@ const installation=fileURLToPath(new URL('../',import.meta.url));
 export async function createProjectServer({createBureauServer,myteamRoot=installation,dataRoot=localDataRoot(),places={home:homedir()},bridge,readTerminal=createTerminalStatusReader(),startTimers=true}={}){
  const token=randomBytes(32).toString('hex');let runtime=null,changing=false;
  const config=join(dataRoot,'project.json');
- const installedVersion=JSON.parse(await readFile(join(myteamRoot,'package.json'),'utf8').catch(()=>'{}')).version??null;
+ const installedVersion=VERSION;
  const select=async (selection,{persist=true}={})=>{
   const project=await resolveProject(selection,places,myteamRoot);
   if(selection.prepareKit===true&&project.mode==='project')await initKit(project.root,{lang:selection.lang==='en'?'en':'fr'});

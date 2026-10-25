@@ -1,11 +1,11 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {readFile,writeFile,mkdir,rm,lstat,cp,rename} from 'node:fs/promises';
-import {readFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {spawn} from 'node:child_process';
 import {dirname,join} from 'node:path';
 import {inflateRawSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
+import {VERSION} from './version.mjs';
 const dataDirectory=()=>process.platform==='win32'?join(process.env.LOCALAPPDATA||join(homedir(),'AppData','Local'),'MyTeam'):process.platform==='darwin'?join(homedir(),'Library','Application Support','MyTeam'):join(process.env.XDG_DATA_HOME||join(homedir(),'.local','share'),'MyTeam');
 
 const repo='BlackAngel242/MyTeam';
@@ -54,7 +54,7 @@ export function extractZip(zip,version){
 }
 export function createUpdater({root=fileURLToPath(new URL('../',import.meta.url)),dataRoot=dataDirectory(),fetcher=fetch,spawnHelper=spawn,version,port=()=>4317}={}){
  let cached=null,checkedAt=0,pending=null,busy=false;
- const installed=version??JSON.parse(readFileSync(join(root,'package.json'),'utf8')).version;
+ const installed=version??VERSION;
  const status=()=>({installed,latest:cached?.version??null,available:cached?newer(cached.version,installed):false,ready:pending?.version??null,busy});
  async function check({force=false}={}){
   if(!force&&Date.now()-checkedAt<3600000)return status();
