@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    branches: [main]
-    paths: ['package.json']
+  # Publication seulement sur demande explicite : un changement de package.json ne publie plus rien.
   workflow_dispatch:
 
 permissions:
