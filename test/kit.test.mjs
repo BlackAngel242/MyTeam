@@ -185,7 +185,9 @@ test('init-kit garde les journaux locaux et complète gitignore sans perte ni do
 
 test('partagerLecon refuse cwd absent, relatif, extérieur et lien sortant',async t=>{
   const dossier=await temporaire(t),exterieur=await temporaire(t);
-  await mkdir(join(dossier,'src'));await symlink(exterieur,join(dossier,'sortie'),'dir');
+  await mkdir(join(dossier,'src'));
+  try{await symlink(exterieur,join(dossier,'sortie'),'dir');}
+  catch(error){if(['EPERM','EACCES'].includes(error.code)){t.skip('Creation de liens non autorisee sur ce poste');return;}throw error;}
   const chemins=[undefined,'src',exterieur,join(dossier,'sortie'),dossier,join(dossier,'src')];
   const agents=chemins.map((cwd,i)=>({pane_id:`w1:p${i}`,name:`agent${i}`,cwd,agent_status:'idle'}));
   const r=await partagerLecon('Locale.',{dossier,dryRun:true,lancer:async()=>JSON.stringify({result:{agents}})});
@@ -216,7 +218,8 @@ test('init-kit refuse gitignore et les parents symboliques avant toute écriture
     const dossier=await temporaire(t),outside=await temporaire(t);
     const cible=nom==='.gitignore'?join(outside,'ignore'):outside;
     if(nom==='.gitignore')await writeFile(cible,'Secret inchangé');
-    await symlink(cible,join(dossier,nom),nom==='.gitignore'?'file':'dir');
+    try{await symlink(cible,join(dossier,nom),nom==='.gitignore'?'file':'dir');}
+    catch(error){if(['EPERM','EACCES'].includes(error.code)){t.skip('Creation de liens non autorisee sur ce poste');return;}throw error;}
     await assert.rejects(initKit(dossier),/Lien symbolique refusé/);
     assert.deepEqual((await readdir(dossier)),[nom]);
     if(nom==='.gitignore')assert.equal(await readFile(cible,'utf8'),'Secret inchangé');

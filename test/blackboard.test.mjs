@@ -79,6 +79,7 @@ test('le tableau lit le relais local en priorité sans suivre un dossier local l
   await rm(join(root,'.myteam-local'),{recursive:true});
   const outside=await mkdtemp(join(tmpdir(),'tableau-outside-'));t.after(()=>rm(outside,{recursive:true,force:true}));
   await writeFile(join(outside,'HANDOFF.md'),'## Secret\n- Interdit');
-  await symlink(outside,join(root,'.myteam-local'),'dir');
+  try{await symlink(outside,join(root,'.myteam-local'),'dir');}
+  catch(error){if(['EPERM','EACCES'].includes(error.code)){t.skip('Creation de liens non autorisee sur ce poste');return;}throw error;}
   assert.deepEqual((await readBlackboard({root})).focus.items,['Ancien']);
 });

@@ -47,6 +47,7 @@ Ce fichier est la mémoire commune des agents. Chaque leçon vient d'une erreur 
 
 ## Interface et Playwright
 
+- Découpage en fabrique : créer le module après l'initialisation de ses dépendances déclarées avec `const` ou `let`. Passer `hhmm` avant sa déclaration arrêtait tout `app.js` ; la syntaxe et le lint passent malgré cette erreur, seul le navigateur la révèle.
 - Couleurs d'identité et couleurs d'état ne doivent jamais se confondre : menthe, bleu et ambre sont réservés aux états.
 - Une mesure prise juste après une capture pleine page peut être faussée : vérifier le défilement par une mesure dédiée avant de déclarer un défaut.
 - Captures : Chrome sans fenêtre bloque sur cette page animée avec `--virtual-time-budget`. Utiliser Playwright avec `channel: 'msedge'` installé hors du projet, et simuler les états par interception de /api/state sans jamais envoyer de consigne.

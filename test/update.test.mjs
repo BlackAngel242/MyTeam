@@ -77,6 +77,7 @@ test('install triggers the helper, which swaps the installation once the app sto
  await mkdir(join(root,'src'),{recursive:true});
  await copyFile(new URL('../src/update.mjs',import.meta.url),join(root,'src','update.mjs'));
  await copyFile(new URL('../src/update-helper.mjs',import.meta.url),join(root,'src','update-helper.mjs'));
+ await copyFile(new URL('../src/version.mjs',import.meta.url),join(root,'src','version.mjs'));
  await writeFile(join(root,'package.json'),JSON.stringify({version:'0.4.2'}));
  await mkdir(join(root,'.bureau'));await writeFile(join(root,'.bureau','marker.txt'),'local-config');
  const newServer=`import {createServer} from 'node:http';import {writeFileSync} from 'node:fs';writeFileSync('child.pid',String(process.pid));createServer((req,res)=>res.end('ready')).listen(process.env.BUREAU_PORT,'127.0.0.1');`;
