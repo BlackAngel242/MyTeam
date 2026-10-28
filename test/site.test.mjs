@@ -18,7 +18,8 @@ function loadSiteI18N() {
 }
 
 test('tous les fichiers locaux référencés dans site/index.html et site/style.css existent', () => {
-  const html = readFileSync(join(siteDir, 'index.html'), 'utf8');
+  // Pendant la maintenance, ces contrôles portent sur la page d'accueil archivée.
+  const html = readFileSync(join(siteDir, '..', 'maintenance', 'site-index-original.html'), 'utf8');
   const css = readFileSync(join(siteDir, 'style.css'), 'utf8');
 
   const refs = new Set();
@@ -146,7 +147,7 @@ test('aucun tiret cadratin dans les fichiers de site/', () => {
 
 test('l\'aperçu de partage (Open Graph) : image en URL absolue, existante, 1200×630 et légère', async () => {
   const { readFile, stat } = await import('node:fs/promises');
-  const html = await readFile(new URL('../site/index.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../maintenance/site-index-original.html', import.meta.url), 'utf8');
   for (const nom of ['og:image', 'twitter:image']) {
     const m = new RegExp(`(?:property|name)="${nom}" content="([^"]+)"`).exec(html);
     assert.ok(m, nom);
@@ -163,7 +164,7 @@ test('l\'aperçu de partage (Open Graph) : image en URL absolue, existante, 1200
 
 test('la vidéo d\'accueil a ses sources (webm, mp4), un repli GIF léger et respecte le mouvement réduit', async () => {
   const { readFile, stat } = await import('node:fs/promises');
-  const html = await readFile(new URL('../site/index.html', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../maintenance/site-index-original.html', import.meta.url), 'utf8');
   assert.match(html, /<video id="hero-video"[^>]*autoplay muted loop playsinline/);
   for (const [fichier, plafondKo] of [['tournee-du-chef.webm', 1500], ['tournee-du-chef.mp4', 1500], ['tournee-du-chef.gif', 5000]]) {
     assert.ok(html.includes(`assets/${fichier}`), fichier);
@@ -174,7 +175,8 @@ test('la vidéo d\'accueil a ses sources (webm, mp4), un repli GIF léger et res
 });
 
 test('le parcours Git propose les commandes Windows, Linux et macOS dans les deux langues',()=>{
-  const html=readFileSync(join(siteDir,'index.html'),'utf8'),section=html.slice(html.indexOf('data-i18n="alt.git.title"'),html.indexOf('<!-- Compatibilité'));
+  // Pendant la maintenance, ce contrôle porte sur la page d'accueil archivée.
+  const html=readFileSync(join(siteDir,'..','maintenance','site-index-original.html'),'utf8'),section=html.slice(html.indexOf('data-i18n="alt.git.title"'),html.indexOf('<!-- Compatibilité'));
   assert.match(section,/git clone https:\/\/github.com\/BlackAngel242\/MyTeam.git/);
   assert.match(section,/powershell -ExecutionPolicy Bypass -File scripts\\installer.ps1/);
   assert.match(section,/bash scripts\/installer.sh/);
@@ -183,4 +185,12 @@ test('le parcours Git propose les commandes Windows, Linux et macOS dans les deu
     assert.match(translations[lang]['alt.git.windows'],/Windows/);
     assert.match(translations[lang]['alt.git.unix'],/Linux.*macOS|macOS.*Linux/);
   }
+});
+
+test('la page publiée pendant la maintenance : pas de ressource externe, date de retour affichée', () => {
+  const html = readFileSync(join(siteDir, 'index.html'), 'utf8');
+  assert.match(html, /<html lang="fr">/);
+  assert.match(html, /en maintenance/);
+  assert.match(html, /à partir du 27 novembre 2026/);
+  assert.doesNotMatch(html, /<(?:script|link|img)\s+[^>]*(?:src|href)=["']https?:/i);
 });
