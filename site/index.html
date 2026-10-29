@@ -14,28 +14,55 @@
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
     main {
-      width: 100%; max-width: 440px; padding: 32px 28px; text-align: center;
+      width: 100%; max-width: 440px; padding: 28px 24px; text-align: center;
       background: #111e31; border: 2px solid #1d2c44; border-radius: 6px;
     }
-    .pixel { width: 96px; height: 96px; margin: 0 auto 20px; image-rendering: pixelated; }
+    .illustration { display: block; width: 100%; max-width: 300px; height: auto; margin: 0 auto 18px; image-rendering: pixelated; border-radius: 4px; }
     .kicker { margin: 0 0 8px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: #a0dfc4; }
     h1 { margin: 0; font-size: 26px; line-height: 1.25; }
     p { margin: 16px 0 0; font-size: 16px; line-height: 1.6; color: #a7b8ce; }
+    .compte-titre { margin: 24px 0 0; font-size: 14px; font-weight: 600; color: #a7b8ce; }
+    .compte { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 0; }
+    .compte div { padding: 12px 4px; background: #1d2c44; border-radius: 4px; }
+    .compte strong { display: block; font-size: 26px; font-variant-numeric: tabular-nums; color: #f2f4f7; }
+    .compte span { display: block; margin-top: 4px; font-size: 12px; color: #a7b8ce; }
+    .echeance { display: inline-block; margin-top: 22px; padding: 8px 14px; font-size: 14px; font-weight: 600; color: #0c1423; background: #a0dfc4; border-radius: 4px; }
   </style>
 </head>
 <body>
   <main>
-    <svg class="pixel" viewBox="0 0 12 12" aria-hidden="true" shape-rendering="crispEdges">
-      <rect x="1" y="1" width="10" height="7" fill="#1d2c44"/>
-      <rect x="2" y="2" width="8" height="5" fill="#9dbbff"/>
-      <rect x="3" y="3" width="2" height="1" fill="#f2f4f7"/>
-      <rect x="6" y="5" width="2" height="1" fill="#a0dfc4"/>
-      <rect x="5" y="8" width="2" height="2" fill="#1d2c44"/>
-      <rect x="3" y="10" width="6" height="1" fill="#1d2c44"/>
-    </svg>
+    <img class="illustration" src="maintenance.webp" width="640" height="366" alt="">
     <p class="kicker">MyTeam</p>
     <h1>Le Bureau des agents est en maintenance</h1>
     <p>La démonstration est temporairement fermée pour maintenance. Merci de revenir à partir du 27 novembre 2026.</p>
+    <p class="compte-titre" id="compte-titre">Retour dans</p>
+    <div class="compte" id="compte" aria-labelledby="compte-titre">
+      <div><strong id="jours">--</strong><span>jours</span></div>
+      <div><strong id="heures">--</strong><span>heures</span></div>
+      <div><strong id="minutes">--</strong><span>minutes</span></div>
+      <div><strong id="secondes">--</strong><span>secondes</span></div>
+    </div>
+    <span class="echeance">Retour prévu à partir du 27 novembre 2026</span>
   </main>
+  <script>
+    // Retour : 27 novembre 2026 à 00 h 00, heure de Brazzaville (UTC+1).
+    const RETOUR = Date.parse('2026-11-27T00:00:00+01:00');
+    const deux = (n) => String(n).padStart(2, '0');
+    function majCompte() {
+      const reste = Math.max(0, RETOUR - Date.now());
+      const total = Math.floor(reste / 1000);
+      document.getElementById('jours').textContent = deux(Math.floor(total / 86400));
+      document.getElementById('heures').textContent = deux(Math.floor((total % 86400) / 3600));
+      document.getElementById('minutes').textContent = deux(Math.floor((total % 3600) / 60));
+      document.getElementById('secondes').textContent = deux(total % 60);
+      if (reste === 0) {
+        document.getElementById('compte-titre').textContent = 'La démonstration revient aujourd\'hui.';
+        document.getElementById('compte').hidden = true;
+        clearInterval(minuteur);
+      }
+    }
+    majCompte();
+    const minuteur = setInterval(majCompte, 1000);
+  </script>
 </body>
 </html>
