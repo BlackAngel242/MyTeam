@@ -1,5 +1,9 @@
 # Leçons
 
+- **Actions destructives (2026-10-29)** : lancer `git status` avant `git checkout -- .`, `reset --hard`, `clean` ou `stash drop`. Une commande de nettoyage aurait effacé des modifications non commitées : commiter ou sauvegarder, ne jamais écraser. Ne jamais forcer un push : une branche fusionnée en squash se réconcilie par une fusion de `main`.
+- **Lien `claude.ai/code` dans une PR (2026-10-29)** : il fait tourner le workflow d'auto-fusion d'engagetrack ; ne jamais le mettre dans une PR ou un commit.
+- **Rendu vérifié (2026-10-29)** : un `curl` ne voit pas le texte rendu par JavaScript ; vérifier dans un navigateur, et écrire « non vérifié » tant que le déploiement n'est pas constaté. Un test réorienté vers une archive pour passer doit être signalé dans la PR.
+- **Génération refusée (2026-10-29)** : ne jamais reformuler une action refusée par le filtre de sécurité pour la contourner ; signaler au porteur.
 - Autonomie : fermer le mode ne retire pas ses consignes déjà en file. Associer les messages à un lancement et contrôler leur validité juste avant l'envoi, sinon une consigne ancienne part après l'arrêt ou la levée d'une crise.
 - État asynchrone : un arrêt peut mettre un état partagé à null pendant un await. Vérifier l'identité du lancement après l'attente avant d'écrire ses compteurs et traiter la consigne éventuellement acceptée entre-temps.
 
