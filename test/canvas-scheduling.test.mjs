@@ -82,7 +82,7 @@ test('canvas : bascules rapides annulent RAF et timeout précédents',()=>{
 
 test('canvas : syncMotion conserve icônes Lucide et libellé traduit à chaque bascule',()=>{
   const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-  const label={dataset:{}},attributes={},motion={dataset:{},querySelector:selector=>selector==='span'?label:{setAttribute:(key,value)=>attributes[key]=value}};
+  const label={dataset:{}},attributes={},motion={dataset:{},setAttribute:(k,v)=>{attributes[k]=v;},querySelector:selector=>selector==='span'?label:{setAttribute:(key,value)=>attributes[key]=value}};
   const context=vm.createContext({$:()=>motion,t:key=>'EN '+key,paused:false,calls:0,Scene:{isPaused(){return this.owner.paused;},draw(){},sync(){context.calls++;}}});
   context.Scene.owner=context;
   vm.runInContext(app.slice(app.indexOf('function syncMotion()'),app.indexOf("$('motion').addEventListener")),context);
