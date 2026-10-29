@@ -706,7 +706,7 @@ $('prompt-form').addEventListener('submit',async event=>{
   finally{sending=false;updateForm();}
 });
 $('refresh').addEventListener('click',async()=>{await refreshState();readOutput();});
-function syncMotion(){ const label=$('motion').querySelector('span');label.dataset.i18n=Scene.isPaused()?'commandes.animer':'commandes.mettre_en_pause';label.textContent=t(label.dataset.i18n);$('motion').dataset.actif=String(Scene.isPaused());$('motion').querySelector('use').setAttribute('href',Scene.isPaused()?'/icons.svg#play':'/icons.svg#pause');Scene.draw(0);Scene.sync(); }
+function syncMotion(){ const label=$('motion').querySelector('span');label.dataset.i18n=Scene.isPaused()?'commandes.animer':'commandes.mettre_en_pause';label.textContent=t(label.dataset.i18n);const titleKey=Scene.isPaused()?'commandes.animer':'bouton.mettre-en-pause';$('motion').setAttribute('data-i18n-attr',`title:${titleKey}`);$('motion').setAttribute('title',t(titleKey));$('motion').dataset.actif=String(Scene.isPaused());$('motion').querySelector('use').setAttribute('href',Scene.isPaused()?'/icons.svg#play':'/icons.svg#pause');Scene.draw(0);Scene.sync(); }
 $('motion').addEventListener('click',()=>{Scene.setPaused(!Scene.isPaused());try{localStorage.setItem('bureau.animation',Scene.isPaused()?'off':'on');}catch{}syncMotion();});
 motionPreference.addEventListener('change',()=>{if(readMotion()==null){Scene.setPaused(motionPreference.matches);syncMotion();}});
 function agentByTarget(target){
