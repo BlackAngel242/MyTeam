@@ -34,7 +34,8 @@ function createScene({ canvas, getState, getSelected, getQueueItems, getBoardDat
   // Since each character has a fixed width of 4px (with -1 total offset), max-3 / 4 gets exact fit.
   function fit(s,max){s=pixelCase(s);if(textWidth(s)<=max)return s;const keep=Math.floor((max-3)/4);return (keep>0?s.slice(0,keep):s.slice(0,1)).trimEnd()+'.';}
   // Performance: Hoist canvas getState() (fillStyle, globalAlpha) out of the character/pixel loop to avoid massive overhead.
-  function text(s,x,y,c,a=1){g.globalAlpha=a;g.fillStyle=c;[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.fillRect(Math.round(x+i*4+b%3),Math.round(y+Math.floor(b/3)),1,1);});g.globalAlpha=1;}
+  // Performance: Batch rect() calls instead of separate fillRect() to reduce rendering overhead.
+  function text(s,x,y,c,a=1){g.globalAlpha=a;g.fillStyle=c;g.beginPath();[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.rect(Math.round(x+i*4+b%3),Math.round(y+Math.floor(b/3)),1,1);});g.fill();g.globalAlpha=1;}
   // Halo en pixels autour d'une getEnseigne() : reste dans le langage pixel, pas de flou.
   function neon(s,x,y,c){for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])text(s,x+dx,y+dy,c,.22);text(s,x,y,c);}
   function pool(cx,cy,rx,ry,c,a){for(let dy=-ry;dy<=ry;dy++){const hw=Math.round(rx*Math.sqrt(1-(dy/ry)**2));if(hw>0)px(cx-hw,cy+dy,hw*2,1,c,a);}}
@@ -141,7 +142,8 @@ function createScene({ canvas, getState, getSelected, getQueueItems, getBoardDat
   let boardSpot=null;
   // Lettres agrandies (chaque pixel d'une lettre devient k x k) : gros pourcentage de l'écran de projection.
   // Performance: Hoist canvas getState() (fillStyle) out of the character/pixel loop.
-  function textBig(s,x,y,c,k){g.globalAlpha=1;g.fillStyle=c;[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.fillRect(Math.round(x+i*4*k+(b%3)*k),Math.round(y+Math.floor(b/3)*k),k,k);});}
+  // Performance: Batch rect() calls instead of separate fillRect() to reduce rendering overhead.
+  function textBig(s,x,y,c,k){g.globalAlpha=1;g.fillStyle=c;g.beginPath();[...s].forEach((ch,i)=>{const bits=glyphs[ch]||glyphs['?'];for(let b=0;b<15;b++)if(bits[b]==='1')g.rect(Math.round(x+i*4*k+(b%3)*k),Math.round(y+Math.floor(b/3)*k),k,k);});g.fill();}
   // Tableau de liège : la todo réelle du projet (cases de TODO.md et des plans), jamais une valeur inventée.
   // Les cases ouvertes d'abord ; quand tout est fait, les dernières cases réalisées.
   let screenSpot=null;
