@@ -1,5 +1,8 @@
 # Règles du projet pour toutes les IA
 
+> **LECTURE OBLIGATOIRE POUR TOUTE IA, AVANT TOUT TRAVAIL** (lecture, analyse, code, commit, pull request, publication) : lire en entier, avec l'outil de lecture, `AGENTS.md`, `LESSONS.md`, `HANDOFF.md`, `PRODUCT.md`, `DESIGN.md` et les deux dernières entrées de `JOURNAL.md`. Une IA qui n'a pas lu ces fichiers ne modifie rien. Après chaque mission : consigner chaque erreur dans `LESSONS.md`, et mettre à jour `JOURNAL.md` et `HANDOFF.md`.
+
+
 Ce fichier s'applique à chaque IA qui travaille sur le Bureau des agents (Claude, Codex, OpenCode, Antigravity, Gemini et les suivantes). Le lire en entier avant la première modification.
 
 ## À lire avant de travailler

@@ -2,6 +2,10 @@
 
 Lire `AGENTS.md`, `LESSONS.md`, `PRODUCT.md`, `DESIGN.md`, `TODO.md` et le plan courant avant toute modification.
 
+## État au 29 octobre 2026
+
+La démonstration publique est en maintenance jusqu'au 27 novembre 2026, avec compte à rebours. Pour la remettre en ligne : copier l'ancienne page (`maintenance/site-index-original.html`) à la place de `site/index.html`. Pendant la maintenance, les contrôles de la page d'accueil portent sur l'archive.
+
 ## État au 20 octobre 2026 (base saine 0.5.0)
 
 - `main` est en version 0.5.0. Dernier commit : `123a161`, qui fusionne la PR #7 (raison d'une consigne en attente) et la leçon sur le 403 de la PR #6, en « squash » pour que l'auteur soit DrSmoke.
