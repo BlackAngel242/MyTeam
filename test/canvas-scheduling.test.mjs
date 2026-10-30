@@ -17,7 +17,8 @@ function stub(){
 function load({paused=false,tiles=false}={}){
   let next=0;
   const raf=new Map(),timers=new Map(),events={},draws=[],state={tiles};
-  const ctx=new Proxy({},{get:(t,p)=>p==='drawImage'?()=>draws.push(true):(p in t?t[p]:stub()),set:(t,p,v)=>{t[p]=v;return true;}});
+  const ctxMethods = { drawImage: ()=>draws.push(true), beginPath: ()=>{}, rect: ()=>{}, fill: ()=>{} };
+  const ctx=new Proxy({},{get:(t,p)=>p in ctxMethods?ctxMethods[p]:(p in t?t[p]:stub()),set:(t,p,v)=>{t[p]=v;return true;}});
   const canvas={width:800,height:600,style:{},title:'',classList:stub(),parentElement:stub(),addEventListener:(name,fn)=>events[name]=fn,getBoundingClientRect:()=>({left:0,top:0,width:800,height:600}),getContext:()=>ctx,setAttribute(){}};
   const context=vm.createContext({
     document:{getElementById:()=>stub(),createElement:()=>({getContext:()=>stub(),width:0,height:0}),addEventListener(){},fullscreenEnabled:false,fullscreenElement:null},
