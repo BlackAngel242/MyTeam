@@ -1,0 +1,20 @@
+{
+  "name": "drsmoke-skillmarket",
+  "interface": {
+    "displayName": "DrSmoke SkillMarket"
+  },
+  "plugins": [
+    {
+      "name": "drsmoke-quality-workflows",
+      "source": {
+        "source": "local",
+        "path": "./skillmarket"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "drsmoke-quality-workflows",
+  "version": "0.1.0",
+  "description": "Fixit (revue adaptative) et TableRonde (PRD et arbitrages) pour ChatGPT et Codex.",
+  "repository": "https://github.com/BlackAngel242/MyTeam",
+  "keywords": [
+    "fixit",
+    "table-ronde",
+    "prd",
+    "quality-review"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Fixit & TableRonde",
+        "shortDescription": "Décider avec TableRonde, vérifier avec Fixit.",
+        "developerName": "DMAM PRO TECH",
+        "category": "Productivity"
+      }
+    }
+  }
+}
