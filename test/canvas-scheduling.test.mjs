@@ -21,7 +21,7 @@ function load({paused=false,tiles=false}={}){
   const canvas={width:800,height:600,style:{},title:'',classList:stub(),parentElement:stub(),addEventListener:(name,fn)=>events[name]=fn,getBoundingClientRect:()=>({left:0,top:0,width:800,height:600}),getContext:()=>ctx,setAttribute(){}};
   const context=vm.createContext({
     document:{getElementById:()=>stub(),createElement:()=>({getContext:()=>stub(),width:0,height:0}),addEventListener(){},fullscreenEnabled:false,fullscreenElement:null},
-    $:()=>stub(),ResizeObserver:function(){return {observe(){}};},localStorage:{getItem:()=>null,setItem(){}},
+    $:()=>stub(),ResizeObserver:function(){return {observe(){}};},localStorage:{getItem:()=>null,setItem(){}},Path2D:function(){return {}},
     matchMedia:()=>({matches:false,addEventListener(){}}),performance:{now:()=>0},
     requestAnimationFrame:fn=>{raf.set(++next,fn);return next;},cancelAnimationFrame:id=>raf.delete(id),
     setTimeout:(fn,delay)=>{timers.set(++next,{fn,delay});return next;},clearTimeout:id=>timers.delete(id),
