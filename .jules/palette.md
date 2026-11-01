@@ -1,0 +1,2 @@
+## 2024-10-27 - Palette Initialized\n**Learning:** Added a journal to record critical UX learnings.\n**Action:** Keep updating this when significant UX discoveries are made.
+## 2024-10-27 - Icon buttons accessibility\n**Learning:** Found several icon-only buttons missing `aria-label` attributes.\n**Action:** Add `data-i18n-attr="aria-label:bouton.XXXX.aria"` or similar to improve screen reader accessibility for icon buttons.
