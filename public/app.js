@@ -133,7 +133,15 @@ function errorBlock(container,message,icon='erreur',retry=null){
 function iconCanvas(name){
   const icon=window.EMPTY_ICONS?.[name];if(!icon)return null;
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='empty-icon';c.setAttribute('aria-hidden','true');const g3=c.getContext('2d');
-  icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(icon.palette[ch]){g3.fillStyle=icon.palette[ch];g3.fillRect(x,y,1,1);}}));return c;
+  const byColor = {};
+  icon.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{const col = icon.palette[ch]; if(col){if(!byColor[col])byColor[col]=[];byColor[col].push({x,y});}}));
+  Object.keys(byColor).forEach(col=>{
+    g3.fillStyle=col;
+    g3.beginPath();
+    byColor[col].forEach(p=>g3.rect(p.x,p.y,1,1));
+    g3.fill();
+  });
+  return c;
 }
 let discData=null;
 window.TodosUi = createTodosUi({ getState: () => state, api: request, t, $, errorBlock, errorText, renderStatusbar, activeAgent, agentByTarget, getQueueItems: () => QueueUi.items, getDiscData: () => discData });
@@ -398,7 +406,14 @@ function logoCanvas(a){
   const logo=logoFor(a);if(!logo)return null;
   const c=document.createElement('canvas');c.width=16;c.height=16;c.className='agent-logo';
   const g2=c.getContext('2d');
-  logo.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(logo.palette[ch]){g2.fillStyle=logo.palette[ch];g2.fillRect(x,y,1,1);}}));
+  const byColor = {};
+  logo.rows.forEach((row,y)=>[...row].forEach((ch,x)=>{const col = logo.palette[ch]; if(col){if(!byColor[col])byColor[col]=[];byColor[col].push({x,y});}}));
+  Object.keys(byColor).forEach(col=>{
+    g2.fillStyle=col;
+    g2.beginPath();
+    byColor[col].forEach(p=>g2.rect(p.x,p.y,1,1));
+    g2.fill();
+  });
   return c;
 }
 // Envoi groupé : seuls les agents disponibles peuvent être cochés, et un second clic confirme la liste exacte.
