@@ -1,0 +1,6 @@
+Batch canvas rectangle rendering for custom fonts
+
+💡 What: Modified `text` and `textBig` rendering functions in `public/scene.js` to batch pixel rendering. Replaced individual `fillRect` calls with `beginPath`, loop over `rect`, and one final `fill`.
+🎯 Why: Drawing custom pixelated text involved looping through a bitmask and calling `fillRect` per active pixel. Canvas state overhead and path building for many small rectangles create a massive rendering bottleneck in a loop.
+📊 Impact: Considerably faster `requestAnimationFrame` loop, reducing main thread CPU time. This optimizes rendering for dozens of active characters simultaneously present on the main application display.
+🔬 Measurement: Compare browser performance profiling in Chrome DevTools using the Performance tab before and after patch. `draw()` time profile drops by a measurable proportion.
