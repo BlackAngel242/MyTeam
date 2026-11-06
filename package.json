@@ -1,6 +1,16 @@
 {
-  "name": "bureau-des-agents",
-  "private": true,
+  "name": "@drsmoke/myteam",
+  "version": "0.5.1",
+  "description": "Tour de contrôle locale en pixel art pour surveiller et piloter ses équipes d'agents d'IA sous Herdr.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlackAngel242/MyTeam.git"
+  },
+  "homepage": "https://blackangel242.github.io/MyTeam/",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
@@ -11,7 +21,6 @@
   "engines": {
     "node": ">=22"
   },
-  "version": "0.5.1",
   "bin": {
     "myteam-install": "scripts/installer-npm.mjs"
   },

@@ -7,9 +7,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const source = fileURLToPath(new URL('../', import.meta.url));
+// Hors du dossier de données (%LOCALAPPDATA%\MyTeam, ~/.local/share/MyTeam), créé dès le premier lancement :
+// sinon toute personne ayant déjà utilisé MyTeam se verrait refuser l'installation.
 const cible = process.platform === 'win32'
-  ? join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'MyTeam')
-  : join(homedir(), '.local', 'share', 'MyTeam');
+  ? join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'Programs', 'MyTeam')
+  : join(homedir(), '.local', 'lib', 'MyTeam');
 const fichiers = ['package.json', 'server.mjs', 'src', 'public', 'scripts', 'kit', 'docs'];
 
 async function installer() {

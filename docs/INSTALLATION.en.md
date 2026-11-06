@@ -47,13 +47,13 @@ Reviewed technical documents may be shared deliberately. The kit creates `HANDOF
 
 ## Method 1: Installation from the Release Archive (Recommended)
 
-If Node.js 22+ and npm are already installed, this command copies the tagged release to your user directory and starts the same setup assistant:
+If Node.js 22+ and npm are already installed, this command copies the latest npm release to your user directory and starts the same setup assistant:
 
 ```sh
-npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install
+npx @drsmoke/myteam
 ```
 
-The destination is `~/.local/share/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\MyTeam` on Windows. An existing installation is never overwritten; use the in-app updater instead. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
+The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. An existing installation is never overwritten; use the in-app updater instead. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
 
 This method is the easiest and does not require any developer tools upfront (no Git, no compilers).
 

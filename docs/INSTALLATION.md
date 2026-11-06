@@ -47,13 +47,13 @@ Les documents techniques relus peuvent être partagés volontairement. Le kit cr
 
 ## Méthode 1 : Installation par la release (recommandée)
 
-Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la version identifiée par le tag dans le dossier utilisateur, puis lance l'assistant :
+Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la dernière version publiée sur npm dans le dossier utilisateur, puis lance l'assistant :
 
 ```sh
-npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install
+npx @drsmoke/myteam
 ```
 
-La cible est `~/.local/share/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\MyTeam` sous Windows. Une installation existante n'est pas écrasée : utilisez sa mise à jour intégrée. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
+La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Une installation existante n'est pas écrasée : utilisez sa mise à jour intégrée. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
 
 Cette méthode est la plus simple et ne nécessite aucun outil de développement préalable (ni Git, ni compilateur).
 
