@@ -23,7 +23,7 @@ Execution memory (queue, direction, autonomy and configuration) is private, sepa
 
 Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
 
-[Download MyTeam 0.5.1](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.1/MyTeam-0.5.1.zip)
+One-command install (Node.js 22+): `npx @drsmoke/myteam` — or [download MyTeam 0.6.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.6.0/MyTeam-0.6.0.zip).
 
 ## Built-in updates
 

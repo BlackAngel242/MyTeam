@@ -4,6 +4,28 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
+## [0.6.0] - 2026-11-07 · « Èṣù »
+
+### Installation en une commande
+
+- `npx @drsmoke/myteam` installe MyTeam dans `%LOCALAPPDATA%\Programs\MyTeam` (Windows) ou `~/.local/lib/MyTeam` (Linux, macOS), hors du dossier de données, puis lance l'assistant. Relancer la commande rouvre l'assistant d'une installation existante sans rien écraser ; `--demo` ne copie rien ; `--dry-run` n'écrit rien.
+- La release publie aussi le paquet npm (publication de confiance, sans jeton stocké), avant de rendre la release publique.
+
+### Assistant d'installation
+
+- Choix aux flèches ↑/↓ et Entrée (numéros à deux chiffres acceptés : les outils 10 et plus étaient inaccessibles), oui/non aux flèches ←/→ avec « Non » par défaut.
+- Cases à cocher pour les intégrations Herdr, les outils d'IA et les extensions : rien de pré-coché, la validation de la liste vaut accord pour les seules cases cochées.
+- Les panneaux restés vides sont reproposés après l'installation des outils d'IA ; « Le bureau » est le raccourci par défaut ; chaque étape affiche la valeur retenue.
+- Le résumé final et la prochaine étape restent à l'écran ; Ctrl+C annule proprement à tout moment (code 130, terminal rendu).
+- Prérequis installés directement, sans question, avec ou sans `-Oui` : Node.js 22+, Herdr et Clink (Windows). Clink déjà installé hors du PATH est reconnu, et les codes winget « déjà installé » ne sont plus signalés comme des échecs.
+- Accents rétablis dans les messages ; `installer.sh` reste compatible avec bash 3.2 (macOS).
+
+### Depuis 0.5.1
+
+- La release ne part plus que sur demande manuelle.
+- `public/app.js` découpé en modules (scène, file d'attente, tâches, fichiers, salle de crise, autonomie, palette, direction).
+- Version du code lue en un seul endroit (`src/version.mjs`) ; `/api/state` exige la même preuve de provenance que les autres lectures ; règles de l'agent chef fixées.
+
 ## [0.5.1] - 2026-10-21 · « Ṣàngó »
 
 - Mise à jour intégrée depuis les releases GitHub : notification, téléchargement, SHA-256, préparation et redémarrage automatique.
