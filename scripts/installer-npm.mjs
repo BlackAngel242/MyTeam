@@ -15,9 +15,9 @@ const cible = process.platform === 'win32'
 const fichiers = ['package.json', 'server.mjs', 'src', 'public', 'scripts', 'kit', 'docs'];
 
 // Même assistant animé que « Installer MyTeam.bat » (flèches, liste de tâches en direct) ; options transmises : --lang, --simple, --port.
-function lancerAssistant() {
-  const r = spawnSync(process.execPath, [join(cible, 'scripts', 'installateur-anime.mjs'), ...process.argv.slice(2)],
-    { cwd: cible, stdio: 'inherit', windowsHide: false });
+function lancerAssistant(dossier = cible) {
+  const r = spawnSync(process.execPath, [join(dossier, 'scripts', 'installateur-anime.mjs'), ...process.argv.slice(2)],
+    { cwd: dossier, stdio: 'inherit', windowsHide: false });
   if (r.error) throw r.error;
   process.exitCode = r.status ?? 1;
 }
@@ -27,6 +27,8 @@ async function installer() {
     console.log(`Simulation : MyTeam serait copié dans ${cible}, puis l'assistant d'installation serait lancé.`);
     return;
   }
+  // La démonstration n'installe rien : elle tourne depuis le paquet npm temporaire, sans copie dans le dossier utilisateur.
+  if (process.argv.includes('--demo')) return lancerAssistant(source);
   if (await lstat(cible).then(() => true, e => e.code === 'ENOENT' ? false : Promise.reject(e))) {
     // Relancer npx sur une installation existante rouvre son assistant, sans rien écraser.
     const installee = await readFile(join(cible, 'package.json'), 'utf8').then(JSON.parse, () => null);

@@ -53,7 +53,7 @@ Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la de
 npx @drsmoke/myteam
 ```
 
-La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, n'installe rien de plus), `--dry-run`. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
+La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, ne copie ni n'installe rien), `--dry-run`. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
 
 Cette méthode est la plus simple et ne nécessite aucun outil de développement préalable (ni Git, ni compilateur).
 

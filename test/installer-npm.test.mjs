@@ -19,6 +19,14 @@ async function maison(t) {
   return { cible, lancer };
 }
 
+test('--demo tourne depuis le paquet sans rien copier dans le dossier utilisateur', async t => {
+  const { cible, lancer } = await maison(t);
+  const r = lancer('--demo', '--simple', '--lang', 'fr');
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Démonstration terminée : rien n’a été installé ni modifié/);
+  await assert.rejects(readdir(cible), 'aucun dossier MyTeam ne doit être créé par une démonstration');
+});
+
 test('--dry-run annonce la cible hors du dossier de données, sans rien écrire', async t => {
   const { cible, lancer } = await maison(t);
   const r = lancer('--dry-run');
