@@ -82,8 +82,22 @@ function checkProtocol(result,windows) {
   assert.equal(new Set(ids).size,ids.length,'identifiants de questions uniques');
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
+  test(`A2 ${platform} : sélections groupées et confirmation`,async t=>{
+    let outils=0, extensions=0;
+    const result=await run(t,platform,{answer:line=>{
+      if(line.startsWith('@@MULTI') && /outils IA|AI tools/.test(line)) return outils++ ? '' : '1';
+      if(line.startsWith('@@MULTI') && /extensions/.test(line)) { extensions++; return '1,3'; }
+      if(line.startsWith('@@CONFIRM') && /Installer cette sélection/.test(line)) return 'o';
+      if(line.startsWith('@@CHOICE')) return '1';
+      return 'n';
+    }});
+    assert.equal(result.code,0,result.errors);
+    assert.ok(outils > 0 && extensions > 0);
+    assert.equal(result.records.filter(x=>x.startsWith('@@CONFIRM') && x.includes('Installer cette sélection')).length,2);
+  });
   test(`J1 ${platform} : dialogue complet, oui/non, choix et saisie sans installation`,async t=>{
     const result=await run(t,platform,{answer:line=>{
+      if(line.startsWith('@@MULTI'))return '';
       if(line.startsWith('@@CHOICE'))return '2';
       if(line.startsWith('@@INPUT'))return 'dossier $(commande) avec espaces';
       return /extensions|kit|Node.js|Clink/i.test(line)?'o':'n';
@@ -118,7 +132,7 @@ if (process.platform !== 'win32') test('installation Bash réelle : zéro IA et 
   . ${shellLiteral(join(path, 'scripts/installer.sh'))} --interface --lang fr --port 4317 --herdr-chemin ${shellLiteral(join(path, 'herdr'))}
   `);
   const result = await dialogue(t, bash, ['--noprofile','--norc',script], {
-    env: { HOME: home }, answer: line => line.startsWith('@@INPUT ') ? '0' : 'n',
+    env: { HOME: home }, answer: line => line.startsWith('@@MULTI ') ? '' : line.startsWith('@@INPUT ') ? '0' : 'n',
   });
   assert.equal(result.code, 0, result.errors);
   assert.equal(result.records.filter(x => /Numéros des outils à installer/.test(x)).length, 1);

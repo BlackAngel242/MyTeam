@@ -627,7 +627,10 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
   for i in "${!OUTILS_MANQUANTS[@]}"; do dire "$((i+1)). ${OUTILS_MANQUANTS[i]%%|*}"; done
   dire "$(texte 'Antigravity : ouverture de la documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')"
   while :; do
-    if [ "$OUI" = 1 ] && [ "$DRY_RUN" != 1 ]; then selection=0
+    if [ "$OUI" = 1 ]; then selection=0
+    elif [ "$INTERFACE" = 1 ]; then
+      labels=(); for fiche in "${OUTILS_MANQUANTS[@]}"; do labels+=("${fiche%%|*}"); done
+      if lire_interface MULTI "$(texte 'Quels outils IA installer ?' 'Which AI tools should be installed?')" "${labels[@]}"; then selection=$REPONSE_INTERFACE; else selection=0; fi
     elif [ "$DRY_RUN" = 1 ]; then selection=0
     elif lire_saisie "$(texte 'Numéros des outils à installer (ex. 1,3 ; 0 = aucun)' 'Tool numbers to install (e.g. 1,3; 0 = none)')" 0; then selection=$REPONSE_INTERFACE
     else selection=0; fi
@@ -647,7 +650,7 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
     noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
     dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
-    if [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if { [ "$INTERFACE" = 1 ] || [ "$DRY_RUN" != 1 ]; } && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
       if [ "$commande" = antigravity-cli ]; then
@@ -680,7 +683,7 @@ dire "$(texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 
 # Trois extensions vérifiées sur le marché VS Code le 17 octobre 2026, avec
 # leurs éditeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
 # (Microsoft), esbenp.prettier-vscode (Prettier).
-if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce projet ?' 'Would you like to see the suggested project extensions?')"; then
+if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce projet ?' 'Would you like to see the suggested project extensions?')"; then
   dire "$(texte '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matières et confort Markdown.' '  1. Markdown All in One: yzhang.markdown-all-in-one (Yu Zhang): contents and Markdown editing.')"
   dire "$(texte '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : contrôle du JavaScript et du TypeScript.' '  2. ESLint: dbaeumer.vscode-eslint (Microsoft): JavaScript and TypeScript checks.')"
   dire "$(texte '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme cohérente du code.' '  3. Prettier - Code formatter: esbenp.prettier-vscode (Prettier): consistent code formatting.')"
@@ -689,9 +692,18 @@ if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce p
     dire "$(texte "VS Code n'est pas détecté sur cet ordinateur : l'installation des extensions est ignorée." "VS Code was not detected: extension installation skipped.")"
     noter "$(texte 'Extensions : ignorées (VS Code absent).' 'Extensions: skipped (VS Code missing).')"
   else
+    extensions_selection=''
+    if [ "$INTERFACE" = 1 ] && [ "$OUI" != 1 ]; then
+      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
+        extensions_selection=",$REPONSE_INTERFACE,"
+        if ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then extensions_selection=''; fi
+      fi
+    fi
+    ext_index=0
     for ext in 'Markdown All in One|yzhang.markdown-all-in-one' 'ESLint|dbaeumer.vscode-eslint' 'Prettier - Code formatter|esbenp.prettier-vscode'; do
+      ext_index=$((ext_index+1))
       nom="${ext%%|*}"; id="${ext##*|}"
-      if confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; then
+      if { [ "$INTERFACE" = 1 ] && [[ "$extensions_selection" == *",$ext_index,"* ]]; } || { [ "$INTERFACE" != 1 ] && confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; }; then
         executer "$(texte "Installation de $id avec code --install-extension." "Installing $id with code --install-extension.")" code --install-extension "$id"
         if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ] && [ "$ETAT_ETAPE" != fail ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Extensions installées : $TOTAL_ETAPE." "Extensions installed: $TOTAL_ETAPE.")";fi
         noter "$(texte "Extension $id : proposée à l'installation." "Extension $id: installation offered.")"

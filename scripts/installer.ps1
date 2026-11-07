@@ -609,7 +609,9 @@ if ($manquants.Count -gt 0) {
   for ($i=0; $i -lt $manquants.Count; $i++) { Dire "$($i+1). $($manquants[$i].Nom)" }
   Dire (Texte 'Antigravity : documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')
   while ($true) {
-    if ($Oui -or $DryRun) { $selection = '0' }
+    if ($Oui) { $selection = '0' }
+    elseif ($Interface) { $selection = Lire-Interface 'MULTI' (Texte 'Quels outils IA installer ?' 'Which AI tools should be installed?') @($manquants | ForEach-Object { $_.Nom }) }
+    elseif ($DryRun) { $selection = '0' }
     else { $selection = Lire-Saisie (Texte 'Numéros à installer (ex. 1,3 ; 0 = aucun)' 'Numbers to install (e.g. 1,3; 0 = none)') '0' }
     if ($null -eq $selection) { break }
     $selection = $selection -replace '\s',''
@@ -643,7 +645,7 @@ Dire (Texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 5.
 # Trois extensions verifiees sur le marche VS Code le 17 octobre 2026, avec
 # leurs editeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
 # (Microsoft), esbenp.prettier-vscode (Prettier).
-if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce projet ?' 'Would you like to see the suggested project extensions?')) {
+if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce projet ?' 'Would you like to see the suggested project extensions?'))) {
   Dire (Texte '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matieres et confort Markdown.' '  1. Markdown All in One: yzhang.markdown-all-in-one (Yu Zhang): contents and Markdown editing.')
   Dire (Texte '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : controle du JavaScript et du TypeScript.' '  2. ESLint: dbaeumer.vscode-eslint (Microsoft): JavaScript and TypeScript checks.')
   Dire (Texte '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme coherente du code.' '  3. Prettier - Code formatter: esbenp.prettier-vscode (Prettier): consistent code formatting.')
@@ -658,8 +660,15 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
     Dire (Texte 'VS Code n''est pas détecté sur cet ordinateur : l''installation des extensions est ignorée.' 'VS Code was not detected: extension installation skipped.')
     Noter (Texte 'Extensions : ignorees (VS Code absent).' 'Extensions: skipped (VS Code missing).')
   } else {
+    $choixExtensions = @()
+    if ($Interface -and -not $Oui) {
+      $selectionExtensions = Lire-Interface 'MULTI' (Texte 'Quelles extensions installer ?' 'Which extensions should be installed?') @($extensions | ForEach-Object { "$($_.nom) ($($_.id))" })
+      if ($selectionExtensions -match '^[1-3](,[1-3])*$') { $choixExtensions = @($selectionExtensions -split ',' | Select-Object -Unique | ForEach-Object { $extensions[[int]$_-1] }) }
+      if ($choixExtensions.Count -gt 0 -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { $choixExtensions = @() }
+    }
     foreach ($ext in $extensions) {
-      if (Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel) {
+      $accordExtension = if ($Interface) { $choixExtensions -contains $ext } else { Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel }
+      if ($accordExtension) {
         try {
           Executer (Texte "Installation de $($ext.id) avec code --install-extension." "Installing $($ext.id) with code --install-extension.") { & $vscode.Source --install-extension $ext.id }
           if ($Interface -and -not $DryRun) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Extensions installées : $($script:totalEtape)." "Extensions installed: $($script:totalEtape).") }
