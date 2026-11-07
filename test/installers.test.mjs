@@ -30,11 +30,11 @@ test('les intégrations utilisent MULTI uniquement en interface et aucune sélec
   assert.match(chefSh, /\$selection.*\$index/);
 });
 
-test('Clink demande confirmation sauf avec Oui', async () => {
+test('Clink est installé directement, avec ou sans Oui', async () => {
   const { ps1: windows, sh: unix } = await textes();
   const clink = windows.slice(windows.indexOf('function Proposer-Clink'), windows.indexOf("Etape 'clink'"));
-  assert.match(clink, /if \(Confirmer .* -Prerequis\) \{/);
-  assert.ok(clink.indexOf('-Prerequis') < clink.indexOf('& $wingetClink.Source install'));
+  assert.doesNotMatch(clink, /Confirmer/);
+  assert.match(clink, /& \$wingetClink.Source install/);
   assert.doesNotMatch(unix, /clink/i);
 });
 

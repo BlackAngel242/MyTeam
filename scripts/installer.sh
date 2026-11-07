@@ -154,18 +154,16 @@ noter() { RAPPORT="$RAPPORT
  - $1"; }
 
 confirmer() {
-  if [ "${2:-}" = prerequis ] && [ "$OUI" = 1 ] && [ "${ENTREE_FERMEE:-0}" != 1 ]; then return 0; fi
   if [ "${INTERFACE:-0}" = 1 ]; then
     if lire_interface CONFIRM "$1" && [ "$REPONSE_INTERFACE" = o ];then return 0;fi
     etat_etape skip "$(texte Refusé. Declined.)";return 1
   fi
-  if [ "$DRY_RUN" = "1" ] && [ "${2:-}" != prerequis ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
+  if [ "$DRY_RUN" = "1" ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
   if [ "$OUI" = "1" ] && [ "${2:-}" != "individuel" ]; then dire "$(texte "$1 o/n : o (accepte automatiquement)" "$1 y/n : y (automatic)")"; return 0; fi
   while true; do
     printf '%s (%s) : ' "$1" "$(texte o/n y/n)"
     read -r reponse || return 1
     reponse=$(printf '%s' "$reponse" | tr '[:upper:]' '[:lower:]')
-    if [ "${2:-}" = prerequis ] && [ -z "$reponse" ]; then return 1; fi
     case "$reponse" in
       o|oui) [ "${LANGUE:-fr}" = fr ] && return 0 ;;
       y|yes) [ "${LANGUE:-fr}" = en ] && return 0 ;;
@@ -312,7 +310,7 @@ else
   if [ -z "$MAJEURE" ]; then dire "$(texte 'Node.js est absent de cet ordinateur.' 'Node.js is missing from this computer.')"
   else dire "$(texte "Node.js est present mais trop ancien (version majeure $MAJEURE) : il faut la version 22 ou plus." "Node.js is available but too old (major version $MAJEURE): version 22 or later is required.")"; fi
   CMD_NODE=$(commande_node)
-  if [ -n "$CMD_NODE" ] && confirmer "$(texte "Installer Node.js ? Commande : $CMD_NODE" "Install Node.js? Command: $CMD_NODE")" prerequis; then
+  if [ -n "$CMD_NODE" ]; then
     executer "$(texte "Installation de Node.js : $CMD_NODE" "Installing Node.js: $CMD_NODE")" installer_node
     if [ "$DRY_RUN" != "1" ]; then
       MAJEURE=$(version_node_majeure || true)
@@ -329,7 +327,7 @@ else
     fi
   else
     dire "$(texte 'Installez Node 22 ou plus depuis la page officielle : https://nodejs.org/en/download' 'Install Node 22 or later from the official page: https://nodejs.org/en/download')"
-    noter "$(texte 'Node.js : non installé ; le bureau ne peut pas fonctionner sans Node.js.' 'Node.js not installed; the desktop requires Node.js.')"
+    noter "$(texte 'Node.js : non installe (gestionnaire absent).' 'Node.js: not installed (no package manager).')"
   fi
 fi
 NODE_OK=0
@@ -385,7 +383,7 @@ else
   dire "$(texte "Methode d'installation officielle (documentation Herdr) :" "Official installation method (Herdr documentation):")"
   dire "$(texte '  macOS et Linux : curl -fsSL https://herdr.dev/install.sh | sh' '  macOS and Linux: curl -fsSL https://herdr.dev/install.sh | sh')"
   dire "$(texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')"
-  if confirmer "$(texte 'Installer Herdr ? Commande : curl -fsSL https://herdr.dev/install.sh | sh' 'Install Herdr? Command: curl -fsSL https://herdr.dev/install.sh | sh')" prerequis; then
+  if true; then
     executer "$(texte 'Installation de Herdr (script officiel https://herdr.dev/install.sh).' 'Installing Herdr (official script https://herdr.dev/install.sh).')" installer_outil herdr
     if [ "$DRY_RUN" != "1" ]; then
       HERDR_TROUVE=$(chercher_herdr || true)

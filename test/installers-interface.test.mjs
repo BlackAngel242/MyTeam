@@ -231,17 +231,17 @@ if(process.platform==='win32') {
     if(result==='present')assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
     if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
   });
-  test('Clink sans Oui : refus sans appel winget',async t=>{
+  test('Clink sans Oui : installation directe sans confirmation',async t=>{
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
-    function FakeWinget { [Console]::WriteLine('CALL:winget') }
+    function FakeWinget { [Console]::WriteLine('CALL:winget'); $global:LASTEXITCODE=0 }
     Etape clink;Proposer-Clink;Terminer-Interface
     `,{answer:()=> 'n'});
     assert.equal(data.code,0,data.errors);
-    assert.match(data.output,/@@CONFIRM .*winget install --id chrisant996.Clink/);
-    assert.doesNotMatch(data.output,/CALL:winget/);
-    assert.ok(data.records.includes('@@DONE clink\tskip\tRefusé.'));
+    assert.doesNotMatch(data.output,/@@CONFIRM/);
+    assert.match(data.output,/CALL:winget/);
+    assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\tok\t')));
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{

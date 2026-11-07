@@ -165,21 +165,19 @@ function Simuler([string]$texte) {
 }
 function Noter([string]$texte) { $script:rapport += $texte }
 
-function Confirmer([string]$question, [switch]$Individuel, [switch]$Prerequis) {
-  if ($Prerequis -and $Oui -and -not $script:entreeFermee) { return $true }
+function Confirmer([string]$question, [switch]$Individuel) {
   if ($Interface) {
     $saisie = Lire-Interface 'CONFIRM' $question @()
     $accord = $null -ne $saisie -and $saisie.Trim().ToLowerInvariant() -eq 'o'
     if (-not $accord) { Etat-Etape 'skip' (Texte 'Refusé.' 'Declined.') }
     return $accord
   }
-  if ($DryRun -and -not $Prerequis) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
+  if ($DryRun) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
   if ($Oui -and -not $Individuel) { Dire (Texte "$question o/n : o (accepte automatiquement)" "$question y/n : y (automatic)"); return $true }
   while ($true) {
     $saisie = Read-Host (Texte "$question (o/n)" "$question (y/n)")
     if ($null -eq $saisie) { return $false }
     $reponse = $saisie.Trim().ToLower()
-    if ($Prerequis -and $reponse -eq '') { return $false }
     if (($Lang -eq 'en' -and $reponse -match '^(y|yes)$') -or ($Lang -ne 'en' -and $reponse -match '^(o|oui)$')) { return $true }
     if ($reponse -match '^(n|non|no)$') { return $false }
     Dire (Texte 'Répondez par o ou par n.' 'Please answer y or n.')
@@ -248,7 +246,7 @@ if ($null -ne $majeur -and $majeur -ge 22) {
 } else {
   if ($null -eq $majeur) { Dire (Texte 'Node.js est absent de cet ordinateur.' 'Node.js is missing from this computer.') }
   else { Dire (Texte "Node.js est présent mais trop ancien (version majeure $majeur) : il faut la version 22 ou plus." "Node.js is available but too old (major version $majeur): version 22 or later is required.") }
-  if (Confirmer (Texte 'Installer Node.js ? Commande : winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements' 'Install Node.js? Command: winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements') -Prerequis) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' 'Installing Node.js with winget (OpenJS.NodeJS.LTS package).') {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
@@ -287,7 +285,7 @@ function Proposer-Clink {
   $wingetClink = @(Get-Command winget -CommandType Application -ErrorAction SilentlyContinue)[0]
   if (-not $wingetClink) { Etat-Etape 'skip' (Texte 'Winget absent.' 'Winget missing.'); Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
   Dire (Texte 'Clink ajoute couleurs, complétion et historique à cmd.exe.' 'Clink adds colors, completion and history to cmd.exe.')
-  if (Confirmer (Texte 'Installer Clink ? Commande : winget install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements' 'Install Clink? Command: winget install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements') -Prerequis) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
@@ -298,10 +296,10 @@ function Proposer-Clink {
         else { Dire (Texte 'Clink : installation à vérifier dans un nouveau terminal.' 'Clink: check installation in a new terminal.'); Noter (Texte 'Clink : à vérifier.' 'Clink: check required.') }
       }
     } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.'); Noter (Texte 'Clink : installation échouée.' 'Clink: installation failed.') }
-  } else { Dire (Texte 'Clink ne sera pas installé ; cmd.exe reste utilisable sans ses améliorations.' 'Clink will not be installed; cmd.exe remains usable without its enhancements.') }
+  }
 }
 Etape 'clink'
-Dire (Texte '--- Clink : confort du terminal (facultatif) ---' '--- Clink: terminal comfort (optional) ---')
+Dire (Texte '--- Clink : confort du terminal ---' '--- Clink: terminal comfort ---')
 Proposer-Clink
 Etape 'herdr'
 Dire (Texte '--- 2. Herdr (gestionnaire de terminaux) ---' '--- 2. Herdr (terminal manager) ---')
@@ -345,7 +343,7 @@ if ($herdrTrouve) {
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire (Texte '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd' '  If an antivirus blocks it: curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd')
   Dire (Texte '  Puis documentation complète : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
-  if (Confirmer (Texte 'Installer Herdr ? Commande : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"' 'Install Herdr? Command: powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"') -Prerequis) {
+  if ($true) {
     try {
       Executer (Texte 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' 'Installing Herdr (official script https://herdr.dev/install.ps1).') {
         powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"
