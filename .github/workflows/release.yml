@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write # publication npm de confiance (OIDC), sans jeton stocké
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
@@ -39,6 +40,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org
       - name: Prepare version and notes
         run: |
           node --input-type=module <<'JS'
@@ -70,6 +72,13 @@ jobs:
         run: |
           gh release edit "v$VERSION" --draft=false --latest
           gh release view "v$VERSION" --json isDraft,tagName --jq 'if .isDraft then error("Release is still a draft") else .tagName end'
+      - name: Publish npm package (npx @drsmoke/myteam)
+        run: |
+          if npm view "@drsmoke/myteam@$VERSION" version >/dev/null 2>&1; then
+            echo "@drsmoke/myteam@$VERSION est déjà sur npm : rien à publier."
+          else
+            npm publish --provenance
+          fi
       - name: Verify Pages download link
         run: |
           for attempt in {1..24}; do
