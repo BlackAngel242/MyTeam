@@ -199,14 +199,16 @@ function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
   const p = peindre(couleur);
   // Appelle `surTouche` pour chaque touche jusqu'à ce qu'il renvoie une valeur différente de undefined.
   const ecouter = surTouche => new Promise(resolve => {
+    const fin = () => { entree.removeListener('data', surDonnees); resolve(null); };
     const surDonnees = buf => {
       for (const cle of touches(buf.toString('utf8'))) {
         if (cle === 'ctrl-c') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
         const r = surTouche(cle);
-        if (r !== undefined) { entree.removeListener('data', surDonnees); resolve(r); return; }
+        if (r !== undefined) { entree.removeListener('data', surDonnees); entree.removeListener('end', fin); resolve(r); return; }
       }
     };
     entree.on('data', surDonnees);
+    if (entree.readableEnded) fin(); else entree.once('end', fin);
   });
   return {
     async confirm(texte) {
@@ -243,9 +245,9 @@ function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
         rafraichir();
       };
       dessiner();
-      await ecouter(cle => { s = naviguerMulti(s, cle, options.length); if (s.valide) return true; dessiner(); });
+      const valide = await ecouter(cle => { s = naviguerMulti(s, cle, options.length); if (s.valide) return true; dessiner(); });
       etat.question = null; rafraichir();
-      return s.coches.join(',');
+      return valide === null ? null : s.coches.join(',');
     },
     async input(texte, defaut) {
       etat.question = { texte, invite: (fr ? 'Saisie puis Entrée' : 'Type then Enter') + (defaut ? ` [${defaut}]` : '') };

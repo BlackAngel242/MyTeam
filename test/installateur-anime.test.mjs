@@ -214,6 +214,21 @@ console.log('@@END ok');`);
   assert.match((await lancer(script, [])).texte, /valeur=EOF/);
 });
 
+test('MULTI animé : EOF annule même une case cochée', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tTest');
+console.log('@@MULTI a\\tChoix ?\\tA\\tB');
+const r = await lire();
+console.log('@@DONE a\\tok\\tvaleur=' + r);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', ferme = false;
+  sortie.on('data', d => { texte += d; if (!ferme && texte.includes('Choix ?')) { ferme = true; setImmediate(() => { entree.write(' '); entree.end(); }); } });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false });
+  assert.equal(r.ok, true);
+  assert.match(texte, /valeur=EOF/);
+});
+
 test('mode animé : un choix aux flèches et une confirmation renvoient le bon numéro à l\'installeur', async t => {
   const script = await fausseInstallation(t, `
 console.log('@@PLAN a\tAgents');
