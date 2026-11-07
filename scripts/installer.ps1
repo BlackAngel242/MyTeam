@@ -184,20 +184,23 @@ function Confirmer([string]$question, [switch]$Individuel) {
   }
 }
 
-function Executer([string]$description, [scriptblock]$action) {
+function Executer([string]$description, [scriptblock]$action, [switch]$Winget) {
   if ($Interface -and $script:entreeFermee) { Etat-Etape 'skip' (Texte 'Entrée fermée.' 'Input closed.'); Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
   $global:LASTEXITCODE = 0
   try {
     & $action
-    if ($LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
+    # Codes officiels winget : aucune mise à jour applicable ou paquet déjà installé.
+    $dejaInstalle = $Winget -and $LASTEXITCODE -in @(-1978335189, -1978335135)
+    if ($null -eq $LASTEXITCODE -or ($LASTEXITCODE -ne 0 -and -not $dejaInstalle)) { throw (Texte "La commande a échoué." 'The command failed.') }
+    if ($dejaInstalle) { Dire (Texte 'Déjà installé.' 'Already installed.') }
     if ($Interface) {
-      $fait = switch ($script:etape) {
+      $fait = if ($dejaInstalle) { Texte 'Déjà installé.' 'Already installed.' } else { switch ($script:etape) {
         'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
         'tests' { Texte 'Vérifications réussies.' 'Checks passed.' }
         default { Texte 'Installation confirmée.' 'Installation confirmed.' }
-      }
+      } }
       Etat-Etape 'ok' $fait
     }
   } catch { if ($Interface) { Etat-Etape 'fail' (Texte 'Commande en échec.' 'Command failed.') }; throw }
@@ -250,7 +253,7 @@ if ($null -ne $majeur -and $majeur -ge 22) {
     try {
       Executer (Texte 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' 'Installing Node.js with winget (OpenJS.NodeJS.LTS package).') {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
         $majeur = Lire-VersionNode
@@ -277,8 +280,17 @@ if ($Interface -and $script:etatEtape -eq 'ok') {
 Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
+function Tester-Clink {
+  foreach ($nom in @('clink','clink_x64')) {
+    if (@(Get-Command $nom -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) { return $true }
+  }
+  foreach ($dossier in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+    if ($dossier -and (Test-Path -LiteralPath (Join-Path $dossier 'clink\clink_x64.exe') -PathType Leaf)) { return $true }
+  }
+  return $false
+}
 function Proposer-Clink {
-  if (@(Get-Command clink -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) {
+  if (Tester-Clink) {
     Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
     Dire (Texte 'Clink est déjà présent.' 'Clink is already available.'); return
   }
@@ -289,10 +301,10 @@ function Proposer-Clink {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
-        if (Get-Command clink -CommandType Application -ErrorAction SilentlyContinue) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
+        if (Tester-Clink) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
         else { Dire (Texte 'Clink : installation à vérifier dans un nouveau terminal.' 'Clink: check installation in a new terminal.'); Noter (Texte 'Clink : à vérifier.' 'Clink: check required.') }
       }
     } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.'); Noter (Texte 'Clink : installation échouée.' 'Clink: installation failed.') }
@@ -626,7 +638,7 @@ if ($manquants.Count -gt 0) {
     if (@($indices | Where-Object { $_ -gt $manquants.Count }).Count -gt 0) { Dire (Texte 'Numéro hors liste.' 'Number out of range.'); continue }
     $choisis = @($indices | ForEach-Object { $manquants[$_-1] })
     Dire (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')")
-    if (-not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    if (-not $Interface -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
     if ($Interface) { $script:detailsEtape += (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')") }
     foreach ($outil in $choisis) {
       if (-not $outil.Installation) { Dire 'https://antigravity.google/docs/cli/getting-started'; Noter 'Antigravity : installation manuelle requise.'; continue }
@@ -667,7 +679,6 @@ if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions propo
     if ($Interface -and -not $Oui) {
       $selectionExtensions = Lire-Interface 'MULTI' (Texte 'Quelles extensions installer ?' 'Which extensions should be installed?') @($extensions | ForEach-Object { "$($_.nom) ($($_.id))" })
       if ($selectionExtensions -match '^[1-3](,[1-3])*$') { $choixExtensions = @($selectionExtensions -split ',' | Select-Object -Unique | ForEach-Object { $extensions[[int]$_-1] }) }
-      if ($choixExtensions.Count -gt 0 -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { $choixExtensions = @() }
       if ($choixExtensions.Count -gt 0) { $script:detailsEtape += (Texte "Sélection : $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')" "Selection: $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')") }
     }
     foreach ($ext in $extensions) {

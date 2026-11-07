@@ -457,14 +457,13 @@ detecter_outils() {
 
 proposer_agents() {
   [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne lance aucun agent.' 'The --oui option never starts an agent.')"; return 0; }
-  declare -gA PANNEAUX_TENTES
   local outils=() panneaux=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4') type pane i=0 j choix liste
   liste=$(detecter_outils)
   [ -n "$liste" ] || { dire "$(texte 'Aucun outil compatible détecté : aucun agent lancé.' 'No supported tools detected: no agent started.')"; return 0; }
   while read -r type; do outils+=("$type"); done <<< "$liste"
   while read -r pane; do panneaux+=("$pane"); done <<< "$1"
   for pane in "${panneaux[@]}"; do
-    if [ "${PANNEAUX_TENTES[$pane]:-0}" = 1 ]; then i=$((i+1)); continue; fi
+    case " ${PANNEAUX_TENTES:-} " in *" $pane "*) i=$((i+1)); continue ;; esac
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Choix et confirmation de l'outil pour ${noms[$i]}." "Choose and confirm a tool for ${noms[$i]}.")"; i=$((i+1)); continue; fi
     if [ "${INTERFACE:-0}" = 1 ]; then
       question="$(texte "Outil pour le panneau ${noms[$i]}" "Tool for pane ${noms[$i]}")"
@@ -479,7 +478,7 @@ proposer_agents() {
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
       type="${outils[$((10#$choix-1))]}"
       if command -v "$type" >/dev/null 2>&1 && confirmer "$(texte "Lancer $type dans le panneau ${noms[$i]} ?" "Start $type in pane ${noms[$i]}?")" individuel; then
-        PANNEAUX_TENTES["$pane"]=1
+        PANNEAUX_TENTES="${PANNEAUX_TENTES:+$PANNEAUX_TENTES }$pane"
         local agent_nom
         if [ "$i" -eq 0 ]; then agent_nom=chef; else agent_nom="agent$((i+1))"; fi
         if "$HERDR_TROUVE" agent start "$agent_nom" --kind "$type" --pane "$pane" >/dev/null; then
@@ -652,7 +651,7 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
     noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
     dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
-    if { [ "$INTERFACE" = 1 ] || [ "$DRY_RUN" != 1 ]; } && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if [ "$INTERFACE" != 1 ] && [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
     if [ "$INTERFACE" = 1 ]; then DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_choisis[*]}"; fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
@@ -697,16 +696,15 @@ if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensi
   else
     extensions_selection=''
     if [ "$INTERFACE" = 1 ] && [ "$OUI" != 1 ]; then
-      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
+      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier - Code formatter (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
         extensions_selection=",$REPONSE_INTERFACE,"
-        if ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then extensions_selection=''; fi
       fi
     fi
     if [ "$INTERFACE" = 1 ] && [ -n "$extensions_selection" ]; then
       noms_extensions=()
       [[ "$extensions_selection" == *",1,"* ]] && noms_extensions+=('Markdown All in One')
       [[ "$extensions_selection" == *",2,"* ]] && noms_extensions+=('ESLint')
-      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier')
+      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier - Code formatter')
       DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_extensions[*]}"
     fi
     ext_index=0

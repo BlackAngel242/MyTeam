@@ -58,7 +58,7 @@ async function run(t,platform,options={}) {
     function FakeWinget {throw 'winget exécuté pendant la simulation'}
     & ${literal(join(path,'scripts/installer.ps1'))} -DryRun -Lang ${options.lang??'fr'} -Port 4317 ${options.classic?'':'-Interface'} ${options.yes?'-Oui':''} -HerdrChemin ${literal(join(path,options.badHerdr?'scripts/installer.ps1':'herdr.exe'))}
     exit $LASTEXITCODE`);
-    return {...await dialogue(t,ps,['-NoProfile','-File',script],options),path};
+    return {...await dialogue(t,ps,['-NoProfile','-File',script],{...options,env:{'ProgramFiles(x86)':path,ProgramFiles:path,...options.env}}),path};
   }
   await writeFile(script,`command() {
     if [ "$1" = -v ];then case "$2" in herdr) printf '%s\\n' '${path.replaceAll('\\','/')}/herdr';return 0;;code) printf 'fake_code\\n';return 0;;node|claude|codex|opencode|gemini) [ '${options.present?'1':'0'}' = 1 ];return $?;;*)return 1;;esac;fi
@@ -91,7 +91,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     assert.match(done,/Raccourci choisi : bureau/);
     assert.match(done,/Port 4317/);
   });
-  test(`A2 ${platform} : sélections groupées et confirmation`,async t=>{
+  test(`A4 ${platform} : valider une sélection groupée suffit`,async t=>{
     let outils=0, extensions=0;
     const result=await run(t,platform,{answer:line=>{
       if(line.startsWith('@@MULTI') && /outils IA|AI tools/.test(line)) return outils++ ? '' : '1';
@@ -102,7 +102,10 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     }});
     assert.equal(result.code,0,result.errors);
     assert.ok(outils > 0 && extensions > 0);
-    assert.equal(result.records.filter(x=>x.startsWith('@@CONFIRM') && x.includes('Installer cette sélection')).length,2);
+    assert.ok(result.records.some(x=>x.startsWith('@@MULTI') && x.includes('Prettier - Code formatter (esbenp.prettier-vscode)')));
+    assert.equal(result.records.filter(x=>x.startsWith('@@CONFIRM') && x.includes('Installer cette sélection')).length,0);
+    assert.ok(result.records.some(x=>x.startsWith('@@DONE outils\t') && x.includes('Claude Code')));
+    assert.ok(result.records.some(x=>x.startsWith('@@DONE extensions\t') && x.includes('ESLint')===false && x.includes('Prettier')));
   });
   test(`J1 ${platform} : dialogue complet, oui/non, choix et saisie sans installation`,async t=>{
     const result=await run(t,platform,{answer:line=>{
@@ -177,7 +180,7 @@ async function functions(t,platform,names,body,options={}) {
   await writeFile(script,definitions+'\n'+body);
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
-const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Proposer-Clink'];
+const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Tester-Clink','Proposer-Clink'];
 test('L C-CD-16 bash : port invalide refusé clairement avant toute étape',async t=>{
   for(const [port,lang] of [['999999999999999999999999999999','fr'],['65536','en'],['1023','fr'],['','fr'],['4317; commande','en']]) {
     const data=await run(t,'bash',{port,lang,eof:true});
@@ -210,6 +213,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L
 });
 if(process.platform==='win32') {
   for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, prérequis automatique avec Oui`,async t=>{
+    const path=await fixture(t);
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction)
@@ -221,7 +225,7 @@ if(process.platform==='win32') {
     function WrongWinget {throw 'deuxième exécutable interdit'}
     Etape clink;Proposer-Clink;Terminer-Interface
     if($script:echecInterface){exit 1}
-    `,{answer:()=>result==='refus'?'n':'o'});
+    `,{answer:()=>result==='refus'?'n':'o',env:{'ProgramFiles(x86)':path,ProgramFiles:path}});
     assert.equal(data.code,result==='fail'?1:0,data.errors);
     assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
     if(['ok','fail','refus'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
@@ -232,16 +236,62 @@ if(process.platform==='win32') {
     if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
   });
   test('Clink sans Oui : installation directe sans confirmation',async t=>{
+    const path=await fixture(t);
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
     function FakeWinget { [Console]::WriteLine('CALL:winget'); $global:LASTEXITCODE=0 }
     Etape clink;Proposer-Clink;Terminer-Interface
-    `,{answer:()=> 'n'});
+    `,{answer:()=> 'n',env:{'ProgramFiles(x86)':path,ProgramFiles:path}});
     assert.equal(data.code,0,data.errors);
     assert.doesNotMatch(data.output,/@@CONFIRM/);
     assert.match(data.output,/CALL:winget/);
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\tok\t')));
+  });
+  for(const variable of ['ProgramFiles(x86)','ProgramFiles'])test(`Clink installé dans ${variable} sans PATH ne relance pas winget`,async t=>{
+    const path=await fixture(t), present=join(path,'present'), absent=join(path,'absent');
+    await mkdir(join(present,'clink'),{recursive:true}); await writeFile(join(present,'clink','clink_x64.exe'),'factice');
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    \${env:ProgramFiles(x86)}=${literal(variable==='ProgramFiles(x86)'?present:absent)}; $env:ProgramFiles=${literal(variable==='ProgramFiles'?present:absent)}
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){throw 'winget ne doit pas être consulté'} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    `,{env:{'ProgramFiles(x86)':absent,ProgramFiles:absent,[variable]:present},eof:true});
+    assert.equal(data.code,0,data.errors);
+    assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
+    assert.doesNotMatch(data.output,/CALL:/);
+  });
+  test('Clink détecté par clink_x64 dans le PATH ne relance pas winget',async t=>{
+    const path=await fixture(t);
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'clink_x64'){return @{Source='FakeClink'}}; if($Name -eq 'winget'){throw 'winget interdit'} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
+    assert.equal(data.code,0,data.errors);
+    assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
+  });
+  for(const [code,ok] of [[-1978335189,true],[-1978335135,true],[8,false],[-1978298325,false]]) test(`Clink : code winget ${code} ${ok?'accepté':'refusé'}`,async t=>{
+    const path=await fixture(t);
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
+    function FakeWinget { $global:LASTEXITCODE=${code} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
+    assert.equal(data.code,ok?0:1,data.errors);
+    assert.ok(data.records.some(x=>x.startsWith(`@@DONE clink\t${ok?'ok':'fail'}\t`)));
+    if(ok) assert.match(data.output,/Déjà installé\./);
+  });
+  test('un code winget ne masque pas l’échec d’une autre commande',async t=>{
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    Etape tests;try { Executer 'npm test' { $global:LASTEXITCODE=-1978335189 } } catch {};Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `,{eof:true});
+    assert.equal(data.code,1,data.errors);
+    assert.ok(data.records.some(x=>x.startsWith('@@DONE tests\tfail\t')));
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
