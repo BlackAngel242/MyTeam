@@ -560,7 +560,7 @@ function Proposer-Chef([string]$DossierPersonnel = $HOME) {
     if ($accord) {
       if ($DryRun) { Simuler "herdr integration install $integration" }
       else {
-        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson }
+        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson; if ($Interface) { $script:detailsEtape += "Intégration : $type" } }
         catch { Dire (Texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.") }
       }
     }

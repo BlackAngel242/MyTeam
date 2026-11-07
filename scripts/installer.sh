@@ -585,7 +585,9 @@ proposer_chef() {
     elif confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then accord=1; fi
     if [ "$accord" = 1 ]; then
       if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
-      elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
+      elif "$HERDR_TROUVE" integration install "$integration"; then
+        etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
+        if [ "${INTERFACE:-0}" = 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }$(texte Intégration Integration) : $type"; fi
       else etat_etape fail;dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
     fi
   done
