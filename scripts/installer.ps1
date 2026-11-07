@@ -173,7 +173,7 @@ function Confirmer([string]$question, [switch]$Individuel, [switch]$Prerequis) {
     if (-not $accord) { Etat-Etape 'skip' (Texte 'Refusé.' 'Declined.') }
     return $accord
   }
-  if ($DryRun) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
+  if ($DryRun -and -not $Prerequis) { Simuler (Texte "$question o/n : o (simule)" "$question y/n : y (preview)"); return $true }
   if ($Oui -and -not $Individuel) { Dire (Texte "$question o/n : o (accepte automatiquement)" "$question y/n : y (automatic)"); return $true }
   while ($true) {
     $saisie = Read-Host (Texte "$question (o/n)" "$question (y/n)")

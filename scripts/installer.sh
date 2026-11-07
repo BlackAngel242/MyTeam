@@ -159,7 +159,7 @@ confirmer() {
     if lire_interface CONFIRM "$1" && [ "$REPONSE_INTERFACE" = o ];then return 0;fi
     etat_etape skip "$(texte Refusé. Declined.)";return 1
   fi
-  if [ "$DRY_RUN" = "1" ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
+  if [ "$DRY_RUN" = "1" ] && [ "${2:-}" != prerequis ]; then simuler "$(texte "$1 o/n : o (simule)" "$1 y/n : y (preview)")"; return 0; fi
   if [ "$OUI" = "1" ] && [ "${2:-}" != "individuel" ]; then dire "$(texte "$1 o/n : o (accepte automatiquement)" "$1 y/n : y (automatic)")"; return 0; fi
   while true; do
     printf '%s (%s) : ' "$1" "$(texte o/n y/n)"
