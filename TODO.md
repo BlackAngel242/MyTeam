@@ -117,3 +117,12 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 - [x] Inventaire de ce qui sort de la machine (PR #31, `20349f8`).
 - [x] Masque incomplet : `AIza`, `github_pat_`, racines `workspace`, `data`, `srv` (voir `docs/revue-opencode-final.md`). Vérifié le 23 octobre 2026 sur `main` : ces six exemples sont masqués (`clé [secret masqué]`, `jeton [secret masqué]`, `fichier [chemin masqué]`), et `https://exemple.test/api/todos` reste intact.
 - [x] Règle de secours de l'écran alignée sur le serveur : sans drapeau `boss`, aucun chef n'est affiché (`public/app.js`, `bossOf`).
+
+## Version 0.6.1 : lancer MyTeam
+
+- [x] Commande `myteam`, session Herdr `myteam`, raccourci MyTeam avec icône, vrai dossier dans le message final.
+- [x] Relais de mission quand un agent atteint sa limite d'usage.
+- [x] Site : commande `npx @drsmoke/myteam` et bouton Copier.
+- [ ] Essai réel dans le Windows Sandbox : raccourci et icône, commande `myteam` dans PowerShell et cmd, navigateur, session `myteam`.
+- [ ] CI Linux verte, relecture, PR, release.
+- [ ] À étudier : proposer la mise à jour des outils d'IA déjà installés ; ajouter au catalogue ceux qui ont une installation officielle (omp, qwen…).

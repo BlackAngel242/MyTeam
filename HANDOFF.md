@@ -2,6 +2,12 @@
 
 Lire `AGENTS.md`, `LESSONS.md`, `PRODUCT.md`, `DESIGN.md`, `TODO.md` et le plan courant avant toute modification.
 
+## État au 7 novembre 2026 (0.6.1 en préparation)
+
+- `main` est en 0.6.0 « Èṣù », publiée sur npm (`@drsmoke/myteam`, publication de confiance) et en release GitHub.
+- 0.6.1 : commande `myteam` (`bin/myteam`, `bin/myteam.cmd`, `scripts/myteam.mjs`), session Herdr `myteam` (`sessionHerdr` dans `src/herdr.mjs`, lue aussi par `src/terminal-status.mjs`), route `GET /api/identite` pour reconnaître un bureau déjà ouvert, raccourci MyTeam automatique avec `public/myteam.ico`, relais de quota (`src/relais-quota.mjs`, appelé par `reprendreApresPause` dans `server.mjs`).
+- Ne jamais lancer d'essai Herdr dans la session par défaut : utiliser une session d'essai (`herdr --session myteam-essai …`), puis `herdr session stop` et `herdr session delete`.
+
 ## État au 29 octobre 2026
 
 La démonstration publique est en maintenance jusqu'au 27 novembre 2026, avec compte à rebours. Pour la remettre en ligne : copier l'ancienne page (`maintenance/site-index-original.html`) à la place de `site/index.html`. Pendant la maintenance, les contrôles de la page d'accueil portent sur l'archive.

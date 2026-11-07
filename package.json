@@ -1,6 +1,6 @@
 {
   "name": "@drsmoke/myteam",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Tour de contrôle locale en pixel art pour surveiller et piloter ses équipes d'agents d'IA sous Herdr.",
   "license": "MIT",
   "repository": {

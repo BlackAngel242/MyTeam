@@ -53,7 +53,7 @@ If Node.js 22+ and npm are already installed, this command copies the latest npm
 npx @drsmoke/myteam
 ```
 
-The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. Running the command again on an existing installation reopens its assistant without overwriting anything; use the in-app updater to change versions. Options: `--lang fr|en`, `--simple` (plain text, no animation), `--demo` (demo, copies and installs nothing), `--dry-run`. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
+The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. Running the command again on an existing installation reopens its assistant without overwriting anything; use the in-app updater to change versions. Options: `--lang fr|en`, `--simple` (plain text, no animation), `--demo` (demo, copies and installs nothing), `--dry-run`. The assistant creates the MyTeam desktop shortcut and the `myteam` command. If Node.js is missing, use the ZIP installer below.
 
 This method is the easiest and does not require any developer tools upfront (no Git, no compilers).
 
@@ -61,7 +61,7 @@ This method is the easiest and does not require any developer tools upfront (no 
 2. **Extract the archive**: Extract all files into your preferred directory (for instance in your personal folder or documents).
 3. **Run installation**:
    - **On Windows**: double-click `Installer MyTeam.bat`.
-     * **Animated mode**: If Node.js (v22 or higher) is already present on your machine, the animated installer starts immediately inside your terminal (pixel art gradient banner, live task list updating in real time with color badges and spinner, optional Clink step for cmd.exe convenience, and interactive prompts).
+     * **Animated mode**: If Node.js (v22 or higher) is already present on your machine, the animated installer starts immediately inside your terminal (pixel art gradient banner, live task list updating in real time with color badges and spinner, Clink step for cmd.exe convenience, and interactive prompts).
      * **Text fallback if Node.js is missing**: If Node.js is missing or older than v22, the `.bat` file automatically switches to the secure text installer via PowerShell to offer Node.js installation via winget. Once Node.js is installed, simply close and rerun `Installer MyTeam.bat` to enjoy the animated setup experience.
    - **On macOS or Linux**: open a terminal in the extracted folder and run:
      ```bash
@@ -112,7 +112,7 @@ The setup scripts `scripts/installer.ps1` and `scripts/installer.sh`, as well as
 | `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms AI tools, integrations, agent launches, extensions, or kit setup (individual y/n confirmation remains mandatory). Prerequisites (Node.js, Herdr, Clink) are installed anyway, with or without this flag. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
 | `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | (PATH auto-detection) | Points to the full Herdr executable path if missing from PATH. |
-| `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Skips offering to create the desktop launcher shortcut. |
+| `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Does not create the MyTeam desktop shortcut. |
 | `-Lang fr` or `-Lang en` | `--lang fr` or `--lang en` | `--lang fr` or `--lang en` | Forces installer message language (defaults to your operating system UI language). |
 | `-Interface` | `--interface` | (enabled by default) | Structured protocol mode for communication with the animated installer. |
 | (not applicable) | (not applicable) | `--demo` | Interactive demonstration of terminal animations without installing anything or using network. |
@@ -123,10 +123,10 @@ The script can be rerun safely at any time: it inspects your system and only set
 
 ### Detailed Step-by-Step Flow
 
-1. **Node.js (version 22 or higher)**: The script checks Node.js presence. If missing or older than v22, it offers installation via your system package manager (`winget` on Windows, `brew` on macOS, or distribution package on Linux).
-2. **Clink (terminal comfort on Windows)**: On Windows with winget available, the script offers optional installation of Clink (`chrisant996.Clink`), adding persistent command history, advanced completion, and user-friendly colors to cmd.exe. Skipped automatically if Clink is already installed or if winget is missing.
-3. **Herdr (terminal manager)**: Searches for the Herdr executable in PATH or under `~/.herdr`. If not found, it prints official Herdr instructions and offers interactive setup. If Herdr is installed outside PATH, it records `BUREAU_HERDR_PATH`.
-4. **4-pane Herdr workspace in 2×2 grid**: Creates a "Bureau des agents" workspace (`herdr workspace create`), splits right (`herdr pane split --direction right`), and splits each column downward (`--direction down`) to produce a balanced 2×2 grid. The four panes are automatically renamed `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`. If parsing fails, verified manual commands are displayed.
+1. **Node.js (version 22 or higher)**: The script checks Node.js presence. If missing or older than v22, it installs it directly, without a question, via your system package manager (`winget` on Windows, `brew` on macOS, or distribution package on Linux).
+2. **Clink (terminal comfort on Windows)**: On Windows with winget available, the script installs Clink (`chrisant996.Clink`) directly, adding persistent command history, advanced completion, and user-friendly colors to cmd.exe. Skipped if Clink is already installed (even outside PATH) or if winget is missing.
+3. **Herdr (terminal manager)**: Searches for the Herdr executable in PATH or under `~/.herdr`. If not found, it installs it directly with the official Herdr method. If Herdr is installed outside PATH, it records `BUREAU_HERDR_PATH`.
+4. **4-pane Herdr workspace in 2×2 grid, in the dedicated `myteam` session**: every Herdr command of the installer targets `--session myteam`; the default session is never touched. The session is started without a window if needed, and an existing "Bureau des agents" workspace is reused instead of creating a second one. Creates a "Bureau des agents" workspace (`herdr workspace create`), splits right (`herdr pane split --direction right`), and splits each column downward (`--direction down`) to produce a balanced 2×2 grid. The four panes are automatically renamed `Chef`, `Agent 2`, `Agent 3`, and `Agent 4`. If parsing fails, verified manual commands are displayed.
 5. **Detection of 24 tools and optional agent launch**: The script checks your environment for all 24 Herdr-supported tools: `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`. For each pane (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), it displays a numbered list of detected tools and offers to launch the selected tool via `herdr agent start <name> --kind <tool> --pane <id>` after individual "y/n" confirmation.
 6. **Official Herdr integrations**: For each detected tool supporting Herdr integrations (`pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`), the script offers to execute `herdr integration install <tool>`. The script explicitly warns that this alters the tool configuration and requests confirmation.
 7. **Lead commands and orientation prompt**:
@@ -138,11 +138,9 @@ The script can be rerun safely at any time: it inspects your system and only set
 8. **Recommended VS Code extensions** (optional): If VS Code (`code`) is detected, the script offers to install verified extensions one by one: `yzhang.markdown-all-in-one` (Markdown All in One), `dbaeumer.vscode-eslint` (ESLint), and `esbenp.prettier-vscode` (Prettier).
 9. **Port configuration and Desktop shortcut**:
    - Configures the HTTP listening port (default: 4317), saved into user environment variables.
-   - Offers 3 desktop shortcut choices:
-     * "Desktop" (default): starts the office in your browser (runs `node server.mjs` and opens the local URL).
-     * "Herdr": starts Herdr directly.
-     * "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
-   - In the animated assistant these choices appear in this order, with "Desktop" preselected. In text mode, input stays numbered: 1 = Herdr, 2 = Desktop (default), 3 = Herdr and desktop.
+   - `myteam` command: on Windows, MyTeam's `bin` folder is added to the user PATH (never the machine PATH); on Linux and macOS, the `~/.local/bin/myteam` link is created (an existing file that is not MyTeam's is kept). Open a new terminal to use it.
+   - **MyTeam** desktop shortcut created without a question, with the MyTeam icon (`public/myteam.ico` on Windows, `myteam.desktop` and `public/myteam.png` on Linux; no automatic shortcut on macOS). It runs the `myteam` command. MyTeam's old "Ouvrir le bureau" shortcut is replaced; a shortcut that does not belong to MyTeam is never touched.
+   - `BUREAU_HERDR_SESSION=myteam` is saved so the desk reads the same session.
 10. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
 11. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
 
@@ -150,7 +148,7 @@ The script can be rerun safely at any time: it inspects your system and only set
 
 Once setup completes, follow this 6-step walkthrough to start your working session:
 
-1. **Open the shortcut**: Double-click the "Herdr and desktop" shortcut created on your Desktop (or open Herdr in a terminal, then start `node server.mjs`).
+1. **Start MyTeam**: double-click the MyTeam desktop shortcut, or type `myteam` in a new terminal (PowerShell, cmd or bash). The desk starts and opens in your default browser at `http://127.0.0.1:<port>`, then Herdr opens in the `myteam` session. A desk already running is reused; if another program uses the port, the command says so and stops. `myteam --bureau` opens only the desk, `myteam --help` shows the help.
 2. **See the 4 panes in a 2×2 grid and the animated office in your browser**: Verify that Herdr displays your 4 terminals (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) and open `http://127.0.0.1:4317` in your browser then choose and confirm the project before opening its office.
 3. **The lead reads CHEF.md**: In the lead pane (or via the Desk tab in the web office), the lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by to coordinate.
 4. **First delegation**: Send an initial prompt to the lead from the office form (Ctrl+Enter). When the lead delegates a task in their log, observe their physical round across the office scene: they step away from the Direction desk and walk over to hand the folder to their teammate.
@@ -235,7 +233,7 @@ The installer script writes these configuration variables to user environment se
 - **Node.js missing or outdated**: `node --version` must show v22 or higher. Install from https://nodejs.org/en/download, open a new terminal, and re-run the setup script.
 - **Antivirus blocks setup command**: This can occur with direct download-and-execute commands (`irm ... | iex`). Official Herdr and Claude Code docs provide alternative workflows with downloaded `install.cmd` files.
 - **Tests fail**: Verify your Node.js version, then re-run `npm test`.
-- **Complete uninstallation**: Delete the software directory and any desktop shortcut; separately remove the system data folder `MyTeam` if you want to erase private execution states, and unset `BUREAU_PORT` and `BUREAU_HERDR_PATH`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
+- **Complete uninstallation**: Delete the software directory and any desktop shortcut; separately remove the system data folder `MyTeam` if you want to erase private execution states, unset `BUREAU_PORT`, `BUREAU_HERDR_PATH` and `BUREAU_HERDR_SESSION`, and remove MyTeam's `bin` folder from the user PATH (or the `~/.local/bin/myteam` link). Delete the Herdr session with `herdr session delete myteam`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
 
 ## Verified Sources
 

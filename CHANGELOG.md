@@ -4,6 +4,23 @@
 
 Toutes les évolutions notables du projet Bureau des agents sont consignées dans ce fichier. Le format s'inspire des principes de Keep a Changelog.
 
+## [0.6.1] - 2026-11-07 · « Èṣù »
+
+### Lancer MyTeam
+
+- Nouvelle commande `myteam` (PowerShell, cmd, bash) : elle démarre le bureau, l'ouvre dans le navigateur par défaut à l'adresse `http://127.0.0.1:<port>`, puis ouvre Herdr dans sa session dédiée `myteam`. Un bureau déjà ouvert est réutilisé ; un autre programme sur le port est signalé, jamais arrêté. `myteam --bureau` ouvre seulement le bureau.
+- L'installateur crée sans question le raccourci **MyTeam** sur le Bureau, avec l'icône de MyTeam, et rend la commande `myteam` disponible (PATH utilisateur sous Windows, `~/.local/bin/myteam` sous Linux et macOS). La question « Que doit lancer le raccourci ? » disparaît.
+- Herdr : l'installateur et le bureau travaillent dans la session `myteam` (`BUREAU_HERDR_SESSION`) ; la session par défaut n'est plus touchée. Relancer l'installateur réutilise l'espace « Bureau des agents » existant.
+- Le message de fin affiche le vrai dossier d'installation au lieu de « [dossier] ».
+
+### Relais en cas de limite d'usage
+
+- Quand un agent atteint sa limite d'usage, sa mission en cours est confiée une seule fois, par la file d'attente, à un agent disponible du même projet (jamais le chef, un autre outil d'abord). À son retour, l'agent apprend que sa mission a été reprise. Désactivable avec `BUREAU_RELAIS_QUOTA=0`.
+
+### Site
+
+- La page d'accueil affiche la commande `npx @drsmoke/myteam` avec un bouton **Copier** au lieu du bouton de téléchargement ; l'archive reste accessible par la dernière release.
+
 ## [0.6.0] - 2026-11-07 · « Èṣù »
 
 ### Installation en une commande

@@ -23,13 +23,19 @@ Execution memory (queue, direction, autonomy and configuration) is private, sepa
 
 Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
 
-One-command install (Node.js 22+): `npx @drsmoke/myteam` — or [download MyTeam 0.6.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.6.0/MyTeam-0.6.0.zip).
+## Install
+
+```sh
+npx @drsmoke/myteam
+```
+
+Node.js 22 or later is required. The wizard installs the prerequisites (Herdr, and Clink on Windows), detects your AI tools, offers to install the missing ones and creates the **MyTeam** desktop shortcut. Then type `myteam` in a new terminal (or double-click the shortcut): Herdr opens in its dedicated `myteam` session and the desk opens in your browser. Without Node.js: [latest release archive](https://github.com/BlackAngel242/MyTeam/releases/latest), whose installer also sets up Node.js.
 
 ## Built-in updates
 
 From an official ZIP installation, MyTeam announces a new release in the desk. Use **Update and restart** in Help: the app downloads and verifies the SHA-256, stages the files and restarts automatically. The previous installation is kept as a backup alongside the app, while project data remains in the system data directory. Git checkouts must be updated with Git. Upgrading from 0.5.0 requires one manual download.
 
-## Quick start
+## From source
 
 ```bash
 git clone https://github.com/BlackAngel242/MyTeam.git && cd MyTeam

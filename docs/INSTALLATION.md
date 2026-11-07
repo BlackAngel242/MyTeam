@@ -53,7 +53,7 @@ Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la de
 npx @drsmoke/myteam
 ```
 
-La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, ne copie ni n'installe rien), `--dry-run`. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
+La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, ne copie ni n'installe rien), `--dry-run`. L'assistant crée le raccourci MyTeam sur le Bureau et la commande `myteam`. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
 
 Cette méthode est la plus simple et ne nécessite aucun outil de développement préalable (ni Git, ni compilateur).
 
@@ -61,7 +61,7 @@ Cette méthode est la plus simple et ne nécessite aucun outil de développement
 2. **Décompresser l'archive** : Extrayez l'ensemble des fichiers dans le dossier de votre choix (par exemple dans votre dossier personnel ou vos documents).
 3. **Lancer l'installation** :
    - **Sous Windows** : double-cliquez sur `Installer MyTeam.bat`.
-     * **Mode animé** : Si Node.js (version 22 ou plus) est déjà présent sur votre machine, l'installeur animé démarre directement dans le terminal (bannière en pixel art dégradé, liste de tâches actualisée en temps réel avec pastilles colorées et spinner, étape Clink facultative pour le confort de cmd.exe, et questions interactives).
+     * **Mode animé** : Si Node.js (version 22 ou plus) est déjà présent sur votre machine, l'installeur animé démarre directement dans le terminal (bannière en pixel art dégradé, liste de tâches actualisée en temps réel avec pastilles colorées et spinner, étape Clink pour le confort de cmd.exe, et questions interactives).
      * **Repli texte si Node.js est absent** : Si Node.js est absent ou dans une version antérieure à 22, le fichier `.bat` bascule automatiquement sur l'installeur texte sécurisé via PowerShell pour vous proposer d'installer Node.js via winget. Une fois l'installation de Node.js validée, fermez et relancez simplement `Installer MyTeam.bat` pour profiter de l'expérience animée.
    - **Sous macOS ou Linux** : ouvrez un terminal dans le dossier décompressé et exécutez :
      ```bash
@@ -112,7 +112,7 @@ Les scripts `scripts/installer.ps1` et `scripts/installer.sh`, ainsi que le lanc
 | `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les outils d'IA, intégrations, lancements d'agents, extensions ni le kit (un accord individuel o/n reste obligatoire). Les prérequis (Node.js, Herdr, Clink) s'installent de toute façon, avec ou sans cette option. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Spécifie le port HTTP du bureau (défaut : 4317 ou variable `BUREAU_PORT` existante). |
 | `-HerdrChemin chemin\herdr.exe` | `--herdr-chemin chemin/herdr` | (détection PATH) | Indique l'emplacement complet de l'exécutable Herdr s'il est absent du PATH. |
-| `-SansRaccourci` | `--sans-raccourci` | (non transmis) | Ne propose pas la création du raccourci sur le Bureau. |
+| `-SansRaccourci` | `--sans-raccourci` | (non transmis) | Ne crée pas le raccourci MyTeam sur le Bureau. |
 | `-Lang fr` ou `-Lang en` | `--lang fr` ou `--lang en` | `--lang fr` ou `--lang en` | Force la langue des messages du script (par défaut, détecte la langue du système). |
 | `-Interface` | `--interface` | (activé par défaut) | Mode protocole de communication avec l'installeur animé. |
 | (non applicable) | (non applicable) | `--demo` | Démonstration interactive de l'animation sans rien installer ni réseau. |
@@ -123,10 +123,10 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 
 ### Déroulement détaillé des étapes
 
-1. **Node.js (version 22 ou plus)** : Le script vérifie la présence de Node.js. S'il est absent ou trop ancien, il propose son installation via le gestionnaire officiel de votre système (`winget` sous Windows, `brew` sous macOS, ou paquet de votre distribution Linux).
-2. **Clink (confort du terminal sous Windows)** : Si vous êtes sous Windows et que winget est disponible, le script propose l'installation facultative de Clink (`chrisant996.Clink`) qui ajoute l'historique persistant des commandes, l'autocomplétion avancée et des couleurs conviviales à cmd.exe. L'étape est sautée automatiquement si Clink est déjà présent ou si winget est indisponible.
-3. **Herdr (gestionnaire de terminaux)** : Recherche de l'exécutable dans le PATH ou dans `~/.herdr`. S'il est introuvable, le script affiche la méthode officielle Herdr et propose son installation interactive. Si Herdr est installé hors du PATH, il enregistre `BUREAU_HERDR_PATH`.
-4. **Espace Herdr à 4 panneaux en grille 2×2** : Création d'un espace « Bureau des agents » (`herdr workspace create`), découpage latéral à droite (`herdr pane split --direction right`) puis découpage vers le bas dans chaque colonne (`--direction down`) pour former une grille 2×2 parfaite. Les quatre panneaux sont automatiquement renommés `Chef`, `Agent 2`, `Agent 3` et `Agent 4`. En cas d'aléa ou de format non standard, la procédure manuelle exacte est affichée.
+1. **Node.js (version 22 ou plus)** : Le script vérifie la présence de Node.js. S'il est absent ou trop ancien, il l'installe directement, sans question, via le gestionnaire officiel de votre système (`winget` sous Windows, `brew` sous macOS, ou paquet de votre distribution Linux).
+2. **Clink (confort du terminal sous Windows)** : Si vous êtes sous Windows et que winget est disponible, le script installe directement Clink (`chrisant996.Clink`), qui ajoute l'historique persistant des commandes, l'autocomplétion avancée et des couleurs conviviales à cmd.exe. L'étape est sautée si Clink est déjà présent (même hors du PATH) ou si winget est indisponible.
+3. **Herdr (gestionnaire de terminaux)** : Recherche de l'exécutable dans le PATH ou dans `~/.herdr`. S'il est introuvable, le script l'installe directement par la méthode officielle Herdr. Si Herdr est installé hors du PATH, il enregistre `BUREAU_HERDR_PATH`.
+4. **Espace Herdr à 4 panneaux en grille 2×2, dans la session dédiée `myteam`** : toutes les commandes Herdr de l'installateur visent `--session myteam` ; la session par défaut n'est jamais touchée. La session est démarrée sans fenêtre si besoin, et un espace « Bureau des agents » déjà présent est réutilisé au lieu d'en créer un second. Création d'un espace « Bureau des agents » (`herdr workspace create`), découpage latéral à droite (`herdr pane split --direction right`) puis découpage vers le bas dans chaque colonne (`--direction down`) pour former une grille 2×2 parfaite. Les quatre panneaux sont automatiquement renommés `Chef`, `Agent 2`, `Agent 3` et `Agent 4`. En cas d'aléa ou de format non standard, la procédure manuelle exacte est affichée.
 5. **Détection des 24 outils et lancement facultatif** : Le script teste dans votre environnement les 24 outils gérés par Herdr : `pi`, `claude`, `codex`, `gemini`, `cursor`, `devin`, `agy`, `cline`, `omp`, `mastracode`, `opencode`, `copilot`, `kimi`, `kiro`, `droid`, `amp`, `grok`, `hermes`, `kilo`, `qodercli`, `qwen`, `letta`, `maki`, `muse`. Pour chaque panneau (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`), il affiche la liste numérotée des outils trouvés et propose de lancer l'outil choisi via `herdr agent start <nom> --kind <outil> --pane <id>` après confirmation individuelle « o/n ».
 6. **Intégrations Herdr officielles** : Pour chaque outil détecté compatible avec les intégrations Herdr (`pi`, `omp`, `claude`, `codex`, `copilot`, `devin`, `droid`, `kimi`, `opencode`, `kilo`, `hermes`, `qodercli`, `qwen`, `letta`, `cursor`, `mastracode`, `antigravity-cli`, `grok`), le script propose d'exécuter `herdr integration install <outil>`. Le script rappelle explicitement que cette action modifie la configuration de l'outil et demande votre confirmation.
 7. **Commandes du chef et consigne d'orientation** :
@@ -138,11 +138,9 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 8. **Extensions utiles pour VS Code** (facultatif) : Si VS Code (`code`) est détecté, le script propose d'installer une par une trois extensions vérifiées : `yzhang.markdown-all-in-one` (Markdown All in One), `dbaeumer.vscode-eslint` (ESLint) et `esbenp.prettier-vscode` (Prettier).
 9. **Configuration du port et raccourci sur le Bureau** :
    - Choix du port HTTP d'écoute (4317 par défaut), sauvegardé dans les variables d'environnement utilisateur.
-   - Création du raccourci sur le Bureau avec 3 options au choix :
-     * « Le bureau » (choix par défaut) : lance le bureau dans votre navigateur (démarre `node server.mjs` puis ouvre l'adresse locale).
-     * « Herdr » : lance Herdr directement.
-     * « Herdr et bureau » : lance Herdr dans un terminal visible, démarre le serveur du bureau et ouvre votre navigateur.
-   - Dans l'assistant animé, ces choix apparaissent dans cet ordre, « Le bureau » présélectionné. En mode texte (sans animation), la saisie reste numérotée : 1 = Herdr, 2 = Le bureau (défaut), 3 = Herdr et bureau.
+   - Commande `myteam` : sous Windows, le dossier `bin` de MyTeam est ajouté au PATH utilisateur (jamais au PATH machine) ; sous Linux et macOS, le lien `~/.local/bin/myteam` est créé (un fichier existant qui n'est pas celui de MyTeam est conservé). Ouvrez un nouveau terminal pour l'utiliser.
+   - Raccourci **MyTeam** créé sans question sur le Bureau, avec l'icône de MyTeam (`public/myteam.ico` sous Windows, `myteam.desktop` et `public/myteam.png` sous Linux ; pas de raccourci automatique sous macOS). Il lance la commande `myteam`. L'ancien raccourci « Ouvrir le bureau » de MyTeam est remplacé ; un raccourci qui n'appartient pas à MyTeam n'est jamais touché.
+   - La variable `BUREAU_HERDR_SESSION=myteam` est enregistrée pour que le bureau lise la même session.
 10. **Tests du projet** : Si Node.js est validé, proposition de lancer `npm test` et `npm run check` pour attester du bon fonctionnement.
 11. **Étape kit d'équipe** : Proposition d'initialiser le kit de collaboration (`node scripts/init-kit.mjs <dossier> --lang <fr|en>`) dans un répertoire de projet pour y déployer les règles `AGENTS.md`, les consignes `CHEF.md`, la mémoire `LESSONS.md` et les fichiers de suivi.
 
@@ -150,7 +148,7 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 
 Une fois l'installation terminée, suivez ce parcours pour démarrer votre session :
 
-1. **Ouvrir le raccourci** : Double-cliquez sur le raccourci « Herdr et bureau » créé sur votre Bureau (ou lancez `herdr` dans un terminal puis démarrez `node server.mjs`).
+1. **Lancer MyTeam** : double-cliquez sur le raccourci MyTeam du Bureau, ou tapez `myteam` dans un nouveau terminal (PowerShell, cmd ou bash). Le bureau démarre et s'ouvre dans votre navigateur par défaut à l'adresse `http://127.0.0.1:<port>`, puis Herdr s'ouvre dans la session `myteam`. Si le bureau tourne déjà, il est réutilisé ; si un autre programme occupe le port, la commande le signale et s'arrête. `myteam --bureau` ouvre seulement le bureau, `myteam --help` affiche l'aide.
 2. **Voir les 4 panneaux dans la grille 2×2 et le bureau animé dans le navigateur** : Vérifiez que Herdr affiche vos 4 terminaux (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) et ouvrez l'adresse `http://127.0.0.1:4317` dans votre navigateur puis choisissez et validez le projet avant d’ouvrir son bureau.
 3. **Le chef lit CHEF.md** : Dans le panneau du chef (ou via l'onglet Poste du bureau Web), le chef prend connaissance de `CHEF.md` et `AGENTS.md`, interroge ses équipiers avec la commande `herdr agent list` et se tient prêt à coordonner le travail.
 4. **Première délégation** : Envoyez une mission au chef depuis le formulaire du bureau (Ctrl+Entrée). Dès que le chef confie une tâche dans son journal, observez sa tournée physique dans la scène : il quitte son bureau Direction pour aller déposer le dossier sur le poste de son collaborateur.
@@ -235,7 +233,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 - **Node.js absent ou trop vieux** : `node --version` doit indiquer v22 ou plus. Téléchargez la dernière version LTS sur https://nodejs.org/en/download puis relancez le script d'installation.
 - **Un antivirus bloque une commande d'installation** : certaines protections bloquent les commandes sans fichier de type `irm ... | iex`. Utilisez la variante par fichier `install.cmd` proposée par Herdr et Claude Code.
 - **Les tests échouent** : assurez-vous de la version de Node.js, puis relancez `npm test`.
-- **Désinstallation complète** : supprimez le dossier du logiciel et le raccourci sur votre Bureau, puis, si vous souhaitez effacer les états privés, le dossier de données système `MyTeam` séparément, et retirez les variables d'environnement `BUREAU_PORT` et `BUREAU_HERDR_PATH`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
+- **Désinstallation complète** : supprimez le dossier du logiciel et le raccourci sur votre Bureau, puis, si vous souhaitez effacer les états privés, le dossier de données système `MyTeam` séparément, retirez les variables d'environnement `BUREAU_PORT`, `BUREAU_HERDR_PATH` et `BUREAU_HERDR_SESSION`, et le dossier `bin` de MyTeam du PATH utilisateur (ou le lien `~/.local/bin/myteam`). La session Herdr se supprime avec `herdr session delete myteam`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
 
 ## Sources vérifiées
 

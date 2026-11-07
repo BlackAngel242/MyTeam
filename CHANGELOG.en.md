@@ -4,6 +4,23 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
+## [0.6.1] - 2026-11-07 · "Èṣù"
+
+### Starting MyTeam
+
+- New `myteam` command (PowerShell, cmd, bash): it starts the desk, opens it in the default browser at `http://127.0.0.1:<port>`, then opens Herdr in its dedicated `myteam` session. A desk already running is reused; another program on the port is reported, never stopped. `myteam --bureau` opens only the desk.
+- The installer creates the **MyTeam** desktop shortcut without asking, with the MyTeam icon, and makes the `myteam` command available (user PATH on Windows, `~/.local/bin/myteam` on Linux and macOS). The "What should the shortcut start?" question is gone.
+- Herdr: the installer and the desk work in the `myteam` session (`BUREAU_HERDR_SESSION`); the default session is no longer touched. Running the installer again reuses the existing "Bureau des agents" workspace.
+- The final message shows the real installation folder instead of "[dossier]".
+
+### Hand-off when a usage limit is hit
+
+- When an agent hits its usage limit, its current mission is handed once, through the queue, to an available agent of the same project (never the lead, another tool first). When it comes back, the agent is told its mission was taken over. Disable with `BUREAU_RELAIS_QUOTA=0`.
+
+### Website
+
+- The home page shows the `npx @drsmoke/myteam` command with a **Copy** button instead of the download button; the archive stays available from the latest release.
+
 ## [0.6.0] - 2026-11-07 · "Èṣù"
 
 ### One-command installation
