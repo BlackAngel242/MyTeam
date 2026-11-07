@@ -7,6 +7,7 @@ import {join,dirname,posix,win32} from 'node:path';
 import {randomBytes,timingSafeEqual,createHash} from 'node:crypto';
 import {createHerdr,sessionHerdr} from './src/herdr.mjs';
 import {VERSION} from './src/version.mjs';
+import {choisirSuppleant,derniereMission,messageRelais,messageRetour,relaisActif} from './src/relais-quota.mjs';
 import {readClaudeActivity} from './src/claude-activity.mjs';
 import {readAgentActivity,normalizeActivity} from './src/agent-activity.mjs';
 import {standardPlaces,recentFiles,listDir,transfer,resolveInside,FileError} from './src/files.mjs';
@@ -89,18 +90,36 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
   // Reprise après une pause de quota, pour tous les agents : une minute après l'heure de retour, une consigne
   // courte passe par la file (donc jamais en crise, jamais à un agent occupé) pour vérifier qu'il est de nouveau là.
   // Une seule fois par pause ; en mémoire seulement, un redémarrage du serveur n'en rattrape aucune.
-  const enPause=new Map(),reprises=new Map();
+  // relayes : agent en pause → suppléant qui a reçu sa mission (src/relais-quota.mjs).
+  const enPause=new Map(),reprises=new Map(),relayes=new Map();
   async function reprendreApresPause(liste) {
     const maintenant=now();
+    const entrees=[];
     for(const agent of liste) {
       let limite;
       try {limite=await limiteQuota(agent.id,liste);} catch {continue;}
       if(limite.limitReached) {
         const retour=limite.resetsAt?Date.parse(limite.resetsAt):null;
+        if(!enPause.has(agent.id)) entrees.push({agent,retour:limite.resetsAt??null});
         enPause.set(agent.id,Number.isFinite(retour)?retour:null);
       } else if(enPause.has(agent.id)) {
         const retour=enPause.get(agent.id);enPause.delete(agent.id);
         reprises.set(agent.id,{nom:agent.name,echeance:(retour??maintenant)+60000,retour});
+      }
+    }
+    // Entrée en pause : la mission est confiée une seule fois à un suppléant disponible, s'il y en a un.
+    if(relaisActif()&&!salleDeCrise.isActive()) {
+      const chefId=equipe.effective(liste).boss?.id??null;
+      for(const {agent,retour} of entrees) {
+        if(relayes.has(agent.id)) continue;
+        const suppleant=choisirSuppleant(agent,liste,{enPause:id=>enPause.has(id),chefId});
+        if(!suppleant) continue;
+        const mission=derniereMission(fileAttente.list().items,agent.id,{now:maintenant});
+        const message=messageRelais({source:agent,retour,mission});
+        try {
+          await fileAttente.enqueue({id:suppleant.id,message,priority:'haute',requestKey:createHash('sha256').update(`relais:${agent.id}:${retour??maintenant}`).digest('hex')},{allowRepeatedMessage:true});
+          relayes.set(agent.id,suppleant.name);
+        } catch { /* File refusée : pas de relais, la reprise classique reste prévue au retour. */ }
       }
     }
     for(const [id,reprise] of [...reprises]) {
@@ -109,7 +128,8 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
       if(maintenant<reprise.echeance||salleDeCrise.isActive()||!['idle','done'].includes(agent.status)) continue;
       reprises.delete(id);
       const heure=reprise.retour?new Date(reprise.retour).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):null;
-      const message=`Chef : ta limite d'usage est levée${heure?` (retour annoncé à ${heure})`:''}. Réponds « dispo » en une ligne, puis reprends ta mission en cours (git status, puis la mission du chef) sans rien refaire de déjà commité. Économise ton quota.`;
+      const suppleant=relayes.get(id);relayes.delete(id);
+      const message=suppleant?messageRetour({heure,suppleant}):`Chef : ta limite d'usage est levée${heure?` (retour annoncé à ${heure})`:''}. Réponds « dispo » en une ligne, puis reprends ta mission en cours (git status, puis la mission du chef) sans rien refaire de déjà commité. Économise ton quota.`;
       await fileAttente.enqueue({id,message,priority:'normale',requestKey:createHash('sha256').update(`reprise:${id}:${reprise.echeance}`).digest('hex')},{allowRepeatedMessage:true}).catch(()=>{});
     }
   }
