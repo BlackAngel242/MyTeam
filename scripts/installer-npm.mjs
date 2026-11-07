@@ -30,10 +30,9 @@ async function installer() {
     throw new Error(`Copie interrompue dans ${cible} : ${erreur.message}. Vérifiez ce dossier avant de réessayer.`);
   }
   console.log(`MyTeam installé dans ${cible}`);
-  const windows = process.platform === 'win32';
-  const r = spawnSync(windows ? 'powershell.exe' : 'bash', windows
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', join(cible, 'scripts', 'installer.ps1')]
-    : [join(cible, 'scripts', 'installer.sh')], { cwd: cible, stdio: 'inherit', windowsHide: false });
+  // Même assistant animé que « Installer MyTeam.bat » (flèches, liste de tâches en direct) ; options transmises : --lang, --simple, --port.
+  const r = spawnSync(process.execPath, [join(cible, 'scripts', 'installateur-anime.mjs'), ...process.argv.slice(2)],
+    { cwd: cible, stdio: 'inherit', windowsHide: false });
   if (r.error) throw r.error;
   process.exitCode = r.status ?? 1;
 }

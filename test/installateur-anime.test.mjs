@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin } from '../scripts/installateur-anime.mjs';
+import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin, touches, naviguerChoix, naviguerConfirmation } from '../scripts/installateur-anime.mjs';
 
 test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@PLAN node\tNode.js 22 ou plus'), { type: 'plan', id: 'node', libelle: 'Node.js 22 ou plus' });
@@ -166,4 +166,49 @@ test('le bilan dit démonstration ou simulation, jamais installation, et signale
   assert.match(bilanFin({ ...etatInitial({ lang: 'en', simulation: true }), fin: { ok: true } }), /Dry run finished: nothing was installed/);
   assert.equal(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: true } }), 'Installation terminée.');
   assert.match(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: false } }), /arrêtée/);
+});
+
+test('touches : flèches, Entrée, effacement et Ctrl+C sont reconnus', () => {
+  assert.deepEqual(touches('\x1b[A\x1b[B\x1bOC\x1b[D\r1\u007f\u0003'), ['haut', 'bas', 'droite', 'gauche', 'entree', '1', 'effacer', 'ctrl-c']);
+});
+
+test('choix au clavier : flèches avec bouclage, numéros à deux chiffres, Entrée valide', () => {
+  let s = { curseur: 1, chiffres: '' };
+  s = naviguerChoix(s, 'haut', 13); assert.equal(s.curseur, 13);
+  s = naviguerChoix(s, 'bas', 13); assert.equal(s.curseur, 1);
+  s = naviguerChoix(s, 'bas', 13); assert.equal(s.curseur, 2);
+  s = naviguerChoix(s, '1', 13); assert.equal(s.curseur, 1);
+  s = naviguerChoix(s, '2', 13); assert.equal(s.curseur, 12, 'les options 10 et plus restent accessibles');
+  s = naviguerChoix(s, '7', 13); assert.equal(s.curseur, 7, 'un numéro hors liste repart du dernier chiffre');
+  s = naviguerChoix(s, 'x', 13); assert.equal(s.valide, undefined);
+  assert.equal(naviguerChoix(s, 'entree', 13).valide, 7);
+});
+
+test('confirmation au clavier : non par défaut, ←/→ basculent, o et n répondent tout de suite', () => {
+  assert.deepEqual(naviguerConfirmation(false, 'entree'), { oui: false, valide: true });
+  assert.deepEqual(naviguerConfirmation(false, 'gauche'), { oui: true });
+  assert.deepEqual(naviguerConfirmation(true, 'n'), { oui: false, valide: true });
+  assert.deepEqual(naviguerConfirmation(false, 'o'), { oui: true, valide: true });
+});
+
+test('mode animé : un choix aux flèches et une confirmation renvoient le bon numéro à l\'installeur', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\tAgents');
+console.log('@@STEP a');
+console.log('@@CHOICE q1\tOutil ?\tIgnorer\tpi\tclaude\tcodex\ta5\ta6\ta7\ta8\ta9\ta10\ta11\ta12\tqwen');
+const c = await lire();
+console.log('@@CONFIRM q2\tLancer ?');
+const o = await lire();
+console.log('@@DONE a\tok\tchoix=' + c + ' oui=' + o);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', etape = 0;
+  sortie.on('data', d => {
+    texte += d;
+    if (etape === 0 && texte.includes('Outil ?')) { etape = 1; setImmediate(() => entree.write('\x1b[A\r')); }
+    else if (etape === 1 && texte.includes('Lancer ?')) { etape = 2; setImmediate(() => entree.write('\x1b[D\r')); }
+  });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' });
+  assert.equal(r.ok, true);
+  assert.match(texte, /choix=13 oui=o/, 'flèche haut depuis la 1re option = dernière option (13), puis ← = Oui');
 });

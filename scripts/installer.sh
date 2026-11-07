@@ -464,9 +464,14 @@ proposer_agents() {
   while read -r pane; do panneaux+=("$pane"); done <<< "$1"
   for pane in "${panneaux[@]}"; do
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Choix et confirmation de l'outil pour ${noms[$i]}." "Choose and confirm a tool for ${noms[$i]}.")"; i=$((i+1)); continue; fi
-    dire "$(texte "Panneau ${noms[$i]} : outils détectés" "Pane ${noms[$i]}: detected tools")"
-    for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
-    choisir "$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')" "$(texte Ignorer Skip)" "${outils[@]}" || REPONSE_INTERFACE=0
+    if [ "${INTERFACE:-0}" = 1 ]; then
+      question="$(texte "Outil pour le panneau ${noms[$i]}" "Tool for pane ${noms[$i]}")"
+    else
+      dire "$(texte "Panneau ${noms[$i]} : outils détectés" "Pane ${noms[$i]}: detected tools")"
+      for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
+      question="$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')"
+    fi
+    choisir "$question" "$(texte Ignorer Skip)" "${outils[@]}" || REPONSE_INTERFACE=0
     choix="$REPONSE_INTERFACE"
     if [ "${INTERFACE:-0}" = 1 ] && [[ "$choix" =~ ^[0-9]{1,2}$ ]]; then choix=$((10#$choix-1));fi
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then

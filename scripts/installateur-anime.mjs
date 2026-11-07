@@ -153,30 +153,78 @@ function sortieSimple(flux) {
 }
 
 // --- questions ------------------------------------------------------------------------------------
-function questionsClavier(entree, etat, rafraichir, lang) {
+// Découpe ce que le terminal envoie en touches : flèches (ESC [ A…D ou ESC O A…D) ou caractères isolés.
+export function touches(texte) {
+  const noms = { A: 'haut', B: 'bas', C: 'droite', D: 'gauche' };
+  const sortie = [];
+  for (let i = 0; i < texte.length; i++) {
+    const fleche = /^\x1b[[O]([ABCD])/.exec(texte.slice(i));
+    if (fleche) { sortie.push(noms[fleche[1]]); i += 2; continue; }
+    const ch = texte[i];
+    sortie.push(ch === '\r' || ch === '\n' ? 'entree' : ch === '\u0003' ? 'ctrl-c' : ch === '\u007f' || ch === '\b' ? 'effacer' : ch);
+  }
+  return sortie;
+}
+// Sélection d'une option (1 à n) : flèches ↑↓ (avec bouclage), j/k, numéro direct (plusieurs chiffres possibles), Entrée valide.
+export function naviguerChoix({ curseur, chiffres = '' }, cle, n) {
+  if (cle === 'haut' || cle === 'k') return { curseur: curseur > 1 ? curseur - 1 : n, chiffres: '' };
+  if (cle === 'bas' || cle === 'j') return { curseur: curseur < n ? curseur + 1 : 1, chiffres: '' };
+  if (cle === 'entree') return { curseur, chiffres: '', valide: curseur };
+  if (/^[0-9]$/.test(cle)) {
+    const essai = chiffres + cle;
+    if (Number(essai) >= 1 && Number(essai) <= n) return { curseur: Number(essai), chiffres: essai };
+    if (Number(cle) >= 1 && Number(cle) <= n) return { curseur: Number(cle), chiffres: cle };
+    return { curseur, chiffres: '' };
+  }
+  return { curseur, chiffres };
+}
+// Oui/non : ←→ (ou ↑↓) basculent, o/y = oui immédiat, n = non immédiat, Entrée valide la sélection (non par défaut).
+export function naviguerConfirmation(oui, cle) {
+  if (['gauche', 'droite', 'haut', 'bas'].includes(cle)) return { oui: !oui };
+  if (/^[oOyY]$/.test(cle)) return { oui: true, valide: true };
+  if (/^[nN]$/.test(cle)) return { oui: false, valide: true };
+  if (cle === 'entree') return { oui, valide: true };
+  return { oui };
+}
+function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
   const fr = lang !== 'en';
-  const touche = (acceptes) => new Promise(resolve => {
+  const p = peindre(couleur);
+  // Appelle `surTouche` pour chaque touche jusqu'à ce qu'il renvoie une valeur différente de undefined.
+  const ecouter = surTouche => new Promise(resolve => {
     const surDonnees = buf => {
-      const s = buf.toString('utf8');
-      if (s === '\u0003') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
-      let t;
-      for (const ch of s) { t = acceptes(ch); if (t !== undefined) break; }
-      if (t !== undefined) { entree.removeListener('data', surDonnees); resolve(t); }
+      for (const cle of touches(buf.toString('utf8'))) {
+        if (cle === 'ctrl-c') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
+        const r = surTouche(cle);
+        if (r !== undefined) { entree.removeListener('data', surDonnees); resolve(r); return; }
+      }
     };
     entree.on('data', surDonnees);
   });
   return {
     async confirm(texte) {
-      etat.question = { texte, invite: fr ? 'o = oui · n ou Entrée = non' : 'y = yes · n or Enter = no' };
-      rafraichir();
-      const oui = await touche(s => (/^[oOyY]$/.test(s) ? true : /^[nN\r\n]$/.test(s) ? false : undefined));
+      let oui = false;
+      const dessiner = () => {
+        const bouton = (actif, libelle) => actif ? p.menthe('●') + ' ' + libelle : p.gris('○ ' + libelle);
+        etat.question = { texte, lignes: [bouton(oui, fr ? 'Oui' : 'Yes') + p.gris(' / ') + bouton(!oui, fr ? 'Non' : 'No')], invite: p.gris(fr ? '←/→ pour changer · Entrée pour valider · o / n' : '←/→ to change · Enter to confirm · y / n') };
+        rafraichir();
+      };
+      dessiner();
+      const r = await ecouter(cle => { const s = naviguerConfirmation(oui, cle); oui = s.oui; if (s.valide) return oui; dessiner(); });
       etat.question = null; rafraichir();
-      return oui;
+      return r;
     },
     async choice(texte, options) {
-      etat.question = { texte, lignes: options.map((o, i) => `${i + 1}. ${o}`), invite: fr ? `Tapez un numéro (1 à ${options.length})` : `Type a number (1 to ${options.length})` };
-      rafraichir();
-      const n = await touche(s => (/^[1-9]$/.test(s) && Number(s) <= options.length ? Number(s) : undefined));
+      let s = { curseur: 1, chiffres: '' };
+      const dessiner = () => {
+        etat.question = {
+          texte,
+          lignes: options.map((o, i) => i + 1 === s.curseur ? p.cyan('❯ ●') + ' ' + p.gras(o) : '  ' + p.gris('○ ') + o + p.gris(`  ${i + 1}`)),
+          invite: p.gris(fr ? '↑/↓ pour choisir · Entrée pour valider · ou tapez le numéro' : '↑/↓ to choose · Enter to confirm · or type the number'),
+        };
+        rafraichir();
+      };
+      dessiner();
+      const n = await ecouter(cle => { s = naviguerChoix(s, cle, options.length); if (s.valide) return s.valide; dessiner(); });
       etat.question = null; rafraichir();
       return n;
     },
@@ -232,6 +280,13 @@ for (const [id, l] of T) {
     console.log('@@DONE herdr' + String.fromCharCode(9) + (r === 'o' ? 'ok' : 'skip') + String.fromCharCode(9) + (r === 'o' ? '' : (fr ? 'refusé' : 'declined')));
     continue;
   }
+  if (id === 'outils') {
+    const outils = [fr ? 'Ignorer' : 'Skip', 'claude', 'codex', 'gemini', 'opencode', 'qwen'];
+    console.log('@@CHOICE chef' + String.fromCharCode(9) + (fr ? 'Démo : outil pour le panneau Chef' : 'Demo: tool for the Lead pane') + String.fromCharCode(9) + outils.join(String.fromCharCode(9)));
+    const n = Number(await lire());
+    console.log('@@DONE outils' + String.fromCharCode(9) + (n > 1 ? 'ok' : 'skip') + String.fromCharCode(9) + (outils[n - 1] ?? ''));
+    continue;
+  }
   console.log('@@DONE ' + id + String.fromCharCode(9) + 'ok' + String.fromCharCode(9));
 }
 console.log('@@END ok');
@@ -257,7 +312,7 @@ export async function executer({ commande, args, sortie = process.stdout, entree
   let rendu, questions, lecteurEntree = null;
   if (anime) {
     rendu = sortieAnimee(sortie, couleur);
-    questions = questionsClavier(entree, etat, () => rendu.maj(), lang);
+    questions = questionsClavier(entree, etat, () => rendu.maj(), lang, couleur);
     if (entree.isTTY) entree.setRawMode(true);
     entree.resume();
   } else {

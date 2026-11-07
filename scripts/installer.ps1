@@ -445,9 +445,13 @@ function Proposer-Agents([string[]]$Panneaux) {
   $noms = @('Chef','Agent 2','Agent 3','Agent 4')
   for ($i=0; $i -lt $Panneaux.Count; $i++) {
     if ($DryRun) { Simuler (Texte "Choix et confirmation de l'outil pour $($noms[$i])." "Choose and confirm a tool for $($noms[$i])."); continue }
-    Dire (Texte "Panneau $($noms[$i]) : outils detectes" "Pane $($noms[$i]): detected tools")
-    for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
-    $choix = Choisir (Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)") (@((Texte 'Ignorer' 'Skip')) + $outils)
+    if ($Interface) { $question = Texte "Outil pour le panneau $($noms[$i])" "Tool for pane $($noms[$i])" }
+    else {
+      Dire (Texte "Panneau $($noms[$i]) : outils detectes" "Pane $($noms[$i]): detected tools")
+      for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
+      $question = Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)"
+    }
+    $choix = Choisir $question (@((Texte 'Ignorer' 'Skip')) + $outils)
     if ($Interface -and $choix -match '^\d+$') { $choix = [string]([int]$choix - 1) }
     if ([string]::IsNullOrWhiteSpace($choix) -or $choix -eq '0') { continue }
     if ($choix -notmatch '^[0-9]{1,2}$' -or [int]$choix -lt 1 -or [int]$choix -gt $outils.Count) { Dire (Texte 'Choix invalide : panneau ignore.' 'Invalid choice: pane skipped.'); continue }
