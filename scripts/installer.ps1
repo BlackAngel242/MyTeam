@@ -277,8 +277,17 @@ if ($Interface -and $script:etatEtape -eq 'ok') {
 Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
+function Tester-Clink {
+  foreach ($nom in @('clink','clink_x64')) {
+    if (@(Get-Command $nom -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) { return $true }
+  }
+  foreach ($dossier in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+    if ($dossier -and (Test-Path -LiteralPath (Join-Path $dossier 'clink\clink_x64.exe') -PathType Leaf)) { return $true }
+  }
+  return $false
+}
 function Proposer-Clink {
-  if (@(Get-Command clink -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) {
+  if (Tester-Clink) {
     Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
     Dire (Texte 'Clink est déjà présent.' 'Clink is already available.'); return
   }
@@ -292,7 +301,7 @@ function Proposer-Clink {
       } | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
-        if (Get-Command clink -CommandType Application -ErrorAction SilentlyContinue) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
+        if (Tester-Clink) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
         else { Dire (Texte 'Clink : installation à vérifier dans un nouveau terminal.' 'Clink: check installation in a new terminal.'); Noter (Texte 'Clink : à vérifier.' 'Clink: check required.') }
       }
     } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.'); Noter (Texte 'Clink : installation échouée.' 'Clink: installation failed.') }

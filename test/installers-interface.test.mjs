@@ -177,7 +177,7 @@ async function functions(t,platform,names,body,options={}) {
   await writeFile(script,definitions+'\n'+body);
   return dialogue(t,bash,['--noprofile','--norc',script.replaceAll('\\','/')],options);
 }
-const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Proposer-Clink'];
+const psFunctions=['Texte','Champ-Interface','Emettre-Interface','Etat-Etape','Fin-Etape','Etape','Terminer-Interface','Lire-Interface','Confirmer','Dire','Simuler','Noter','Executer','Rafraichir-Path','Tester-Clink','Proposer-Clink'];
 test('L C-CD-16 bash : port invalide refusé clairement avant toute étape',async t=>{
   for(const [port,lang] of [['999999999999999999999999999999','fr'],['65536','en'],['1023','fr'],['','fr'],['4317; commande','en']]) {
     const data=await run(t,'bash',{port,lang,eof:true});
@@ -210,6 +210,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`L
 });
 if(process.platform==='win32') {
   for(const result of ['ok','fail','absent','present','refus'])test(`J1 Clink : ${result}, prérequis automatique avec Oui`,async t=>{
+    const path=await fixture(t);
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$true;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction)
@@ -221,7 +222,7 @@ if(process.platform==='win32') {
     function WrongWinget {throw 'deuxième exécutable interdit'}
     Etape clink;Proposer-Clink;Terminer-Interface
     if($script:echecInterface){exit 1}
-    `,{answer:()=>result==='refus'?'n':'o'});
+    `,{answer:()=>result==='refus'?'n':'o',env:{'ProgramFiles(x86)':path,ProgramFiles:path}});
     assert.equal(data.code,result==='fail'?1:0,data.errors);
     assert.equal(data.records.at(-1),'@@END '+(result==='fail'?'fail':'ok'));
     if(['ok','fail','refus'].includes(result))assert.match(data.output,/CALL:install\|--id\|chrisant996.Clink\|-e\|--accept-source-agreements\|--accept-package-agreements/);
@@ -232,16 +233,29 @@ if(process.platform==='win32') {
     if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
   });
   test('Clink sans Oui : installation directe sans confirmation',async t=>{
+    const path=await fixture(t);
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
     function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
     function FakeWinget { [Console]::WriteLine('CALL:winget'); $global:LASTEXITCODE=0 }
     Etape clink;Proposer-Clink;Terminer-Interface
-    `,{answer:()=> 'n'});
+    `,{answer:()=> 'n',env:{'ProgramFiles(x86)':path,ProgramFiles:path}});
     assert.equal(data.code,0,data.errors);
     assert.doesNotMatch(data.output,/@@CONFIRM/);
     assert.match(data.output,/CALL:winget/);
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\tok\t')));
+  });
+  test('Clink installé dans Program Files sans PATH ne relance pas winget',async t=>{
+    const path=await fixture(t);
+    await mkdir(join(path,'clink')); await writeFile(join(path,'clink','clink_x64.exe'),'factice');
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){throw 'winget ne doit pas être consulté'} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
+    assert.equal(data.code,0,data.errors);
+    assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
+    assert.doesNotMatch(data.output,/CALL:/);
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
