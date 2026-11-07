@@ -560,13 +560,25 @@ installer_competence_chef() {
 proposer_chef() {
   [ "$OUI" = 1 ] && { etat_etape skip "$(texte 'Ignoré avec --oui.' 'Skipped with --oui.')";return 0; }
   [ -n "$HERDR_TROUVE" ] || { etat_etape skip "$(texte 'Herdr absent.' 'Herdr missing.')";return 0; }
-  local personnel="${1:-$HOME}" outils=() liste type integration orientation
+  local personnel="${1:-$HOME}" outils=() eligibles=() liste type integration orientation selection='' index=0 accord
   liste=$(detecter_outils)
   if [ -n "$liste" ]; then while read -r type; do outils+=("$type"); done <<< "$liste"; fi
   for type in "${outils[@]}"; do
     integration="$type";[ "$type" = agy ] && integration=antigravity-cli
     case "$integration" in pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|qwen|letta|cursor|mastracode|antigravity-cli|grok) ;; *) continue ;; esac
-    if confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then
+    eligibles+=("$type")
+  done
+  if [ "$INTERFACE" = 1 ] && [ "${#eligibles[@]}" -gt 0 ]; then
+    if lire_interface MULTI "$(texte 'Quelles intégrations Herdr installer ? Elles modifient la configuration des outils sélectionnés.' 'Which Herdr integrations should be installed? They change the configuration of selected tools.')" "${eligibles[@]}"; then
+      [[ "$REPONSE_INTERFACE" =~ ^[0-9]+(,[0-9]+)*$ ]] && selection=",$REPONSE_INTERFACE,"
+    fi
+  fi
+  for type in "${eligibles[@]}"; do
+    index=$((index+1)); integration="$type"; [ "$type" = agy ] && integration=antigravity-cli
+    accord=0
+    if [ "$INTERFACE" = 1 ]; then [[ "$selection" == *",$index,"* ]] && accord=1
+    elif confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then accord=1; fi
+    if [ "$accord" = 1 ]; then
       if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
       elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
       else etat_etape fail;dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi

@@ -539,10 +539,18 @@ function Installer-CompetenceChef([string]$DossierPersonnel) {
 function Proposer-Chef([string]$DossierPersonnel = $HOME) {
   if ($Oui -or -not $herdrTrouve) { if ($Interface) { Etat-Etape 'skip' (Texte 'Non applicable dans ce mode.' 'Not applicable in this mode.') }; return }
   $integrations = @('pi','omp','claude','codex','copilot','devin','droid','kimi','opencode','kilo','hermes','qodercli','qwen','letta','cursor','mastracode','antigravity-cli','grok')
-  foreach ($type in @(Detecter-Outils)) {
+  $outils = @(Detecter-Outils | Where-Object { $(if ($_ -eq 'agy') { 'antigravity-cli' } else { $_ }) -in $integrations })
+  $selection = @()
+  if ($Interface -and $outils.Count -gt 0) {
+    $saisie = Lire-Interface 'MULTI' (Texte 'Quelles intégrations Herdr installer ? Elles modifient la configuration des outils sélectionnés.' 'Which Herdr integrations should be installed? They change the configuration of selected tools.') $outils
+    if ($saisie -match '^\d+(,\d+)*$') { $selection = @($saisie -split ',' | Where-Object { [int]$_ -ge 1 -and [int]$_ -le $outils.Count }) }
+  }
+  $index = 0
+  foreach ($type in $outils) {
+    $index++
     $integration = if ($type -eq 'agy') { 'antigravity-cli' } else { $type }
-    if ($integration -notin $integrations) { continue }
-    if (Confirmer (Texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.") -Individuel) {
+    $accord = if ($Interface) { [string]$index -in $selection } else { Confirmer (Texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.") -Individuel }
+    if ($accord) {
       if ($DryRun) { Simuler "herdr integration install $integration" }
       else {
         try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson }
