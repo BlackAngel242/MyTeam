@@ -41,7 +41,7 @@ Les documents techniques relus peuvent être partagés volontairement. Le kit cr
 
 - **Aucune dépendance npm externe** : Le projet ne contient aucun `node_modules` et ne fait aucun `npm install`.
 - **Aucune collecte de clés ou secrets** : Aucun mot de passe, jeton ou clé API n'est demandé ni manipulé. Chaque IA gère sa propre authentification.
-- **Aucune installation automatique forcée** : L'option `-Oui` / `--oui` ne valide JAMAIS d'installation de logiciel, d'intégration, de lancement d'agent ou de kit d'équipe. Chaque action sensible exige un accord interactif « o/n ».
+- **Aucune installation optionnelle sans accord** : seuls les prérequis manquants — Node.js 22+, Herdr et, sous Windows, Clink — sont installés directement, sans question (winget ou script officiel de Herdr), car le bureau en a besoin. Tout le reste (outils d'IA, intégrations Herdr, lancement d'agents, extensions, kit d'équipe) exige un accord interactif, et l'option `-Oui` / `--oui` ne le donne jamais à votre place.
 - **Aucun écrasement de fichier** : Les scripts ne remplacent jamais vos compétences existantes ni vos fichiers de projet.
 - **Aucun appel réseau extérieur non maîtrisé** : Le serveur écoute exclusivement sur l'interface locale `127.0.0.1`.
 
@@ -109,7 +109,7 @@ Les scripts `scripts/installer.ps1` et `scripts/installer.sh`, ainsi que le lanc
 | Option Windows | Option macOS / Linux | Option animateur Node | Effet |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation : affiche toutes les actions prévues sans rien modifier ni exécuter. |
-| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les installations logicielles, intégrations, lancements d'agents ni le kit (un accord individuel o/n reste obligatoire). |
+| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les outils d'IA, intégrations, lancements d'agents, extensions ni le kit (un accord individuel o/n reste obligatoire). Les prérequis (Node.js, Herdr, Clink) s'installent de toute façon, avec ou sans cette option. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Spécifie le port HTTP du bureau (défaut : 4317 ou variable `BUREAU_PORT` existante). |
 | `-HerdrChemin chemin\herdr.exe` | `--herdr-chemin chemin/herdr` | (détection PATH) | Indique l'emplacement complet de l'exécutable Herdr s'il est absent du PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (non transmis) | Ne propose pas la création du raccourci sur le Bureau. |

@@ -41,7 +41,7 @@ Reviewed technical documents may be shared deliberately. The kit creates `HANDOF
 
 - **No external npm dependencies**: The project contains no `node_modules` and never runs `npm install`.
 - **No key or secret collection**: No password, token, or API key is requested or handled. Each AI manages its own credentials.
-- **No forced silent installation**: The `-Oui` / `--oui` flag NEVER auto-confirms software installations, integrations, agent launches, or team kit setup. Each sensitive action requires explicit interactive "y/n" consent.
+- **No optional installation without consent**: only missing prerequisites — Node.js 22+, Herdr and, on Windows, Clink — are installed directly, without a question (winget or Herdr's official script), because the desktop needs them. Everything else (AI tools, Herdr integrations, agent launches, extensions, team kit) requires interactive consent, and the `-Oui` / `--oui` flag never gives it on your behalf.
 - **No file overwriting**: The scripts never overwrite existing skills or project documents.
 - **No unauthorized external network requests**: The server strictly binds to the local interface `127.0.0.1`.
 
@@ -109,7 +109,7 @@ The setup scripts `scripts/installer.ps1` and `scripts/installer.sh`, as well as
 | Windows Option | macOS / Linux Option | Node Animated Driver | Effect |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
-| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms software installations, integrations, agent launches, or kit setup (individual y/n confirmation remains mandatory). |
+| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms AI tools, integrations, agent launches, extensions, or kit setup (individual y/n confirmation remains mandatory). Prerequisites (Node.js, Herdr, Clink) are installed anyway, with or without this flag. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
 | `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | (PATH auto-detection) | Points to the full Herdr executable path if missing from PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Skips offering to create the desktop launcher shortcut. |
