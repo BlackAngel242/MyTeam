@@ -104,9 +104,15 @@ test('les installeurs préparent les panneaux Herdr et les extensions utiles', a
     }
     assert.match(texte, /code --install-extension/, `${nom} : installation VS Code`);
     assert.match(texte, /Veux-tu voir la liste des extensions/, `${nom} : question explicite`);
-    // Raccourci : une question de choix, sans doublon de lanceur.
-    assert.match(texte, /1 = Herdr, 2 = le bureau/, `${nom} : choix du raccourci`);
-    assert.ok((texte.match(/Ouvrir le bureau\.cmd|Ouvrir le bureau\.command|ouvrir-le-bureau\.desktop/g) ?? []).length >= 1, `${nom} : lanceur existant réutilisé`);
+    // Session Herdr dédiée : toute commande de panneau/agent vise --session myteam.
+    assert.match(texte, /--session/, `${nom} : session explicite`);
+    assert.match(texte, /SESSION_HERDR|sessionActuelle/, `${nom} : session par défaut myteam`);
+    // Raccourci : automatique, cible le lanceur myteam, jamais une question de choix.
+    assert.match(texte, /MyTeam\.lnk|myteam\.desktop/, `${nom} : raccourci MyTeam`);
+    assert.match(texte, /myteam\.cmd|bin\/myteam/, `${nom} : lanceur myteam`);
+    assert.doesNotMatch(texte, /1 = Herdr, 2 = le bureau/, `${nom} : plus de question de raccourci`);
+    // Prochaine étape finale.
+    assert.match(texte, /Pour démarrer/, `${nom} : prochaine étape`);
   }
 });
 

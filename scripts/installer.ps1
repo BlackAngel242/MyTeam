@@ -86,6 +86,8 @@ Aucune cle n'est demandee.
 }
 
 $racine = Split-Path -Parent $PSScriptRoot
+# Session Herdr dédiée : le tableau de bord et la grille vivent ici, jamais dans la session par défaut.
+$SessionHerdr = 'myteam'
 $rapport = @()
 $script:questionNumero = 0
 $script:etape = ''
@@ -389,8 +391,10 @@ if ($herdrTrouve) {
 Dire ''
 
 # --- 3. Panneaux Herdr --------------------------------------------------
-function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
-  $texte = & $herdrTrouve @Arguments
+function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson, [switch]$SansSession) {
+  $nomSession = if ($SessionHerdr) { $SessionHerdr } else { 'myteam' }
+  $appel = if ($SansSession) { $Arguments } else { @('--session',$nomSession) + $Arguments }
+  $texte = & $herdrTrouve @appel
   if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refusé la commande.' 'Herdr rejected the command.') }
   if ($Interface -and $Arguments[1] -in @('create','split','rename','start','prompt','install')) {
     $fait = switch ($Arguments[1]) {
@@ -405,6 +409,35 @@ function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   $resultat = ($texte -join "`n") | ConvertFrom-Json
   if ($resultat.error) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refusé la commande.' 'Herdr rejected the command.') }
   return $resultat
+}
+
+function Session-HerdrActive {
+  $nom = if ($SessionHerdr) { $SessionHerdr } else { 'myteam' }
+  try { $lignes = & $herdrTrouve session list 2>$null } catch { return $false }
+  return [bool](@($lignes | Where-Object { $_ -match ('^' + [regex]::Escape($nom) + '\s+running\b') }).Count)
+}
+
+# Démarre la session dédiée en arrière-plan, sans fenêtre, puis attend qu'elle réponde.
+# Commande vérifiée dans une session d'essai (herdr 0.9.5) : herdr --session <nom> server.
+function Demarrer-SessionHerdr {
+  $nom = if ($SessionHerdr) { $SessionHerdr } else { 'myteam' }
+  if (Session-HerdrActive) { return }
+  Start-Process -FilePath $herdrTrouve -ArgumentList @('--session',$nom,'server') -WindowStyle Hidden | Out-Null
+  for ($i = 0; $i -lt 100; $i++) {
+    if (Session-HerdrActive) { return }
+    Start-Sleep -Milliseconds 100
+  }
+  throw (Texte "La session Herdr « $nom » n'a pas démarré." "The Herdr session '$nom' did not start.")
+}
+
+# Espace « Bureau des agents » déjà présent dans la session ? Sinon $null.
+function Espace-BureauExistant {
+  $liste = Appeler-Herdr @('workspace','list')
+  $espaces = @($liste.result.workspaces | Where-Object { $_.label -eq 'Bureau des agents' })
+  if ($espaces.Count -eq 0) { return $null }
+  $espace = $espaces[0]
+  if ($espace.workspace_id -notmatch '^[A-Za-z0-9_-]+$') { throw (Texte 'L''espace existant est illisible.' 'The existing workspace cannot be read.') }
+  return $espace
 }
 
 function Lire-Panneaux([string]$espace) {
@@ -441,6 +474,20 @@ function Creer-GrilleHerdr {
   $noms = @('Chef','Agent 2','Agent 3','Agent 4')
   for ($i=0; $i -lt 4; $i++) { Appeler-Herdr @('pane','rename',$ids[$i],$noms[$i]) | Out-Null }
   return $ids
+}
+
+# Réutilise l'unique espace « Bureau des agents » s'il existe, sinon le crée. Jamais de second espace.
+function Assurer-GrilleHerdr {
+  $existant = Espace-BureauExistant
+  if ($existant) {
+    $ids = @(Lire-Panneaux $existant.workspace_id)
+    $ids = @($ids | Select-Object -First 4)
+    if ($ids.Count -ne 4) {
+      Dire (Texte "Espace « Bureau des agents » existant : $($ids.Count) panneau(x), conservé tel quel." "Existing Bureau des agents workspace: $($ids.Count) pane(s), kept as is.")
+    }
+    return @{ ids = $ids; cree = $false }
+  }
+  return @{ ids = @(Creer-GrilleHerdr); cree = $true }
 }
 
 function Detecter-Outils {
@@ -496,34 +543,45 @@ Dire (Texte '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---' '--- 3
 # manuelle est affichee au lieu d'echouer silencieusement.
 # Aucun outil d'IA n'est lance sans choix et confirmation individuelle.
 if ($herdrTrouve) {
-  if (Confirmer (Texte 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
+  if ($Oui) {
+    Dire (Texte 'Le mode -Oui ne crée ni session Herdr ni espace de panneaux.' 'The -Oui option creates no Herdr session or workspace.')
+    Noter (Texte 'Panneaux Herdr : ignorés (-Oui).' 'Herdr panes: skipped (-Oui).')
+    Etat-Etape 'skip' (Texte 'Ignoré avec -Oui.' 'Skipped with -Oui.')
+  } elseif (Confirmer (Texte 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
     if ($DryRun) {
-      Simuler (Texte 'Creation de l''espace « Bureau des agents » puis 3 decoupes de panneaux.' 'Creating the Agent desktop workspace, then splitting it into four panes.')
+      Simuler (Texte 'Démarrage de la session Herdr « myteam » puis création de l''espace « Bureau des agents » (ou réutilisation s''il existe).' 'Starting the myteam Herdr session, then creating or reusing the Bureau des agents workspace.')
       Simuler (Texte 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.' 'Pane names: Chef, Agent 2, Agent 3, Agent 4.')
       Noter (Texte 'Panneaux Herdr : simulation.' 'Herdr panes: preview.')
     } else {
       try {
-        Dire (Texte 'Création de l''espace Herdr « Bureau des agents »...' 'Creating the Agent desktop workspace...')
-        $ids = @(Creer-GrilleHerdr)
-        $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
-        Dire (Texte "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))." "Panes created and named: $($noms -join ', ') (identifiers $($ids[0..3] -join ', ')).")
-        Noter (Texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')
-        Etat-Etape 'ok' (Texte '4 panneaux créés.' '4 panes created.')
+        Dire (Texte 'Démarrage de la session Herdr « myteam »...' 'Starting the Herdr session myteam...')
+        Demarrer-SessionHerdr
+        Dire (Texte 'Préparation de l''espace « Bureau des agents »...' 'Preparing the Bureau des agents workspace...')
+        $grille = Assurer-GrilleHerdr
+        $ids = @($grille.ids)
+        if ($grille.cree) {
+          Dire (Texte "Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4 (session myteam)." "Panes created and named: Chef, Agent 2, Agent 3, Agent 4 (session myteam).")
+          Noter (Texte 'Panneaux Herdr : 4 panneaux créés et nommés dans la session myteam.' 'Herdr panes: 4 panes created and named in the myteam session.')
+        } else {
+          Dire (Texte "Espace « Bureau des agents » existant réutilisé dans la session myteam ($($ids.Count) panneau(x))." "Existing Bureau des agents workspace reused in the myteam session ($($ids.Count) pane(s)).")
+          Noter (Texte 'Panneaux Herdr : espace existant réutilisé.' 'Herdr panes: existing workspace reused.')
+        }
+        Etat-Etape 'ok' (Texte 'Espace prêt.' 'Workspace ready.')
         $outilsAvantInstallation = @(Detecter-Outils)
         Proposer-Agents $ids
       } catch {
         if ($Interface) { Etat-Etape 'fail' }
         Dire (Texte "La creation automatique n'a pas abouti : $($_.Exception.Message)" "Automatic creation failed: $($_.Exception.Message)")
-        Dire (Texte 'Procédure manuelle (commandes vérifiées de Herdr) :' 'Manual procedure (verified Herdr commands):')
-        Dire ('  herdr workspace create --label "Bureau des agents" --cwd "' + $racine + '"')
-        Dire (Texte '  herdr pane list                      # reperer les identifiants, ex. w6:p1' '  herdr pane list                      # find pane identifiers, e.g. w6:p1')
-        Dire '  herdr pane split --pane w6:p1 --direction right'
-        Dire '  herdr pane split --pane w6:p1 --direction down'
-        Dire '  herdr pane split --pane w6:p2 --direction down'
-        Dire (Texte '  herdr pane rename w6:p1 Chef         # puis Agent 2, Agent 3, Agent 4' '  herdr pane rename w6:p1 Chef         # then Agent 2, Agent 3, Agent 4')
+        Dire (Texte 'Procédure manuelle (commandes vérifiées de Herdr, session myteam) :' 'Manual procedure (verified Herdr commands, myteam session):')
+        Dire ('  herdr --session myteam server       # puis attendre que la session réponde')
+        Dire ('  herdr --session myteam workspace create --label "Bureau des agents" --cwd "' + $racine + '"')
+        Dire (Texte '  herdr --session myteam pane list     # reperer les identifiants, ex. w6:p1' '  herdr --session myteam pane list     # find pane identifiers, e.g. w6:p1')
+        Dire '  herdr --session myteam pane split --pane w6:p1 --direction right --no-focus'
+        Dire '  herdr --session myteam pane split --pane w6:p1 --direction down --no-focus'
+        Dire '  herdr --session myteam pane split --pane w6:p2 --direction down --no-focus'
+        Dire (Texte '  herdr --session myteam pane rename w6:p1 Chef   # puis Agent 2, Agent 3, Agent 4' '  herdr --session myteam pane rename w6:p1 Chef   # then Agent 2, Agent 3, Agent 4')
         Dire (Texte '  # optionnel : lancer un outil d''IA dans un panneau (non fait par ce script)' '  # optional: start an AI tool in a pane')
-        Dire (Texte '  # herdr agent start <nom> --kind claude --pane w6:p1' '  # herdr agent start <name> --kind claude --pane w6:p1')
-        Dire (Texte '  # types verifies : pi, claude, codex, gemini, cursor, agy, opencode, copilot...' '  # verified types: pi, claude, codex, gemini, cursor, agy, opencode, copilot...')
+        Dire (Texte '  # herdr --session myteam agent start <nom> --kind claude --pane w6:p1' '  # herdr --session myteam agent start <name> --kind claude --pane w6:p1')
         Noter (Texte 'Panneaux Herdr : procedure manuelle affichee.' 'Herdr panes: manual procedure displayed.')
       }
     }
@@ -572,7 +630,7 @@ function Proposer-Chef([string]$DossierPersonnel = $HOME) {
     if ($accord) {
       if ($DryRun) { Simuler "herdr integration install $integration" }
       else {
-        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson; if ($Interface) { $script:detailsEtape += "Intégration : $type" } }
+        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson -SansSession; if ($Interface) { $script:detailsEtape += "Intégration : $type" } }
         catch { Dire (Texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.") }
       }
     }
@@ -733,71 +791,90 @@ if ("$portActuel" -ne "$portChoisi") {
   Etat-Etape 'ok' (Texte "Port $portChoisi déjà enregistré." "Port $portChoisi already saved.")
 }
 
+$sessionActuelle = [Environment]::GetEnvironmentVariable('BUREAU_HERDR_SESSION', 'User')
+if ($herdrTrouve -and -not $Oui -and $sessionActuelle -ne $SessionHerdr) {
+  Executer (Texte "Enregistrement de BUREAU_HERDR_SESSION = $SessionHerdr (variable de l'utilisateur)." "Saving BUREAU_HERDR_SESSION = $SessionHerdr (user environment variable).") {
+    [Environment]::SetEnvironmentVariable('BUREAU_HERDR_SESSION', $SessionHerdr, 'User')
+  } | Out-Null
+  if (-not ($Interface -and $script:entreeFermee)) { Noter (Texte "BUREAU_HERDR_SESSION : $SessionHerdr." "BUREAU_HERDR_SESSION: $SessionHerdr.") }
+} elseif ($herdrTrouve -and -not $Oui) {
+  Dire (Texte "BUREAU_HERDR_SESSION déjà à $SessionHerdr." "BUREAU_HERDR_SESSION already set to $SessionHerdr.")
+}
+
+$binMyTeam = Join-Path $racine 'bin'
+if (Test-Path -LiteralPath (Join-Path $binMyTeam 'myteam.cmd') -PathType Leaf) {
+  $pathUtilisateur = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $entrees = @($pathUtilisateur -split ';' | Where-Object { $_ -and $_.Trim() } | ForEach-Object { $_.Trim() })
+  $dejaDansPath = [bool](@($entrees | Where-Object { $_.TrimEnd('\') -ieq $binMyTeam.TrimEnd('\') }).Count)
+  if (-not $dejaDansPath) {
+    Executer (Texte "Ajout de $binMyTeam au PATH utilisateur (sans toucher au PATH machine)." "Adding $binMyTeam to the user PATH (machine PATH untouched).") {
+      $nouveau = (@($entrees) + $binMyTeam) -join ';'
+      [Environment]::SetEnvironmentVariable('Path', $nouveau, 'User')
+    } | Out-Null
+    if (-not ($Interface -and $script:entreeFermee)) { Noter (Texte 'Commande myteam : ajoutée au PATH utilisateur.' 'myteam command: added to the user PATH.') }
+  } else {
+    Noter (Texte 'Commande myteam : déjà dans le PATH utilisateur.' 'myteam command: already in the user PATH.')
+  }
+  Dire (Texte 'Ouvrez un nouveau terminal puis tapez « myteam ».' 'Open a new terminal, then type "myteam".')
+} else {
+  Dire (Texte "Le lanceur bin\myteam.cmd est absent : commande myteam non installée." "bin\myteam.cmd is missing: the myteam command was not installed.")
+  Noter (Texte 'Commande myteam : lanceur absent.' 'myteam command: launcher missing.')
+}
+
 if (-not $SansRaccourci) {
   $bureau = [Environment]::GetFolderPath('Desktop')
-  $lienRaccourci = Join-Path $bureau 'Ouvrir le bureau.lnk'
-  # Nouveau choix : le raccourci lance Herdr directement, ou le bureau ouvert
-  # dans le navigateur. Le lanceur « Ouvrir le bureau.cmd » existant est reutilise
-  # pour ce second cas : aucun doublon n'est cree.
-  $choixLanceur = 'bureau'
-  if ($Interface) {
-    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @((Texte 'Le bureau' 'Desktop'),'Herdr',(Texte 'Herdr et bureau' 'Herdr and desktop'))
-    if ($saisie -eq '2') { $choixLanceur = 'herdr' }
-    if ($saisie -eq '3') { $choixLanceur = 'ensemble' }
+  $cible = Join-Path $racine 'bin\myteam.cmd'
+  $icone = Join-Path $racine 'public\myteam.ico'
+  $lien = Join-Path $bureau 'MyTeam.lnk'
+  $ancien = Join-Path $bureau 'Ouvrir le bureau.lnk'
+  $ancienneCible = Join-Path $racine 'Ouvrir le bureau.cmd'
+  $detailRaccourci = ''
+  if (-not (Test-Path -LiteralPath $cible -PathType Leaf)) {
+    Dire (Texte 'Le lanceur bin\myteam.cmd est absent : raccourci ignoré.' 'bin\myteam.cmd is missing: shortcut skipped.')
+    Noter (Texte 'Raccourci : lanceur absent.' 'Shortcut: launcher missing.')
+    $detailRaccourci = Texte 'Raccourci : lanceur absent' 'Shortcut: launcher missing'
   } elseif ($DryRun) {
-    Simuler (Texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')
-  } elseif ($Oui) {
-    Dire (Texte 'Raccourci : choix automatique « le bureau » (-Oui).' 'Shortcut: automatic desktop choice (-Oui).')
+    Simuler (Texte "Création du raccourci $lien (cible bin\myteam.cmd, icône public\myteam.ico) ; un raccourci étranger n'est jamais écrasé." "Creating shortcut $lien (target bin\myteam.cmd, icon public\myteam.ico); foreign shortcuts are never overwritten.")
+    Noter (Texte 'Raccourci : simulé, rien créé.' 'Shortcut: simulated, nothing created.')
+    $detailRaccourci = Texte 'Raccourci : MyTeam.lnk' 'Shortcut: MyTeam.lnk'
   } else {
-    $saisie = Read-Host (Texte 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2)' 'What should the shortcut open? 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2)')
-    if ($saisie.Trim() -eq '1') { $choixLanceur = 'herdr' }
-    if ($saisie.Trim() -eq '3') { $choixLanceur = 'ensemble' }
-  }
-  if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += (Texte "Raccourci choisi : $choixLanceur" "Shortcut selected: $choixLanceur") }
-  if ($choixLanceur -eq 'herdr') {
-    $cible = $herdrTrouve
-    if (-not $cible) { $cible = Chercher-Herdr }
-    if (-not $cible) {
-      Dire (Texte 'Herdr est introuvable : le raccourci Herdr est ignoré.' 'Herdr was not found: Herdr shortcut skipped.')
-      Noter (Texte 'Raccourci : Herdr absent.' 'Shortcut: Herdr missing.')
-    } elseif (Confirmer (Texte 'Créer le raccourci « Ouvrir le bureau » qui lance Herdr ?' 'Create the Open desktop shortcut that starts Herdr?')) {
-      Executer (Texte "Creation du raccourci $lienRaccourci (lance Herdr)." "Creating shortcut $lienRaccourci (starts Herdr).") {
-        $wsh = New-Object -ComObject WScript.Shell
-        $raccourci = $wsh.CreateShortcut($lienRaccourci)
+    $wsh = New-Object -ComObject WScript.Shell
+    $remplacer = $true
+    if (Test-Path -LiteralPath $lien) {
+      $existant = $wsh.CreateShortcut($lien)
+      $cibleExistante = if ($existant.TargetPath) { [IO.Path]::GetFullPath($existant.TargetPath) } else { '' }
+      $notre = ($cibleExistante -ieq [IO.Path]::GetFullPath($cible)) -or ($cibleExistante -ieq [IO.Path]::GetFullPath($ancienneCible))
+      if (-not $notre) {
+        $remplacer = $false
+        Dire (Texte "Un raccourci MyTeam.lnk existe déjà et n'appartient pas à MyTeam : conservé." "A MyTeam.lnk shortcut already exists and is not MyTeam's: kept.")
+        Noter (Texte 'Raccourci : étranger conservé.' 'Shortcut: foreign shortcut kept.')
+        $detailRaccourci = Texte 'Raccourci : étranger conservé' 'Shortcut: foreign shortcut kept'
+      }
+    }
+    if ($remplacer) {
+      Executer (Texte "Création du raccourci $lien." "Creating shortcut $lien.") {
+        $raccourci = $wsh.CreateShortcut($lien)
         $raccourci.TargetPath = $cible
+        if (Test-Path -LiteralPath $icone -PathType Leaf) { $raccourci.IconLocation = "$icone,0" }
         $raccourci.WorkingDirectory = $racine
+        $raccourci.Description = 'MyTeam'
         $raccourci.Save()
       } | Out-Null
-      if ($DryRun) { Noter (Texte 'Raccourci : simule (lance Herdr), rien cree.' 'Shortcut: simulated (starts Herdr), nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau (lance Herdr).' 'Shortcut: created on Desktop (starts Herdr).') }
-    } else { Noter (Texte 'Raccourci : non créé (refusé).' 'Shortcut: not created (declined).') }
-  } else {
-    $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
-    if ($choixLanceur -eq 'ensemble') {
-      $cible = Join-Path $PSHOME 'powershell.exe'
-      if (-not $herdrTrouve) { Dire (Texte 'Herdr absent : raccourci combiné ignoré.' 'Herdr missing: combined shortcut skipped.'); $cible = $null }
-    }
-    if (-not $cible -or -not (Test-Path -LiteralPath $cible)) {
-      Dire (Texte "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignoré." "The Open desktop launcher is missing from the project: shortcut skipped.")
-      Noter (Texte 'Raccourci : lanceur absent.' 'Shortcut: launcher missing.')
-    } else {
-      $dejaLa = Test-Path $lienRaccourci
-      $question = if ($dejaLa) { Texte 'Le raccourci existe déjà sur le Bureau. Le remplacer ?' 'The shortcut already exists on Desktop. Replace it?' } else { Texte 'Créer le raccourci « Ouvrir le bureau » ?' 'Create the Open desktop shortcut?' }
-      if (Confirmer $question) {
-        Executer (Texte "Creation du raccourci $lienRaccourci." "Creating shortcut $lienRaccourci..") {
-          $wsh = New-Object -ComObject WScript.Shell
-          $raccourci = $wsh.CreateShortcut($lienRaccourci)
-          $raccourci.TargetPath = $cible
-          if ($choixLanceur -eq 'ensemble') {
-            $lanceur = Join-Path $racine 'Ouvrir le bureau.ps1'
-            $raccourci.Arguments = '-NoProfile -File "' + $lanceur + '" -AvecHerdr'
-          }
-          $raccourci.WorkingDirectory = $racine
-          $raccourci.Save()
-        } | Out-Null
-        if ($DryRun) { Noter (Texte 'Raccourci : simule, rien cree.' 'Shortcut: simulated, nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau.' 'Shortcut: created on Desktop.') }
-      } else { Noter (Texte 'Raccourci : non créé (refusé).' 'Shortcut: not created (declined).') }
+      Noter (Texte 'Raccourci : MyTeam.lnk créé sur le Bureau.' 'Shortcut: MyTeam.lnk created on the Desktop.')
+      $detailRaccourci = Texte 'Raccourci : MyTeam.lnk' 'Shortcut: MyTeam.lnk'
+      # L'ancien raccourci de MyTeam est retiré ; un raccourci étranger n'est jamais touché.
+      if (Test-Path -LiteralPath $ancien) {
+        $vieux = $wsh.CreateShortcut($ancien)
+        $vieuxCible = if ($vieux.TargetPath) { [IO.Path]::GetFullPath($vieux.TargetPath) } else { '' }
+        $vieuxNous = ($vieuxCible -ieq [IO.Path]::GetFullPath($ancienneCible)) -or ($vieuxCible -and $vieuxCible.StartsWith([IO.Path]::GetFullPath($racine), [StringComparison]::OrdinalIgnoreCase)) -or ($vieux.Arguments -and $vieux.Arguments.Contains($racine))
+        if ($vieuxNous) {
+          Remove-Item -LiteralPath $ancien -Force
+          Noter (Texte 'Raccourci : ancien « Ouvrir le bureau.lnk » retiré.' 'Shortcut: old Ouvrir le bureau.lnk removed.')
+        }
+      }
     }
   }
+  if ($Interface -and -not $script:entreeFermee -and $detailRaccourci) { $script:detailsEtape += $detailRaccourci }
 }
 if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += "Port $portChoisi" }
 Dire ''
@@ -863,8 +940,15 @@ Dire (Texte '=== Resume ===' '=== Summary ===')
 if ($rapport.Count -eq 0) { Dire (Texte 'Rien a signaler.' 'Nothing to report.') }
 else { foreach ($ligne in $rapport) { Dire " - $ligne" } }
 Dire ''
-Dire (Texte "Pour ouvrir le bureau : double-cliquez sur 'Ouvrir le bureau.cmd' dans $racine" "To open the desktop: double-click Ouvrir le bureau.cmd in $racine")
-Dire (Texte "ou lancez 'node server.mjs' puis ouvrez http://127.0.0.1:$portChoisi" "or run node server.mjs, then open http://127.0.0.1:$portChoisi")
-Dire (Texte 'Herdr doit être ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
+if ($SansRaccourci) {
+  Dire (Texte 'Pour démarrer : tapez « myteam » dans un nouveau terminal.' 'To start: type "myteam" in a new terminal.')
+} else {
+  Dire (Texte 'Pour démarrer : double-cliquez sur le raccourci MyTeam du Bureau, ou tapez « myteam » dans un nouveau terminal.' 'To start: double-click the MyTeam shortcut on your Desktop, or type "myteam" in a new terminal.')
+}
+if ($herdrTrouve) {
+  Dire (Texte "Adresse du bureau : http://127.0.0.1:$portChoisi (myteam ouvre Herdr sur la session myteam)." "Desktop address: http://127.0.0.1:$portChoisi (myteam opens Herdr in the myteam session).")
+} else {
+  Dire (Texte "Adresse du bureau : http://127.0.0.1:$portChoisi (Herdr absent : le bureau reste consultable, sans agents)." "Desktop address: http://127.0.0.1:$portChoisi (Herdr missing: the desktop remains available, without agents).")
+}
 Terminer-Interface
 if ($installationIncomplete -or ($Interface -and $script:echecInterface)) { exit 1 }
