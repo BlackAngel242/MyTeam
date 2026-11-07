@@ -1,0 +1,6 @@
+#!/usr/bin/env node
+// Commande `myteam` (Linux, macOS ; Windows passe par myteam.cmd). Un lien ~/.local/bin/myteam peut pointer ici :
+// Node résout le lien, les imports relatifs restent valables.
+import { lancerMyTeam } from '../scripts/myteam.mjs';
+
+process.exitCode = await lancerMyTeam(process.argv.slice(2)).catch(erreur => { console.error(erreur.message); return 1; });

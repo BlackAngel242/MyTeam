@@ -14,6 +14,12 @@ const shellLiteral=value=>`'${String(value).replaceAll("'","'\\''")}'`;
 async function fixture(t) {
   const path=await mkdtemp(join(tmpdir(),'installer-interface-'));t.after(()=>rm(path,{recursive:true,force:true}));
   await mkdir(join(path,'scripts'));
+  await mkdir(join(path,'bin'));
+  await writeFile(join(path,'bin/myteam.cmd'),'rem ne pas exécuter');
+  await writeFile(join(path,'bin/myteam'),'#!/bin/bash\nexit 0\n');await chmod(join(path,'bin/myteam'),0o755);
+  await mkdir(join(path,'public'));
+  await writeFile(join(path,'public/myteam.ico'),'factice');
+  await writeFile(join(path,'public/myteam.png'),'factice');
   for(const file of ['installer.sh','installer.ps1'])await copyFile(join(root,'scripts',file),join(path,'scripts',file));
   await writeFile(join(path,'scripts/init-kit.mjs'),'throw new Error("ne pas exécuter");');
   await writeFile(join(path,'Ouvrir le bureau.cmd'),'ne pas exécuter');
@@ -82,14 +88,14 @@ function checkProtocol(result,windows) {
   assert.equal(new Set(ids).size,ids.length,'identifiants de questions uniques');
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
-  test(`A2 ${platform} : raccourci par défaut et port dans le bilan`,async t=>{
+  test(`A2 ${platform} : raccourci MyTeam automatique et port dans le bilan`,async t=>{
     const result=await run(t,platform,{answer:line=>line.startsWith('@@MULTI')?'':line.startsWith('@@CHOICE')?'1':'n'});
     assert.equal(result.code,0,result.errors);
-    const choice=result.records.find(x=>x.startsWith('@@CHOICE') && x.includes('raccourci'));
-    assert.match(choice,/\tLe bureau\tHerdr\t/);
+    assert.ok(!result.records.some(x=>x.startsWith('@@CHOICE') && x.includes('raccourci')),'plus de question sur le raccourci');
     const done=result.records.find(x=>x.startsWith('@@DONE config\t'));
-    assert.match(done,/Raccourci choisi : bureau/);
+    assert.match(done,/Raccourci : (MyTeam\.lnk|myteam\.desktop)/);
     assert.match(done,/Port 4317/);
+    assert.ok(result.records.some(x=>x.startsWith('@@INFO ') && x.includes('Pour démarrer')),'prochaine étape affichée');
   });
   test(`A4 ${platform} : valider une sélection groupée suffit`,async t=>{
     let outils=0, extensions=0;
@@ -116,16 +122,16 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     }});
     checkProtocol(result,platform==='ps');
     assert.ok(result.records.some(x=>x.startsWith('@@CONFIRM ')));
-    assert.ok(result.records.some(x=>x.startsWith('@@CHOICE ')));
     assert.ok(result.records.some(x=>x.startsWith('@@INPUT ')));
     assert.doesNotMatch(result.errors,/exécuté|commande:|command not found/);
   });
   test(`J1 ${platform} : EOF refuse et Oui ne valide pas les installations`,async t=>{
     const result=await run(t,platform,{yes:true,eof:true,lang:'en'});
     checkProtocol(result,platform==='ps');
-    assert.ok(result.records.some(x=>x.startsWith('@@CONFIRM '))); // les choix facultatifs restent explicites
     assert.ok(result.records.some(x=>x.startsWith('@@PLAN tests\tChecks')));
-    assert.deepEqual(result.records.filter(x=>/^@@DONE [a-z]+\tok\t/.test(x)).map(x=>x.split(' ')[1].split('\t')[0]),['herdr'],'seul le prérequis réellement présent est satisfait');
+    const satisfaits=result.records.filter(x=>/^@@DONE [a-z]+\tok\t/.test(x)).map(x=>x.split(' ')[1].split('\t')[0]);
+    assert.equal(satisfaits[0],'herdr');
+    assert.ok(satisfaits.every(x=>['herdr','config'].includes(x)),'aucune installation optionnelle validée par Oui');
   });
   test(`J1 ${platform} : sans drapeau, aucune ligne du protocole`,async t=>{
     const result=await run(t,platform,{classic:true,eof:true});
@@ -358,7 +364,7 @@ w9:p2';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
   const names=platform==='ps'?[...psFunctions,'Choisir','Detecter-Outils','Proposer-Agents','Appeler-Herdr','Noter']:['texte','champ_interface','emettre_interface','etat_etape','fin_etape','etape','terminer_interface','lire_interface','choisir','dire','simuler','noter','confirmer','detecter_outils','proposer_agents'];
   const data=await functions(t,platform,names,body,{answer:line=>line.startsWith('@@CHOICE')?'2':'o'});
   assert.equal(data.code,0,data.errors);
-  assert.match(data.output,platform==='ps'?/CALL:agent\|start\|chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:agent start chef --kind codex --pane w9:p1/);
+  assert.match(data.output,platform==='ps'?/CALL:--session\|myteam\|agent\|start\|chef\|--kind\|codex\|--pane\|w9:p1/:/CALL:--session myteam agent start chef --kind codex --pane w9:p1/);
   assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
   assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));

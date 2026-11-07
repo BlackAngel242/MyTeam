@@ -87,9 +87,13 @@
         
         <p class="hero-requirements" data-i18n="hero.requirements">MyTeam s’installe sur votre ordinateur et supervise les agents lancés dans Herdr. Node.js 22 ou plus et Herdr sont nécessaires.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/BlackAngel242/MyTeam/releases/download/v0.6.0/MyTeam-0.6.0.zip" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-telecharger">Télécharger la dernière version</a>
+          <div class="hero-install">
+            <code class="hero-install-commande">npx @drsmoke/myteam</code>
+            <button class="btn btn-primary" type="button" data-copie="npx @drsmoke/myteam" data-i18n="hero.btn-copier">Copier la commande</button>
+          </div>
           <a class="btn btn-secondary" href="https://github.com/BlackAngel242/MyTeam" target="_blank" rel="noopener noreferrer" data-i18n="hero.btn-github">Voir le projet sur GitHub</a>
         </div>
+        <p class="hero-install-aide"><span data-i18n="hero.install.aide">Collez-la dans PowerShell, l’Invite de commandes ou un terminal (Node.js 22 ou plus). Sans Node.js :</span> <a href="https://github.com/BlackAngel242/MyTeam/releases/latest" target="_blank" rel="noopener noreferrer" data-i18n="hero.install.zip">archive de la dernière version</a></p>
 
         <div class="hero-preview">
           <div class="preview-bar">
