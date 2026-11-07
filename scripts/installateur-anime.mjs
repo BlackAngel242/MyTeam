@@ -33,6 +33,7 @@ export function parseLigne(ligne) {
     case 'INFO': return { type: 'info', texte: m[2] ?? '' };
     case 'CONFIRM': return champs.length >= 2 ? { type: 'confirm', id: champs[0], question: champs.slice(1).join(' ') } : null;
     case 'CHOICE': return champs.length >= 3 ? { type: 'choice', id: champs[0], question: champs[1], options: champs.slice(2) } : null;
+    case 'MULTI': return champs.length >= 3 ? { type: 'multi', id: champs[0], question: champs[1], options: champs.slice(2) } : null;
     case 'INPUT': return champs.length >= 2 ? { type: 'input', id: champs[0], question: champs[1], defaut: champs[2] ?? '' } : null;
     case 'DONE': return champs.length >= 2 && ['ok', 'skip', 'fail'].includes(champs[1]) ? { type: 'done', id: champs[0], etat: champs[1], texte: champs.slice(2).join(' ') } : null;
     case 'END': return { type: 'end', ok: (champs[0] ?? 'ok') === 'ok' };
@@ -186,6 +187,13 @@ export function naviguerConfirmation(oui, cle) {
   if (cle === 'entree') return { oui, valide: true };
   return { oui };
 }
+export function naviguerMulti({ curseur, coches }, cle, n) {
+  if (cle === 'haut' || cle === 'bas') return { curseur: cle === 'haut' ? (curseur > 1 ? curseur - 1 : n) : (curseur < n ? curseur + 1 : 1), coches };
+  if (cle === ' ') return { curseur, coches: coches.includes(curseur) ? coches.filter(x => x !== curseur) : [...coches, curseur].sort((a, b) => a - b) };
+  if (cle === 'a') return { curseur, coches: coches.length === n ? [] : Array.from({ length: n }, (_, i) => i + 1) };
+  if (cle === 'entree') return { curseur, coches, valide: true };
+  return { curseur, coches };
+}
 function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
   const fr = lang !== 'en';
   const p = peindre(couleur);
@@ -228,6 +236,17 @@ function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
       etat.question = null; rafraichir();
       return n;
     },
+    async multi(texte, options) {
+      let s = { curseur: 1, coches: [] };
+      const dessiner = () => {
+        etat.question = { texte, lignes: options.map((o, i) => `${i + 1 === s.curseur ? '❯' : ' '} ${s.coches.includes(i + 1) ? '◼' : '◻'} ${o}`), invite: p.gris(fr ? '↑/↓ déplacer · Espace cocher · a tout · Entrée valider' : '↑/↓ move · Space toggle · a all · Enter confirm') };
+        rafraichir();
+      };
+      dessiner();
+      await ecouter(cle => { s = naviguerMulti(s, cle, options.length); if (s.valide) return true; dessiner(); });
+      etat.question = null; rafraichir();
+      return s.coches.join(',');
+    },
     async input(texte, defaut) {
       etat.question = { texte, invite: (fr ? 'Saisie puis Entrée' : 'Type then Enter') + (defaut ? ` [${defaut}]` : '') };
       rafraichir();
@@ -256,6 +275,7 @@ function questionsTexte(sortie, lecteurLignes, lang) {
     // Jamais de réponse synthétique (ni « n » prétendu saisi, ni valeur par défaut) à la place de la personne.
     async confirm(texte) { sortie.write(`? ${texte} ${fr ? '(o/n)' : '(y/n)'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : /^(o|oui|y|yes)$/i.test(r); },
     async choice(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n> `); const r = await lire(); sortie.write((r ?? '') + '\n'); if (r === null) return null; const n = Number(r); return Number.isInteger(n) && n >= 1 && n <= options.length ? n : 1; },
+    async multi(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n${fr ? 'Numéros séparés par des virgules' : 'Comma-separated numbers'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); if (r === null) return null; if (!/^(?:\d+(?:\s*,\s*\d+)*)?$/.test(r)) return ''; const numeros = r ? r.split(',').map(Number) : []; return numeros.every(n => Number.isSafeInteger(n) && n >= 1 && n <= options.length) ? [...new Set(numeros)].sort((a, b) => a - b).join(',') : ''; },
     async input(texte, defaut) { sortie.write(`? ${texte}${defaut ? ` [${defaut}]` : ''} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : (r || defaut); },
   };
 }
@@ -285,6 +305,12 @@ for (const [id, l] of T) {
     console.log('@@CHOICE chef' + String.fromCharCode(9) + (fr ? 'Démo : outil pour le panneau Chef' : 'Demo: tool for the Lead pane') + String.fromCharCode(9) + outils.join(String.fromCharCode(9)));
     const n = Number(await lire());
     console.log('@@DONE outils' + String.fromCharCode(9) + (n > 1 ? 'ok' : 'skip') + String.fromCharCode(9) + (outils[n - 1] ?? ''));
+    continue;
+  }
+  if (id === 'chef') {
+    console.log('@@MULTI integrations' + String.fromCharCode(9) + (fr ? 'Démo : intégrations à choisir' : 'Demo: choose integrations') + String.fromCharCode(9) + ['claude','codex','gemini'].join(String.fromCharCode(9)));
+    const r = await lire();
+    console.log('@@DONE chef' + String.fromCharCode(9) + (r ? 'ok' : 'skip') + String.fromCharCode(9) + r);
     continue;
   }
   console.log('@@DONE ' + id + String.fromCharCode(9) + 'ok' + String.fromCharCode(9));
@@ -333,8 +359,8 @@ export async function executer({ commande, args, sortie = process.stdout, entree
       const evt = parseLigne(ligne);
       if (!evt) return;
       appliquer(etat, evt);
-      if (['confirm', 'choice', 'input'].includes(evt.type)) {
-        const reponse = evt.type === 'confirm' ? await questions.confirm(evt.question) : evt.type === 'choice' ? await questions.choice(evt.question, evt.options) : await questions.input(evt.question, evt.defaut);
+      if (['confirm', 'choice', 'multi', 'input'].includes(evt.type)) {
+        const reponse = evt.type === 'confirm' ? await questions.confirm(evt.question) : evt.type === 'choice' ? await questions.choice(evt.question, evt.options) : evt.type === 'multi' ? await questions.multi(evt.question, evt.options) : await questions.input(evt.question, evt.defaut);
         if (reponse === null) { try { enfant.stdin.end(); } catch { /* déjà fermé */ } }
         else repondre(evt.type === 'confirm' ? (reponse ? 'o' : 'n') : String(reponse));
       }

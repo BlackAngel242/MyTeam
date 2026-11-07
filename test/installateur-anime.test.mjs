@@ -4,7 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin, touches, naviguerChoix, naviguerConfirmation } from '../scripts/installateur-anime.mjs';
+import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin, touches, naviguerChoix, naviguerConfirmation, naviguerMulti } from '../scripts/installateur-anime.mjs';
 
 test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@PLAN node\tNode.js 22 ou plus'), { type: 'plan', id: 'node', libelle: 'Node.js 22 ou plus' });
@@ -12,6 +12,7 @@ test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@INFO Recherche de Herdr…'), { type: 'info', texte: 'Recherche de Herdr…' });
   assert.deepEqual(parseLigne('@@CONFIRM herdr\tInstaller Herdr ?\r'), { type: 'confirm', id: 'herdr', question: 'Installer Herdr ?' });
   assert.deepEqual(parseLigne('@@CHOICE config\tRaccourci ?\tHerdr\tBureau'), { type: 'choice', id: 'config', question: 'Raccourci ?', options: ['Herdr', 'Bureau'] });
+  assert.deepEqual(parseLigne('@@MULTI q\tInstaller ?\tA\tB'), { type: 'multi', id: 'q', question: 'Installer ?', options: ['A', 'B'] });
   assert.deepEqual(parseLigne('@@INPUT kit\tDossier ?\t.'), { type: 'input', id: 'kit', question: 'Dossier ?', defaut: '.' });
   assert.deepEqual(parseLigne('@@DONE node\tok\tv24.22.0'), { type: 'done', id: 'node', etat: 'ok', texte: 'v24.22.0' });
   assert.deepEqual(parseLigne('@@END fail'), { type: 'end', ok: false });
@@ -189,6 +190,28 @@ test('confirmation au clavier : non par défaut, ←/→ basculent, o et n répo
   assert.deepEqual(naviguerConfirmation(false, 'gauche'), { oui: true });
   assert.deepEqual(naviguerConfirmation(true, 'n'), { oui: false, valide: true });
   assert.deepEqual(naviguerConfirmation(false, 'o'), { oui: true, valide: true });
+});
+
+test('cases : aucune par défaut, déplacement, espace et tout', () => {
+  let s = { curseur: 1, coches: [] };
+  s = naviguerMulti(s, 'haut', 3); assert.equal(s.curseur, 3);
+  s = naviguerMulti(s, ' ', 3); assert.deepEqual(s.coches, [3]);
+  s = naviguerMulti(s, 'bas', 3); s = naviguerMulti(s, ' ', 3); assert.deepEqual(s.coches, [1, 3]);
+  s = naviguerMulti(s, 'a', 3); assert.deepEqual(s.coches, [1, 2, 3]);
+  s = naviguerMulti(s, 'a', 3); assert.deepEqual(s.coches, []);
+  assert.equal(naviguerMulti(s, 'entree', 3).valide, true);
+});
+
+test('MULTI texte transmet les choix et refuse les réponses invalides ou EOF', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tTest');
+console.log('@@MULTI a\\tChoix ?\\tA\\tB\\tC');
+const r = await lire();
+console.log('@@DONE a\\tok\\tvaleur=' + r);
+console.log('@@END ok');`);
+  assert.match((await lancer(script, ['3,1'])).texte, /valeur=1,3/);
+  assert.match((await lancer(script, ['1,4'])).texte, /valeur=\s/);
+  assert.match((await lancer(script, [])).texte, /valeur=EOF/);
 });
 
 test('mode animé : un choix aux flèches et une confirmation renvoient le bon numéro à l\'installeur', async t => {
