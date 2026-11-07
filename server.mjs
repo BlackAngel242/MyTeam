@@ -5,8 +5,7 @@ import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 import {join,dirname,posix,win32} from 'node:path';
 import {randomBytes,timingSafeEqual,createHash} from 'node:crypto';
-import {createHerdr,sessionHerdr} from './src/herdr.mjs';
-import {VERSION} from './src/version.mjs';
+import {createHerdr} from './src/herdr.mjs';
 import {choisirSuppleant,derniereMission,messageRelais,messageRetour,relaisActif} from './src/relais-quota.mjs';
 import {readClaudeActivity} from './src/claude-activity.mjs';
 import {readAgentActivity,normalizeActivity} from './src/agent-activity.mjs';
@@ -356,12 +355,6 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         if(!guard(req,{body:false})) return;
         try {return json(200,normalizeTodos(await getTodos(await bridge.list())));}
         catch(error) {return json(errorStatus(error),{error:'Impossible de lire les listes de tâches pour le moment.'});}
-      }
-      // Identité du bureau, pour la commande myteam : savoir si le port porte bien un bureau MyTeam de la bonne
-      // session Herdr. Rien de personnel (ni chemin, ni jeton, ni processus) : nom, version, session.
-      if(req.method==='GET'&&url.pathname==='/api/identite') {
-        let session=null;try{session=sessionHerdr();}catch{session=null;}
-        return json(200,{app:'myteam',version:VERSION,session});
       }
       // Pied de page facultatif : chacun met ses propres informations dans .bureau/pied.json ; rien n'est imposé.
       if(req.method==='GET'&&url.pathname==='/api/pied') {

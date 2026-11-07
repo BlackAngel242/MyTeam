@@ -5,7 +5,7 @@ import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes} from 'node:crypto';
 import {resolveProject,relativeProjectPath,projectContains,projectStateDir,scopedBridge,ProjectError} from './projects.mjs';
-import {createHerdr} from './herdr.mjs';
+import {createHerdr,sessionHerdr} from './herdr.mjs';
 import {createTerminalStatusReader} from './terminal-status.mjs';
 import {readClaudeActivity} from './claude-activity.mjs';
 import {readAgentActivity} from './agent-activity.mjs';
@@ -42,6 +42,9 @@ export async function createProjectServer({createBureauServer,myteamRoot=install
   try{
    if(req.headers.host!==new URL(origin).host||req.headers['sec-fetch-site']==='cross-site')return json(403,{error:'Origine refusée.'});
    const url=new URL(req.url,origin);
+   // Identité du bureau pour la commande myteam, avant même le choix du projet (sinon 409, pris pour un autre programme).
+   // Rien de personnel (ni chemin, ni jeton, ni processus) : nom, version, session Herdr.
+   if(url.pathname==='/api/identite'&&req.method==='GET'){let session=null;try{session=sessionHerdr();}catch{session=null;}return json(200,{app:'myteam',version:installedVersion,session});}
    if(url.pathname==='/api/projet'){
     if(req.method==='GET')return json(200,{token,version:installedVersion,project:runtime?{mode:runtime.mode,root:runtime.root}:null,places:Object.keys(places)});
     if(req.method!=='POST')return json(405,{error:'Méthode refusée.'});

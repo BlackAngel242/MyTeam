@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { createProjectServer } from '../src/project-server.mjs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createHerdr, sessionHerdr } from '../src/herdr.mjs';
@@ -111,11 +114,14 @@ test('processusNode : seul un processus node.exe qui écoute le port est retenu'
   assert.equal(processusNode(4317, { platform: 'win32', lancer: allemand }), 4242, 'état d\'écoute dans une autre langue de Windows');
 });
 
-test('le serveur annonce son identité : application, version et session Herdr, sans numéro de processus', async t => {
+test('le serveur annonce son identité dès le démarrage, avant le choix du projet : application, version, session, sans processus', async t => {
   const avant = process.env.BUREAU_HERDR_SESSION;
   process.env.BUREAU_HERDR_SESSION = 'myteam';
   t.after(() => { if (avant === undefined) delete process.env.BUREAU_HERDR_SESSION; else process.env.BUREAU_HERDR_SESSION = avant; });
-  const server = createBureauServer();
+  // Serveur réel lancé par server.mjs (installation neuve : aucun projet choisi), pas le seul cœur du bureau.
+  const temp = await mkdtemp(join(tmpdir(), 'identite-'));
+  t.after(() => rm(temp, { recursive: true, force: true }));
+  const server = await createProjectServer({ createBureauServer, myteamRoot: temp, dataRoot: join(temp, 'data'), places: { home: temp }, bridge: { list: async () => [], prompt: async () => ({}) }, startTimers: false });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const corps = await (await fetch(`http://127.0.0.1:${server.address().port}/api/identite`)).json();
