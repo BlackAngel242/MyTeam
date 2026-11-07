@@ -147,7 +147,8 @@ if (process.platform !== 'win32') test('installation Bash réelle : zéro IA et 
     env: { HOME: home }, answer: line => line.startsWith('@@MULTI ') ? '' : line.startsWith('@@INPUT ') ? '0' : 'n',
   });
   assert.equal(result.code, 0, result.errors);
-  assert.equal(result.records.filter(x => /Numéros des outils à installer/.test(x)).length, 1);
+  // En mode interface, la saisie « Numéros des outils » est devenue une liste à cocher (A2-3) : toujours posée une seule fois.
+  assert.equal(result.records.filter(x => /^@@MULTI .*Quels outils IA installer \?/.test(x)).length, 1);
   assert.match(result.output, /Aucune IA choisie/);
   assert.equal(result.records.at(-1), '@@END ok');
 });
