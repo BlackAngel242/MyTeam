@@ -80,11 +80,17 @@ jobs:
         run: |
           gh release edit "v$VERSION" --draft=false --latest
           gh release view "v$VERSION" --json isDraft,tagName --jq 'if .isDraft then error("Release is still a draft") else .tagName end'
+      # Garde : ne retirer les anciennes releases que si le site ne pointe plus vers elles.
+      # Une page sans aucun lien de téléchargement (page de maintenance) ne peut pas casser : on continue.
       - name: Verify Pages download link
         run: |
           for attempt in {1..24}; do
-            if curl --fail --silent --show-error --max-time 20 "https://blackangel242.github.io/MyTeam/?release=$VERSION" | grep -Fq "releases/download/v$VERSION/MyTeam-$VERSION.zip"; then
-              exit 0
+            if page=$(curl --fail --silent --show-error --max-time 20 "https://blackangel242.github.io/MyTeam/?release=$VERSION"); then
+              if grep -Fq "releases/download/v$VERSION/MyTeam-$VERSION.zip" <<< "$page"; then exit 0; fi
+              if ! grep -Fq "releases/download/" <<< "$page"; then
+                echo "La page publiée ne propose aucun téléchargement (maintenance) : aucun lien à casser."
+                exit 0
+              fi
             fi
             sleep 10
           done
