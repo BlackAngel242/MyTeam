@@ -852,18 +852,25 @@ if (-not $SansRaccourci) {
       }
     }
     if ($remplacer) {
-      Executer (Texte "Création du raccourci $lien." "Creating shortcut $lien.") {
+      $cree = Executer (Texte "Création du raccourci $lien." "Creating shortcut $lien.") {
         $raccourci = $wsh.CreateShortcut($lien)
         $raccourci.TargetPath = $cible
         if (Test-Path -LiteralPath $icone -PathType Leaf) { $raccourci.IconLocation = "$icone,0" }
         $raccourci.WorkingDirectory = $racine
         $raccourci.Description = 'MyTeam'
         $raccourci.Save()
-      } | Out-Null
-      Noter (Texte 'Raccourci : MyTeam.lnk créé sur le Bureau.' 'Shortcut: MyTeam.lnk created on the Desktop.')
-      $detailRaccourci = Texte 'Raccourci : MyTeam.lnk' 'Shortcut: MyTeam.lnk'
-      # L'ancien raccourci de MyTeam est retiré ; un raccourci étranger n'est jamais touché.
-      if (Test-Path -LiteralPath $ancien) {
+      }
+      # Le résumé ne dit « créé » que si le fichier existe : une action ignorée (entrée fermée) ou en échec n'est pas un succès.
+      $cree = $cree -and (Test-Path -LiteralPath $lien -PathType Leaf)
+      if ($cree) {
+        Noter (Texte 'Raccourci : MyTeam.lnk créé sur le Bureau.' 'Shortcut: MyTeam.lnk created on the Desktop.')
+        $detailRaccourci = Texte 'Raccourci : MyTeam.lnk' 'Shortcut: MyTeam.lnk'
+      } else {
+        Noter (Texte 'Raccourci : non créé.' 'Shortcut: not created.')
+        $detailRaccourci = Texte 'Raccourci : non créé' 'Shortcut: not created'
+      }
+      # L'ancien raccourci de MyTeam n'est retiré qu'une fois le nouveau en place ; un raccourci étranger n'est jamais touché.
+      if ($cree -and (Test-Path -LiteralPath $ancien)) {
         $vieux = $wsh.CreateShortcut($ancien)
         $vieuxCible = if ($vieux.TargetPath) { [IO.Path]::GetFullPath($vieux.TargetPath) } else { '' }
         $vieuxNous = ($vieuxCible -ieq [IO.Path]::GetFullPath($ancienneCible)) -or ($vieuxCible -and $vieuxCible.StartsWith([IO.Path]::GetFullPath($racine), [StringComparison]::OrdinalIgnoreCase)) -or ($vieux.Arguments -and $vieux.Arguments.Contains($racine))
