@@ -35,7 +35,7 @@ function dialogue(t,file,args,{answer=()=> 'n',eof=false,env={}}={}) {
         const line=partial.slice(0,newline).replace(/\r$/,'');partial=partial.slice(newline+1);
         if(!line.startsWith('@@'))continue;
         records.push(line);
-        if(!eof&&/^@@(?:CONFIRM|CHOICE|INPUT) /.test(line))child.stdin.write(answer(line)+'\n');
+        if(!eof&&/^@@(?:CONFIRM|CHOICE|MULTI|INPUT) /.test(line))child.stdin.write(answer(line)+'\n');
       }
     });
     child.stderr.on('data',part=>errors+=part);child.stdin.on('error',()=>{});
@@ -207,6 +207,18 @@ if(process.platform==='win32') {
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\t'+expected+'\t')));
     if(result==='present')assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
     if(result==='refus')assert.ok(!data.records.some(x=>x.startsWith('@@CONFIRM '))); 
+  });
+  test('Clink sans Oui : refus sans appel winget',async t=>{
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:questionNumero=0;$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
+    function FakeWinget { [Console]::WriteLine('CALL:winget') }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    `,{answer:()=> 'n'});
+    assert.equal(data.code,0,data.errors);
+    assert.match(data.output,/@@CONFIRM .*winget install --id chrisant996.Clink/);
+    assert.doesNotMatch(data.output,/CALL:winget/);
+    assert.ok(data.records.includes('@@DONE clink\tskip\tRefusé.'));
   });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{

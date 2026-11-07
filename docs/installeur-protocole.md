@@ -19,6 +19,6 @@ L'interface (`scripts/installateur-anime.mjs`) lance `scripts/installer.ps1 -Int
 ## Règles
 
 - Une réponse est lue sur une seule ligne de l'entrée standard, après chaque `@@CONFIRM`, `@@CHOICE`, `@@MULTI` ou `@@INPUT`. Fin de l'entrée (EOF) = refus, aucune case cochée, jamais un accord. Chaque case représente un consentement individuel ; les options `-Oui` et `--oui` ne cochent aucune case.
-- `-Oui` / `--oui` ne répond jamais à la place de l'interface pour une installation (Node.js, Herdr, outils, extensions, Clink) : chaque `@@CONFIRM` d'installation est posé à la personne.
+- `-Oui` / `--oui` accepte automatiquement les prérequis Node.js, Herdr et Clink ; sans cette option, leur commande exacte est présentée pour confirmation. Les outils IA et extensions exigent une confirmation explicite.
 - Le texte est dans la langue demandée (`-Lang fr|en` / `--lang fr|en`).
 - Aucun chemin personnel, jeton ni valeur du disque non échappée dans un message : les valeurs restent des données.
