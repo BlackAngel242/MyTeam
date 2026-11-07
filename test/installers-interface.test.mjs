@@ -282,7 +282,7 @@ if(process.platform==='win32') {
     `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
     assert.equal(data.code,ok?0:1,data.errors);
     assert.ok(data.records.some(x=>x.startsWith(`@@DONE clink\t${ok?'ok':'fail'}\t`)));
-    if(ok) assert.match(data.output,/Déjà installé et à jour\./);
+    if(ok) assert.match(data.output,/Déjà installé\./);
   });
   test('un code winget ne masque pas l’échec d’une autre commande',async t=>{
     const data=await functions(t,'ps',psFunctions,`

@@ -194,9 +194,9 @@ function Executer([string]$description, [scriptblock]$action, [switch]$Winget) {
     # Codes officiels winget : aucune mise à jour applicable ou paquet déjà installé.
     $dejaInstalle = $Winget -and $LASTEXITCODE -in @(-1978335189, -1978335135)
     if ($null -eq $LASTEXITCODE -or ($LASTEXITCODE -ne 0 -and -not $dejaInstalle)) { throw (Texte "La commande a échoué." 'The command failed.') }
-    if ($dejaInstalle) { Dire (Texte 'Déjà installé et à jour.' 'Already installed and up to date.') }
+    if ($dejaInstalle) { Dire (Texte 'Déjà installé.' 'Already installed.') }
     if ($Interface) {
-      $fait = if ($dejaInstalle) { Texte 'Déjà installé et à jour.' 'Already installed and up to date.' } else { switch ($script:etape) {
+      $fait = if ($dejaInstalle) { Texte 'Déjà installé.' 'Already installed.' } else { switch ($script:etape) {
         'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
         'tests' { Texte 'Vérifications réussies.' 'Checks passed.' }
         default { Texte 'Installation confirmée.' 'Installation confirmed.' }
