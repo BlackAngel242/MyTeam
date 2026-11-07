@@ -323,8 +323,8 @@ function Chercher-Herdr {
 $herdrTrouve = Chercher-Herdr
 if ($herdrTrouve) {
   Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
-  Dire (Texte "Herdr est present : $herdrTrouve" "Herdr is available: $herdrTrouve")
-  Noter (Texte 'Herdr : deja present.' 'Herdr: already available.')
+  Dire (Texte "Herdr est présent : $herdrTrouve" "Herdr is available: $herdrTrouve")
+  Noter (Texte 'Herdr : déjà présent.' 'Herdr: already available.')
   $dansPath = [bool](Get-Command herdr -ErrorAction SilentlyContinue)
   if (-not $dansPath) {
     Dire (Texte 'Herdr n''est pas dans le PATH : le bureau a besoin de la variable BUREAU_HERDR_PATH.' 'Herdr is not in PATH: the desktop needs the BUREAU_HERDR_PATH variable.')
@@ -333,14 +333,14 @@ if ($herdrTrouve) {
         [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
       } | Out-Null
       Noter (Texte 'BUREAU_HERDR_PATH : enregistre.' 'BUREAU_HERDR_PATH: saved.')
-    } else { Noter (Texte 'BUREAU_HERDR_PATH : non enregistre (refuse).' 'BUREAU_HERDR_PATH: not saved (declined).') }
+    } else { Noter (Texte 'BUREAU_HERDR_PATH : non enregistré (refusé).' 'BUREAU_HERDR_PATH: not saved (declined).') }
   }
 } else {
   Dire (Texte 'Herdr est introuvable sur cet ordinateur.' 'Herdr could not be found on this computer.')
-  Dire (Texte 'Methode d''installation officielle (documentation Herdr) :' 'Official installation method (Herdr documentation):')
+  Dire (Texte 'Méthode d''installation officielle (documentation Herdr) :' 'Official installation method (Herdr documentation):')
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire (Texte '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd' '  If an antivirus blocks it: curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd')
-  Dire (Texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
+  Dire (Texte '  Puis documentation complète : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
   if ($true) {
     try {
       Executer (Texte 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' 'Installing Herdr (official script https://herdr.dev/install.ps1).') {
@@ -350,8 +350,8 @@ if ($herdrTrouve) {
         Rafraichir-Path
         $herdrTrouve = Chercher-Herdr
         if ($herdrTrouve) {
-          Dire (Texte "Herdr est maintenant installe : $herdrTrouve" "Herdr is now installed: $herdrTrouve")
-          Noter (Texte 'Herdr : installe.' 'Herdr: installed.')
+        Dire (Texte "Herdr est maintenant installé : $herdrTrouve" "Herdr is now installed: $herdrTrouve")
+          Noter (Texte 'Herdr : installé.' 'Herdr: installed.')
           if (-not (Get-Command herdr -ErrorAction SilentlyContinue)) {
             Executer (Texte 'Enregistrement du chemin Herdr utilisateur.' 'Saving user Herdr path.') {
               [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
@@ -359,15 +359,15 @@ if ($herdrTrouve) {
             Noter (Texte 'BUREAU_HERDR_PATH : enregistré.' 'BUREAU_HERDR_PATH: saved.')
           }
         }
-        else { Dire (Texte 'Herdr n''a pas ete detecte. Consultez https://herdr.dev/docs/install/ puis relancez ce script.' 'Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.'); Noter (Texte 'Herdr : a verifier.' 'Herdr: check required.') }
+        else { Dire (Texte 'Herdr n''a pas été détecté. Consultez https://herdr.dev/docs/install/ puis relancez ce script.' 'Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.'); Noter (Texte 'Herdr : à vérifier.' 'Herdr: check required.') }
       } else { Noter (Texte 'Herdr : simulation de l''installation officielle.' 'Herdr: preview of official installation.') }
     } catch {
-      Dire (Texte "L'installation de Herdr a echoue : $($_.Exception.Message)" "Herdr installation failed: $($_.Exception.Message)")
+      Dire (Texte "L'installation de Herdr a échoué : $($_.Exception.Message)" "Herdr installation failed: $($_.Exception.Message)")
       Dire (Texte 'Suivez la documentation officielle : https://herdr.dev/docs/install/' 'Follow the official documentation: https://herdr.dev/docs/install/')
-      Noter (Texte 'Herdr : installation echouee.' 'Herdr: installation failed.')
+      Noter (Texte 'Herdr : installation échouée.' 'Herdr: installation failed.')
     }
   } else {
-    Dire (Texte 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')
+    Dire (Texte 'Herdr reste à installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')
     Dire (Texte 'Le bureau ne fonctionnera pas sans Herdr ouvert.' 'The desktop requires Herdr to be open.')
     Noter (Texte 'Herdr : installation impossible.' 'Herdr: installation unavailable.')
   }
@@ -441,15 +441,15 @@ function Detecter-Outils {
 function Proposer-Agents([string[]]$Panneaux) {
   if ($Oui) { Dire (Texte 'Le mode -Oui ne lance aucun agent.' 'The -Oui option never starts an agent.'); return }
   $outils = @(Detecter-Outils)
-  if ($outils.Count -eq 0) { Dire (Texte 'Aucun outil compatible detecte : aucun agent lance.' 'No supported tools detected: no agent started.'); return }
+  if ($outils.Count -eq 0) { Dire (Texte 'Aucun outil compatible détecté : aucun agent lancé.' 'No supported tools detected: no agent started.'); return }
   $noms = @('Chef','Agent 2','Agent 3','Agent 4')
   for ($i=0; $i -lt $Panneaux.Count; $i++) {
     if ($DryRun) { Simuler (Texte "Choix et confirmation de l'outil pour $($noms[$i])." "Choose and confirm a tool for $($noms[$i])."); continue }
     if ($Interface) { $question = Texte "Outil pour le panneau $($noms[$i])" "Tool for pane $($noms[$i])" }
     else {
-      Dire (Texte "Panneau $($noms[$i]) : outils detectes" "Pane $($noms[$i]): detected tools")
+      Dire (Texte "Panneau $($noms[$i]) : outils détectés" "Pane $($noms[$i]): detected tools")
       for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
-      $question = Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)"
+      $question = Texte "Numéro de l'outil (0 ou Entrée pour ignorer)" "Tool number (0 or Enter to skip)"
     }
     $choix = Choisir $question (@((Texte 'Ignorer' 'Skip')) + $outils)
     if ($Interface -and $choix -match '^\d+$') { $choix = [string]([int]$choix - 1) }
@@ -478,18 +478,18 @@ Dire (Texte '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---' '--- 3
 # manuelle est affichee au lieu d'echouer silencieusement.
 # Aucun outil d'IA n'est lance sans choix et confirmation individuelle.
 if ($herdrTrouve) {
-  if (Confirmer (Texte 'Creer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
+  if (Confirmer (Texte 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
     if ($DryRun) {
       Simuler (Texte 'Creation de l''espace « Bureau des agents » puis 3 decoupes de panneaux.' 'Creating the Agent desktop workspace, then splitting it into four panes.')
       Simuler (Texte 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.' 'Pane names: Chef, Agent 2, Agent 3, Agent 4.')
       Noter (Texte 'Panneaux Herdr : simulation.' 'Herdr panes: preview.')
     } else {
       try {
-        Dire (Texte 'Creation de l''espace Herdr « Bureau des agents »...' 'Creating the Agent desktop workspace...')
+        Dire (Texte 'Création de l''espace Herdr « Bureau des agents »...' 'Creating the Agent desktop workspace...')
         $ids = @(Creer-GrilleHerdr)
         $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
         Dire (Texte "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))." "Panes created and named: $($noms -join ', ') (identifiers $($ids[0..3] -join ', ')).")
-        Noter (Texte 'Panneaux Herdr : 4 panneaux crees et nommes.' 'Herdr panes: 4 panes created and named.')
+        Noter (Texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')
         Etat-Etape 'ok' (Texte '4 panneaux créés.' '4 panes created.')
         Proposer-Agents $ids
       } catch {
@@ -508,10 +508,10 @@ if ($herdrTrouve) {
         Noter (Texte 'Panneaux Herdr : procedure manuelle affichee.' 'Herdr panes: manual procedure displayed.')
       }
     }
-  } else { Noter (Texte 'Panneaux Herdr : non crees (refuse).' 'Herdr panes: not created (declined).') }
+  } else { Noter (Texte 'Panneaux Herdr : non créés (refusé).' 'Herdr panes: not created (declined).') }
 } else {
-  Dire (Texte 'Herdr absent : l''espace de panneaux est ignore. Installez Herdr puis relancez ce script.' 'Herdr is missing: workspace skipped. Install Herdr and run this script again.')
-  Noter (Texte 'Panneaux Herdr : ignores (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
+  Dire (Texte 'Herdr absent : l''espace de panneaux est ignoré. Installez Herdr puis relancez ce script.' 'Herdr is missing: workspace skipped. Install Herdr and run this script again.')
+  Noter (Texte 'Panneaux Herdr : ignorés (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
   Etat-Etape 'skip' (Texte 'Herdr absent.' 'Herdr missing.')
 }
 Dire ''
@@ -649,7 +649,7 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
   $vscode = Get-Command code -ErrorAction SilentlyContinue
   if (-not $vscode) {
     Etat-Etape 'skip' (Texte 'VS Code absent.' 'VS Code missing.')
-    Dire (Texte 'VS Code n''est pas detecte sur cet ordinateur : l''installation des extensions est ignoree.' 'VS Code was not detected: extension installation skipped.')
+    Dire (Texte 'VS Code n''est pas détecté sur cet ordinateur : l''installation des extensions est ignorée.' 'VS Code was not detected: extension installation skipped.')
     Noter (Texte 'Extensions : ignorees (VS Code absent).' 'Extensions: skipped (VS Code missing).')
   } else {
     foreach ($ext in $extensions) {
@@ -674,7 +674,7 @@ Dire (Texte '--- 6. Configuration du bureau ---' '--- 6. Desktop configuration -
 $portChoisi = 0
 $portActuel = [Environment]::GetEnvironmentVariable('BUREAU_PORT', 'User')
 if ($Port -gt 0) { $portChoisi = $Port }
-elseif ($portActuel -match '^\d+$') { $portChoisi = [int]$portActuel; Dire (Texte "Port deja enregistre : $portChoisi" "Previously saved port: $portChoisi") }
+elseif ($portActuel -match '^\d+$') { $portChoisi = [int]$portActuel; Dire (Texte "Port déjà enregistré : $portChoisi" "Previously saved port: $portChoisi") }
 else { $portChoisi = 4317 }
 
 if ($Port -eq 0 -and -not $DryRun) {
@@ -698,8 +698,8 @@ if ("$portActuel" -ne "$portChoisi") {
   } | Out-Null
   if (-not ($Interface -and $script:entreeFermee)) { Noter (Texte "BUREAU_PORT : $portChoisi." "BUREAU_PORT: $portChoisi..") }
 } else {
-  Dire (Texte "BUREAU_PORT deja enregistre ($portChoisi). Rien a faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
-  Noter (Texte "BUREAU_PORT : deja a $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
+  Dire (Texte "BUREAU_PORT déjà enregistré ($portChoisi). Rien à faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
+  Noter (Texte "BUREAU_PORT : déjà à $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
   Etat-Etape 'ok' (Texte "Port $portChoisi déjà enregistré." "Port $portChoisi already saved.")
 }
 
@@ -729,7 +729,7 @@ if (-not $SansRaccourci) {
     if (-not $cible) {
       Dire (Texte 'Herdr est introuvable : le raccourci Herdr est ignore.' 'Herdr was not found: Herdr shortcut skipped.')
       Noter (Texte 'Raccourci : Herdr absent.' 'Shortcut: Herdr missing.')
-    } elseif (Confirmer (Texte 'Creer le raccourci « Ouvrir le bureau » qui lance Herdr ?' 'Create the Open desktop shortcut that starts Herdr?')) {
+    } elseif (Confirmer (Texte 'Créer le raccourci « Ouvrir le bureau » qui lance Herdr ?' 'Create the Open desktop shortcut that starts Herdr?')) {
       Executer (Texte "Creation du raccourci $lienRaccourci (lance Herdr)." "Creating shortcut $lienRaccourci (starts Herdr).") {
         $wsh = New-Object -ComObject WScript.Shell
         $raccourci = $wsh.CreateShortcut($lienRaccourci)
@@ -833,6 +833,6 @@ else { foreach ($ligne in $rapport) { Dire " - $ligne" } }
 Dire ''
 Dire (Texte "Pour ouvrir le bureau : double-cliquez sur 'Ouvrir le bureau.cmd' dans $racine" "To open the desktop: double-click Ouvrir le bureau.cmd in $racine")
 Dire (Texte "ou lancez 'node server.mjs' puis ouvrez http://127.0.0.1:$portChoisi" "or run node server.mjs, then open http://127.0.0.1:$portChoisi")
-Dire (Texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
+Dire (Texte 'Herdr doit être ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
 Terminer-Interface
 if ($installationIncomplete -or ($Interface -and $script:echecInterface)) { exit 1 }
