@@ -696,7 +696,7 @@ if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensi
   else
     extensions_selection=''
     if [ "$INTERFACE" = 1 ] && [ "$OUI" != 1 ]; then
-      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
+      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier - Code formatter (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
         extensions_selection=",$REPONSE_INTERFACE,"
       fi
     fi
@@ -704,7 +704,7 @@ if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensi
       noms_extensions=()
       [[ "$extensions_selection" == *",1,"* ]] && noms_extensions+=('Markdown All in One')
       [[ "$extensions_selection" == *",2,"* ]] && noms_extensions+=('ESLint')
-      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier')
+      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier - Code formatter')
       DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_extensions[*]}"
     fi
     ext_index=0
