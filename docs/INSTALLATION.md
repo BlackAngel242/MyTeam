@@ -139,9 +139,10 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 9. **Configuration du port et raccourci sur le Bureau** :
    - Choix du port HTTP d'écoute (4317 par défaut), sauvegardé dans les variables d'environnement utilisateur.
    - Création du raccourci sur le Bureau avec 3 options au choix :
-     * Option 1 : Lance Herdr directement.
-     * Option 2 : Lance le Bureau dans votre navigateur (démarre `node server.mjs` puis ouvre l'adresse locale).
-     * Option 3 : « Herdr et bureau » : lance Herdr dans un terminal visible, démarre le serveur du bureau et ouvre votre navigateur.
+     * « Le bureau » (choix par défaut) : lance le bureau dans votre navigateur (démarre `node server.mjs` puis ouvre l'adresse locale).
+     * « Herdr » : lance Herdr directement.
+     * « Herdr et bureau » : lance Herdr dans un terminal visible, démarre le serveur du bureau et ouvre votre navigateur.
+   - Dans l'assistant animé, ces choix apparaissent dans cet ordre, « Le bureau » présélectionné. En mode texte (sans animation), la saisie reste numérotée : 1 = Herdr, 2 = Le bureau (défaut), 3 = Herdr et bureau.
 10. **Tests du projet** : Si Node.js est validé, proposition de lancer `npm test` et `npm run check` pour attester du bon fonctionnement.
 11. **Étape kit d'équipe** : Proposition d'initialiser le kit de collaboration (`node scripts/init-kit.mjs <dossier> --lang <fr|en>`) dans un répertoire de projet pour y déployer les règles `AGENTS.md`, les consignes `CHEF.md`, la mémoire `LESSONS.md` et les fichiers de suivi.
 

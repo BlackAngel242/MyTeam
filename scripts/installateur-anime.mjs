@@ -110,7 +110,8 @@ export function appliquer(etat, evt) {
     case 'plan': if (!tache(evt.id)) etat.taches.push({ id: evt.id, libelle: evt.libelle, etat: 'pending', texte: '' }); break;
     case 'step': { const t = tache(evt.id); if (t) t.etat = 'run'; etat.info = ''; break; }
     case 'info':
-      if (/^===.*===$/.test(evt.texte.trim())) { etat.dansResume = true; etat.resume = []; break; }
+      // Seul le titre du résumé final l'ouvre : la bannière d'ouverture (« === Bureau des agents : installation === ») ne compte pas.
+      if (/^===\s*(Résumé|Resume|Summary)\s*===$/i.test(evt.texte.trim())) { etat.dansResume = true; etat.resume = []; break; }
       if (etat.dansResume) { if (evt.texte.trim()) etat.resume.push(evt.texte.trim()); if (etat.resume.length > 15) etat.resume.shift(); break; }
       etat.info = evt.texte; break;
     case 'done': { const t = tache(evt.id); if (t) { t.etat = evt.etat; t.texte = evt.texte; } etat.info = ''; break; }

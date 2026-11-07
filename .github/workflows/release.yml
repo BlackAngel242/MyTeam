@@ -68,10 +68,7 @@ jobs:
           cd verification
           sha256sum --check "MyTeam-$VERSION.zip.sha256"
           unzip -t "MyTeam-$VERSION.zip"
-      - name: Publish new reference
-        run: |
-          gh release edit "v$VERSION" --draft=false --latest
-          gh release view "v$VERSION" --json isDraft,tagName --jq 'if .isDraft then error("Release is still a draft") else .tagName end'
+      # npm avant la release publique : un échec npm laisse un brouillon, jamais une release sans paquet npx.
       - name: Publish npm package (npx @drsmoke/myteam)
         run: |
           if npm view "@drsmoke/myteam@$VERSION" version >/dev/null 2>&1; then
@@ -79,6 +76,10 @@ jobs:
           else
             npm publish --provenance
           fi
+      - name: Publish new reference
+        run: |
+          gh release edit "v$VERSION" --draft=false --latest
+          gh release view "v$VERSION" --json isDraft,tagName --jq 'if .isDraft then error("Release is still a draft") else .tagName end'
       - name: Verify Pages download link
         run: |
           for attempt in {1..24}; do

@@ -22,23 +22,31 @@ function lancerAssistant(dossier = cible) {
   process.exitCode = r.status ?? 1;
 }
 
+// package.json illisible ou invalide = null (dossier étranger), jamais une erreur brute.
+const lirePaquet = dossier => readFile(join(dossier, 'package.json'), 'utf8').then(t => { try { return JSON.parse(t); } catch { return null; } }, () => null);
+
 async function installer() {
-  if (process.argv.includes('--dry-run')) {
-    console.log(`Simulation : MyTeam serait copié dans ${cible}, puis l'assistant d'installation serait lancé.`);
-    return;
-  }
   // La démonstration n'installe rien : elle tourne depuis le paquet npm temporaire, sans copie dans le dossier utilisateur.
   if (process.argv.includes('--demo')) return lancerAssistant(source);
+  const simulation = process.argv.includes('--dry-run');
   if (await lstat(cible).then(() => true, e => e.code === 'ENOENT' ? false : Promise.reject(e))) {
     // Relancer npx sur une installation existante rouvre son assistant, sans rien écraser.
-    const installee = await readFile(join(cible, 'package.json'), 'utf8').then(JSON.parse, () => null);
+    const installee = await lirePaquet(cible);
     if (!['@drsmoke/myteam', 'bureau-des-agents'].includes(installee?.name)) {
       throw new Error(`Le dossier ${cible} existe mais ne contient pas MyTeam : rien n'a été modifié. Déplacez-le avant de réessayer.`);
     }
-    const proposee = JSON.parse(await readFile(join(source, 'package.json'), 'utf8')).version;
+    if (simulation) {
+      console.log(`Simulation : MyTeam ${installee.version} est déjà installé dans ${cible} ; rien ne serait copié, son assistant serait relancé.`);
+      return;
+    }
+    const proposee = (await lirePaquet(source)).version;
     console.log(`MyTeam ${installee.version} est déjà installé dans ${cible} : rien n'est écrasé, son assistant se relance.`);
     if (installee.version !== proposee) console.log(`La version ${proposee} existe : utilisez la mise à jour intégrée du bureau pour l'installer.`);
     return lancerAssistant();
+  }
+  if (simulation) {
+    console.log(`Simulation : MyTeam serait copié dans ${cible}, puis l'assistant d'installation serait lancé.`);
+    return;
   }
   await mkdir(dirname(cible), { recursive: true });
   await mkdir(cible);

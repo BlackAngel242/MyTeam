@@ -139,9 +139,10 @@ The script can be rerun safely at any time: it inspects your system and only set
 9. **Port configuration and Desktop shortcut**:
    - Configures the HTTP listening port (default: 4317), saved into user environment variables.
    - Offers 3 desktop shortcut choices:
-     * Option 1: Starts Herdr directly.
-     * Option 2: Starts the office in your browser (runs `node server.mjs` and opens the local URL).
-     * Option 3: "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
+     * "Desktop" (default): starts the office in your browser (runs `node server.mjs` and opens the local URL).
+     * "Herdr": starts Herdr directly.
+     * "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
+   - In the animated assistant these choices appear in this order, with "Desktop" preselected. In text mode, input stays numbered: 1 = Herdr, 2 = Desktop (default), 3 = Herdr and desktop.
 10. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
 11. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
 

@@ -253,7 +253,12 @@ console.log('@@END ok');`);
 
 test('le résumé de l\'installeur (après « === Résumé === ») reste affiché après la fin', () => {
   const etat = etatInitial({ lang: 'fr' });
-  for (const l of ['@@PLAN a\tA', '@@STEP a', '@@INFO travail en cours', '@@INFO === Résumé ===', '@@INFO  - Node.js : présent.', '@@INFO ', '@@INFO Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd', '@@DONE a\tok\t', '@@END ok']) appliquer(etat, parseLigne(l));
+  // Le flux réel commence par une bannière en === … === : elle ne doit pas ouvrir le résumé (relecture omp, B1).
+  appliquer(etat, parseLigne('@@INFO === Bureau des agents : installation ==='));
+  appliquer(etat, parseLigne('@@INFO Installation de Node.js avec winget.'));
+  assert.equal(etat.dansResume, false);
+  assert.equal(etat.info, 'Installation de Node.js avec winget.', 'les messages en direct restent visibles pendant l\'installation');
+  for (const l of ['@@PLAN a\tA', '@@STEP a', '@@INFO travail en cours', '@@INFO === Resume ===', '@@INFO  - Node.js : présent.', '@@INFO ', '@@INFO Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd', '@@DONE a\tok\t', '@@END ok']) appliquer(etat, parseLigne(l));
   assert.deepEqual(etat.resume, ['- Node.js : présent.', 'Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd']);
   const ecran = cadre(etat, 0, { couleur: false, largeur: 120 }).join('\n');
   assert.match(ecran, /Pour ouvrir le bureau/);

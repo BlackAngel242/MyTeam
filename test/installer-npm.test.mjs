@@ -35,13 +35,25 @@ test('--dry-run annonce la cible hors du dossier de données, sans rien écrire'
   await assert.rejects(readdir(cible));
 });
 
-test('un dossier cible étranger à MyTeam est refusé sans modification', async t => {
+for (const [cas, contenu] of [['un autre paquet', JSON.stringify({ name: 'autre-chose', version: '1.0.0' })], ['un package.json invalide', '{ pas du json']]) {
+  test(`un dossier cible étranger à MyTeam (${cas}) est refusé sans modification`, async t => {
+    const { cible, lancer } = await maison(t);
+    await mkdir(cible, { recursive: true });
+    await writeFile(join(cible, 'package.json'), contenu);
+    const r = lancer();
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /ne contient pas MyTeam : rien n'a été modifié/);
+    assert.deepEqual(await readdir(cible), ['package.json']);
+  });
+}
+
+test('--dry-run sur une installation existante annonce la relance, pas une copie', async t => {
   const { cible, lancer } = await maison(t);
   await mkdir(cible, { recursive: true });
-  await writeFile(join(cible, 'package.json'), JSON.stringify({ name: 'autre-chose', version: '1.0.0' }));
-  const r = lancer();
-  assert.equal(r.status, 1);
-  assert.match(r.stderr, /ne contient pas MyTeam : rien n'a été modifié/);
+  await writeFile(join(cible, 'package.json'), JSON.stringify({ name: '@drsmoke/myteam', version: '0.0.1' }));
+  const r = lancer('--dry-run');
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /déjà installé .* rien ne serait copié, son assistant serait relancé/);
   assert.deepEqual(await readdir(cible), ['package.json']);
 });
 
