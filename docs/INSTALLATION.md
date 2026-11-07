@@ -109,7 +109,7 @@ Les scripts `scripts/installer.ps1` et `scripts/installer.sh`, ainsi que le lanc
 | Option Windows | Option macOS / Linux | Option animateur Node | Effet |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation : affiche toutes les actions prévues sans rien modifier ni exécuter. |
-| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les outils d'IA, intégrations, lancements d'agents, extensions ni le kit (un accord individuel o/n reste obligatoire). Les prérequis (Node.js, Herdr, Clink) s'installent de toute façon, avec ou sans cette option. |
+| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les outils d'IA, intégrations, lancements d'agents, extensions ni le kit (un accord individuel o/n reste obligatoire). Les prérequis (Node.js, Herdr, Clink) s'installent de toute façon, avec ou sans cette option. Avec `-Oui`, ni la session Herdr `myteam` ni sa grille ne sont créées : relancez l'installateur sans `-Oui` pour les obtenir. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Spécifie le port HTTP du bureau (défaut : 4317 ou variable `BUREAU_PORT` existante). |
 | `-HerdrChemin chemin\herdr.exe` | `--herdr-chemin chemin/herdr` | (détection PATH) | Indique l'emplacement complet de l'exécutable Herdr s'il est absent du PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (non transmis) | Ne crée pas le raccourci MyTeam sur le Bureau. |
@@ -148,7 +148,7 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 
 Une fois l'installation terminée, suivez ce parcours pour démarrer votre session :
 
-1. **Lancer MyTeam** : double-cliquez sur le raccourci MyTeam du Bureau, ou tapez `myteam` dans un nouveau terminal (PowerShell, cmd ou bash). Le bureau démarre et s'ouvre dans votre navigateur par défaut à l'adresse `http://127.0.0.1:<port>`, puis Herdr s'ouvre dans la session `myteam`. Si le bureau tourne déjà, il est réutilisé ; si un autre programme occupe le port, la commande le signale et s'arrête. `myteam --bureau` ouvre seulement le bureau, `myteam --help` affiche l'aide.
+1. **Lancer MyTeam** : double-cliquez sur le raccourci MyTeam du Bureau, ou tapez `myteam` dans un nouveau terminal (PowerShell, cmd ou bash). Le bureau démarre et s'ouvre dans votre navigateur par défaut à l'adresse `http://127.0.0.1:<port>`, puis Herdr s'ouvre dans la session `myteam`. Si le bureau tourne déjà, il est réutilisé ; si un autre programme occupe le port, la commande le signale et s'arrête sans le fermer. `myteam --bureau` ouvre seulement le bureau, `myteam --help` affiche l'aide.
 2. **Voir les 4 panneaux dans la grille 2×2 et le bureau animé dans le navigateur** : Vérifiez que Herdr affiche vos 4 terminaux (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) et ouvrez l'adresse `http://127.0.0.1:4317` dans votre navigateur puis choisissez et validez le projet avant d’ouvrir son bureau.
 3. **Le chef lit CHEF.md** : Dans le panneau du chef (ou via l'onglet Poste du bureau Web), le chef prend connaissance de `CHEF.md` et `AGENTS.md`, interroge ses équipiers avec la commande `herdr agent list` et se tient prêt à coordonner le travail.
 4. **Première délégation** : Envoyez une mission au chef depuis le formulaire du bureau (Ctrl+Entrée). Dès que le chef confie une tâche dans son journal, observez sa tournée physique dans la scène : il quitte son bureau Direction pour aller déposer le dossier sur le poste de son collaborateur.
@@ -213,6 +213,9 @@ Deux points d'honnêteté :
 |---|---|---|
 | `BUREAU_PORT` | Port du bureau (4317 par défaut) | Script d'installation, ou variable d'environnement utilisateur |
 | `BUREAU_HERDR_PATH` | Chemin complet de Herdr s'il n'est pas dans le PATH | Script d'installation, ou variable d'environnement utilisateur |
+| `BUREAU_HERDR_SESSION` | Session Herdr lue par le bureau et ouverte par `myteam` (`myteam` par défaut ; lettres, chiffres, `-` et `_`) | Script d'installation, ou variable d'environnement utilisateur |
+| `BUREAU_RELAIS_QUOTA` | `0` désactive le relais : la mission d'un agent qui atteint sa limite d'usage n'est plus confiée à un autre agent | Variable d'environnement |
+| `MYTEAM_SANS_PAUSE` | `1` : en cas d'erreur, `myteam.cmd` n'attend pas de touche (appel depuis un script) | Variable d'environnement |
 
 Le script d'installation écrit ces réglages dans les variables d'environnement de l'utilisateur (Windows) ou dans un bloc marqué entre `# >>> bureau-des-agents >>>` et `# <<< bureau-des-agents <<<` dans `~/.profile` et `~/.bashrc` (macOS et Linux). Ce bloc est remplacé proprement à chaque relance, sans doublon. Ouvrez un nouveau terminal après configuration pour que les modifications soient actives.
 
@@ -233,7 +236,7 @@ Le script d'installation écrit ces réglages dans les variables d'environnement
 - **Node.js absent ou trop vieux** : `node --version` doit indiquer v22 ou plus. Téléchargez la dernière version LTS sur https://nodejs.org/en/download puis relancez le script d'installation.
 - **Un antivirus bloque une commande d'installation** : certaines protections bloquent les commandes sans fichier de type `irm ... | iex`. Utilisez la variante par fichier `install.cmd` proposée par Herdr et Claude Code.
 - **Les tests échouent** : assurez-vous de la version de Node.js, puis relancez `npm test`.
-- **Désinstallation complète** : supprimez le dossier du logiciel et le raccourci sur votre Bureau, puis, si vous souhaitez effacer les états privés, le dossier de données système `MyTeam` séparément, retirez les variables d'environnement `BUREAU_PORT`, `BUREAU_HERDR_PATH` et `BUREAU_HERDR_SESSION`, et le dossier `bin` de MyTeam du PATH utilisateur (ou le lien `~/.local/bin/myteam`). La session Herdr se supprime avec `herdr session delete myteam`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
+- **Désinstallation complète** : supprimez le dossier du logiciel et le raccourci sur votre Bureau, puis, si vous souhaitez effacer les états privés, le dossier de données système `MyTeam` séparément, retirez les variables d'environnement `BUREAU_PORT`, `BUREAU_HERDR_PATH` et `BUREAU_HERDR_SESSION`, et le dossier `bin` de MyTeam du PATH utilisateur (ou le lien `~/.local/bin/myteam`). La session Herdr se supprime avec `herdr session stop myteam` puis `herdr session delete myteam`. Node.js, Herdr et les IA se désinstallent via leurs propres outils.
 
 ## Sources vérifiées
 

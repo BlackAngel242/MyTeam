@@ -1,10 +1,12 @@
 // Relais en cas de pause de quota : quand un agent atteint sa limite d'usage (« You've hit your usage limit »),
 // sa mission en cours est confiée à un suppléant disponible du même projet, puis l'agent est prévenu à son retour
-// qu'elle a été reprise. Les messages passent par la file d'attente : jamais en crise, jamais à un agent occupé.
+// qu'elle a été confiée. Les messages passent par la file d'attente : jamais en crise, jamais à un agent occupé.
+import { masque } from './masque.mjs';
 
-// Suppléant : même dossier de projet, prêt (idle/done), pas en pause, jamais le chef.
+// Suppléant : même dossier de projet (jamais quand ce dossier est inconnu), prêt (idle/done), pas en pause, jamais le chef.
 // Un outil d'une autre famille passe d'abord : un autre agent du même outil partage souvent le même compte, donc la même limite.
 export function choisirSuppleant(source, agents, { enPause = () => false, chefId = null } = {}) {
+  if (!source.cwd) return null;
   const candidats = agents.filter(a => a.id !== source.id && a.id !== chefId && a.cwd === source.cwd
     && ['idle', 'done'].includes(a.status) && a.ready === true && !enPause(a.id));
   return candidats.find(a => a.kind !== source.kind) ?? candidats[0] ?? null;
@@ -15,11 +17,13 @@ const heureDe = iso => {
   return Number.isFinite(t) ? new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : null;
 };
 
-// Consigne de relais. La mission connue (dernière consigne envoyée par la file) est citée ; dans tous les cas le
-// suppléant lit l'écran de l'agent en pause, car une mission peut avoir été donnée hors de la file.
+// Consigne de relais. La mission connue (dernière consigne envoyée par la file) est citée, secrets et chemins masqués,
+// car elle part chez un autre outil ; dans tous les cas le suppléant lit l'écran de l'agent en pause, car une mission
+// peut avoir été donnée hors de la file.
 export function messageRelais({ source, retour = null, mission = null }) {
   const heure = heureDe(retour);
-  const extrait = mission ? `\nSa dernière consigne connue :\n« ${mission.slice(0, 1500)}${mission.length > 1500 ? '…' : ''} »` : '';
+  const texte = mission ? masque(mission) : '';
+  const extrait = texte ? `\nSa dernière consigne connue :\n« ${texte.slice(0, 1500)}${texte.length > 1500 ? '…' : ''} »` : '';
   return `Chef : ${source.name} (${source.kind}) est en pause de quota${heure ? ` jusqu'à ${heure}` : ''}. Tu reprends sa mission en relais.`
     + `\n1. Lis son écran pour retrouver la tâche et l'état exact : herdr agent read ${source.paneId} --source recent-unwrapped --lines 200`
     + `\n2. Vérifie ce qui est déjà fait (git status, git log, fichiers modifiés) dans ${source.cwd} : ne refais rien de déjà commité, ne touche pas aux fichiers d'un autre agent.`
@@ -28,7 +32,7 @@ export function messageRelais({ source, retour = null, mission = null }) {
 }
 
 export function messageRetour({ heure = null, suppleant }) {
-  return `Chef : ta limite d'usage est levée${heure ? ` (retour annoncé à ${heure})` : ''}. Pendant ta pause, ta mission a été confiée à ${suppleant} : ne la reprends pas. Réponds « dispo » en une ligne et attends la prochaine consigne du chef.`;
+  return `Chef : ta limite d'usage est levée${heure ? ` (retour annoncé à ${heure})` : ''}. Pendant ta pause, ta mission a été confiée à ${suppleant}. Ne la reprends pas de toi-même : réponds « dispo » en une ligne et attends que le chef te dise si elle est terminée ou s'il faut la reprendre.`;
 }
 
 // Dernière consigne envoyée par la file à cet agent dans les 12 dernières heures, s'il y en a une.

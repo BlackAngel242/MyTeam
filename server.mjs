@@ -358,10 +358,10 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
         catch(error) {return json(errorStatus(error),{error:'Impossible de lire les listes de tâches pour le moment.'});}
       }
       // Identité du bureau, pour la commande myteam : savoir si le port porte bien un bureau MyTeam de la bonne
-      // session Herdr, et l'arrêter sinon. Rien de personnel (ni chemin, ni jeton) : nom, version, session, processus.
+      // session Herdr. Rien de personnel (ni chemin, ni jeton, ni processus) : nom, version, session.
       if(req.method==='GET'&&url.pathname==='/api/identite') {
         let session=null;try{session=sessionHerdr();}catch{session=null;}
-        return json(200,{app:'myteam',version:VERSION,session,pid:process.pid});
+        return json(200,{app:'myteam',version:VERSION,session});
       }
       // Pied de page facultatif : chacun met ses propres informations dans .bureau/pied.json ; rien n'est imposé.
       if(req.method==='GET'&&url.pathname==='/api/pied') {

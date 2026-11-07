@@ -52,14 +52,30 @@ test('myteam : ouvre le bureau au port enregistré puis Herdr sur la session MyT
 });
 
 test('myteam : un bureau MyTeam d’une autre session est arrêté puis rouvert sur la session MyTeam', async () => {
-  const { journal, options } = dependances({ presents: [{ myteam: true, session: null, pid: 4242 }, null] });
+  const { journal, options } = dependances({ presents: [{ myteam: true, session: null }, null], pidNode: () => 4242 });
   assert.equal(await lancerMyTeam([], options), 0);
   assert.deepEqual(journal.tues, [4242]);
   assert.equal(journal.ouvertures.length, 1);
 });
 
+test('myteam : un numéro de processus annoncé par une réponse HTTP n’est jamais arrêté', async () => {
+  const { journal, options } = dependances({ presents: [{ myteam: true, session: 'autre', pid: 666 }] });
+  assert.equal(await lancerMyTeam([], options), 1, 'aucun processus Node identifié sur le port : on explique');
+  assert.deepEqual(journal.tues, []);
+  assert.equal(journal.ouvertures.length, 0);
+});
+
+test('myteam : un port invalide est refusé avant toute sonde', async () => {
+  for (const port of ['80', '4317x', '70000', '1:2']) {
+    const { journal, options } = dependances({ variables: { BUREAU_PORT: port }, presents: [{ myteam: false }] });
+    assert.equal(await lancerMyTeam([], options), 2, port);
+    assert.equal(journal.ouvertures.length, 0);
+    assert.ok(journal.textes.some(t => /Port invalide/.test(t)));
+  }
+});
+
 test('myteam : le bon bureau déjà ouvert est réutilisé, un autre programme sur le port n’est jamais arrêté', async () => {
-  const a = dependances({ presents: [{ myteam: true, session: 'myteam', pid: 7 }] });
+  const a = dependances({ presents: [{ myteam: true, session: 'myteam' }] });
   assert.equal(await lancerMyTeam([], a.options), 0);
   assert.deepEqual(a.journal.tues, []);
   const b = dependances({ presents: [{ myteam: false }] });
@@ -67,20 +83,23 @@ test('myteam : le bon bureau déjà ouvert est réutilisé, un autre programme s
   assert.deepEqual(b.journal.tues, []);
   assert.equal(b.journal.ouvertures.length, 0);
   assert.ok(b.journal.textes.some(t => /occupé par un autre programme/.test(t)));
-  const c = dependances({ presents: [{ myteam: true, ancien: true, session: null, pid: null }] });
+  const c = dependances({ presents: [{ myteam: true, ancien: true, session: null }] });
   assert.equal(await lancerMyTeam([], c.options), 1, 'ancien bureau sans processus Node identifié : on explique au lieu de deviner');
   assert.equal(c.journal.ouvertures.length, 0);
-  const d = dependances({ presents: [{ myteam: true, ancien: true, session: null, pid: null }, null], pidNode: () => 99 });
+  const d = dependances({ presents: [{ myteam: true, ancien: true, session: null }, null], pidNode: () => 99 });
   assert.equal(await lancerMyTeam([], d.options), 0);
   assert.deepEqual(d.journal.tues, [99]);
 });
 
-test('identifier : bureau MyTeam, ancien bureau, autre programme, port libre', async () => {
+test('identifier : bureau MyTeam, ancien bureau, autre programme (même muet), port libre', async () => {
   const rep = (status, corps, csp = '') => async () => ({ ok: status === 200, status, json: async () => corps, headers: { get: n => n === 'content-security-policy' ? csp : null } });
-  assert.deepEqual(await identifier(4317, { recuperer: rep(200, { app: 'myteam', version: '0.6.1', session: 'myteam', pid: 5 }) }), { myteam: true, session: 'myteam', pid: 5, version: '0.6.1' });
+  assert.deepEqual(await identifier(4317, { recuperer: rep(200, { app: 'myteam', version: '0.6.1', session: 'myteam', pid: 5 }) }), { myteam: true, session: 'myteam', version: '0.6.1' });
   assert.equal((await identifier(4317, { recuperer: rep(404, { error: 'Page introuvable.' }, "default-src 'self'; frame-ancestors 'none'") })).ancien, true);
   assert.deepEqual(await identifier(4317, { recuperer: rep(404, { error: 'Not found' }) }), { myteam: false });
-  assert.equal(await identifier(4317, { recuperer: async () => { throw new Error('ECONNREFUSED'); } }), null);
+  const refus = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+  assert.equal(await identifier(4317, { recuperer: async () => { throw refus; } }), null, 'connexion refusée : port libre');
+  assert.deepEqual(await identifier(4317, { recuperer: async () => { throw new TypeError('fetch failed'); } }), { myteam: false }, 'listener qui ne parle pas HTTP');
+  assert.deepEqual(await identifier(4317, { recuperer: async () => { throw new DOMException('timeout', 'TimeoutError'); } }), { myteam: false }, 'listener muet');
 });
 
 test('processusNode : seul un processus node.exe qui écoute le port est retenu', () => {
@@ -88,9 +107,11 @@ test('processusNode : seul un processus node.exe qui écoute le port est retenu'
   const lancer = image => (cmd) => ({ stdout: cmd === 'netstat' ? netstat : image });
   assert.equal(processusNode(4317, { platform: 'win32', lancer: lancer('"node.exe","4242","Console","1","50 000 K"') }), 4242);
   assert.equal(processusNode(4317, { platform: 'win32', lancer: lancer('"chrome.exe","4242","Console","1","50 000 K"') }), null);
+  const allemand = (cmd) => ({ stdout: cmd === 'netstat' ? '  TCP    127.0.0.1:4317         0.0.0.0:0              ABHÖREN         4242\r\n' : '"node.exe","4242","Console","1","50 000 K"' });
+  assert.equal(processusNode(4317, { platform: 'win32', lancer: allemand }), 4242, 'état d\'écoute dans une autre langue de Windows');
 });
 
-test('le serveur annonce son identité : application, version, session Herdr et processus', async t => {
+test('le serveur annonce son identité : application, version et session Herdr, sans numéro de processus', async t => {
   const avant = process.env.BUREAU_HERDR_SESSION;
   process.env.BUREAU_HERDR_SESSION = 'myteam';
   t.after(() => { if (avant === undefined) delete process.env.BUREAU_HERDR_SESSION; else process.env.BUREAU_HERDR_SESSION = avant; });
@@ -99,7 +120,7 @@ test('le serveur annonce son identité : application, version, session Herdr et 
   t.after(() => new Promise(resolve => server.close(resolve)));
   const corps = await (await fetch(`http://127.0.0.1:${server.address().port}/api/identite`)).json();
   const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
-  assert.deepEqual(corps, { app: 'myteam', version, session: 'myteam', pid: process.pid });
+  assert.deepEqual(corps, { app: 'myteam', version, session: 'myteam' });
 });
 
 test('myteam --bureau n\'ouvre pas Herdr ; option inconnue et --help répondent sans rien lancer', async () => {
@@ -120,11 +141,13 @@ test('myteam sans Herdr : le bureau s\'ouvre quand même et la marche à suivre 
   assert.ok(journal.textes.some(t => /Herdr est introuvable.*npx @drsmoke\/myteam/.test(t)));
 });
 
-test('les variables de l\'utilisateur Windows sont relues dans le registre si le terminal est plus ancien', () => {
+test('les variables de l\'utilisateur Windows : le registre fait foi, l\'environnement du terminal sert de repli', () => {
   const sortie = '\r\nHKEY_CURRENT_USER\\Environment\r\n    BUREAU_PORT    REG_SZ    8317\r\n\r\n';
   const lancer = (cmd, args) => { assert.deepEqual([cmd, ...args], ['reg', 'query', 'HKCU\\Environment', '/v', 'BUREAU_PORT']); return { stdout: sortie }; };
   assert.equal(variableUtilisateur('BUREAU_PORT', { env: {}, platform: 'win32', lancer }), '8317');
-  assert.equal(variableUtilisateur('BUREAU_PORT', { env: { BUREAU_PORT: '9000' }, platform: 'win32', lancer }), '9000');
+  assert.equal(variableUtilisateur('BUREAU_PORT', { env: { BUREAU_PORT: '9000' }, platform: 'win32', lancer }), '8317', 'un terminal ancien ne l\'emporte pas sur le registre');
+  assert.equal(variableUtilisateur('BUREAU_PORT', { env: { BUREAU_PORT: '9000' }, platform: 'win32', lancer: () => ({ stdout: '' }) }), '9000');
+  assert.equal(variableUtilisateur('BUREAU_PORT', { env: { BUREAU_PORT: '9000' }, platform: 'linux', lancer }), '9000');
   assert.equal(variableUtilisateur('BUREAU_PORT', { env: {}, platform: 'linux', lancer }), undefined);
 });
 

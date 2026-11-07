@@ -20,6 +20,8 @@ test('suppléant : même projet, prêt, pas en pause, jamais le chef, un autre o
   assert.equal(choisirSuppleant(codex, liste, { chefId: chef.id }).id, omp.id, 'un autre outil passe avant un second Codex');
   assert.equal(choisirSuppleant(codex, liste, { chefId: chef.id, enPause: id => id === omp.id }).id, codex2.id);
   assert.equal(choisirSuppleant(codex, [codex, chef, ailleurs, occupe], { chefId: chef.id }), null, 'aucun suppléant : pas de relais');
+  const inconnu = agent('w1:p7', 'Codex', { status: 'working', ready: false, cwd: '' });
+  assert.equal(choisirSuppleant(inconnu, [inconnu, agent('w1:p8', 'OMP', { cwd: '' })]), null, 'dossier inconnu : jamais de relais, il pourrait viser un autre projet');
 });
 
 test('consignes : relais avec écran à lire et mission connue, retour qui interdit de reprendre', () => {
@@ -30,7 +32,11 @@ test('consignes : relais avec écran à lire et mission connue, retour qui inter
   assert.match(m, /ne refais rien de déjà commité/);
   assert.match(m, /« Implémenter L1\. »/);
   assert.doesNotMatch(messageRelais({ source }), /dernière consigne/, 'mission inconnue : seulement l\'écran à lire');
-  assert.match(messageRetour({ heure: '05:42', suppleant: 'OMP' }), /confiée à OMP : ne la reprends pas/);
+  const secret = messageRelais({ source, mission: 'Déploie avec token=abcdef1234567890 sur le serveur.' });
+  assert.doesNotMatch(secret, /abcdef1234567890/, 'un secret de la consigne ne part pas chez un autre outil');
+  assert.match(secret, /\[secret masqué\]/);
+  assert.match(messageRetour({ heure: '05:42', suppleant: 'OMP' }), /confiée à OMP\. Ne la reprends pas de toi-même/);
+  assert.match(messageRetour({ suppleant: 'OMP' }), /attends que le chef te dise/);
   assert.equal(relaisActif({ BUREAU_RELAIS_QUOTA: '0' }), false);
   assert.equal(relaisActif({}), true);
 });
@@ -85,5 +91,5 @@ test('serveur : un agent qui atteint sa limite voit sa mission confiée une fois
   file = serveur.queue.list().items;
   const retour = file.filter(e => e.id === 'w1:p1@x');
   assert.equal(retour.length, 1);
-  assert.match(retour[0].message, /confiée à critique : ne la reprends pas/);
+  assert.match(retour[0].message, /confiée à critique\. Ne la reprends pas de toi-même/);
 });

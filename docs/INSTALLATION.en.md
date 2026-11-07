@@ -109,7 +109,7 @@ The setup scripts `scripts/installer.ps1` and `scripts/installer.sh`, as well as
 | Windows Option | macOS / Linux Option | Node Animated Driver | Effect |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
-| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms AI tools, integrations, agent launches, extensions, or kit setup (individual y/n confirmation remains mandatory). Prerequisites (Node.js, Herdr, Clink) are installed anyway, with or without this flag. |
+| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms AI tools, integrations, agent launches, extensions, or kit setup (individual y/n confirmation remains mandatory). Prerequisites (Node.js, Herdr, Clink) are installed anyway, with or without this flag. With `-Oui`, neither the `myteam` Herdr session nor its grid is created: run the installer again without `-Oui` to get them. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
 | `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | (PATH auto-detection) | Points to the full Herdr executable path if missing from PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Does not create the MyTeam desktop shortcut. |
@@ -148,7 +148,7 @@ The script can be rerun safely at any time: it inspects your system and only set
 
 Once setup completes, follow this 6-step walkthrough to start your working session:
 
-1. **Start MyTeam**: double-click the MyTeam desktop shortcut, or type `myteam` in a new terminal (PowerShell, cmd or bash). The desk starts and opens in your default browser at `http://127.0.0.1:<port>`, then Herdr opens in the `myteam` session. A desk already running is reused; if another program uses the port, the command says so and stops. `myteam --bureau` opens only the desk, `myteam --help` shows the help.
+1. **Start MyTeam**: double-click the MyTeam desktop shortcut, or type `myteam` in a new terminal (PowerShell, cmd or bash). The desk starts and opens in your default browser at `http://127.0.0.1:<port>`, then Herdr opens in the `myteam` session. A desk already running is reused; if another program uses the port, the command says so and stops without closing it. `myteam --bureau` opens only the desk, `myteam --help` shows the help.
 2. **See the 4 panes in a 2×2 grid and the animated office in your browser**: Verify that Herdr displays your 4 terminals (`Chef`, `Agent 2`, `Agent 3`, `Agent 4`) and open `http://127.0.0.1:4317` in your browser then choose and confirm the project before opening its office.
 3. **The lead reads CHEF.md**: In the lead pane (or via the Desk tab in the web office), the lead reads `CHEF.md` and `AGENTS.md`, inspects team members with `herdr agent list`, and stands by to coordinate.
 4. **First delegation**: Send an initial prompt to the lead from the office form (Ctrl+Enter). When the lead delegates a task in their log, observe their physical round across the office scene: they step away from the Direction desk and walk over to hand the folder to their teammate.
@@ -212,6 +212,9 @@ Two points of factual integrity:
 | Variable | Role | How to Configure |
 |---|---|---|
 | `BUREAU_PORT` | Office HTTP listening port (default: 4317) | Installer script, or user environment variable |
+| `BUREAU_HERDR_SESSION` | Herdr session read by the desk and opened by `myteam` (default `myteam`; letters, digits, `-` and `_`) | Installer script, or user environment variable |
+| `BUREAU_RELAIS_QUOTA` | `0` disables the hand-off: the mission of an agent that hits its usage limit is no longer given to another agent | Environment variable |
+| `MYTEAM_SANS_PAUSE` | `1`: on error, `myteam.cmd` does not wait for a key (called from a script) | Environment variable |
 | `BUREAU_HERDR_PATH` | Full path to Herdr binary if not in PATH | Installer script, or user environment variable |
 
 The installer script writes these configuration variables to user environment settings (Windows) or within a bounded block between `# >>> bureau-des-agents >>>` and `# <<< bureau-des-agents <<<` in `~/.profile` and `~/.bashrc` (macOS and Linux). This block is cleanly replaced on reruns without duplication. Open a fresh terminal after configuration for new variables to take effect.
@@ -233,7 +236,7 @@ The installer script writes these configuration variables to user environment se
 - **Node.js missing or outdated**: `node --version` must show v22 or higher. Install from https://nodejs.org/en/download, open a new terminal, and re-run the setup script.
 - **Antivirus blocks setup command**: This can occur with direct download-and-execute commands (`irm ... | iex`). Official Herdr and Claude Code docs provide alternative workflows with downloaded `install.cmd` files.
 - **Tests fail**: Verify your Node.js version, then re-run `npm test`.
-- **Complete uninstallation**: Delete the software directory and any desktop shortcut; separately remove the system data folder `MyTeam` if you want to erase private execution states, unset `BUREAU_PORT`, `BUREAU_HERDR_PATH` and `BUREAU_HERDR_SESSION`, and remove MyTeam's `bin` folder from the user PATH (or the `~/.local/bin/myteam` link). Delete the Herdr session with `herdr session delete myteam`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
+- **Complete uninstallation**: Delete the software directory and any desktop shortcut; separately remove the system data folder `MyTeam` if you want to erase private execution states, unset `BUREAU_PORT`, `BUREAU_HERDR_PATH` and `BUREAU_HERDR_SESSION`, and remove MyTeam's `bin` folder from the user PATH (or the `~/.local/bin/myteam` link). Delete the Herdr session with `herdr session stop myteam`, then `herdr session delete myteam`. Node.js, Herdr, and AI tools are uninstalled separately through their own standard procedures.
 
 ## Verified Sources
 

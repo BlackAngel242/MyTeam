@@ -125,4 +125,8 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 - [x] Site : commande `npx @drsmoke/myteam` et bouton Copier.
 - [ ] Essai réel dans le Windows Sandbox : raccourci et icône, commande `myteam` dans PowerShell et cmd, navigateur, session `myteam`.
 - [ ] CI Linux verte, relecture, PR, release.
+- [ ] Espace Herdr `myteam` créé dans le dossier de MyTeam : le repointer vers le projet choisi dans le bureau (relecture 0.6.1, B2).
+- [ ] Raccourci et `.desktop` : retrouver Node si le PATH de la session graphique ne le contient pas (nvm, Explorateur pas encore rafraîchi).
+- [ ] Relais de quota : annuler un relais encore en file quand l'agent revient ou qu'une crise commence.
+- [ ] `myteam` : redémarrer un bureau de la même session mais d'une autre version, après une mise à jour.
 - [ ] À étudier : proposer la mise à jour des outils d'IA déjà installés ; ajouter au catalogue ceux qui ont une installation officielle (omp, qwen…).
