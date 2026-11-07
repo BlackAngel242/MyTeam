@@ -441,10 +441,12 @@ function Detecter-Outils {
 
 function Proposer-Agents([string[]]$Panneaux) {
   if ($Oui) { Dire (Texte 'Le mode -Oui ne lance aucun agent.' 'The -Oui option never starts an agent.'); return }
+  if (-not $script:panneauxTentes) { $script:panneauxTentes = @{} }
   $outils = @(Detecter-Outils)
   if ($outils.Count -eq 0) { Dire (Texte 'Aucun outil compatible détecté : aucun agent lancé.' 'No supported tools detected: no agent started.'); return }
   $noms = @('Chef','Agent 2','Agent 3','Agent 4')
   for ($i=0; $i -lt $Panneaux.Count; $i++) {
+    if ($script:panneauxTentes.ContainsKey($Panneaux[$i])) { continue }
     if ($DryRun) { Simuler (Texte "Choix et confirmation de l'outil pour $($noms[$i])." "Choose and confirm a tool for $($noms[$i])."); continue }
     if ($Interface) { $question = Texte "Outil pour le panneau $($noms[$i])" "Tool for pane $($noms[$i])" }
     else {
@@ -459,6 +461,7 @@ function Proposer-Agents([string[]]$Panneaux) {
     $type = $outils[[int]$choix-1]
     if (-not (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue)) { Dire (Texte "Cet outil n'est plus disponible." "This tool is no longer available."); continue }
     if (Confirmer (Texte "Lancer $type dans le panneau $($noms[$i]) ?" "Start $type in pane $($noms[$i])?") -Individuel) {
+      $script:panneauxTentes[$Panneaux[$i]] = $true
       try {
         $nomAgent = if ($i -eq 0) { 'chef' } else { "agent$($i+1)" }
         Appeler-Herdr @('agent','start',$nomAgent,'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
@@ -492,6 +495,7 @@ if ($herdrTrouve) {
         Dire (Texte "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))." "Panes created and named: $($noms -join ', ') (identifiers $($ids[0..3] -join ', ')).")
         Noter (Texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')
         Etat-Etape 'ok' (Texte '4 panneaux créés.' '4 panes created.')
+        $outilsAvantInstallation = @(Detecter-Outils)
         Proposer-Agents $ids
       } catch {
         if ($Interface) { Etat-Etape 'fail' }
@@ -630,6 +634,7 @@ if ($manquants.Count -gt 0) {
   }
 }
 if ($disponibles.Count -eq 0 -and -not $DryRun) { Dire (Texte 'Aucune IA détectée : configurez un outil avant une mission.' 'No AI detected: set up a tool before starting a mission.') }
+if ($ids -and @(@(Detecter-Outils) | Where-Object { $_ -notin $outilsAvantInstallation }).Count -gt 0) { Proposer-Agents $ids }
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
 if ($Interface) { Etape 'chef'; Proposer-Chef }
