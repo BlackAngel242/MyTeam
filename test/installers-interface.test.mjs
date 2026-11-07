@@ -257,6 +257,28 @@ if(process.platform==='win32') {
     assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
     assert.doesNotMatch(data.output,/CALL:/);
   });
+  for(const [code,ok] of [[-1978335189,true],[-1978335135,true],[8,false],[-1978298325,false]]) test(`Clink : code winget ${code} ${ok?'accepté':'refusé'}`,async t=>{
+    const path=await fixture(t);
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){return @{Source='FakeWinget'}} }
+    function FakeWinget { $global:LASTEXITCODE=${code} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
+    assert.equal(data.code,ok?0:1,data.errors);
+    assert.ok(data.records.some(x=>x.startsWith(`@@DONE clink\t${ok?'ok':'fail'}\t`)));
+    if(ok) assert.match(data.output,/Déjà installé et à jour\./);
+  });
+  test('un code winget ne masque pas l’échec d’une autre commande',async t=>{
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    Etape tests;try { Executer 'npm test' { $global:LASTEXITCODE=-1978335189 } } catch {};Terminer-Interface
+    if($script:echecInterface){exit 1}
+    `,{eof:true});
+    assert.equal(data.code,1,data.errors);
+    assert.ok(data.records.some(x=>x.startsWith('@@DONE tests\tfail\t')));
+  });
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : champs sûrs et échec réel conservé jusqu’à END`,async t=>{
   const body=platform==='ps'?`
