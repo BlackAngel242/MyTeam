@@ -53,7 +53,7 @@ If Node.js 22+ and npm are already installed, this command copies the latest npm
 npx @drsmoke/myteam
 ```
 
-The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. An existing installation is never overwritten; use the in-app updater instead. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
+The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. Running the command again on an existing installation reopens its assistant without overwriting anything; use the in-app updater to change versions. Options: `--lang fr|en`, `--simple` (plain text, no animation), `--demo` (demo, installs nothing more), `--dry-run`. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
 
 This method is the easiest and does not require any developer tools upfront (no Git, no compilers).
 
