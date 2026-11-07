@@ -91,7 +91,7 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     assert.match(done,/Raccourci choisi : bureau/);
     assert.match(done,/Port 4317/);
   });
-  test(`A2 ${platform} : sélections groupées et confirmation`,async t=>{
+  test(`A4 ${platform} : valider une sélection groupée suffit`,async t=>{
     let outils=0, extensions=0;
     const result=await run(t,platform,{answer:line=>{
       if(line.startsWith('@@MULTI') && /outils IA|AI tools/.test(line)) return outils++ ? '' : '1';
@@ -102,7 +102,9 @@ for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
     }});
     assert.equal(result.code,0,result.errors);
     assert.ok(outils > 0 && extensions > 0);
-    assert.equal(result.records.filter(x=>x.startsWith('@@CONFIRM') && x.includes('Installer cette sélection')).length,2);
+    assert.equal(result.records.filter(x=>x.startsWith('@@CONFIRM') && x.includes('Installer cette sélection')).length,0);
+    assert.ok(result.records.some(x=>x.startsWith('@@DONE outils\t') && x.includes('Claude Code')));
+    assert.ok(result.records.some(x=>x.startsWith('@@DONE extensions\t') && x.includes('ESLint')===false && x.includes('Prettier')));
   });
   test(`J1 ${platform} : dialogue complet, oui/non, choix et saisie sans installation`,async t=>{
     const result=await run(t,platform,{answer:line=>{

@@ -638,7 +638,7 @@ if ($manquants.Count -gt 0) {
     if (@($indices | Where-Object { $_ -gt $manquants.Count }).Count -gt 0) { Dire (Texte 'Numéro hors liste.' 'Number out of range.'); continue }
     $choisis = @($indices | ForEach-Object { $manquants[$_-1] })
     Dire (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')")
-    if (-not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    if (-not $Interface -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
     if ($Interface) { $script:detailsEtape += (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')") }
     foreach ($outil in $choisis) {
       if (-not $outil.Installation) { Dire 'https://antigravity.google/docs/cli/getting-started'; Noter 'Antigravity : installation manuelle requise.'; continue }
@@ -679,7 +679,6 @@ if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions propo
     if ($Interface -and -not $Oui) {
       $selectionExtensions = Lire-Interface 'MULTI' (Texte 'Quelles extensions installer ?' 'Which extensions should be installed?') @($extensions | ForEach-Object { "$($_.nom) ($($_.id))" })
       if ($selectionExtensions -match '^[1-3](,[1-3])*$') { $choixExtensions = @($selectionExtensions -split ',' | Select-Object -Unique | ForEach-Object { $extensions[[int]$_-1] }) }
-      if ($choixExtensions.Count -gt 0 -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { $choixExtensions = @() }
       if ($choixExtensions.Count -gt 0) { $script:detailsEtape += (Texte "Sélection : $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')" "Selection: $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')") }
     }
     foreach ($ext in $extensions) {

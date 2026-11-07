@@ -651,7 +651,7 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
     noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
     dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
-    if { [ "$INTERFACE" = 1 ] || [ "$DRY_RUN" != 1 ]; } && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if [ "$INTERFACE" != 1 ] && [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
     if [ "$INTERFACE" = 1 ]; then DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_choisis[*]}"; fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
@@ -698,7 +698,6 @@ if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensi
     if [ "$INTERFACE" = 1 ] && [ "$OUI" != 1 ]; then
       if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
         extensions_selection=",$REPONSE_INTERFACE,"
-        if ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then extensions_selection=''; fi
       fi
     fi
     if [ "$INTERFACE" = 1 ] && [ -n "$extensions_selection" ]; then
