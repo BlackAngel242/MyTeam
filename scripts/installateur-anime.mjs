@@ -85,15 +85,20 @@ export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
     for (const o of etat.question.lignes ?? []) L.push(p.gris('│') + '   ' + o);
     L.push(p.gris('│') + '   ' + p.cyan(etat.question.invite));
   }
-  if (etat.fin) L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
+  if (etat.fin) {
+    // Résumé de l'installeur (lignes après « === Résumé === ») : rapport et prochaine étape restent à l'écran.
+    if (etat.resume.length) { L.push(p.gris('│')); for (const l of etat.resume) L.push(p.gris('│') + '   ' + l); }
+    L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
+  }
   return L.map(l => ajuster(l, largeur - 1));
 }
 
 // --- état -------------------------------------------------------------------------------------
-export function etatInitial({ lang = 'fr', simulation = false, demo = false } = {}) { return { lang, simulation, demo, taches: [], info: '', question: null, fin: null }; }
+export function etatInitial({ lang = 'fr', simulation = false, demo = false } = {}) { return { lang, simulation, demo, taches: [], info: '', question: null, fin: null, resume: [], dansResume: false, annule: false }; }
 // Bilan final : une démonstration ou une simulation ne prétend jamais avoir installé quoi que ce soit.
 export function bilanFin(etat) {
   const fr = etat.lang !== 'en';
+  if (etat.annule) return fr ? 'Installation annulée (Ctrl+C) : ce qui était déjà fait reste en place ; relancez l’installateur pour reprendre.' : 'Installation cancelled (Ctrl+C): completed steps stay in place; run the installer again to resume.';
   if (!etat.fin?.ok) return fr ? 'Installation arrêtée : voir le message ci-dessus.' : 'Installation stopped: see the message above.';
   if (etat.demo) return fr ? 'Démonstration terminée : rien n’a été installé ni modifié.' : 'Demo finished: nothing was installed or changed.';
   if (etat.simulation) return fr ? 'Simulation terminée : rien n’a été installé ni modifié.' : 'Dry run finished: nothing was installed or changed.';
@@ -104,7 +109,10 @@ export function appliquer(etat, evt) {
   switch (evt.type) {
     case 'plan': if (!tache(evt.id)) etat.taches.push({ id: evt.id, libelle: evt.libelle, etat: 'pending', texte: '' }); break;
     case 'step': { const t = tache(evt.id); if (t) t.etat = 'run'; etat.info = ''; break; }
-    case 'info': etat.info = evt.texte; break;
+    case 'info':
+      if (/^===.*===$/.test(evt.texte.trim())) { etat.dansResume = true; etat.resume = []; break; }
+      if (etat.dansResume) { if (evt.texte.trim()) etat.resume.push(evt.texte.trim()); if (etat.resume.length > 15) etat.resume.shift(); break; }
+      etat.info = evt.texte; break;
     case 'done': { const t = tache(evt.id); if (t) { t.etat = evt.etat; t.texte = evt.texte; } etat.info = ''; break; }
     case 'end': etat.fin = { ok: evt.ok }; etat.info = ''; break;
     default: break;
@@ -194,21 +202,25 @@ export function naviguerMulti({ curseur, coches }, cle, n) {
   if (cle === 'entree') return { curseur, coches, valide: true };
   return { curseur, coches };
 }
-function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
+function questionsClavier(entree, etat, rafraichir, lang, couleur = true, signal = null) {
   const fr = lang !== 'en';
   const p = peindre(couleur);
   // Appelle `surTouche` pour chaque touche jusqu'à ce qu'il renvoie une valeur différente de undefined.
   const ecouter = surTouche => new Promise(resolve => {
-    const fin = () => { entree.removeListener('data', surDonnees); resolve(null); };
+    // Fin de l'entrée ou annulation (Ctrl+C, géré par `executer`) = aucune réponse, jamais un accord.
+    const arreter = r => { entree.removeListener('data', surDonnees); entree.removeListener('end', fin); signal?.removeEventListener('abort', fin); resolve(r); };
+    const fin = () => arreter(null);
     const surDonnees = buf => {
       for (const cle of touches(buf.toString('utf8'))) {
-        if (cle === 'ctrl-c') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
+        if (cle === 'ctrl-c') return;
         const r = surTouche(cle);
-        if (r !== undefined) { entree.removeListener('data', surDonnees); entree.removeListener('end', fin); resolve(r); return; }
+        if (r !== undefined) return arreter(r);
       }
     };
     entree.on('data', surDonnees);
-    if (entree.readableEnded) fin(); else entree.once('end', fin);
+    if (entree.readableEnded || signal?.aborted) return fin();
+    entree.once('end', fin);
+    signal?.addEventListener('abort', fin, { once: true });
   });
   return {
     async confirm(texte) {
@@ -241,7 +253,14 @@ function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
     async multi(texte, options) {
       let s = { curseur: 1, coches: [] };
       const dessiner = () => {
-        etat.question = { texte, lignes: options.map((o, i) => `${i + 1 === s.curseur ? '❯' : ' '} ${s.coches.includes(i + 1) ? '◼' : '◻'} ${o}`), invite: p.gris(fr ? '↑/↓ déplacer · Espace cocher · a tout · Entrée valider' : '↑/↓ move · Space toggle · a all · Enter confirm') };
+        etat.question = {
+          texte,
+          lignes: options.map((o, i) => {
+            const coche = s.coches.includes(i + 1), ici = i + 1 === s.curseur;
+            return (ici ? p.cyan('❯ ') : '  ') + (coche ? p.menthe('◼') : p.gris('◻')) + ' ' + (ici ? p.gras(o) : o);
+          }),
+          invite: p.gris(fr ? `${s.coches.length} sur ${options.length} · ↑/↓ déplacer · Espace cocher · a tout · Entrée valider` : `${s.coches.length} of ${options.length} · ↑/↓ move · Space toggle · a all · Enter confirm`),
+        };
         rafraichir();
       };
       dessiner();
@@ -253,19 +272,14 @@ function questionsClavier(entree, etat, rafraichir, lang, couleur = true) {
       etat.question = { texte, invite: (fr ? 'Saisie puis Entrée' : 'Type then Enter') + (defaut ? ` [${defaut}]` : '') };
       rafraichir();
       let tampon = '';
-      const v = await new Promise(resolve => {
-        const surDonnees = buf => {
-          for (const ch of buf.toString('utf8')) {
-            if (ch === '\r' || ch === '\n') { entree.removeListener('data', surDonnees); resolve(tampon); return; }
-            if (ch === '\u007f' || ch === '\b') tampon = tampon.slice(0, -1); else if (ch >= ' ') tampon += ch;
-            etat.question.invite = (fr ? 'Saisie : ' : 'Input: ') + tampon;
-            rafraichir();
-          }
-        };
-        entree.on('data', surDonnees);
+      const v = await ecouter(cle => {
+        if (cle === 'entree') return tampon;
+        if (cle === 'effacer') tampon = tampon.slice(0, -1); else if (cle.length === 1 && cle >= ' ') tampon += cle; else return;
+        etat.question.invite = (fr ? 'Saisie : ' : 'Input: ') + tampon;
+        rafraichir();
       });
       etat.question = null; rafraichir();
-      return v || defaut;
+      return v === null ? null : v || defaut;
     },
   };
 }
@@ -317,6 +331,9 @@ for (const [id, l] of T) {
   }
   console.log('@@DONE ' + id + String.fromCharCode(9) + 'ok' + String.fromCharCode(9));
 }
+for (const l of fr
+  ? ['=== Résumé ===', '- Démonstration : aucun logiciel installé.', 'Pour ouvrir le bureau : double-cliquez sur « Ouvrir le bureau.cmd » dans le dossier de MyTeam.']
+  : ['=== Summary ===', '- Demo: no software installed.', 'To open the desktop: double-click “Ouvrir le bureau.cmd” in the MyTeam folder.']) console.log('@@INFO ' + l);
 console.log('@@END ok');
 `;
 
@@ -337,11 +354,21 @@ export function commandeInstalleur({ plateforme = process.platform, lang = 'fr',
 export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn } = {}) {
   const etat = etatInitial({ lang, simulation, demo });
   const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false });
-  let rendu, questions, lecteurEntree = null;
+  let rendu, questions, lecteurEntree = null, surCtrlC = null;
+  const annulation = new AbortController();
+  // Ctrl+C à tout moment (le mode brut le reçoit comme une touche) : arrêter l'installeur, rendre le terminal, dire où on en est.
+  const annuler = () => {
+    if (etat.annule) return;
+    etat.annule = true;
+    annulation.abort();
+    try { enfant.kill(); } catch { /* déjà fini */ }
+  };
   if (anime) {
     rendu = sortieAnimee(sortie, couleur);
-    questions = questionsClavier(entree, etat, () => rendu.maj(), lang, couleur);
+    questions = questionsClavier(entree, etat, () => rendu.maj(), lang, couleur, annulation.signal);
     if (entree.isTTY) entree.setRawMode(true);
+    surCtrlC = buf => { if (Buffer.from(buf).includes(3)) annuler(); };
+    entree.on('data', surCtrlC);
     entree.resume();
   } else {
     rendu = sortieSimple(sortie);
@@ -373,12 +400,13 @@ export async function executer({ commande, args, sortie = process.stdout, entree
   const sortieCode = await code;
   await lignesFermees;
   await fileAttente;
-  if (!etat.fin) etat.fin = { ok: sortieCode === 0 };
+  if (!etat.fin || etat.annule) etat.fin = { ok: !etat.annule && sortieCode === 0 };
   rendu.arreter();
+  if (surCtrlC) entree.removeListener('data', surCtrlC);
   if (anime && entree.isTTY) entree.setRawMode(false);
   if (!anime) { lecteurEntree?.return?.(); sortie.write(bilanFin(etat) + '\n'); }
   entree.pause?.();
-  return { code: sortieCode, ok: etat.fin.ok && sortieCode === 0, etat, fin };
+  return { code: etat.annule ? 130 : sortieCode, ok: !etat.annule && etat.fin.ok && sortieCode === 0, etat, fin };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

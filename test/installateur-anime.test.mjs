@@ -250,3 +250,31 @@ console.log('@@END ok');`);
   assert.equal(r.ok, true);
   assert.match(texte, /choix=13 oui=o/, 'flèche haut depuis la 1re option = dernière option (13), puis ← = Oui');
 });
+
+test('le résumé de l\'installeur (après « === Résumé === ») reste affiché après la fin', () => {
+  const etat = etatInitial({ lang: 'fr' });
+  for (const l of ['@@PLAN a\tA', '@@STEP a', '@@INFO travail en cours', '@@INFO === Résumé ===', '@@INFO  - Node.js : présent.', '@@INFO ', '@@INFO Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd', '@@DONE a\tok\t', '@@END ok']) appliquer(etat, parseLigne(l));
+  assert.deepEqual(etat.resume, ['- Node.js : présent.', 'Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd']);
+  const ecran = cadre(etat, 0, { couleur: false, largeur: 120 }).join('\n');
+  assert.match(ecran, /Pour ouvrir le bureau/);
+  assert.match(ecran, /Installation terminée/);
+  assert.doesNotMatch(ecran, /=== Résumé ===|travail en cours/);
+});
+
+test('Ctrl+C pendant une question : installeur arrêté, aucune réponse envoyée, code 130 et message d\'annulation', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tA');
+console.log('@@STEP a');
+console.log('@@CONFIRM q1\\tInstaller ?');
+const r = await lire();
+console.log('@@DONE a\\tok\\treponse=' + r);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', envoye = false;
+  sortie.on('data', d => { texte += d; if (!envoye && texte.includes('Installer ?')) { envoye = true; setImmediate(() => entree.write('\u0003')); } });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' });
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 130);
+  assert.doesNotMatch(texte, /reponse=/, 'aucune réponse ne doit atteindre l\'installeur');
+  assert.match(texte, /Installation annulée \(Ctrl\+C\)/);
+});
