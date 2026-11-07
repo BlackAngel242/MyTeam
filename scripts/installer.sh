@@ -928,8 +928,8 @@ if [ ! -d "$RACINE/test" ]; then
   dire "$(texte 'Les tests de développement sont disponibles dans le dépôt source.' 'Development tests are available in the source repository.')"
 elif [ "$NODE_OK" != "1" ]; then
   etat_etape skip "$(texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')"
-  dire "$(texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
-  noter "$(texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')"
+  dire "$(texte 'Node.js manquant ou trop ancien : tests ignorés. Relancez ce script après installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
+  noter "$(texte 'Tests : ignorés (Node.js absent).' 'Tests: skipped (Node.js missing).')"
 elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')"; then
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail

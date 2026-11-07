@@ -661,7 +661,7 @@ if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions propo
   if (-not $vscode) {
     Etat-Etape 'skip' (Texte 'VS Code absent.' 'VS Code missing.')
     Dire (Texte 'VS Code n''est pas détecté sur cet ordinateur : l''installation des extensions est ignorée.' 'VS Code was not detected: extension installation skipped.')
-    Noter (Texte 'Extensions : ignorees (VS Code absent).' 'Extensions: skipped (VS Code missing).')
+    Noter (Texte 'Extensions : ignorées (VS Code absent).' 'Extensions: skipped (VS Code missing).')
   } else {
     $choixExtensions = @()
     if ($Interface -and -not $Oui) {
@@ -818,8 +818,8 @@ if (-not (Test-Path (Join-Path $racine 'test') -PathType Container)) {
   Dire (Texte 'Les tests de développement sont dans le dépôt source.' 'Development tests are in the source repository.')
 } elseif (-not $nodeOk) {
   Etat-Etape 'skip' (Texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')
-  Dire (Texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
-  Noter (Texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')
+  Dire (Texte 'Node.js manquant ou trop ancien : tests ignorés. Relancez ce script après installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
+  Noter (Texte 'Tests : ignorés (Node.js absent).' 'Tests: skipped (Node.js missing).')
 } else {
   if (Confirmer (Texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')) {
     try {
