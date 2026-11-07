@@ -457,14 +457,13 @@ detecter_outils() {
 
 proposer_agents() {
   [ "$OUI" = 1 ] && { dire "$(texte 'Le mode --oui ne lance aucun agent.' 'The --oui option never starts an agent.')"; return 0; }
-  declare -gA PANNEAUX_TENTES
   local outils=() panneaux=() noms=('Chef' 'Agent 2' 'Agent 3' 'Agent 4') type pane i=0 j choix liste
   liste=$(detecter_outils)
   [ -n "$liste" ] || { dire "$(texte 'Aucun outil compatible détecté : aucun agent lancé.' 'No supported tools detected: no agent started.')"; return 0; }
   while read -r type; do outils+=("$type"); done <<< "$liste"
   while read -r pane; do panneaux+=("$pane"); done <<< "$1"
   for pane in "${panneaux[@]}"; do
-    if [ "${PANNEAUX_TENTES[$pane]:-0}" = 1 ]; then i=$((i+1)); continue; fi
+    case " ${PANNEAUX_TENTES:-} " in *" $pane "*) i=$((i+1)); continue ;; esac
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Choix et confirmation de l'outil pour ${noms[$i]}." "Choose and confirm a tool for ${noms[$i]}.")"; i=$((i+1)); continue; fi
     if [ "${INTERFACE:-0}" = 1 ]; then
       question="$(texte "Outil pour le panneau ${noms[$i]}" "Tool for pane ${noms[$i]}")"
@@ -479,7 +478,7 @@ proposer_agents() {
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
       type="${outils[$((10#$choix-1))]}"
       if command -v "$type" >/dev/null 2>&1 && confirmer "$(texte "Lancer $type dans le panneau ${noms[$i]} ?" "Start $type in pane ${noms[$i]}?")" individuel; then
-        PANNEAUX_TENTES["$pane"]=1
+        PANNEAUX_TENTES="${PANNEAUX_TENTES:+$PANNEAUX_TENTES }$pane"
         local agent_nom
         if [ "$i" -eq 0 ]; then agent_nom=chef; else agent_nom="agent$((i+1))"; fi
         if "$HERDR_TROUVE" agent start "$agent_nom" --kind "$type" --pane "$pane" >/dev/null; then
