@@ -283,7 +283,7 @@ function Proposer-Clink {
   $wingetClink = @(Get-Command winget -CommandType Application -ErrorAction SilentlyContinue)[0]
   if (-not $wingetClink) { Etat-Etape 'skip' (Texte 'Winget absent.' 'Winget missing.'); Dire (Texte 'Clink ignoré : winget est absent.' 'Clink skipped: winget is missing.'); return }
   Dire (Texte 'Clink ajoute couleurs, complétion et historique à cmd.exe.' 'Clink adds colors, completion and history to cmd.exe.')
-  if ($true) {
+  if (Confirmer (Texte 'Installer Clink pour améliorer cmd.exe ?' 'Install Clink to improve cmd.exe?') -Individuel) {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements

@@ -30,6 +30,14 @@ test('les intégrations utilisent MULTI uniquement en interface et aucune sélec
   assert.match(chefSh, /\$selection.*\$index/);
 });
 
+test('Clink exige un consentement individuel avant winget', async () => {
+  const { ps1: windows, sh: unix } = await textes();
+  const clink = windows.slice(windows.indexOf('function Proposer-Clink'), windows.indexOf("Etape 'clink'"));
+  assert.match(clink, /if \(Confirmer .* -Individuel\) \{/);
+  assert.ok(clink.indexOf('-Individuel') < clink.indexOf('& $wingetClink.Source install'));
+  assert.doesNotMatch(unix, /clink/i);
+});
+
 test('les deux installeurs annoncent simulation, option oui et aide', async () => {
   const { ps1: t1, sh: t2 } = await textes();
   for (const [nom, texte] of [['installer.ps1', t1], ['installer.sh', t2]]) {
