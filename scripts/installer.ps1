@@ -627,6 +627,7 @@ if ($manquants.Count -gt 0) {
     $choisis = @($indices | ForEach-Object { $manquants[$_-1] })
     Dire (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')")
     if (-not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    if ($Interface) { $script:detailsEtape += (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')") }
     foreach ($outil in $choisis) {
       if (-not $outil.Installation) { Dire 'https://antigravity.google/docs/cli/getting-started'; Noter 'Antigravity : installation manuelle requise.'; continue }
       try {
@@ -667,9 +668,10 @@ if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions propo
       $selectionExtensions = Lire-Interface 'MULTI' (Texte 'Quelles extensions installer ?' 'Which extensions should be installed?') @($extensions | ForEach-Object { "$($_.nom) ($($_.id))" })
       if ($selectionExtensions -match '^[1-3](,[1-3])*$') { $choixExtensions = @($selectionExtensions -split ',' | Select-Object -Unique | ForEach-Object { $extensions[[int]$_-1] }) }
       if ($choixExtensions.Count -gt 0 -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { $choixExtensions = @() }
+      if ($choixExtensions.Count -gt 0) { $script:detailsEtape += (Texte "Sélection : $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')" "Selection: $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')") }
     }
     foreach ($ext in $extensions) {
-      $accordExtension = if ($Interface) { $choixExtensions -contains $ext } else { Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel }
+      $accordExtension = if ($Interface) { $choixExtensions -contains $ext } else { (Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel) }
       if ($accordExtension) {
         try {
           Executer (Texte "Installation de $($ext.id) avec code --install-extension." "Installing $($ext.id) with code --install-extension.") { & $vscode.Source --install-extension $ext.id }

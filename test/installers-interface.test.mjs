@@ -311,7 +311,7 @@ w9:p2';printf 'CALL:%s\\n' "$CALLED";terminer_interface 0
   assert.ok(data.records.some(x=>x.startsWith('@@CHOICE ')));
   assert.ok(data.records.some(x=>x.startsWith('@@CONFIRM ')));
   assert.ok(data.records.some(x=>x.startsWith('@@DONE panneaux\tok\t')));
-  assert.ok(data.records.includes('@@DONE panneaux\tok\tOutils lancés : 2.'));
+  assert.ok(data.records.some(x=>/^@@DONE panneaux\tok\tOutils lancés : 2\..*Chef = .*Agent 2 = /.test(x)));
 });
 
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])])test(`J1 ${platform} : entrée fermée, aucune configuration écrite ensuite`,async t=>{

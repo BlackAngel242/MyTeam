@@ -651,6 +651,7 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
     dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
     if { [ "$INTERFACE" = 1 ] || [ "$DRY_RUN" != 1 ]; } && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if [ "$INTERFACE" = 1 ]; then DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_choisis[*]}"; fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
       if [ "$commande" = antigravity-cli ]; then
@@ -699,11 +700,21 @@ if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensi
         if ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then extensions_selection=''; fi
       fi
     fi
+    if [ "$INTERFACE" = 1 ] && [ -n "$extensions_selection" ]; then
+      noms_extensions=()
+      [[ "$extensions_selection" == *",1,"* ]] && noms_extensions+=('Markdown All in One')
+      [[ "$extensions_selection" == *",2,"* ]] && noms_extensions+=('ESLint')
+      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier')
+      DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_extensions[*]}"
+    fi
     ext_index=0
     for ext in 'Markdown All in One|yzhang.markdown-all-in-one' 'ESLint|dbaeumer.vscode-eslint' 'Prettier - Code formatter|esbenp.prettier-vscode'; do
       ext_index=$((ext_index+1))
       nom="${ext%%|*}"; id="${ext##*|}"
-      if { [ "$INTERFACE" = 1 ] && [[ "$extensions_selection" == *",$ext_index,"* ]]; } || { [ "$INTERFACE" != 1 ] && confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; }; then
+      accord_extension=0
+      if [ "$INTERFACE" = 1 ]; then [[ "$extensions_selection" == *",$ext_index,"* ]] && accord_extension=1
+      elif confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; then accord_extension=1; fi
+      if [ "$accord_extension" = 1 ]; then
         executer "$(texte "Installation de $id avec code --install-extension." "Installing $id with code --install-extension.")" code --install-extension "$id"
         if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ] && [ "$ETAT_ETAPE" != fail ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Extensions installées : $TOTAL_ETAPE." "Extensions installed: $TOTAL_ETAPE.")";fi
         noter "$(texte "Extension $id : proposée à l'installation." "Extension $id: installation offered.")"
