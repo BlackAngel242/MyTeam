@@ -179,6 +179,7 @@ function Confirmer([string]$question, [switch]$Individuel, [switch]$Prerequis) {
     $saisie = Read-Host (Texte "$question (o/n)" "$question (y/n)")
     if ($null -eq $saisie) { return $false }
     $reponse = $saisie.Trim().ToLower()
+    if ($Prerequis -and $reponse -eq '') { return $false }
     if (($Lang -eq 'en' -and $reponse -match '^(y|yes)$') -or ($Lang -ne 'en' -and $reponse -match '^(o|oui)$')) { return $true }
     if ($reponse -match '^(n|non|no)$') { return $false }
     Dire (Texte 'Répondez par o ou par n.' 'Please answer y or n.')

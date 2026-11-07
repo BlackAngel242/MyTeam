@@ -165,6 +165,7 @@ confirmer() {
     printf '%s (%s) : ' "$1" "$(texte o/n y/n)"
     read -r reponse || return 1
     reponse=$(printf '%s' "$reponse" | tr '[:upper:]' '[:lower:]')
+    if [ "${2:-}" = prerequis ] && [ -z "$reponse" ]; then return 1; fi
     case "$reponse" in
       o|oui) [ "${LANGUE:-fr}" = fr ] && return 0 ;;
       y|yes) [ "${LANGUE:-fr}" = en ] && return 0 ;;
