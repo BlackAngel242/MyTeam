@@ -1,3 +1,7 @@
 ## 2024-10-21 - O(n) text fitting optimization
 **Learning:** Found a hot path in `public/app.js` where the function `fit(s, max)` used a `while` loop to iteratively shorten a string character by character and recalculate its pixel width via `textWidth`. This effectively resulted in O(n^2) behavior on string length because `s.slice` and `textWidth` run in a loop based on the difference between string length and the target fit.
 **Action:** Replaced the iterative `while` loop with direct mathematical calculation `keep = Math.floor((max - 3) / 4)`. Because each character is mapped to a fixed width of `4` pixels (with a trailing offset of `-1`), calculating the max characters directly is much faster. Measured 2x speedup in isolated string truncations and this reduces JS time spent during Canvas painting loop where strings are rendered.
+
+## 2024-10-21 - Canvas Rect Batching Optimization
+**Learning:** Found a hot path in `public/scene.js` where the `text` and `textBig` functions used individual `g.fillRect()` calls inside nested loops to draw characters pixel-by-pixel. Because these functions are heavily used for rendering labels on the Canvas in every frame of the animation loop, each individual context mutation (`fillRect`) added rendering overhead.
+**Action:** Wrapped the drawing loops with `beginPath()` and `fill()` while using `g.rect()` instead of `g.fillRect()`. This batches the drawing into a single path, minimizing Canvas rendering API overhead.
