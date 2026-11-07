@@ -26,7 +26,10 @@ const I18N = {
     'hero.badge': '100% Local · Zéro Dépendance npm · Vérité des faits',
     'hero.titre': 'Surveillez, lisez et dirigez vos agents d\'IA dans un atelier vivant en pixel art',
     'hero.description': 'Un tableau de bord local immersif pour orchestrer vos équipes d\'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.',
-    'hero.btn-telecharger': 'Télécharger la dernière version',
+    'hero.btn-copier': 'Copier la commande',
+    'hero.btn-copie': 'Commande copiée',
+    'hero.install.aide': 'Collez-la dans PowerShell, l’Invite de commandes ou un terminal (Node.js 22 ou plus). Sans Node.js :',
+    'hero.install.zip': 'archive de la dernière version',
     'hero.btn-github': 'Voir le projet sur GitHub',
     'hero.preview-caption': 'Tournée du chef : délégation animée en direct avec remise du dossier doré au poste d\'un collaborateur.',
 
@@ -230,7 +233,10 @@ const I18N = {
     'hero.badge': '100% Local · Zero npm Dependencies · Factual Truth',
     'hero.titre': 'Monitor, inspect, and direct your AI agent teams in a living pixel art workshop',
     'hero.description': 'An immersive local dashboard to orchestrate your autonomous agent teams running in Herdr. No more blind consoles: every agent has their own desk, tool emblem, and visible dossiers.',
-    'hero.btn-telecharger': 'Download the latest version',
+    'hero.btn-copier': 'Copy the command',
+    'hero.btn-copie': 'Command copied',
+    'hero.install.aide': 'Paste it into PowerShell, Command Prompt or a terminal (Node.js 22 or later). Without Node.js:',
+    'hero.install.zip': 'archive of the latest release',
     'hero.btn-github': 'View project on GitHub',
     'hero.preview-caption': 'Chief tour: live animated delegation delivering the golden folder to a teammate\'s workstation.',
 
@@ -506,6 +512,19 @@ function setupLightbox() {
 
 }
 
+// Bouton « Copier la commande » : un site ne peut pas lancer une installation sur l'ordinateur ; il copie la
+// commande, à coller dans un terminal. Repli : la commande reste sélectionnable si le presse-papiers est refusé.
+function setupCopie() {
+  document.querySelectorAll('[data-copie]').forEach(bouton => {
+    bouton.addEventListener('click', async () => {
+      const lang = document.documentElement.lang === 'en' ? 'en' : 'fr';
+      try { await navigator.clipboard.writeText(bouton.dataset.copie); } catch { return; }
+      bouton.textContent = t('hero.btn-copie', lang);
+      setTimeout(() => { bouton.textContent = t('hero.btn-copier', document.documentElement.lang === 'en' ? 'en' : 'fr'); }, 2000);
+    });
+  });
+}
+
 function setupNavToggle() {
   if (typeof document === 'undefined') return;
   const toggle = document.getElementById('nav-toggle');
@@ -541,6 +560,7 @@ if (typeof document !== 'undefined') {
 
     setupLightbox();
     setupNavToggle();
+    setupCopie();
   });
 }
 
