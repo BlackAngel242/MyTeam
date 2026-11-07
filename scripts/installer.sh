@@ -99,14 +99,14 @@ etat_etape() {
 
 fin_etape() {
   if [ "${INTERFACE:-0}" = 1 ] && [ -n "${ETAPE:-}" ]; then
-    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$TEXTE_ETAPE"
+    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$TEXTE_ETAPE${DETAILS_ETAPE:+ $DETAILS_ETAPE}"
     ETAPE=''
   fi
 }
 
 etape() {
   [ "${INTERFACE:-0}" = 1 ] || return 0
-  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;TEXTE_ETAPE=$(texte 'Non applicable.' 'Not applicable.');TOTAL_ETAPE=0;emettre_interface STEP "$ETAPE"
+  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;TEXTE_ETAPE=$(texte 'Non applicable.' 'Not applicable.');TOTAL_ETAPE=0;DETAILS_ETAPE='';emettre_interface STEP "$ETAPE"
 }
 
 terminer_interface() {
@@ -463,18 +463,26 @@ proposer_agents() {
   while read -r type; do outils+=("$type"); done <<< "$liste"
   while read -r pane; do panneaux+=("$pane"); done <<< "$1"
   for pane in "${panneaux[@]}"; do
+    case " ${PANNEAUX_TENTES:-} " in *" $pane "*) i=$((i+1)); continue ;; esac
     if [ "$DRY_RUN" = 1 ]; then simuler "$(texte "Choix et confirmation de l'outil pour ${noms[$i]}." "Choose and confirm a tool for ${noms[$i]}.")"; i=$((i+1)); continue; fi
-    dire "$(texte "Panneau ${noms[$i]} : outils détectés" "Pane ${noms[$i]}: detected tools")"
-    for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
-    choisir "$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')" "$(texte Ignorer Skip)" "${outils[@]}" || REPONSE_INTERFACE=0
+    if [ "${INTERFACE:-0}" = 1 ]; then
+      question="$(texte "Outil pour le panneau ${noms[$i]}" "Tool for pane ${noms[$i]}")"
+    else
+      dire "$(texte "Panneau ${noms[$i]} : outils détectés" "Pane ${noms[$i]}: detected tools")"
+      for ((j=0;j<${#outils[@]};j++)); do dire "$((j+1)). ${outils[$j]}"; done
+      question="$(texte 'Numéro de l’outil (0 ou Entrée pour ignorer)' 'Tool number (0 or Enter to skip)')"
+    fi
+    choisir "$question" "$(texte Ignorer Skip)" "${outils[@]}" || REPONSE_INTERFACE=0
     choix="$REPONSE_INTERFACE"
     if [ "${INTERFACE:-0}" = 1 ] && [[ "$choix" =~ ^[0-9]{1,2}$ ]]; then choix=$((10#$choix-1));fi
     if [[ "$choix" =~ ^[0-9]{1,2}$ ]] && [ "$choix" -ge 1 ] && [ "$choix" -le "${#outils[@]}" ]; then
       type="${outils[$((10#$choix-1))]}"
       if command -v "$type" >/dev/null 2>&1 && confirmer "$(texte "Lancer $type dans le panneau ${noms[$i]} ?" "Start $type in pane ${noms[$i]}?")" individuel; then
+        PANNEAUX_TENTES="${PANNEAUX_TENTES:+$PANNEAUX_TENTES }$pane"
         local agent_nom
         if [ "$i" -eq 0 ]; then agent_nom=chef; else agent_nom="agent$((i+1))"; fi
         if "$HERDR_TROUVE" agent start "$agent_nom" --kind "$type" --pane "$pane" >/dev/null; then
+          if [ "${INTERFACE:-0}" = 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }${noms[$i]} = $type"; fi
           [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
           if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
           if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils lancés : $TOTAL_ETAPE." "Tools started: $TOTAL_ETAPE.")";fi
@@ -507,6 +515,7 @@ if [ -n "$HERDR_TROUVE" ]; then
         [ "$INTERFACE" != 1 ] || etat_etape ok "$(texte '4 panneaux créés.' '4 panes created.')"
         dire "$(texte 'Panneaux créés et nommés : Chef, Agent 2, Agent 3, Agent 4.' 'Panes created and named: Chef, Agent 2, Agent 3, Agent 4.')"
         noter "$(texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')"
+        OUTILS_AVANT_INSTALLATION=$(detecter_outils)
         proposer_agents "$ids"
       fi
       if [ "$panneaux_ok" = "0" ]; then
@@ -555,15 +564,29 @@ installer_competence_chef() {
 proposer_chef() {
   [ "$OUI" = 1 ] && { etat_etape skip "$(texte 'Ignoré avec --oui.' 'Skipped with --oui.')";return 0; }
   [ -n "$HERDR_TROUVE" ] || { etat_etape skip "$(texte 'Herdr absent.' 'Herdr missing.')";return 0; }
-  local personnel="${1:-$HOME}" outils=() liste type integration orientation
+  local personnel="${1:-$HOME}" outils=() eligibles=() liste type integration orientation selection='' index=0 accord
   liste=$(detecter_outils)
   if [ -n "$liste" ]; then while read -r type; do outils+=("$type"); done <<< "$liste"; fi
   for type in "${outils[@]}"; do
     integration="$type";[ "$type" = agy ] && integration=antigravity-cli
     case "$integration" in pi|omp|claude|codex|copilot|devin|droid|kimi|opencode|kilo|hermes|qodercli|qwen|letta|cursor|mastracode|antigravity-cli|grok) ;; *) continue ;; esac
-    if confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then
+    eligibles+=("$type")
+  done
+  if [ "$INTERFACE" = 1 ] && [ "${#eligibles[@]}" -gt 0 ]; then
+    if lire_interface MULTI "$(texte 'Quelles intégrations Herdr installer ? Elles modifient la configuration des outils sélectionnés.' 'Which Herdr integrations should be installed? They change the configuration of selected tools.')" "${eligibles[@]}"; then
+      [[ "$REPONSE_INTERFACE" =~ ^[0-9]+(,[0-9]+)*$ ]] && selection=",$REPONSE_INTERFACE,"
+    fi
+  fi
+  for type in "${eligibles[@]}"; do
+    index=$((index+1)); integration="$type"; [ "$type" = agy ] && integration=antigravity-cli
+    accord=0
+    if [ "$INTERFACE" = 1 ]; then [[ "$selection" == *",$index,"* ]] && accord=1
+    elif confirmer "$(texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.")" individuel; then accord=1; fi
+    if [ "$accord" = 1 ]; then
       if [ "$DRY_RUN" = 1 ]; then simuler "herdr integration install $integration"
-      elif "$HERDR_TROUVE" integration install "$integration"; then etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
+      elif "$HERDR_TROUVE" integration install "$integration"; then
+        etat_etape ok "$(texte 'Intégration installée.' 'Integration installed.')"
+        if [ "${INTERFACE:-0}" = 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }$(texte Intégration Integration) : $type"; fi
       else etat_etape fail;dire "$(texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.")"; fi
     fi
   done
@@ -605,7 +628,10 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
   for i in "${!OUTILS_MANQUANTS[@]}"; do dire "$((i+1)). ${OUTILS_MANQUANTS[i]%%|*}"; done
   dire "$(texte 'Antigravity : ouverture de la documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')"
   while :; do
-    if [ "$OUI" = 1 ] && [ "$DRY_RUN" != 1 ]; then selection=0
+    if [ "$OUI" = 1 ]; then selection=0
+    elif [ "$INTERFACE" = 1 ]; then
+      labels=(); for fiche in "${OUTILS_MANQUANTS[@]}"; do labels+=("${fiche%%|*}"); done
+      if lire_interface MULTI "$(texte 'Quels outils IA installer ?' 'Which AI tools should be installed?')" "${labels[@]}"; then selection=$REPONSE_INTERFACE; else selection=0; fi
     elif [ "$DRY_RUN" = 1 ]; then selection=0
     elif lire_saisie "$(texte 'Numéros des outils à installer (ex. 1,3 ; 0 = aucun)' 'Tool numbers to install (e.g. 1,3; 0 = none)')" 0; then selection=$REPONSE_INTERFACE
     else selection=0; fi
@@ -625,7 +651,8 @@ if [ "${#OUTILS_MANQUANTS[@]}" -gt 0 ]; then
     if [ "$valide" != 1 ]; then dire "$(texte 'Numéro hors liste.' 'Number out of range.')";continue;fi
     noms_choisis=(); for fiche in "${choisis[@]}"; do noms_choisis+=("${fiche%%|*}"); done
     dire "$(texte "Sélection : ${noms_choisis[*]}" "Selection: ${noms_choisis[*]}")"
-    if [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if [ "$INTERFACE" != 1 ] && [ "$DRY_RUN" != 1 ] && ! confirmer "$(texte 'Installer cette sélection ?' 'Install this selection?')" individuel; then continue;fi
+    if [ "$INTERFACE" = 1 ]; then DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_choisis[*]}"; fi
     for fiche in "${choisis[@]}"; do
       nom=${fiche%%|*}; commande=${fiche#*|}
       if [ "$commande" = antigravity-cli ]; then
@@ -643,6 +670,16 @@ fi
 if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ]; then
   dire "$(texte 'Aucun outil IA détecté : configurez au moins un outil avant de démarrer une mission.' 'No AI tool detected: set up one before starting a mission.')"
 fi
+if [ "${panneaux_ok:-0}" = 1 ] && [ -n "${ids:-}" ]; then
+  # Repérer d'abord un nouvel outil, puis poser les questions hors de la boucle :
+  # dans `while … done <<< "$nouveaux"`, les questions liraient la liste au lieu des réponses.
+  nouvel_outil=0
+  while IFS= read -r outil; do
+    [ -n "$outil" ] || continue
+    if ! printf '%s\n' "${OUTILS_AVANT_INSTALLATION:-}" | grep -Fxq "$outil"; then nouvel_outil=1; break; fi
+  done <<< "$(detecter_outils)"
+  if [ "$nouvel_outil" = 1 ]; then proposer_agents "$ids"; fi
+fi
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
 if [ "$INTERFACE" = 1 ]; then etape chef;proposer_chef;fi
@@ -651,7 +688,7 @@ dire "$(texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 
 # Trois extensions vérifiées sur le marché VS Code le 17 octobre 2026, avec
 # leurs éditeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
 # (Microsoft), esbenp.prettier-vscode (Prettier).
-if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce projet ?' 'Would you like to see the suggested project extensions?')"; then
+if [ "$INTERFACE" = 1 ] || confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce projet ?' 'Would you like to see the suggested project extensions?')"; then
   dire "$(texte '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matières et confort Markdown.' '  1. Markdown All in One: yzhang.markdown-all-in-one (Yu Zhang): contents and Markdown editing.')"
   dire "$(texte '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : contrôle du JavaScript et du TypeScript.' '  2. ESLint: dbaeumer.vscode-eslint (Microsoft): JavaScript and TypeScript checks.')"
   dire "$(texte '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme cohérente du code.' '  3. Prettier - Code formatter: esbenp.prettier-vscode (Prettier): consistent code formatting.')"
@@ -660,9 +697,27 @@ if confirmer "$(texte 'Veux-tu voir la liste des extensions proposées pour ce p
     dire "$(texte "VS Code n'est pas détecté sur cet ordinateur : l'installation des extensions est ignorée." "VS Code was not detected: extension installation skipped.")"
     noter "$(texte 'Extensions : ignorées (VS Code absent).' 'Extensions: skipped (VS Code missing).')"
   else
+    extensions_selection=''
+    if [ "$INTERFACE" = 1 ] && [ "$OUI" != 1 ]; then
+      if lire_interface MULTI "$(texte 'Quelles extensions installer ?' 'Which extensions should be installed?')" 'Markdown All in One (yzhang.markdown-all-in-one)' 'ESLint (dbaeumer.vscode-eslint)' 'Prettier - Code formatter (esbenp.prettier-vscode)' && [[ "$REPONSE_INTERFACE" =~ ^[1-3](,[1-3])*$ ]]; then
+        extensions_selection=",$REPONSE_INTERFACE,"
+      fi
+    fi
+    if [ "$INTERFACE" = 1 ] && [ -n "$extensions_selection" ]; then
+      noms_extensions=()
+      [[ "$extensions_selection" == *",1,"* ]] && noms_extensions+=('Markdown All in One')
+      [[ "$extensions_selection" == *",2,"* ]] && noms_extensions+=('ESLint')
+      [[ "$extensions_selection" == *",3,"* ]] && noms_extensions+=('Prettier - Code formatter')
+      DETAILS_ETAPE="$(texte 'Sélection' 'Selection') : ${noms_extensions[*]}"
+    fi
+    ext_index=0
     for ext in 'Markdown All in One|yzhang.markdown-all-in-one' 'ESLint|dbaeumer.vscode-eslint' 'Prettier - Code formatter|esbenp.prettier-vscode'; do
+      ext_index=$((ext_index+1))
       nom="${ext%%|*}"; id="${ext##*|}"
-      if confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; then
+      accord_extension=0
+      if [ "$INTERFACE" = 1 ]; then [[ "$extensions_selection" == *",$ext_index,"* ]] && accord_extension=1
+      elif confirmer "$(texte "Installer l'extension $nom ($id) ?" "Install extension $nom ($id)?")" individuel; then accord_extension=1; fi
+      if [ "$accord_extension" = 1 ]; then
         executer "$(texte "Installation de $id avec code --install-extension." "Installing $id with code --install-extension.")" code --install-extension "$id"
         if [ "$DRY_RUN" != 1 ] && [ "${INTERFACE:-0}" = 1 ] && [ "$ETAT_ETAPE" != fail ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Extensions installées : $TOTAL_ETAPE." "Extensions installed: $TOTAL_ETAPE.")";fi
         noter "$(texte "Extension $id : proposée à l'installation." "Extension $id: installation offered.")"
@@ -754,8 +809,8 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
   # aucun doublon n'est créé.
   CHOIX_LANCEUR='bureau'
   if [ "$INTERFACE" = 1 ]; then
-    choisir "$(texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?')" Herdr "$(texte 'Le bureau' Desktop)" "$(texte 'Herdr et bureau' 'Herdr and desktop')" || REPONSE_INTERFACE=''
-    [ "$REPONSE_INTERFACE" = 1 ] && CHOIX_LANCEUR=herdr
+    choisir "$(texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?')" "$(texte 'Le bureau' Desktop)" Herdr "$(texte 'Herdr et bureau' 'Herdr and desktop')" || REPONSE_INTERFACE=''
+    [ "$REPONSE_INTERFACE" = 2 ] && CHOIX_LANCEUR=herdr
     [ "$REPONSE_INTERFACE" = 3 ] && CHOIX_LANCEUR=ensemble
   elif [ "$DRY_RUN" = "1" ]; then
     simuler "$(texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')"
@@ -767,6 +822,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
     [ "$choix_saisi" = "1" ] && CHOIX_LANCEUR='herdr'
     [ "$choix_saisi" = "3" ] && CHOIX_LANCEUR='ensemble'
   fi
+  if [ "$INTERFACE" = 1 ] && [ "$ENTREE_FERMEE" != 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }$(texte "Raccourci choisi : $CHOIX_LANCEUR" "Shortcut selected: $CHOIX_LANCEUR")"; fi
   if [ "$CHOIX_LANCEUR" = "herdr" ]; then
     HERDR_LANCEUR="$HERDR_TROUVE"
     [ -z "$HERDR_LANCEUR" ] && HERDR_LANCEUR=$(command -v herdr 2>/dev/null || true)
@@ -842,6 +898,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
     fi
   fi
 fi
+if [ "$INTERFACE" = 1 ] && [ "$ENTREE_FERMEE" != 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }Port $PORT_CHOISI"; fi
 dire ''
 
 proposer_kit() {
@@ -872,8 +929,8 @@ if [ ! -d "$RACINE/test" ]; then
   dire "$(texte 'Les tests de développement sont disponibles dans le dépôt source.' 'Development tests are available in the source repository.')"
 elif [ "$NODE_OK" != "1" ]; then
   etat_etape skip "$(texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')"
-  dire "$(texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
-  noter "$(texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')"
+  dire "$(texte 'Node.js manquant ou trop ancien : tests ignorés. Relancez ce script après installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')"
+  noter "$(texte 'Tests : ignorés (Node.js absent).' 'Tests: skipped (Node.js missing).')"
 elif confirmer "$(texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')"; then
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm test.' 'Running npm test.')" npm test) || etat_etape fail
   (cd -- "$RACINE" && executer "$(texte 'Execution de npm run check.' 'Running npm run check.')" npm run check) || etat_etape fail

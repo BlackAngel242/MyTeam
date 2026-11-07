@@ -147,6 +147,21 @@ printf 'START:%s\n' "$STARTED"`);
   assert.equal((result.stdout.match(/START:/g)||[]).length,1);
 });
 
+test('A4 bash : un panneau déjà tenté ne masque pas un identifiant voisin',async t=>{
+  const result=await bash(t,['proposer_agents'],`
+INTERFACE=0;DRY_RUN=0;OUI=0;PANNEAUX_TENTES='w9:p1'
+detecter_outils(){ printf 'codex\\n'; };dire(){ :; };noter(){ :; };confirmer(){ return 0; }
+command(){ [ "$1" = -v ] && return 0; builtin command "$@"; }
+fake_herdr(){ STARTED="$STARTED|$*"; };HERDR_TROUVE=fake_herdr
+proposer_agents 'w9:p1
+w9:p10' <<< 1
+proposer_agents 'w9:p1
+w9:p10' <<< 1
+printf 'START:%s\\n' "$STARTED"`);
+  assert.equal((result.stdout.match(/agent start/g)||[]).length,1);
+  assert.match(result.stdout,/--pane w9:p10/);
+});
+
 test('H3 raccourci combiné bash : port et chemins littéraux, serveur avant Herdr',async t=>{
   const result=await bash(t,['literal_shell','ecrire_lanceur'],`
 set -e

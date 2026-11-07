@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
-import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin } from '../scripts/installateur-anime.mjs';
+import { parseLigne, etatInitial, appliquer, cadre, ajuster, commandeInstalleur, executer, bannière, bilanFin, touches, naviguerChoix, naviguerConfirmation, naviguerMulti } from '../scripts/installateur-anime.mjs';
 
 test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@PLAN node\tNode.js 22 ou plus'), { type: 'plan', id: 'node', libelle: 'Node.js 22 ou plus' });
@@ -12,6 +12,7 @@ test('le protocole est lu ligne par ligne, le reste est ignoré', () => {
   assert.deepEqual(parseLigne('@@INFO Recherche de Herdr…'), { type: 'info', texte: 'Recherche de Herdr…' });
   assert.deepEqual(parseLigne('@@CONFIRM herdr\tInstaller Herdr ?\r'), { type: 'confirm', id: 'herdr', question: 'Installer Herdr ?' });
   assert.deepEqual(parseLigne('@@CHOICE config\tRaccourci ?\tHerdr\tBureau'), { type: 'choice', id: 'config', question: 'Raccourci ?', options: ['Herdr', 'Bureau'] });
+  assert.deepEqual(parseLigne('@@MULTI q\tInstaller ?\tA\tB'), { type: 'multi', id: 'q', question: 'Installer ?', options: ['A', 'B'] });
   assert.deepEqual(parseLigne('@@INPUT kit\tDossier ?\t.'), { type: 'input', id: 'kit', question: 'Dossier ?', defaut: '.' });
   assert.deepEqual(parseLigne('@@DONE node\tok\tv24.22.0'), { type: 'done', id: 'node', etat: 'ok', texte: 'v24.22.0' });
   assert.deepEqual(parseLigne('@@END fail'), { type: 'end', ok: false });
@@ -166,4 +167,158 @@ test('le bilan dit démonstration ou simulation, jamais installation, et signale
   assert.match(bilanFin({ ...etatInitial({ lang: 'en', simulation: true }), fin: { ok: true } }), /Dry run finished: nothing was installed/);
   assert.equal(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: true } }), 'Installation terminée.');
   assert.match(bilanFin({ ...etatInitial({ lang: 'fr' }), fin: { ok: false } }), /arrêtée/);
+});
+
+test('touches : flèches, Entrée, effacement et Ctrl+C sont reconnus', () => {
+  assert.deepEqual(touches('\x1b[A\x1b[B\x1bOC\x1b[D\r1\u007f\u0003'), ['haut', 'bas', 'droite', 'gauche', 'entree', '1', 'effacer', 'ctrl-c']);
+});
+
+test('choix au clavier : flèches avec bouclage, numéros à deux chiffres, Entrée valide', () => {
+  let s = { curseur: 1, chiffres: '' };
+  s = naviguerChoix(s, 'haut', 13); assert.equal(s.curseur, 13);
+  s = naviguerChoix(s, 'bas', 13); assert.equal(s.curseur, 1);
+  s = naviguerChoix(s, 'bas', 13); assert.equal(s.curseur, 2);
+  s = naviguerChoix(s, '1', 13); assert.equal(s.curseur, 1);
+  s = naviguerChoix(s, '2', 13); assert.equal(s.curseur, 12, 'les options 10 et plus restent accessibles');
+  s = naviguerChoix(s, '7', 13); assert.equal(s.curseur, 7, 'un numéro hors liste repart du dernier chiffre');
+  s = naviguerChoix(s, 'x', 13); assert.equal(s.valide, undefined);
+  assert.equal(naviguerChoix(s, 'entree', 13).valide, 7);
+});
+
+test('confirmation au clavier : non par défaut, ←/→ basculent, o et n répondent tout de suite', () => {
+  assert.deepEqual(naviguerConfirmation(false, 'entree'), { oui: false, valide: true });
+  assert.deepEqual(naviguerConfirmation(false, 'gauche'), { oui: true });
+  assert.deepEqual(naviguerConfirmation(true, 'n'), { oui: false, valide: true });
+  assert.deepEqual(naviguerConfirmation(false, 'o'), { oui: true, valide: true });
+});
+
+test('cases : aucune par défaut, déplacement, espace et tout', () => {
+  let s = { curseur: 1, coches: [] };
+  s = naviguerMulti(s, 'haut', 3); assert.equal(s.curseur, 3);
+  s = naviguerMulti(s, ' ', 3); assert.deepEqual(s.coches, [3]);
+  s = naviguerMulti(s, 'bas', 3); s = naviguerMulti(s, ' ', 3); assert.deepEqual(s.coches, [1, 3]);
+  s = naviguerMulti(s, 'a', 3); assert.deepEqual(s.coches, [1, 2, 3]);
+  s = naviguerMulti(s, 'a', 3); assert.deepEqual(s.coches, []);
+  assert.equal(naviguerMulti(s, 'entree', 3).valide, true);
+});
+
+test('MULTI texte transmet les choix et refuse les réponses invalides ou EOF', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tTest');
+console.log('@@MULTI a\\tChoix ?\\tA\\tB\\tC');
+const r = await lire();
+console.log('@@DONE a\\tok\\tvaleur=' + r);
+console.log('@@END ok');`);
+  assert.match((await lancer(script, ['3,1'])).texte, /valeur=1,3/);
+  assert.match((await lancer(script, ['1,4'])).texte, /valeur=\s/);
+  assert.match((await lancer(script, [])).texte, /valeur=EOF/);
+});
+
+test('MULTI animé : EOF annule même une case cochée', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tTest');
+console.log('@@MULTI a\\tChoix ?\\tA\\tB');
+const r = await lire();
+console.log('@@DONE a\\tok\\tvaleur=' + r);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', ferme = false;
+  sortie.on('data', d => { texte += d; if (!ferme && texte.includes('Choix ?')) { ferme = true; setImmediate(() => { entree.write(' '); entree.end(); }); } });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false });
+  assert.equal(r.ok, true);
+  assert.match(texte, /valeur=EOF/);
+});
+
+test('mode animé : un choix aux flèches et une confirmation renvoient le bon numéro à l\'installeur', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\tAgents');
+console.log('@@STEP a');
+console.log('@@CHOICE q1\tOutil ?\tIgnorer\tpi\tclaude\tcodex\ta5\ta6\ta7\ta8\ta9\ta10\ta11\ta12\tqwen');
+const c = await lire();
+console.log('@@CONFIRM q2\tLancer ?');
+const o = await lire();
+console.log('@@DONE a\tok\tchoix=' + c + ' oui=' + o);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', etape = 0;
+  sortie.on('data', d => {
+    texte += d;
+    if (etape === 0 && texte.includes('Outil ?')) { etape = 1; setImmediate(() => entree.write('\x1b[A\r')); }
+    else if (etape === 1 && texte.includes('Lancer ?')) { etape = 2; setImmediate(() => entree.write('\x1b[D\r')); }
+  });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' });
+  assert.equal(r.ok, true);
+  assert.match(texte, /choix=13 oui=o/, 'flèche haut depuis la 1re option = dernière option (13), puis ← = Oui');
+});
+
+test('le résumé de l\'installeur (après « === Résumé === ») reste affiché après la fin', () => {
+  const etat = etatInitial({ lang: 'fr' });
+  // Le flux réel commence par une bannière en === … === : elle ne doit pas ouvrir le résumé.
+  appliquer(etat, parseLigne('@@INFO === Bureau des agents : installation ==='));
+  appliquer(etat, parseLigne('@@INFO Installation de Node.js avec winget.'));
+  assert.equal(etat.dansResume, false);
+  assert.equal(etat.info, 'Installation de Node.js avec winget.', 'les messages en direct restent visibles pendant l\'installation');
+  for (const l of ['@@PLAN a\tA', '@@STEP a', '@@INFO travail en cours', '@@INFO === Resume ===', '@@INFO  - Node.js : présent.', '@@INFO ', '@@INFO Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd', '@@DONE a\tok\t', '@@END ok']) appliquer(etat, parseLigne(l));
+  assert.deepEqual(etat.resume, ['- Node.js : présent.', 'Pour ouvrir le bureau : double-cliquez sur Ouvrir le bureau.cmd']);
+  const ecran = cadre(etat, 0, { couleur: false, largeur: 120 }).join('\n');
+  assert.match(ecran, /Pour ouvrir le bureau/);
+  assert.match(ecran, /Installation terminée/);
+  assert.doesNotMatch(ecran, /=== Résumé ===|travail en cours/);
+});
+
+test('Ctrl+C pendant une question : installeur arrêté, aucune réponse envoyée, code 130 et message d\'annulation', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\\tA');
+console.log('@@STEP a');
+console.log('@@CONFIRM q1\\tInstaller ?');
+const r = await lire();
+console.log('@@DONE a\\tok\\treponse=' + r);
+console.log('@@END ok');`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', envoye = false;
+  sortie.on('data', d => { texte += d; if (!envoye && texte.includes('Installer ?')) { envoye = true; setImmediate(() => entree.write('\u0003')); } });
+  const r = await executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' });
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 130);
+  assert.doesNotMatch(texte, /reponse=/, 'aucune réponse ne doit atteindre l\'installeur');
+  assert.match(texte, /Installation annulée \(Ctrl\+C\)/);
+});
+
+// Garde-fou : un executer bloqué ferait échouer le test au lieu de le figer.
+const sansBlocage = (promesse, ms, quoi) => Promise.race([promesse, new Promise((_, refus) => setTimeout(() => refus(new Error(quoi + ' : executer bloqué')), ms).unref())]);
+
+test('Ctrl+C pendant la bannière : executer se termine avec le code 130 (aucun événement de fin perdu)', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\tA');
+console.log('@@STEP a');
+await new Promise(r => setTimeout(r, 30000));`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  sortie.resume();
+  setTimeout(() => entree.write('\u0003'), 20);
+  const r = await sansBlocage(executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' }), 15000, 'Ctrl+C pendant la bannière');
+  assert.equal(r.code, 130);
+  assert.equal(r.ok, false);
+});
+
+// Probant sous Linux/macOS (groupe de processus). Sous Windows, Node tue déjà les enfants Node d'un parent mort (job object) :
+// le test y passe même sans taskkill ; le cas réel (PowerShell → winget) repose sur `taskkill /T`, non simulé ici.
+test('Ctrl+C arrête aussi les commandes lancées par l\'installeur (arbre de processus)', async t => {
+  const dossier = await mkdtemp(join(tmpdir(), 'myteam-arbre-'));
+  t.after(() => rm(dossier, { recursive: true, force: true }));
+  const temoin = join(dossier, 'ecrit-apres-annulation.txt');
+  const script = await fausseInstallation(t, `
+const { spawn } = await import('node:child_process');
+// Commande d'installation simulée : garde la sortie ouverte et écrirait un fichier après 2 s.
+spawn(process.execPath, ['-e', ${JSON.stringify(`setTimeout(() => require('fs').writeFileSync(${JSON.stringify(temoin)}, 'trop tard'), 2000)`)}], { stdio: 'inherit' });
+console.log('@@PLAN a\tA');
+console.log('@@STEP a');
+console.log('@@CONFIRM q1\tContinuer ?');
+await lire();`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', envoye = false;
+  sortie.on('data', d => { texte += d; if (!envoye && texte.includes('Continuer ?')) { envoye = true; setImmediate(() => entree.write('\u0003')); } });
+  const r = await sansBlocage(executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' }), 15000, 'Ctrl+C avec un petit-enfant');
+  assert.equal(r.code, 130);
+  await new Promise(res => setTimeout(res, 3000));
+  await assert.rejects(access(temoin), 'la commande lancée par l\'installeur ne doit plus rien écrire après Ctrl+C');
 });

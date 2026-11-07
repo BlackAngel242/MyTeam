@@ -41,19 +41,19 @@ Reviewed technical documents may be shared deliberately. The kit creates `HANDOF
 
 - **No external npm dependencies**: The project contains no `node_modules` and never runs `npm install`.
 - **No key or secret collection**: No password, token, or API key is requested or handled. Each AI manages its own credentials.
-- **No forced silent installation**: The `-Oui` / `--oui` flag NEVER auto-confirms software installations, integrations, agent launches, or team kit setup. Each sensitive action requires explicit interactive "y/n" consent.
+- **No optional installation without consent**: only missing prerequisites — Node.js 22+, Herdr and, on Windows, Clink — are installed directly, without a question (winget or Herdr's official script), because the desktop needs them. Everything else (AI tools, Herdr integrations, agent launches, extensions, team kit) requires interactive consent, and the `-Oui` / `--oui` flag never gives it on your behalf.
 - **No file overwriting**: The scripts never overwrite existing skills or project documents.
 - **No unauthorized external network requests**: The server strictly binds to the local interface `127.0.0.1`.
 
 ## Method 1: Installation from the Release Archive (Recommended)
 
-If Node.js 22+ and npm are already installed, this command copies the tagged release to your user directory and starts the same setup assistant:
+If Node.js 22+ and npm are already installed, this command copies the latest npm release to your user directory and starts the same setup assistant:
 
 ```sh
-npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install
+npx @drsmoke/myteam
 ```
 
-The destination is `~/.local/share/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\MyTeam` on Windows. An existing installation is never overwritten; use the in-app updater instead. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
+The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. Running the command again on an existing installation reopens its assistant without overwriting anything; use the in-app updater to change versions. Options: `--lang fr|en`, `--simple` (plain text, no animation), `--demo` (demo, copies and installs nothing), `--dry-run`. The assistant offers MyTeam, Herdr, and combined shortcuts. If Node.js is missing, use the ZIP installer below.
 
 This method is the easiest and does not require any developer tools upfront (no Git, no compilers).
 
@@ -109,7 +109,7 @@ The setup scripts `scripts/installer.ps1` and `scripts/installer.sh`, as well as
 | Windows Option | macOS / Linux Option | Node Animated Driver | Effect |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation: displays all planned actions without modifying or installing anything. |
-| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms software installations, integrations, agent launches, or kit setup (individual y/n confirmation remains mandatory). |
+| `-Oui` | `--oui` | (not forwarded) | Accepts standard configuration choices, but never auto-confirms AI tools, integrations, agent launches, extensions, or kit setup (individual y/n confirmation remains mandatory). Prerequisites (Node.js, Herdr, Clink) are installed anyway, with or without this flag. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Customizes the office HTTP port (default: 4317 or existing `BUREAU_PORT` environment variable). |
 | `-HerdrChemin path\herdr.exe` | `--herdr-chemin path/herdr` | (PATH auto-detection) | Points to the full Herdr executable path if missing from PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (not forwarded) | Skips offering to create the desktop launcher shortcut. |
@@ -139,9 +139,10 @@ The script can be rerun safely at any time: it inspects your system and only set
 9. **Port configuration and Desktop shortcut**:
    - Configures the HTTP listening port (default: 4317), saved into user environment variables.
    - Offers 3 desktop shortcut choices:
-     * Option 1: Starts Herdr directly.
-     * Option 2: Starts the office in your browser (runs `node server.mjs` and opens the local URL).
-     * Option 3: "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
+     * "Desktop" (default): starts the office in your browser (runs `node server.mjs` and opens the local URL).
+     * "Herdr": starts Herdr directly.
+     * "Herdr and desktop": launches Herdr in a visible terminal, starts the office server, and opens your browser.
+   - In the animated assistant these choices appear in this order, with "Desktop" preselected. In text mode, input stays numbered: 1 = Herdr, 2 = Desktop (default), 3 = Herdr and desktop.
 10. **Project test suite**: If Node.js is validated, offers to run `npm test` and `npm run check` to verify system health.
 11. **Team kit initialization**: Offers to initialize the collaboration kit (`node scripts/init-kit.mjs <folder> --lang <fr|en>`) in a project directory to deploy `AGENTS.md` rules, `CHEF.md` lead guidelines, `LESSONS.md` memory, and tracking templates without overwriting existing files.
 

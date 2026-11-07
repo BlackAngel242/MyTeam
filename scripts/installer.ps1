@@ -118,7 +118,8 @@ function Etat-Etape([string]$etat, [string]$texte = '') {
 }
 function Fin-Etape {
   if ($Interface -and $script:etape) {
-    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,$script:texteEtape)
+    $details = if ($script:detailsEtape.Count -gt 0) { ' ' + ($script:detailsEtape -join ', ') } else { '' }
+    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,($script:texteEtape + $details))
     $script:etape = ''
   }
 }
@@ -128,6 +129,7 @@ function Etape([string]$id) {
   $script:etape = $id; $script:etatEtape = 'skip'
   $script:texteEtape = Texte 'Non applicable.' 'Not applicable.'
   $script:totalEtape = 0
+  $script:detailsEtape = @()
   Emettre-Interface 'STEP' @($id)
 }
 function Terminer-Interface {
@@ -178,24 +180,27 @@ function Confirmer([string]$question, [switch]$Individuel) {
     $reponse = $saisie.Trim().ToLower()
     if (($Lang -eq 'en' -and $reponse -match '^(y|yes)$') -or ($Lang -ne 'en' -and $reponse -match '^(o|oui)$')) { return $true }
     if ($reponse -match '^(n|non|no)$') { return $false }
-    Dire (Texte 'Repondez par o ou par n.' 'Please answer y or n.')
+    Dire (Texte 'Répondez par o ou par n.' 'Please answer y or n.')
   }
 }
 
-function Executer([string]$description, [scriptblock]$action) {
+function Executer([string]$description, [scriptblock]$action, [switch]$Winget) {
   if ($Interface -and $script:entreeFermee) { Etat-Etape 'skip' (Texte 'Entrée fermée.' 'Input closed.'); Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
   $global:LASTEXITCODE = 0
   try {
     & $action
-    if ($LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
+    # Codes officiels winget : aucune mise à jour applicable ou paquet déjà installé.
+    $dejaInstalle = $Winget -and $LASTEXITCODE -in @(-1978335189, -1978335135)
+    if ($null -eq $LASTEXITCODE -or ($LASTEXITCODE -ne 0 -and -not $dejaInstalle)) { throw (Texte "La commande a échoué." 'The command failed.') }
+    if ($dejaInstalle) { Dire (Texte 'Déjà installé.' 'Already installed.') }
     if ($Interface) {
-      $fait = switch ($script:etape) {
+      $fait = if ($dejaInstalle) { Texte 'Déjà installé.' 'Already installed.' } else { switch ($script:etape) {
         'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
         'tests' { Texte 'Vérifications réussies.' 'Checks passed.' }
         default { Texte 'Installation confirmée.' 'Installation confirmed.' }
-      }
+      } }
       Etat-Etape 'ok' $fait
     }
   } catch { if ($Interface) { Etat-Etape 'fail' (Texte 'Commande en échec.' 'Command failed.') }; throw }
@@ -230,7 +235,7 @@ trap { if ($Interface) { Etat-Etape 'fail'; Terminer-Interface }; break }
 
 Dire (Texte '=== Bureau des agents : installation ===' '=== Agent desktop: installation ===')
 Dire (Texte "Dossier du projet : $racine" "Project folder: $racine")
-if ($DryRun) { Dire (Texte 'Mode simulation : rien ne sera installe ni modifie.' 'Preview mode: nothing will be installed or changed.') }
+if ($DryRun) { Dire (Texte 'Mode simulation : rien ne sera installé ni modifié.' 'Preview mode: nothing will be installed or changed.') }
 Dire ''
 
 # --- 1. Node.js ---------------------------------------------------------
@@ -239,30 +244,30 @@ Dire (Texte '--- 1. Node.js (version 22 ou plus) ---' '--- 1. Node.js (version 2
 $majeur = Lire-VersionNode
 if ($null -ne $majeur -and $majeur -ge 22) {
   Etat-Etape 'ok' "Version $majeur."
-  Dire (Texte "Node.js est deja present (version majeure $majeur). Rien a faire." "Node.js is already available (major version $majeur). No action needed.")
-  Noter (Texte 'Node.js : deja present.' 'Node.js: already available.')
+  Dire (Texte "Node.js est déjà présent (version majeure $majeur). Rien à faire." "Node.js is already available (major version $majeur). No action needed.")
+  Noter (Texte 'Node.js : déjà présent.' 'Node.js: already available.')
 } else {
   if ($null -eq $majeur) { Dire (Texte 'Node.js est absent de cet ordinateur.' 'Node.js is missing from this computer.') }
-  else { Dire (Texte "Node.js est present mais trop ancien (version majeure $majeur) : il faut la version 22 ou plus." "Node.js is available but too old (major version $majeur): version 22 or later is required.") }
+  else { Dire (Texte "Node.js est présent mais trop ancien (version majeure $majeur) : il faut la version 22 ou plus." "Node.js is available but too old (major version $majeur): version 22 or later is required.") }
   if ($true) {
     try {
       Executer (Texte 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' 'Installing Node.js with winget (OpenJS.NodeJS.LTS package).') {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
         $majeur = Lire-VersionNode
-        if ($null -ne $majeur -and $majeur -ge 22) { Dire (Texte "Node.js est maintenant installe (version majeure $majeur)." "Node.js is now installed (major version $majeur)."); Noter (Texte 'Node.js : installe avec winget.' 'Node.js: installed with winget.') }
-        else { Dire (Texte "Node.js n'a pas ete detecte. Ouvrez un nouveau terminal, ou installez-le depuis https://nodejs.org/en/download puis relancez ce script." "Node.js was not detected. Open a new terminal, or install it from https://nodejs.org/en/download and run this script again."); Noter (Texte 'Node.js : a verifier (installation winget non confirmee).' 'Node.js: check required (winget installation not confirmed).') }
+        if ($null -ne $majeur -and $majeur -ge 22) { Dire (Texte "Node.js est maintenant installé (version majeure $majeur)." "Node.js is now installed (major version $majeur)."); Noter (Texte 'Node.js : installé avec winget.' 'Node.js: installed with winget.') }
+        else { Dire (Texte "Node.js n'a pas été détecté. Ouvrez un nouveau terminal, ou installez-le depuis https://nodejs.org/en/download puis relancez ce script." "Node.js was not detected. Open a new terminal, or install it from https://nodejs.org/en/download and run this script again."); Noter (Texte 'Node.js : à vérifier (installation winget non confirmée).' 'Node.js: check required (winget installation not confirmed).') }
       } else { Noter (Texte 'Node.js : simulation de l''installation winget.' 'Node.js: preview of winget installation.') }
     } catch {
-      Dire (Texte "L'installation de Node.js a echoue : $($_.Exception.Message)" "Node.js installation failed: $($_.Exception.Message)")
+      Dire (Texte "L'installation de Node.js a échoué : $($_.Exception.Message)" "Node.js installation failed: $($_.Exception.Message)")
       Dire (Texte 'Vous pouvez l''installer vous-meme depuis https://nodejs.org/en/download puis relancer ce script.' 'You can install it from https://nodejs.org/en/download and run this script again.')
       Noter (Texte 'Node.js : installation echouee.' 'Node.js: installation failed.')
     }
   } else {
     Dire (Texte 'Node.js reste a installer depuis https://nodejs.org/en/download (version 22 ou plus).' 'Node.js still needs installing from https://nodejs.org/en/download (version 22 or later).')
-    Noter (Texte 'Node.js : non installe (refuse).' 'Node.js: not installed (declined).')
+    Noter (Texte 'Node.js : non installé (refusé).' 'Node.js: not installed (declined).')
   }
 }
 $nodeOk = $false
@@ -275,8 +280,17 @@ if ($Interface -and $script:etatEtape -eq 'ok') {
 Dire ''
 
 # --- 2. Herdr -----------------------------------------------------------
+function Tester-Clink {
+  foreach ($nom in @('clink','clink_x64')) {
+    if (@(Get-Command $nom -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) { return $true }
+  }
+  foreach ($dossier in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+    if ($dossier -and (Test-Path -LiteralPath (Join-Path $dossier 'clink\clink_x64.exe') -PathType Leaf)) { return $true }
+  }
+  return $false
+}
 function Proposer-Clink {
-  if (@(Get-Command clink -CommandType Application -ErrorAction SilentlyContinue).Count -gt 0) {
+  if (Tester-Clink) {
     Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
     Dire (Texte 'Clink est déjà présent.' 'Clink is already available.'); return
   }
@@ -287,17 +301,17 @@ function Proposer-Clink {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
-        if (Get-Command clink -CommandType Application -ErrorAction SilentlyContinue) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
+        if (Tester-Clink) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
         else { Dire (Texte 'Clink : installation à vérifier dans un nouveau terminal.' 'Clink: check installation in a new terminal.'); Noter (Texte 'Clink : à vérifier.' 'Clink: check required.') }
       }
     } catch { Dire (Texte "L'installation de Clink a échoué." 'Clink installation failed.'); Noter (Texte 'Clink : installation échouée.' 'Clink: installation failed.') }
   }
 }
 Etape 'clink'
-Dire (Texte '--- Clink : confort du terminal (facultatif) ---' '--- Clink: terminal comfort (optional) ---')
+Dire (Texte '--- Clink : confort du terminal ---' '--- Clink: terminal comfort ---')
 Proposer-Clink
 Etape 'herdr'
 Dire (Texte '--- 2. Herdr (gestionnaire de terminaux) ---' '--- 2. Herdr (terminal manager) ---')
@@ -323,8 +337,8 @@ function Chercher-Herdr {
 $herdrTrouve = Chercher-Herdr
 if ($herdrTrouve) {
   Etat-Etape 'ok' (Texte 'Déjà présent.' 'Already available.')
-  Dire (Texte "Herdr est present : $herdrTrouve" "Herdr is available: $herdrTrouve")
-  Noter (Texte 'Herdr : deja present.' 'Herdr: already available.')
+  Dire (Texte "Herdr est présent : $herdrTrouve" "Herdr is available: $herdrTrouve")
+  Noter (Texte 'Herdr : déjà présent.' 'Herdr: already available.')
   $dansPath = [bool](Get-Command herdr -ErrorAction SilentlyContinue)
   if (-not $dansPath) {
     Dire (Texte 'Herdr n''est pas dans le PATH : le bureau a besoin de la variable BUREAU_HERDR_PATH.' 'Herdr is not in PATH: the desktop needs the BUREAU_HERDR_PATH variable.')
@@ -332,15 +346,15 @@ if ($herdrTrouve) {
       Executer (Texte "Enregistrement de BUREAU_HERDR_PATH = $herdrTrouve (variable de l'utilisateur)." "Saving BUREAU_HERDR_PATH = $herdrTrouve (user environment variable).") {
         [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
       } | Out-Null
-      Noter (Texte 'BUREAU_HERDR_PATH : enregistre.' 'BUREAU_HERDR_PATH: saved.')
-    } else { Noter (Texte 'BUREAU_HERDR_PATH : non enregistre (refuse).' 'BUREAU_HERDR_PATH: not saved (declined).') }
+      Noter (Texte 'BUREAU_HERDR_PATH : enregistré.' 'BUREAU_HERDR_PATH: saved.')
+    } else { Noter (Texte 'BUREAU_HERDR_PATH : non enregistré (refusé).' 'BUREAU_HERDR_PATH: not saved (declined).') }
   }
 } else {
   Dire (Texte 'Herdr est introuvable sur cet ordinateur.' 'Herdr could not be found on this computer.')
-  Dire (Texte 'Methode d''installation officielle (documentation Herdr) :' 'Official installation method (Herdr documentation):')
+  Dire (Texte 'Méthode d''installation officielle (documentation Herdr) :' 'Official installation method (Herdr documentation):')
   Dire '  Windows PowerShell : powershell -ExecutionPolicy Bypass -c "irm https://herdr.dev/install.ps1 | iex"'
   Dire (Texte '  Si un antivirus bloque : curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd' '  If an antivirus blocks it: curl.exe -fsSLo install.cmd https://herdr.dev/install.cmd && install.cmd && del install.cmd')
-  Dire (Texte '  Puis documentation complete : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
+  Dire (Texte '  Puis documentation complète : https://herdr.dev/docs/install/' '  Full documentation: https://herdr.dev/docs/install/')
   if ($true) {
     try {
       Executer (Texte 'Installation de Herdr (script officiel https://herdr.dev/install.ps1).' 'Installing Herdr (official script https://herdr.dev/install.ps1).') {
@@ -350,8 +364,8 @@ if ($herdrTrouve) {
         Rafraichir-Path
         $herdrTrouve = Chercher-Herdr
         if ($herdrTrouve) {
-          Dire (Texte "Herdr est maintenant installe : $herdrTrouve" "Herdr is now installed: $herdrTrouve")
-          Noter (Texte 'Herdr : installe.' 'Herdr: installed.')
+        Dire (Texte "Herdr est maintenant installé : $herdrTrouve" "Herdr is now installed: $herdrTrouve")
+          Noter (Texte 'Herdr : installé.' 'Herdr: installed.')
           if (-not (Get-Command herdr -ErrorAction SilentlyContinue)) {
             Executer (Texte 'Enregistrement du chemin Herdr utilisateur.' 'Saving user Herdr path.') {
               [Environment]::SetEnvironmentVariable('BUREAU_HERDR_PATH', $herdrTrouve, 'User')
@@ -359,15 +373,15 @@ if ($herdrTrouve) {
             Noter (Texte 'BUREAU_HERDR_PATH : enregistré.' 'BUREAU_HERDR_PATH: saved.')
           }
         }
-        else { Dire (Texte 'Herdr n''a pas ete detecte. Consultez https://herdr.dev/docs/install/ puis relancez ce script.' 'Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.'); Noter (Texte 'Herdr : a verifier.' 'Herdr: check required.') }
+        else { Dire (Texte 'Herdr n''a pas été détecté. Consultez https://herdr.dev/docs/install/ puis relancez ce script.' 'Herdr was not detected. See https://herdr.dev/docs/install/ and run this script again.'); Noter (Texte 'Herdr : à vérifier.' 'Herdr: check required.') }
       } else { Noter (Texte 'Herdr : simulation de l''installation officielle.' 'Herdr: preview of official installation.') }
     } catch {
-      Dire (Texte "L'installation de Herdr a echoue : $($_.Exception.Message)" "Herdr installation failed: $($_.Exception.Message)")
+      Dire (Texte "L'installation de Herdr a échoué : $($_.Exception.Message)" "Herdr installation failed: $($_.Exception.Message)")
       Dire (Texte 'Suivez la documentation officielle : https://herdr.dev/docs/install/' 'Follow the official documentation: https://herdr.dev/docs/install/')
-      Noter (Texte 'Herdr : installation echouee.' 'Herdr: installation failed.')
+      Noter (Texte 'Herdr : installation échouée.' 'Herdr: installation failed.')
     }
   } else {
-    Dire (Texte 'Herdr reste a installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')
+    Dire (Texte 'Herdr reste à installer. Documentation officielle : https://herdr.dev/docs/install/' 'Herdr still needs installing. Official documentation: https://herdr.dev/docs/install/')
     Dire (Texte 'Le bureau ne fonctionnera pas sans Herdr ouvert.' 'The desktop requires Herdr to be open.')
     Noter (Texte 'Herdr : installation impossible.' 'Herdr: installation unavailable.')
   }
@@ -377,7 +391,7 @@ Dire ''
 # --- 3. Panneaux Herdr --------------------------------------------------
 function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   $texte = & $herdrTrouve @Arguments
-  if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($LASTEXITCODE -ne 0) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refusé la commande.' 'Herdr rejected the command.') }
   if ($Interface -and $Arguments[1] -in @('create','split','rename','start','prompt','install')) {
     $fait = switch ($Arguments[1]) {
       'install' { Texte 'Intégration installée.' 'Integration installed.' }
@@ -389,7 +403,7 @@ function Appeler-Herdr([string[]]$Arguments, [switch]$SansJson) {
   }
   if ($SansJson) { return $texte }
   $resultat = ($texte -join "`n") | ConvertFrom-Json
-  if ($resultat.error) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refuse la commande.' 'Herdr rejected the command.') }
+  if ($resultat.error) { if ($Interface) { Etat-Etape 'fail' }; throw (Texte 'Herdr a refusé la commande.' 'Herdr rejected the command.') }
   return $resultat
 }
 
@@ -440,23 +454,31 @@ function Detecter-Outils {
 
 function Proposer-Agents([string[]]$Panneaux) {
   if ($Oui) { Dire (Texte 'Le mode -Oui ne lance aucun agent.' 'The -Oui option never starts an agent.'); return }
+  if (-not $script:panneauxTentes) { $script:panneauxTentes = @{} }
   $outils = @(Detecter-Outils)
-  if ($outils.Count -eq 0) { Dire (Texte 'Aucun outil compatible detecte : aucun agent lance.' 'No supported tools detected: no agent started.'); return }
+  if ($outils.Count -eq 0) { Dire (Texte 'Aucun outil compatible détecté : aucun agent lancé.' 'No supported tools detected: no agent started.'); return }
   $noms = @('Chef','Agent 2','Agent 3','Agent 4')
   for ($i=0; $i -lt $Panneaux.Count; $i++) {
+    if ($script:panneauxTentes.ContainsKey($Panneaux[$i])) { continue }
     if ($DryRun) { Simuler (Texte "Choix et confirmation de l'outil pour $($noms[$i])." "Choose and confirm a tool for $($noms[$i])."); continue }
-    Dire (Texte "Panneau $($noms[$i]) : outils detectes" "Pane $($noms[$i]): detected tools")
-    for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
-    $choix = Choisir (Texte "Numero de l'outil (0 ou Entree pour ignorer)" "Tool number (0 or Enter to skip)") (@((Texte 'Ignorer' 'Skip')) + $outils)
+    if ($Interface) { $question = Texte "Outil pour le panneau $($noms[$i])" "Tool for pane $($noms[$i])" }
+    else {
+      Dire (Texte "Panneau $($noms[$i]) : outils détectés" "Pane $($noms[$i]): detected tools")
+      for ($j=0; $j -lt $outils.Count; $j++) { Dire "$($j+1). $($outils[$j])" }
+      $question = Texte "Numéro de l'outil (0 ou Entrée pour ignorer)" "Tool number (0 or Enter to skip)"
+    }
+    $choix = Choisir $question (@((Texte 'Ignorer' 'Skip')) + $outils)
     if ($Interface -and $choix -match '^\d+$') { $choix = [string]([int]$choix - 1) }
     if ([string]::IsNullOrWhiteSpace($choix) -or $choix -eq '0') { continue }
-    if ($choix -notmatch '^[0-9]{1,2}$' -or [int]$choix -lt 1 -or [int]$choix -gt $outils.Count) { Dire (Texte 'Choix invalide : panneau ignore.' 'Invalid choice: pane skipped.'); continue }
+    if ($choix -notmatch '^[0-9]{1,2}$' -or [int]$choix -lt 1 -or [int]$choix -gt $outils.Count) { Dire (Texte 'Choix invalide : panneau ignoré.' 'Invalid choice: pane skipped.'); continue }
     $type = $outils[[int]$choix-1]
     if (-not (Get-Command $type -CommandType Application -ErrorAction SilentlyContinue)) { Dire (Texte "Cet outil n'est plus disponible." "This tool is no longer available."); continue }
     if (Confirmer (Texte "Lancer $type dans le panneau $($noms[$i]) ?" "Start $type in pane $($noms[$i])?") -Individuel) {
+      $script:panneauxTentes[$Panneaux[$i]] = $true
       try {
         $nomAgent = if ($i -eq 0) { 'chef' } else { "agent$($i+1)" }
         Appeler-Herdr @('agent','start',$nomAgent,'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
+        if ($Interface) { $script:detailsEtape += "$($noms[$i]) = $type" }
         if (-not $script:chefPane) { $script:chefPane=$Panneaux[$i]; $script:chefOutil=$type }
         if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils lancés : $($script:totalEtape)." "Tools started: $($script:totalEtape).") }
         Noter (Texte "$type : lancement confirme par Herdr." "${type}: launch confirmed by Herdr.")
@@ -474,24 +496,25 @@ Dire (Texte '--- 3. Espace Herdr avec 4 panneaux (le premier = chef) ---' '--- 3
 # manuelle est affichee au lieu d'echouer silencieusement.
 # Aucun outil d'IA n'est lance sans choix et confirmation individuelle.
 if ($herdrTrouve) {
-  if (Confirmer (Texte 'Creer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
+  if (Confirmer (Texte 'Créer un espace Herdr « Bureau » avec 4 panneaux (le premier = chef) ?' 'Create a Herdr workspace called Bureau with 4 panes (first pane = chief)?')) {
     if ($DryRun) {
       Simuler (Texte 'Creation de l''espace « Bureau des agents » puis 3 decoupes de panneaux.' 'Creating the Agent desktop workspace, then splitting it into four panes.')
       Simuler (Texte 'Nommage des panneaux : Chef, Agent 2, Agent 3, Agent 4.' 'Pane names: Chef, Agent 2, Agent 3, Agent 4.')
       Noter (Texte 'Panneaux Herdr : simulation.' 'Herdr panes: preview.')
     } else {
       try {
-        Dire (Texte 'Creation de l''espace Herdr « Bureau des agents »...' 'Creating the Agent desktop workspace...')
+        Dire (Texte 'Création de l''espace Herdr « Bureau des agents »...' 'Creating the Agent desktop workspace...')
         $ids = @(Creer-GrilleHerdr)
         $noms = @('Chef', 'Agent 2', 'Agent 3', 'Agent 4')
         Dire (Texte "Panneaux crees et nommes : $($noms -join ', ') (identifiants $($ids[0..3] -join ', '))." "Panes created and named: $($noms -join ', ') (identifiers $($ids[0..3] -join ', ')).")
-        Noter (Texte 'Panneaux Herdr : 4 panneaux crees et nommes.' 'Herdr panes: 4 panes created and named.')
+        Noter (Texte 'Panneaux Herdr : 4 panneaux créés et nommés.' 'Herdr panes: 4 panes created and named.')
         Etat-Etape 'ok' (Texte '4 panneaux créés.' '4 panes created.')
+        $outilsAvantInstallation = @(Detecter-Outils)
         Proposer-Agents $ids
       } catch {
         if ($Interface) { Etat-Etape 'fail' }
         Dire (Texte "La creation automatique n'a pas abouti : $($_.Exception.Message)" "Automatic creation failed: $($_.Exception.Message)")
-        Dire (Texte 'Procedure manuelle (commandes verifiees de Herdr) :' 'Manual procedure (verified Herdr commands):')
+        Dire (Texte 'Procédure manuelle (commandes vérifiées de Herdr) :' 'Manual procedure (verified Herdr commands):')
         Dire ('  herdr workspace create --label "Bureau des agents" --cwd "' + $racine + '"')
         Dire (Texte '  herdr pane list                      # reperer les identifiants, ex. w6:p1' '  herdr pane list                      # find pane identifiers, e.g. w6:p1')
         Dire '  herdr pane split --pane w6:p1 --direction right'
@@ -504,10 +527,10 @@ if ($herdrTrouve) {
         Noter (Texte 'Panneaux Herdr : procedure manuelle affichee.' 'Herdr panes: manual procedure displayed.')
       }
     }
-  } else { Noter (Texte 'Panneaux Herdr : non crees (refuse).' 'Herdr panes: not created (declined).') }
+  } else { Noter (Texte 'Panneaux Herdr : non créés (refusé).' 'Herdr panes: not created (declined).') }
 } else {
-  Dire (Texte 'Herdr absent : l''espace de panneaux est ignore. Installez Herdr puis relancez ce script.' 'Herdr is missing: workspace skipped. Install Herdr and run this script again.')
-  Noter (Texte 'Panneaux Herdr : ignores (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
+  Dire (Texte 'Herdr absent : l''espace de panneaux est ignoré. Installez Herdr puis relancez ce script.' 'Herdr is missing: workspace skipped. Install Herdr and run this script again.')
+  Noter (Texte 'Panneaux Herdr : ignorés (Herdr absent).' 'Herdr panes: skipped (Herdr missing).')
   Etat-Etape 'skip' (Texte 'Herdr absent.' 'Herdr missing.')
 }
 Dire ''
@@ -535,13 +558,21 @@ function Installer-CompetenceChef([string]$DossierPersonnel) {
 function Proposer-Chef([string]$DossierPersonnel = $HOME) {
   if ($Oui -or -not $herdrTrouve) { if ($Interface) { Etat-Etape 'skip' (Texte 'Non applicable dans ce mode.' 'Not applicable in this mode.') }; return }
   $integrations = @('pi','omp','claude','codex','copilot','devin','droid','kimi','opencode','kilo','hermes','qodercli','qwen','letta','cursor','mastracode','antigravity-cli','grok')
-  foreach ($type in @(Detecter-Outils)) {
+  $outils = @(Detecter-Outils | Where-Object { $(if ($_ -eq 'agy') { 'antigravity-cli' } else { $_ }) -in $integrations })
+  $selection = @()
+  if ($Interface -and $outils.Count -gt 0) {
+    $saisie = Lire-Interface 'MULTI' (Texte 'Quelles intégrations Herdr installer ? Elles modifient la configuration des outils sélectionnés.' 'Which Herdr integrations should be installed? They change the configuration of selected tools.') $outils
+    if ($saisie -match '^\d+(,\d+)*$') { $selection = @($saisie -split ',' | Where-Object { [int]$_ -ge 1 -and [int]$_ -le $outils.Count }) }
+  }
+  $index = 0
+  foreach ($type in $outils) {
+    $index++
     $integration = if ($type -eq 'agy') { 'antigravity-cli' } else { $type }
-    if ($integration -notin $integrations) { continue }
-    if (Confirmer (Texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.") -Individuel) {
+    $accord = if ($Interface) { [string]$index -in $selection } else { Confirmer (Texte "Installer l'intégration Herdr pour $type ? Elle modifie la configuration de cet outil." "Install the Herdr integration for $type? It changes this tool's configuration.") -Individuel }
+    if ($accord) {
       if ($DryRun) { Simuler "herdr integration install $integration" }
       else {
-        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson }
+        try { $null = Appeler-Herdr @('integration','install',$integration) -SansJson; if ($Interface) { $script:detailsEtape += "Intégration : $type" } }
         catch { Dire (Texte "L'intégration de $type n'a pas été confirmée. Vérifiez avant de réessayer." "Integration for $type was not confirmed. Check before trying again.") }
       }
     }
@@ -592,7 +623,9 @@ if ($manquants.Count -gt 0) {
   for ($i=0; $i -lt $manquants.Count; $i++) { Dire "$($i+1). $($manquants[$i].Nom)" }
   Dire (Texte 'Antigravity : documentation officielle, installation manuelle.' 'Antigravity: official documentation, manual installation.')
   while ($true) {
-    if ($Oui -or $DryRun) { $selection = '0' }
+    if ($Oui) { $selection = '0' }
+    elseif ($Interface) { $selection = Lire-Interface 'MULTI' (Texte 'Quels outils IA installer ?' 'Which AI tools should be installed?') @($manquants | ForEach-Object { $_.Nom }) }
+    elseif ($DryRun) { $selection = '0' }
     else { $selection = Lire-Saisie (Texte 'Numéros à installer (ex. 1,3 ; 0 = aucun)' 'Numbers to install (e.g. 1,3; 0 = none)') '0' }
     if ($null -eq $selection) { break }
     $selection = $selection -replace '\s',''
@@ -605,7 +638,8 @@ if ($manquants.Count -gt 0) {
     if (@($indices | Where-Object { $_ -gt $manquants.Count }).Count -gt 0) { Dire (Texte 'Numéro hors liste.' 'Number out of range.'); continue }
     $choisis = @($indices | ForEach-Object { $manquants[$_-1] })
     Dire (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')")
-    if (-not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    if (-not $Interface -and -not (Confirmer (Texte 'Installer cette sélection ?' 'Install this selection?') -Individuel)) { continue }
+    if ($Interface) { $script:detailsEtape += (Texte "Sélection : $(($choisis | ForEach-Object { $_.Nom }) -join ', ')" "Selection: $(($choisis | ForEach-Object { $_.Nom }) -join ', ')") }
     foreach ($outil in $choisis) {
       if (-not $outil.Installation) { Dire 'https://antigravity.google/docs/cli/getting-started'; Noter 'Antigravity : installation manuelle requise.'; continue }
       try {
@@ -617,6 +651,7 @@ if ($manquants.Count -gt 0) {
   }
 }
 if ($disponibles.Count -eq 0 -and -not $DryRun) { Dire (Texte 'Aucune IA détectée : configurez un outil avant une mission.' 'No AI detected: set up a tool before starting a mission.') }
+if ($ids -and @(@(Detecter-Outils) | Where-Object { $_ -notin $outilsAvantInstallation }).Count -gt 0) { Proposer-Agents $ids }
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------
 if ($Interface) { Etape 'chef'; Proposer-Chef }
@@ -625,7 +660,7 @@ Dire (Texte '--- 5. Extensions utiles pour ce projet (optionnelles) ---' '--- 5.
 # Trois extensions verifiees sur le marche VS Code le 17 octobre 2026, avec
 # leurs editeurs : yzhang.markdown-all-in-one (Yu Zhang), dbaeumer.vscode-eslint
 # (Microsoft), esbenp.prettier-vscode (Prettier).
-if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce projet ?' 'Would you like to see the suggested project extensions?')) {
+if ($Interface -or (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce projet ?' 'Would you like to see the suggested project extensions?'))) {
   Dire (Texte '  1. Markdown All in One : yzhang.markdown-all-in-one (Yu Zhang) : table des matieres et confort Markdown.' '  1. Markdown All in One: yzhang.markdown-all-in-one (Yu Zhang): contents and Markdown editing.')
   Dire (Texte '  2. ESLint : dbaeumer.vscode-eslint (Microsoft) : controle du JavaScript et du TypeScript.' '  2. ESLint: dbaeumer.vscode-eslint (Microsoft): JavaScript and TypeScript checks.')
   Dire (Texte '  3. Prettier - Code formatter : esbenp.prettier-vscode (Prettier) : mise en forme coherente du code.' '  3. Prettier - Code formatter: esbenp.prettier-vscode (Prettier): consistent code formatting.')
@@ -637,17 +672,24 @@ if (Confirmer (Texte 'Veux-tu voir la liste des extensions proposees pour ce pro
   $vscode = Get-Command code -ErrorAction SilentlyContinue
   if (-not $vscode) {
     Etat-Etape 'skip' (Texte 'VS Code absent.' 'VS Code missing.')
-    Dire (Texte 'VS Code n''est pas detecte sur cet ordinateur : l''installation des extensions est ignoree.' 'VS Code was not detected: extension installation skipped.')
-    Noter (Texte 'Extensions : ignorees (VS Code absent).' 'Extensions: skipped (VS Code missing).')
+    Dire (Texte 'VS Code n''est pas détecté sur cet ordinateur : l''installation des extensions est ignorée.' 'VS Code was not detected: extension installation skipped.')
+    Noter (Texte 'Extensions : ignorées (VS Code absent).' 'Extensions: skipped (VS Code missing).')
   } else {
+    $choixExtensions = @()
+    if ($Interface -and -not $Oui) {
+      $selectionExtensions = Lire-Interface 'MULTI' (Texte 'Quelles extensions installer ?' 'Which extensions should be installed?') @($extensions | ForEach-Object { "$($_.nom) ($($_.id))" })
+      if ($selectionExtensions -match '^[1-3](,[1-3])*$') { $choixExtensions = @($selectionExtensions -split ',' | Select-Object -Unique | ForEach-Object { $extensions[[int]$_-1] }) }
+      if ($choixExtensions.Count -gt 0) { $script:detailsEtape += (Texte "Sélection : $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')" "Selection: $(($choixExtensions | ForEach-Object { $_.nom }) -join ', ')") }
+    }
     foreach ($ext in $extensions) {
-      if (Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel) {
+      $accordExtension = if ($Interface) { $choixExtensions -contains $ext } else { (Confirmer (Texte "Installer l'extension $($ext.nom) ($($ext.id)) ?" "Install extension $($ext.nom) ($($ext.id))?") -Individuel) }
+      if ($accordExtension) {
         try {
           Executer (Texte "Installation de $($ext.id) avec code --install-extension." "Installing $($ext.id) with code --install-extension.") { & $vscode.Source --install-extension $ext.id }
           if ($Interface -and -not $DryRun) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Extensions installées : $($script:totalEtape)." "Extensions installed: $($script:totalEtape).") }
-          Noter (Texte "Extension $($ext.id) : installee." "Extension $($ext.id): installed.")
+          Noter (Texte "Extension $($ext.id) : installée." "Extension $($ext.id): installed.")
         } catch {
-          Dire (Texte "L'installation de $($ext.id) a echoue : $($_.Exception.Message)" "Installation of $($ext.id) failed: $($_.Exception.Message)")
+          Dire (Texte "L'installation de $($ext.id) a échoué : $($_.Exception.Message)" "Installation of $($ext.id) failed: $($_.Exception.Message)")
           Noter (Texte "Extension $($ext.id) : echec." "Extension $($ext.id): failed.")
         }
       } else { Noter (Texte "Extension $($ext.id) : refusee." "Extension $($ext.id): declined.") }
@@ -662,7 +704,7 @@ Dire (Texte '--- 6. Configuration du bureau ---' '--- 6. Desktop configuration -
 $portChoisi = 0
 $portActuel = [Environment]::GetEnvironmentVariable('BUREAU_PORT', 'User')
 if ($Port -gt 0) { $portChoisi = $Port }
-elseif ($portActuel -match '^\d+$') { $portChoisi = [int]$portActuel; Dire (Texte "Port deja enregistre : $portChoisi" "Previously saved port: $portChoisi") }
+elseif ($portActuel -match '^\d+$') { $portChoisi = [int]$portActuel; Dire (Texte "Port déjà enregistré : $portChoisi" "Previously saved port: $portChoisi") }
 else { $portChoisi = 4317 }
 
 if ($Port -eq 0 -and -not $DryRun) {
@@ -686,8 +728,8 @@ if ("$portActuel" -ne "$portChoisi") {
   } | Out-Null
   if (-not ($Interface -and $script:entreeFermee)) { Noter (Texte "BUREAU_PORT : $portChoisi." "BUREAU_PORT: $portChoisi..") }
 } else {
-  Dire (Texte "BUREAU_PORT deja enregistre ($portChoisi). Rien a faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
-  Noter (Texte "BUREAU_PORT : deja a $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
+  Dire (Texte "BUREAU_PORT déjà enregistré ($portChoisi). Rien à faire." "BUREAU_PORT already saved ($portChoisi). No action needed.")
+  Noter (Texte "BUREAU_PORT : déjà à $portChoisi." "BUREAU_PORT: already set to $portChoisi..")
   Etat-Etape 'ok' (Texte "Port $portChoisi déjà enregistré." "Port $portChoisi already saved.")
 }
 
@@ -699,25 +741,26 @@ if (-not $SansRaccourci) {
   # pour ce second cas : aucun doublon n'est cree.
   $choixLanceur = 'bureau'
   if ($Interface) {
-    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @('Herdr',(Texte 'Le bureau' 'Desktop'),(Texte 'Herdr et bureau' 'Herdr and desktop'))
-    if ($saisie -eq '1') { $choixLanceur = 'herdr' }
+    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @((Texte 'Le bureau' 'Desktop'),'Herdr',(Texte 'Herdr et bureau' 'Herdr and desktop'))
+    if ($saisie -eq '2') { $choixLanceur = 'herdr' }
     if ($saisie -eq '3') { $choixLanceur = 'ensemble' }
   } elseif ($DryRun) {
-    Simuler (Texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (defaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')
+    Simuler (Texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')
   } elseif ($Oui) {
     Dire (Texte 'Raccourci : choix automatique « le bureau » (-Oui).' 'Shortcut: automatic desktop choice (-Oui).')
   } else {
-    $saisie = Read-Host (Texte 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (defaut 2)' 'What should the shortcut open? 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2)')
+    $saisie = Read-Host (Texte 'Que doit lancer le raccourci du Bureau ? 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2)' 'What should the shortcut open? 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2)')
     if ($saisie.Trim() -eq '1') { $choixLanceur = 'herdr' }
     if ($saisie.Trim() -eq '3') { $choixLanceur = 'ensemble' }
   }
+  if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += (Texte "Raccourci choisi : $choixLanceur" "Shortcut selected: $choixLanceur") }
   if ($choixLanceur -eq 'herdr') {
     $cible = $herdrTrouve
     if (-not $cible) { $cible = Chercher-Herdr }
     if (-not $cible) {
-      Dire (Texte 'Herdr est introuvable : le raccourci Herdr est ignore.' 'Herdr was not found: Herdr shortcut skipped.')
+      Dire (Texte 'Herdr est introuvable : le raccourci Herdr est ignoré.' 'Herdr was not found: Herdr shortcut skipped.')
       Noter (Texte 'Raccourci : Herdr absent.' 'Shortcut: Herdr missing.')
-    } elseif (Confirmer (Texte 'Creer le raccourci « Ouvrir le bureau » qui lance Herdr ?' 'Create the Open desktop shortcut that starts Herdr?')) {
+    } elseif (Confirmer (Texte 'Créer le raccourci « Ouvrir le bureau » qui lance Herdr ?' 'Create the Open desktop shortcut that starts Herdr?')) {
       Executer (Texte "Creation du raccourci $lienRaccourci (lance Herdr)." "Creating shortcut $lienRaccourci (starts Herdr).") {
         $wsh = New-Object -ComObject WScript.Shell
         $raccourci = $wsh.CreateShortcut($lienRaccourci)
@@ -726,15 +769,15 @@ if (-not $SansRaccourci) {
         $raccourci.Save()
       } | Out-Null
       if ($DryRun) { Noter (Texte 'Raccourci : simule (lance Herdr), rien cree.' 'Shortcut: simulated (starts Herdr), nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau (lance Herdr).' 'Shortcut: created on Desktop (starts Herdr).') }
-    } else { Noter (Texte 'Raccourci : non cree (refuse).' 'Shortcut: not created (declined).') }
+    } else { Noter (Texte 'Raccourci : non créé (refusé).' 'Shortcut: not created (declined).') }
   } else {
     $cible = Join-Path $racine 'Ouvrir le bureau.cmd'
     if ($choixLanceur -eq 'ensemble') {
       $cible = Join-Path $PSHOME 'powershell.exe'
-      if (-not $herdrTrouve) { Dire (Texte 'Herdr absent : raccourci combine ignore.' 'Herdr missing: combined shortcut skipped.'); $cible = $null }
+      if (-not $herdrTrouve) { Dire (Texte 'Herdr absent : raccourci combiné ignoré.' 'Herdr missing: combined shortcut skipped.'); $cible = $null }
     }
     if (-not $cible -or -not (Test-Path -LiteralPath $cible)) {
-      Dire (Texte "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignore." "The Open desktop launcher is missing from the project: shortcut skipped.")
+      Dire (Texte "Le lanceur 'Ouvrir le bureau.cmd' est absent du projet : raccourci ignoré." "The Open desktop launcher is missing from the project: shortcut skipped.")
       Noter (Texte 'Raccourci : lanceur absent.' 'Shortcut: launcher missing.')
     } else {
       $dejaLa = Test-Path $lienRaccourci
@@ -752,10 +795,11 @@ if (-not $SansRaccourci) {
           $raccourci.Save()
         } | Out-Null
         if ($DryRun) { Noter (Texte 'Raccourci : simule, rien cree.' 'Shortcut: simulated, nothing created.') } else { Noter (Texte 'Raccourci : cree sur le Bureau.' 'Shortcut: created on Desktop.') }
-      } else { Noter (Texte 'Raccourci : non cree (refuse).' 'Shortcut: not created (declined).') }
+      } else { Noter (Texte 'Raccourci : non créé (refusé).' 'Shortcut: not created (declined).') }
     }
   }
 }
+if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += "Port $portChoisi" }
 Dire ''
 
 function Proposer-Kit {
@@ -785,8 +829,8 @@ if (-not (Test-Path (Join-Path $racine 'test') -PathType Container)) {
   Dire (Texte 'Les tests de développement sont dans le dépôt source.' 'Development tests are in the source repository.')
 } elseif (-not $nodeOk) {
   Etat-Etape 'skip' (Texte 'Node.js absent ou trop ancien.' 'Node.js missing or too old.')
-  Dire (Texte 'Node.js manquant ou trop ancien : tests ignores. Relancez ce script apres installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
-  Noter (Texte 'Tests : ignores (Node.js absent).' 'Tests: skipped (Node.js missing).')
+  Dire (Texte 'Node.js manquant ou trop ancien : tests ignorés. Relancez ce script après installation.' 'Node.js missing or too old: tests skipped. Run this script again after installing it.')
+  Noter (Texte 'Tests : ignorés (Node.js absent).' 'Tests: skipped (Node.js missing).')
 } else {
   if (Confirmer (Texte 'Lancer npm test et npm run check maintenant ?' 'Run npm test and npm run check now?')) {
     try {
@@ -800,10 +844,10 @@ if (-not (Test-Path (Join-Path $racine 'test') -PathType Container)) {
       } | Out-Null
       if ($DryRun) { Noter (Texte 'Tests : simules, non executes.' 'Tests: simulated, not run.') } else { Noter (Texte 'Tests : executes.' 'Tests: completed.') }
     } catch {
-      Dire (Texte "Les tests ont echoue : $($_.Exception.Message)" "Tests failed: $($_.Exception.Message)")
+      Dire (Texte "Les tests ont échoué : $($_.Exception.Message)" "Tests failed: $($_.Exception.Message)")
       Noter (Texte 'Tests : echec.' 'Tests: failed.')
     }
-  } else { Noter (Texte 'Tests : non executes (refuse).' 'Tests: not run (declined).') }
+  } else { Noter (Texte 'Tests : non exécutés (refusé).' 'Tests: not run (declined).') }
 }
 Dire ''
 
@@ -821,6 +865,6 @@ else { foreach ($ligne in $rapport) { Dire " - $ligne" } }
 Dire ''
 Dire (Texte "Pour ouvrir le bureau : double-cliquez sur 'Ouvrir le bureau.cmd' dans $racine" "To open the desktop: double-click Ouvrir le bureau.cmd in $racine")
 Dire (Texte "ou lancez 'node server.mjs' puis ouvrez http://127.0.0.1:$portChoisi" "or run node server.mjs, then open http://127.0.0.1:$portChoisi")
-Dire (Texte 'Herdr doit etre ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
+Dire (Texte 'Herdr doit être ouvert pour que le bureau voie vos agents.' 'Herdr must be open for the desktop to see your agents.')
 Terminer-Interface
 if ($installationIncomplete -or ($Interface -and $script:echecInterface)) { exit 1 }

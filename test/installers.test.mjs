@@ -18,6 +18,26 @@ async function textes() {
   return { ps1: await readFile(ps1, 'utf8'), sh: await readFile(sh, 'utf8') };
 }
 
+test('les intégrations utilisent MULTI uniquement en interface et aucune sélection automatique', async () => {
+  const { ps1: windows, sh: unix } = await textes();
+  const chefPs = windows.slice(windows.indexOf('function Proposer-Chef'), windows.indexOf('if (-not $Interface) { Proposer-Chef }'));
+  const chefSh = unix.slice(unix.indexOf('proposer_chef()'), unix.indexOf('[ "$INTERFACE" = 1 ] || proposer_chef'));
+  assert.match(chefPs, /\$Oui -or -not \$herdrTrouve/);
+  assert.match(chefPs, /Lire-Interface 'MULTI'/);
+  assert.match(chefPs, /\[string\]\$index -in \$selection/);
+  assert.match(chefSh, /\[ "\$OUI" = 1 \]/);
+  assert.match(chefSh, /lire_interface MULTI/);
+  assert.match(chefSh, /\$selection.*\$index/);
+});
+
+test('Clink est installé directement, avec ou sans Oui', async () => {
+  const { ps1: windows, sh: unix } = await textes();
+  const clink = windows.slice(windows.indexOf('function Proposer-Clink'), windows.indexOf("Etape 'clink'"));
+  assert.doesNotMatch(clink, /Confirmer/);
+  assert.match(clink, /& \$wingetClink.Source install/);
+  assert.doesNotMatch(unix, /clink/i);
+});
+
 test('les deux installeurs annoncent simulation, option oui et aide', async () => {
   const { ps1: t1, sh: t2 } = await textes();
   for (const [nom, texte] of [['installer.ps1', t1], ['installer.sh', t2]]) {

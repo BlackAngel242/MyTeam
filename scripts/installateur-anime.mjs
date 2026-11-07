@@ -5,7 +5,7 @@
 // Sans dépendance. Hors terminal ou avec --simple : sortie en texte simple, une ligne par événement.
 // Usage : node scripts/installateur-anime.mjs [--lang fr|en] [--dry-run] [--simple] [--port <n>] [--demo]
 // --demo : démonstration de l'animation, sans rien installer ni réseau.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join, dirname } from 'node:path';
@@ -33,6 +33,7 @@ export function parseLigne(ligne) {
     case 'INFO': return { type: 'info', texte: m[2] ?? '' };
     case 'CONFIRM': return champs.length >= 2 ? { type: 'confirm', id: champs[0], question: champs.slice(1).join(' ') } : null;
     case 'CHOICE': return champs.length >= 3 ? { type: 'choice', id: champs[0], question: champs[1], options: champs.slice(2) } : null;
+    case 'MULTI': return champs.length >= 3 ? { type: 'multi', id: champs[0], question: champs[1], options: champs.slice(2) } : null;
     case 'INPUT': return champs.length >= 2 ? { type: 'input', id: champs[0], question: champs[1], defaut: champs[2] ?? '' } : null;
     case 'DONE': return champs.length >= 2 && ['ok', 'skip', 'fail'].includes(champs[1]) ? { type: 'done', id: champs[0], etat: champs[1], texte: champs.slice(2).join(' ') } : null;
     case 'END': return { type: 'end', ok: (champs[0] ?? 'ok') === 'ok' };
@@ -84,15 +85,20 @@ export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
     for (const o of etat.question.lignes ?? []) L.push(p.gris('│') + '   ' + o);
     L.push(p.gris('│') + '   ' + p.cyan(etat.question.invite));
   }
-  if (etat.fin) L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
+  if (etat.fin) {
+    // Résumé de l'installeur (lignes après « === Résumé === ») : rapport et prochaine étape restent à l'écran.
+    if (etat.resume.length) { L.push(p.gris('│')); for (const l of etat.resume) L.push(p.gris('│') + '   ' + l); }
+    L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
+  }
   return L.map(l => ajuster(l, largeur - 1));
 }
 
 // --- état -------------------------------------------------------------------------------------
-export function etatInitial({ lang = 'fr', simulation = false, demo = false } = {}) { return { lang, simulation, demo, taches: [], info: '', question: null, fin: null }; }
+export function etatInitial({ lang = 'fr', simulation = false, demo = false } = {}) { return { lang, simulation, demo, taches: [], info: '', question: null, fin: null, resume: [], dansResume: false, annule: false }; }
 // Bilan final : une démonstration ou une simulation ne prétend jamais avoir installé quoi que ce soit.
 export function bilanFin(etat) {
   const fr = etat.lang !== 'en';
+  if (etat.annule) return fr ? 'Installation annulée (Ctrl+C) : ce qui était déjà fait reste en place ; relancez l’installateur pour reprendre.' : 'Installation cancelled (Ctrl+C): completed steps stay in place; run the installer again to resume.';
   if (!etat.fin?.ok) return fr ? 'Installation arrêtée : voir le message ci-dessus.' : 'Installation stopped: see the message above.';
   if (etat.demo) return fr ? 'Démonstration terminée : rien n’a été installé ni modifié.' : 'Demo finished: nothing was installed or changed.';
   if (etat.simulation) return fr ? 'Simulation terminée : rien n’a été installé ni modifié.' : 'Dry run finished: nothing was installed or changed.';
@@ -103,7 +109,11 @@ export function appliquer(etat, evt) {
   switch (evt.type) {
     case 'plan': if (!tache(evt.id)) etat.taches.push({ id: evt.id, libelle: evt.libelle, etat: 'pending', texte: '' }); break;
     case 'step': { const t = tache(evt.id); if (t) t.etat = 'run'; etat.info = ''; break; }
-    case 'info': etat.info = evt.texte; break;
+    case 'info':
+      // Seul le titre du résumé final l'ouvre : la bannière d'ouverture (« === Bureau des agents : installation === ») ne compte pas.
+      if (/^===\s*(Résumé|Resume|Summary)\s*===$/i.test(evt.texte.trim())) { etat.dansResume = true; etat.resume = []; break; }
+      if (etat.dansResume) { if (evt.texte.trim()) etat.resume.push(evt.texte.trim()); if (etat.resume.length > 15) etat.resume.shift(); break; }
+      etat.info = evt.texte; break;
     case 'done': { const t = tache(evt.id); if (t) { t.etat = evt.etat; t.texte = evt.texte; } etat.info = ''; break; }
     case 'end': etat.fin = { ok: evt.ok }; etat.info = ''; break;
     default: break;
@@ -153,50 +163,124 @@ function sortieSimple(flux) {
 }
 
 // --- questions ------------------------------------------------------------------------------------
-function questionsClavier(entree, etat, rafraichir, lang) {
+// Découpe ce que le terminal envoie en touches : flèches (ESC [ A…D ou ESC O A…D) ou caractères isolés.
+export function touches(texte) {
+  const noms = { A: 'haut', B: 'bas', C: 'droite', D: 'gauche' };
+  const sortie = [];
+  for (let i = 0; i < texte.length; i++) {
+    const fleche = /^\x1b[[O]([ABCD])/.exec(texte.slice(i));
+    if (fleche) { sortie.push(noms[fleche[1]]); i += 2; continue; }
+    const ch = texte[i];
+    sortie.push(ch === '\r' || ch === '\n' ? 'entree' : ch === '\u0003' ? 'ctrl-c' : ch === '\u007f' || ch === '\b' ? 'effacer' : ch);
+  }
+  return sortie;
+}
+// Sélection d'une option (1 à n) : flèches ↑↓ (avec bouclage), j/k, numéro direct (plusieurs chiffres possibles), Entrée valide.
+export function naviguerChoix({ curseur, chiffres = '' }, cle, n) {
+  if (cle === 'haut' || cle === 'k') return { curseur: curseur > 1 ? curseur - 1 : n, chiffres: '' };
+  if (cle === 'bas' || cle === 'j') return { curseur: curseur < n ? curseur + 1 : 1, chiffres: '' };
+  if (cle === 'entree') return { curseur, chiffres: '', valide: curseur };
+  if (/^[0-9]$/.test(cle)) {
+    const essai = chiffres + cle;
+    if (Number(essai) >= 1 && Number(essai) <= n) return { curseur: Number(essai), chiffres: essai };
+    if (Number(cle) >= 1 && Number(cle) <= n) return { curseur: Number(cle), chiffres: cle };
+    return { curseur, chiffres: '' };
+  }
+  return { curseur, chiffres };
+}
+// Oui/non : ←→ (ou ↑↓) basculent, o/y = oui immédiat, n = non immédiat, Entrée valide la sélection (non par défaut).
+export function naviguerConfirmation(oui, cle) {
+  if (['gauche', 'droite', 'haut', 'bas'].includes(cle)) return { oui: !oui };
+  if (/^[oOyY]$/.test(cle)) return { oui: true, valide: true };
+  if (/^[nN]$/.test(cle)) return { oui: false, valide: true };
+  if (cle === 'entree') return { oui, valide: true };
+  return { oui };
+}
+export function naviguerMulti({ curseur, coches }, cle, n) {
+  if (cle === 'haut' || cle === 'bas') return { curseur: cle === 'haut' ? (curseur > 1 ? curseur - 1 : n) : (curseur < n ? curseur + 1 : 1), coches };
+  if (cle === ' ') return { curseur, coches: coches.includes(curseur) ? coches.filter(x => x !== curseur) : [...coches, curseur].sort((a, b) => a - b) };
+  if (cle === 'a') return { curseur, coches: coches.length === n ? [] : Array.from({ length: n }, (_, i) => i + 1) };
+  if (cle === 'entree') return { curseur, coches, valide: true };
+  return { curseur, coches };
+}
+function questionsClavier(entree, etat, rafraichir, lang, couleur = true, signal = null) {
   const fr = lang !== 'en';
-  const touche = (acceptes) => new Promise(resolve => {
+  const p = peindre(couleur);
+  // Appelle `surTouche` pour chaque touche jusqu'à ce qu'il renvoie une valeur différente de undefined.
+  const ecouter = surTouche => new Promise(resolve => {
+    // Fin de l'entrée ou annulation (Ctrl+C, géré par `executer`) = aucune réponse, jamais un accord.
+    const arreter = r => { entree.removeListener('data', surDonnees); entree.removeListener('end', fin); signal?.removeEventListener('abort', fin); resolve(r); };
+    const fin = () => arreter(null);
     const surDonnees = buf => {
-      const s = buf.toString('utf8');
-      if (s === '\u0003') { entree.removeListener('data', surDonnees); process.kill(process.pid, 'SIGINT'); return; }
-      let t;
-      for (const ch of s) { t = acceptes(ch); if (t !== undefined) break; }
-      if (t !== undefined) { entree.removeListener('data', surDonnees); resolve(t); }
+      for (const cle of touches(buf.toString('utf8'))) {
+        if (cle === 'ctrl-c') return;
+        const r = surTouche(cle);
+        if (r !== undefined) return arreter(r);
+      }
     };
     entree.on('data', surDonnees);
+    if (entree.readableEnded || signal?.aborted) return fin();
+    entree.once('end', fin);
+    signal?.addEventListener('abort', fin, { once: true });
   });
   return {
     async confirm(texte) {
-      etat.question = { texte, invite: fr ? 'o = oui · n ou Entrée = non' : 'y = yes · n or Enter = no' };
-      rafraichir();
-      const oui = await touche(s => (/^[oOyY]$/.test(s) ? true : /^[nN\r\n]$/.test(s) ? false : undefined));
+      let oui = false;
+      const dessiner = () => {
+        const bouton = (actif, libelle) => actif ? p.menthe('●') + ' ' + libelle : p.gris('○ ' + libelle);
+        etat.question = { texte, lignes: [bouton(oui, fr ? 'Oui' : 'Yes') + p.gris(' / ') + bouton(!oui, fr ? 'Non' : 'No')], invite: p.gris(fr ? '←/→ pour changer · Entrée pour valider · o / n' : '←/→ to change · Enter to confirm · y / n') };
+        rafraichir();
+      };
+      dessiner();
+      const r = await ecouter(cle => { const s = naviguerConfirmation(oui, cle); oui = s.oui; if (s.valide) return oui; dessiner(); });
       etat.question = null; rafraichir();
-      return oui;
+      return r;
     },
     async choice(texte, options) {
-      etat.question = { texte, lignes: options.map((o, i) => `${i + 1}. ${o}`), invite: fr ? `Tapez un numéro (1 à ${options.length})` : `Type a number (1 to ${options.length})` };
-      rafraichir();
-      const n = await touche(s => (/^[1-9]$/.test(s) && Number(s) <= options.length ? Number(s) : undefined));
+      let s = { curseur: 1, chiffres: '' };
+      const dessiner = () => {
+        etat.question = {
+          texte,
+          lignes: options.map((o, i) => i + 1 === s.curseur ? p.cyan('❯ ●') + ' ' + p.gras(o) : '  ' + p.gris('○ ') + o + p.gris(`  ${i + 1}`)),
+          invite: p.gris(fr ? '↑/↓ pour choisir · Entrée pour valider · ou tapez le numéro' : '↑/↓ to choose · Enter to confirm · or type the number'),
+        };
+        rafraichir();
+      };
+      dessiner();
+      const n = await ecouter(cle => { s = naviguerChoix(s, cle, options.length); if (s.valide) return s.valide; dessiner(); });
       etat.question = null; rafraichir();
       return n;
+    },
+    async multi(texte, options) {
+      let s = { curseur: 1, coches: [] };
+      const dessiner = () => {
+        etat.question = {
+          texte,
+          lignes: options.map((o, i) => {
+            const coche = s.coches.includes(i + 1), ici = i + 1 === s.curseur;
+            return (ici ? p.cyan('❯ ') : '  ') + (coche ? p.menthe('◼') : p.gris('◻')) + ' ' + (ici ? p.gras(o) : o);
+          }),
+          invite: p.gris(fr ? `${s.coches.length} sur ${options.length} · ↑/↓ déplacer · Espace cocher · a tout · Entrée valider` : `${s.coches.length} of ${options.length} · ↑/↓ move · Space toggle · a all · Enter confirm`),
+        };
+        rafraichir();
+      };
+      dessiner();
+      const valide = await ecouter(cle => { s = naviguerMulti(s, cle, options.length); if (s.valide) return true; dessiner(); });
+      etat.question = null; rafraichir();
+      return valide === null ? null : s.coches.join(',');
     },
     async input(texte, defaut) {
       etat.question = { texte, invite: (fr ? 'Saisie puis Entrée' : 'Type then Enter') + (defaut ? ` [${defaut}]` : '') };
       rafraichir();
       let tampon = '';
-      const v = await new Promise(resolve => {
-        const surDonnees = buf => {
-          for (const ch of buf.toString('utf8')) {
-            if (ch === '\r' || ch === '\n') { entree.removeListener('data', surDonnees); resolve(tampon); return; }
-            if (ch === '\u007f' || ch === '\b') tampon = tampon.slice(0, -1); else if (ch >= ' ') tampon += ch;
-            etat.question.invite = (fr ? 'Saisie : ' : 'Input: ') + tampon;
-            rafraichir();
-          }
-        };
-        entree.on('data', surDonnees);
+      const v = await ecouter(cle => {
+        if (cle === 'entree') return tampon;
+        if (cle === 'effacer') tampon = tampon.slice(0, -1); else if (cle.length === 1 && cle >= ' ') tampon += cle; else return;
+        etat.question.invite = (fr ? 'Saisie : ' : 'Input: ') + tampon;
+        rafraichir();
       });
       etat.question = null; rafraichir();
-      return v || defaut;
+      return v === null ? null : v || defaut;
     },
   };
 }
@@ -208,6 +292,7 @@ function questionsTexte(sortie, lecteurLignes, lang) {
     // Jamais de réponse synthétique (ni « n » prétendu saisi, ni valeur par défaut) à la place de la personne.
     async confirm(texte) { sortie.write(`? ${texte} ${fr ? '(o/n)' : '(y/n)'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : /^(o|oui|y|yes)$/i.test(r); },
     async choice(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n> `); const r = await lire(); sortie.write((r ?? '') + '\n'); if (r === null) return null; const n = Number(r); return Number.isInteger(n) && n >= 1 && n <= options.length ? n : 1; },
+    async multi(texte, options) { sortie.write(`? ${texte}\n${options.map((o, i) => `  ${i + 1}. ${o}`).join('\n')}\n${fr ? 'Numéros séparés par des virgules' : 'Comma-separated numbers'} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); if (r === null) return null; if (!/^(?:\d+(?:\s*,\s*\d+)*)?$/.test(r)) return ''; const numeros = r ? r.split(',').map(Number) : []; return numeros.every(n => Number.isSafeInteger(n) && n >= 1 && n <= options.length) ? [...new Set(numeros)].sort((a, b) => a - b).join(',') : ''; },
     async input(texte, defaut) { sortie.write(`? ${texte}${defaut ? ` [${defaut}]` : ''} : `); const r = await lire(); sortie.write((r ?? '') + '\n'); return r === null ? null : (r || defaut); },
   };
 }
@@ -232,8 +317,24 @@ for (const [id, l] of T) {
     console.log('@@DONE herdr' + String.fromCharCode(9) + (r === 'o' ? 'ok' : 'skip') + String.fromCharCode(9) + (r === 'o' ? '' : (fr ? 'refusé' : 'declined')));
     continue;
   }
+  if (id === 'outils') {
+    const outils = [fr ? 'Ignorer' : 'Skip', 'claude', 'codex', 'gemini', 'opencode', 'qwen'];
+    console.log('@@CHOICE chef' + String.fromCharCode(9) + (fr ? 'Démo : outil pour le panneau Chef' : 'Demo: tool for the Lead pane') + String.fromCharCode(9) + outils.join(String.fromCharCode(9)));
+    const n = Number(await lire());
+    console.log('@@DONE outils' + String.fromCharCode(9) + (n > 1 ? 'ok' : 'skip') + String.fromCharCode(9) + (outils[n - 1] ?? ''));
+    continue;
+  }
+  if (id === 'chef') {
+    console.log('@@MULTI integrations' + String.fromCharCode(9) + (fr ? 'Démo : intégrations à choisir' : 'Demo: choose integrations') + String.fromCharCode(9) + ['claude','codex','gemini'].join(String.fromCharCode(9)));
+    const r = await lire();
+    console.log('@@DONE chef' + String.fromCharCode(9) + (r ? 'ok' : 'skip') + String.fromCharCode(9) + r);
+    continue;
+  }
   console.log('@@DONE ' + id + String.fromCharCode(9) + 'ok' + String.fromCharCode(9));
 }
+for (const l of fr
+  ? ['=== Résumé ===', '- Démonstration : aucun logiciel installé.', 'Pour ouvrir le bureau : double-cliquez sur « Ouvrir le bureau.cmd » dans le dossier de MyTeam.']
+  : ['=== Summary ===', '- Demo: no software installed.', 'To open the desktop: double-click “Ouvrir le bureau.cmd” in the MyTeam folder.']) console.log('@@INFO ' + l);
 console.log('@@END ok');
 `;
 
@@ -253,33 +354,53 @@ export function commandeInstalleur({ plateforme = process.platform, lang = 'fr',
 
 export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn } = {}) {
   const etat = etatInitial({ lang, simulation, demo });
-  const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false });
-  let rendu, questions, lecteurEntree = null;
+  // Hors Windows, l'installeur mène son propre groupe de processus : Ctrl+C peut alors arrêter aussi ses commandes en cours.
+  const windows = process.platform === 'win32';
+  const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false, detached: !windows });
+  // Fin du processus écoutée tout de suite : un Ctrl+C pendant la bannière ne doit pas perdre l'événement.
+  const code = new Promise(resolve => enfant.on('close', c => resolve(c ?? 1)));
+  let rendu, questions, lecteurEntree = null, surCtrlC = null;
+  const annulation = new AbortController();
+  // Ctrl+C à tout moment (le mode brut le reçoit comme une touche) : arrêter l'installeur ET ses commandes (winget, apt…),
+  // rendre le terminal, dire où on en est.
+  const annuler = () => {
+    if (etat.annule) return;
+    etat.annule = true;
+    // Arrêt synchrone AVANT d'annuler la question en cours : sinon la fin d'entrée part vers l'installeur, qui répondrait encore.
+    try {
+      if (windows && enfant.pid) spawnSync('taskkill', ['/pid', String(enfant.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+      else if (enfant.pid) process.kill(-enfant.pid, 'SIGTERM');
+    } catch { /* arbre déjà fini */ }
+    try { enfant.kill(); } catch { /* déjà fini */ }
+    annulation.abort();
+  };
   if (anime) {
     rendu = sortieAnimee(sortie, couleur);
-    questions = questionsClavier(entree, etat, () => rendu.maj(), lang);
+    questions = questionsClavier(entree, etat, () => rendu.maj(), lang, couleur, annulation.signal);
     if (entree.isTTY) entree.setRawMode(true);
+    surCtrlC = buf => { if (Buffer.from(buf).includes(3)) annuler(); };
+    entree.on('data', surCtrlC);
     entree.resume();
   } else {
     rendu = sortieSimple(sortie);
     lecteurEntree = createInterface({ input: entree, crlfDelay: Infinity })[Symbol.asyncIterator]();
     questions = questionsTexte(sortie, lecteurEntree, lang);
   }
-  await rendu.demarrer(etat);
   enfant.stdin.on('error', () => {});
   const repondre = texte => { try { enfant.stdin.write(texte + '\n'); } catch { /* l'installeur est déjà fini */ } };
   let fin = null;
+  // Lecture branchée dès le lancement (un installeur arrêté pendant la bannière ferme sa sortie tôt) ;
+  // les événements, eux, attendent la fin de la bannière dans la file.
   const lignes = createInterface({ input: enfant.stdout, crlfDelay: Infinity });
-  const code = new Promise(resolve => enfant.on('close', c => resolve(c ?? 1)));
   const lignesFermees = new Promise(resolve => lignes.once('close', resolve));
-  let fileAttente = Promise.resolve();
+  let fileAttente = Promise.resolve(rendu.demarrer(etat));
   lignes.on('line', ligne => {
     fileAttente = fileAttente.then(async () => {
       const evt = parseLigne(ligne);
       if (!evt) return;
       appliquer(etat, evt);
-      if (['confirm', 'choice', 'input'].includes(evt.type)) {
-        const reponse = evt.type === 'confirm' ? await questions.confirm(evt.question) : evt.type === 'choice' ? await questions.choice(evt.question, evt.options) : await questions.input(evt.question, evt.defaut);
+      if (['confirm', 'choice', 'multi', 'input'].includes(evt.type)) {
+        const reponse = evt.type === 'confirm' ? await questions.confirm(evt.question) : evt.type === 'choice' ? await questions.choice(evt.question, evt.options) : evt.type === 'multi' ? await questions.multi(evt.question, evt.options) : await questions.input(evt.question, evt.defaut);
         if (reponse === null) { try { enfant.stdin.end(); } catch { /* déjà fermé */ } }
         else repondre(evt.type === 'confirm' ? (reponse ? 'o' : 'n') : String(reponse));
       }
@@ -290,12 +411,13 @@ export async function executer({ commande, args, sortie = process.stdout, entree
   const sortieCode = await code;
   await lignesFermees;
   await fileAttente;
-  if (!etat.fin) etat.fin = { ok: sortieCode === 0 };
+  if (!etat.fin || etat.annule) etat.fin = { ok: !etat.annule && sortieCode === 0 };
   rendu.arreter();
+  if (surCtrlC) entree.removeListener('data', surCtrlC);
   if (anime && entree.isTTY) entree.setRawMode(false);
   if (!anime) { lecteurEntree?.return?.(); sortie.write(bilanFin(etat) + '\n'); }
   entree.pause?.();
-  return { code: sortieCode, ok: etat.fin.ok && sortieCode === 0, etat, fin };
+  return { code: etat.annule ? 130 : sortieCode, ok: !etat.annule && etat.fin.ok && sortieCode === 0, etat, fin };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

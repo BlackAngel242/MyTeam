@@ -11,13 +11,16 @@ L'interface (`scripts/installateur-anime.mjs`) lance `scripts/installer.ps1 -Int
 | `@@INFO <texte>` | Message sous la tâche en cours. |
 | `@@CONFIRM <id>	<question>` | Question o/n. L'interface répond `o` ou `n`. Toute demande « individuelle » reste individuelle : jamais de réponse automatique. |
 | `@@CHOICE <id>	<question>	<option 1>	<option 2>...` | Choix numéroté. L'interface répond le numéro à partir de 1. |
+| `@@MULTI <id>	<question>	<option 1>	<option 2>...` | Cases toutes décochées au départ ; réponse : numéros cochés séparés par des virgules, ligne vide pour aucun. Flèches pour déplacer, Espace pour cocher, `a` pour tout cocher ou décocher, Entrée pour valider. En texte : saisir par exemple `2,4`. |
 | `@@INPUT <id>	<question>	<valeur par défaut>` | Saisie libre. L'interface répond une ligne (vide = défaut). |
 | `@@DONE <id>	<ok|skip|fail>	<texte>` | La tâche est finie : réussie, ignorée (refus ou déjà fait) ou en échec. |
 | `@@END <ok|fail>` | Fin de l'installation. |
 
 ## Règles
 
-- Une réponse est lue sur une seule ligne de l'entrée standard, après chaque `@@CONFIRM`, `@@CHOICE` ou `@@INPUT`. Fin de l'entrée (EOF) = refus (`n`), jamais un accord.
-- `-Oui` / `--oui` ne répond jamais à la place de l'interface pour une installation (Node.js, Herdr, outils, extensions, Clink) : chaque `@@CONFIRM` d'installation est posé à la personne.
+- Une réponse est lue sur une seule ligne de l'entrée standard, après chaque `@@CONFIRM`, `@@CHOICE`, `@@MULTI` ou `@@INPUT`. Fin de l'entrée (EOF) = refus, aucune case cochée, jamais un accord. Chaque case représente un consentement individuel ; les options `-Oui` et `--oui` ne cochent aucune case.
+- Les prérequis Node.js, Herdr et Clink sont installés automatiquement, avec ou sans `-Oui` / `--oui`. Les outils IA et extensions exigent une confirmation explicite.
+- Résumé final : un `@@INFO` de la forme `=== <titre> ===` ouvre le résumé ; les `@@INFO` suivants (rapport, prochaine étape) restent affichés après `@@END` au lieu d'être effacés.
+- Ctrl+C dans l'interface animée arrête l'installeur sans envoyer de réponse, rend le terminal et sort avec le code 130.
 - Le texte est dans la langue demandée (`-Lang fr|en` / `--lang fr|en`).
 - Aucun chemin personnel, jeton ni valeur du disque non échappée dans un message : les valeurs restent des données.

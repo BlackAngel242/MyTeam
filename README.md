@@ -23,7 +23,7 @@ La mémoire d’exécution (file, direction, autonomie et configuration) est pri
 
 Les documents techniques relus peuvent être partagés volontairement. Le kit crée ses notes `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git, et n’écrase aucun fichier existant. `.gitignore` ne protège pas un fichier déjà suivi ou ajouté de force ; vérifiez les fichiers avant publication. Les outils d’IA conservent leurs propres journaux, droits et connexions : MyTeam ne fournit pas de bac à sable système pour ces outils.
 
-[Télécharger MyTeam 0.5.1](https://github.com/BlackAngel242/MyTeam/releases/download/v0.5.1/MyTeam-0.5.1.zip)
+Installation en une commande (Node.js 22+) : `npx @drsmoke/myteam` — ou [télécharger MyTeam 0.6.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.6.0/MyTeam-0.6.0.zip).
 
 ## Mises à jour intégrées
 

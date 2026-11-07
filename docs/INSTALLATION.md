@@ -41,19 +41,19 @@ Les documents techniques relus peuvent être partagés volontairement. Le kit cr
 
 - **Aucune dépendance npm externe** : Le projet ne contient aucun `node_modules` et ne fait aucun `npm install`.
 - **Aucune collecte de clés ou secrets** : Aucun mot de passe, jeton ou clé API n'est demandé ni manipulé. Chaque IA gère sa propre authentification.
-- **Aucune installation automatique forcée** : L'option `-Oui` / `--oui` ne valide JAMAIS d'installation de logiciel, d'intégration, de lancement d'agent ou de kit d'équipe. Chaque action sensible exige un accord interactif « o/n ».
+- **Aucune installation optionnelle sans accord** : seuls les prérequis manquants — Node.js 22+, Herdr et, sous Windows, Clink — sont installés directement, sans question (winget ou script officiel de Herdr), car le bureau en a besoin. Tout le reste (outils d'IA, intégrations Herdr, lancement d'agents, extensions, kit d'équipe) exige un accord interactif, et l'option `-Oui` / `--oui` ne le donne jamais à votre place.
 - **Aucun écrasement de fichier** : Les scripts ne remplacent jamais vos compétences existantes ni vos fichiers de projet.
 - **Aucun appel réseau extérieur non maîtrisé** : Le serveur écoute exclusivement sur l'interface locale `127.0.0.1`.
 
 ## Méthode 1 : Installation par la release (recommandée)
 
-Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la version identifiée par le tag dans le dossier utilisateur, puis lance l'assistant :
+Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la dernière version publiée sur npm dans le dossier utilisateur, puis lance l'assistant :
 
 ```sh
-npm exec --yes --package=https://github.com/BlackAngel242/MyTeam/archive/refs/tags/v0.5.1.tar.gz -- myteam-install
+npx @drsmoke/myteam
 ```
 
-La cible est `~/.local/share/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\MyTeam` sous Windows. Une installation existante n'est pas écrasée : utilisez sa mise à jour intégrée. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
+La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, ne copie ni n'installe rien), `--dry-run`. L'assistant propose les raccourcis MyTeam, Herdr et combiné. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
 
 Cette méthode est la plus simple et ne nécessite aucun outil de développement préalable (ni Git, ni compilateur).
 
@@ -109,7 +109,7 @@ Les scripts `scripts/installer.ps1` et `scripts/installer.sh`, ainsi que le lanc
 | Option Windows | Option macOS / Linux | Option animateur Node | Effet |
 |---|---|---|---|
 | `-DryRun` | `--dry-run` | `--dry-run` | Simulation : affiche toutes les actions prévues sans rien modifier ni exécuter. |
-| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les installations logicielles, intégrations, lancements d'agents ni le kit (un accord individuel o/n reste obligatoire). |
+| `-Oui` | `--oui` | (non transmis) | Accepte les choix de configuration courants, mais n'auto-approuve jamais les outils d'IA, intégrations, lancements d'agents, extensions ni le kit (un accord individuel o/n reste obligatoire). Les prérequis (Node.js, Herdr, Clink) s'installent de toute façon, avec ou sans cette option. |
 | `-Port 8317` | `--port 8317` | `--port 8317` | Spécifie le port HTTP du bureau (défaut : 4317 ou variable `BUREAU_PORT` existante). |
 | `-HerdrChemin chemin\herdr.exe` | `--herdr-chemin chemin/herdr` | (détection PATH) | Indique l'emplacement complet de l'exécutable Herdr s'il est absent du PATH. |
 | `-SansRaccourci` | `--sans-raccourci` | (non transmis) | Ne propose pas la création du raccourci sur le Bureau. |
@@ -139,9 +139,10 @@ Le script peut être relancé sans risque : il inspecte l'état du système et n
 9. **Configuration du port et raccourci sur le Bureau** :
    - Choix du port HTTP d'écoute (4317 par défaut), sauvegardé dans les variables d'environnement utilisateur.
    - Création du raccourci sur le Bureau avec 3 options au choix :
-     * Option 1 : Lance Herdr directement.
-     * Option 2 : Lance le Bureau dans votre navigateur (démarre `node server.mjs` puis ouvre l'adresse locale).
-     * Option 3 : « Herdr et bureau » : lance Herdr dans un terminal visible, démarre le serveur du bureau et ouvre votre navigateur.
+     * « Le bureau » (choix par défaut) : lance le bureau dans votre navigateur (démarre `node server.mjs` puis ouvre l'adresse locale).
+     * « Herdr » : lance Herdr directement.
+     * « Herdr et bureau » : lance Herdr dans un terminal visible, démarre le serveur du bureau et ouvre votre navigateur.
+   - Dans l'assistant animé, ces choix apparaissent dans cet ordre, « Le bureau » présélectionné. En mode texte (sans animation), la saisie reste numérotée : 1 = Herdr, 2 = Le bureau (défaut), 3 = Herdr et bureau.
 10. **Tests du projet** : Si Node.js est validé, proposition de lancer `npm test` et `npm run check` pour attester du bon fonctionnement.
 11. **Étape kit d'équipe** : Proposition d'initialiser le kit de collaboration (`node scripts/init-kit.mjs <dossier> --lang <fr|en>`) dans un répertoire de projet pour y déployer les règles `AGENTS.md`, les consignes `CHEF.md`, la mémoire `LESSONS.md` et les fichiers de suivi.
 
