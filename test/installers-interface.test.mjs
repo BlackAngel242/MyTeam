@@ -58,7 +58,7 @@ async function run(t,platform,options={}) {
     function FakeWinget {throw 'winget exécuté pendant la simulation'}
     & ${literal(join(path,'scripts/installer.ps1'))} -DryRun -Lang ${options.lang??'fr'} -Port 4317 ${options.classic?'':'-Interface'} ${options.yes?'-Oui':''} -HerdrChemin ${literal(join(path,options.badHerdr?'scripts/installer.ps1':'herdr.exe'))}
     exit $LASTEXITCODE`);
-    return {...await dialogue(t,ps,['-NoProfile','-File',script],options),path};
+    return {...await dialogue(t,ps,['-NoProfile','-File',script],{...options,env:{'ProgramFiles(x86)':path,ProgramFiles:path,...options.env}}),path};
   }
   await writeFile(script,`command() {
     if [ "$1" = -v ];then case "$2" in herdr) printf '%s\\n' '${path.replaceAll('\\','/')}/herdr';return 0;;code) printf 'fake_code\\n';return 0;;node|claude|codex|opencode|gemini) [ '${options.present?'1':'0'}' = 1 ];return $?;;*)return 1;;esac;fi
@@ -245,17 +245,28 @@ if(process.platform==='win32') {
     assert.match(data.output,/CALL:winget/);
     assert.ok(data.records.some(x=>x.startsWith('@@DONE clink\tok\t')));
   });
-  test('Clink installé dans Program Files sans PATH ne relance pas winget',async t=>{
-    const path=await fixture(t);
-    await mkdir(join(path,'clink')); await writeFile(join(path,'clink','clink_x64.exe'),'factice');
+  for(const variable of ['ProgramFiles(x86)','ProgramFiles'])test(`Clink installé dans ${variable} sans PATH ne relance pas winget`,async t=>{
+    const path=await fixture(t), present=join(path,'present'), absent=join(path,'absent');
+    await mkdir(join(present,'clink'),{recursive:true}); await writeFile(join(present,'clink','clink_x64.exe'),'factice');
     const data=await functions(t,'ps',psFunctions,`
     $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    \${env:ProgramFiles(x86)}=${literal(variable==='ProgramFiles(x86)'?present:absent)}; $env:ProgramFiles=${literal(variable==='ProgramFiles'?present:absent)}
     function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'winget'){throw 'winget ne doit pas être consulté'} }
+    Etape clink;Proposer-Clink;Terminer-Interface
+    `,{env:{'ProgramFiles(x86)':absent,ProgramFiles:absent,[variable]:present},eof:true});
+    assert.equal(data.code,0,data.errors);
+    assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
+    assert.doesNotMatch(data.output,/CALL:/);
+  });
+  test('Clink détecté par clink_x64 dans le PATH ne relance pas winget',async t=>{
+    const path=await fixture(t);
+    const data=await functions(t,'ps',psFunctions,`
+    $Interface=$true;$DryRun=$false;$Oui=$false;$Lang='fr';$script:echecInterface=$false;$script:interfaceFinie=$false
+    function Get-Command {param($Name,$CommandType,$ErrorAction) if($Name -eq 'clink_x64'){return @{Source='FakeClink'}}; if($Name -eq 'winget'){throw 'winget interdit'} }
     Etape clink;Proposer-Clink;Terminer-Interface
     `,{env:{'ProgramFiles(x86)':path,ProgramFiles:path},eof:true});
     assert.equal(data.code,0,data.errors);
     assert.ok(data.records.includes('@@DONE clink\tok\tDéjà présent.'));
-    assert.doesNotMatch(data.output,/CALL:/);
   });
   for(const [code,ok] of [[-1978335189,true],[-1978335135,true],[8,false],[-1978298325,false]]) test(`Clink : code winget ${code} ${ok?'accepté':'refusé'}`,async t=>{
     const path=await fixture(t);
