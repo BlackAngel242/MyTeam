@@ -184,20 +184,23 @@ function Confirmer([string]$question, [switch]$Individuel) {
   }
 }
 
-function Executer([string]$description, [scriptblock]$action) {
+function Executer([string]$description, [scriptblock]$action, [switch]$Winget) {
   if ($Interface -and $script:entreeFermee) { Etat-Etape 'skip' (Texte 'Entrée fermée.' 'Input closed.'); Dire (Texte 'Entrée fermée : action ignorée.' 'Input closed: action skipped.'); return $false }
   if ($DryRun) { Simuler $description; return $true }
   Dire $description
   $global:LASTEXITCODE = 0
   try {
     & $action
-    if ($LASTEXITCODE -ne 0) { throw (Texte "La commande a échoué." 'The command failed.') }
+    # Codes officiels winget : aucune mise à jour applicable ou paquet déjà installé.
+    $dejaInstalle = $Winget -and $LASTEXITCODE -in @(-1978335189, -1978335135)
+    if ($null -eq $LASTEXITCODE -or ($LASTEXITCODE -ne 0 -and -not $dejaInstalle)) { throw (Texte "La commande a échoué." 'The command failed.') }
+    if ($dejaInstalle) { Dire (Texte 'Déjà installé et à jour.' 'Already installed and up to date.') }
     if ($Interface) {
-      $fait = switch ($script:etape) {
+      $fait = if ($dejaInstalle) { Texte 'Déjà installé et à jour.' 'Already installed and up to date.' } else { switch ($script:etape) {
         'config' { Texte 'Configuration enregistrée.' 'Configuration saved.' }
         'tests' { Texte 'Vérifications réussies.' 'Checks passed.' }
         default { Texte 'Installation confirmée.' 'Installation confirmed.' }
-      }
+      } }
       Etat-Etape 'ok' $fait
     }
   } catch { if ($Interface) { Etat-Etape 'fail' (Texte 'Commande en échec.' 'Command failed.') }; throw }
@@ -250,7 +253,7 @@ if ($null -ne $majeur -and $majeur -ge 22) {
     try {
       Executer (Texte 'Installation de Node.js avec winget (paquet OpenJS.NodeJS.LTS).' 'Installing Node.js with winget (OpenJS.NodeJS.LTS package).') {
         winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
         $majeur = Lire-VersionNode
@@ -298,7 +301,7 @@ function Proposer-Clink {
     try {
       Executer (Texte 'Installation de Clink.' 'Installing Clink.') {
         & $wingetClink.Source install --id chrisant996.Clink -e --accept-source-agreements --accept-package-agreements
-      } | Out-Null
+      } -Winget | Out-Null
       if (-not $DryRun) {
         Rafraichir-Path
         if (Tester-Clink) { Noter (Texte 'Clink : installé.' 'Clink: installed.') }
