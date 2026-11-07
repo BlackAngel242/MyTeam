@@ -20,5 +20,7 @@ L'interface (`scripts/installateur-anime.mjs`) lance `scripts/installer.ps1 -Int
 
 - Une réponse est lue sur une seule ligne de l'entrée standard, après chaque `@@CONFIRM`, `@@CHOICE`, `@@MULTI` ou `@@INPUT`. Fin de l'entrée (EOF) = refus, aucune case cochée, jamais un accord. Chaque case représente un consentement individuel ; les options `-Oui` et `--oui` ne cochent aucune case.
 - Les prérequis Node.js, Herdr et Clink sont installés automatiquement, avec ou sans `-Oui` / `--oui`. Les outils IA et extensions exigent une confirmation explicite.
+- Résumé final : un `@@INFO` de la forme `=== <titre> ===` ouvre le résumé ; les `@@INFO` suivants (rapport, prochaine étape) restent affichés après `@@END` au lieu d'être effacés.
+- Ctrl+C dans l'interface animée arrête l'installeur sans envoyer de réponse, rend le terminal et sort avec le code 130.
 - Le texte est dans la langue demandée (`-Lang fr|en` / `--lang fr|en`).
 - Aucun chemin personnel, jeton ni valeur du disque non échappée dans un message : les valeurs restent des données.
