@@ -99,14 +99,14 @@ etat_etape() {
 
 fin_etape() {
   if [ "${INTERFACE:-0}" = 1 ] && [ -n "${ETAPE:-}" ]; then
-    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$TEXTE_ETAPE"
+    emettre_interface DONE "$ETAPE" "$ETAT_ETAPE" "$TEXTE_ETAPE${DETAILS_ETAPE:+ $DETAILS_ETAPE}"
     ETAPE=''
   fi
 }
 
 etape() {
   [ "${INTERFACE:-0}" = 1 ] || return 0
-  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;TEXTE_ETAPE=$(texte 'Non applicable.' 'Not applicable.');TOTAL_ETAPE=0;emettre_interface STEP "$ETAPE"
+  fin_etape;ETAPE="$1";ETAT_ETAPE=skip;TEXTE_ETAPE=$(texte 'Non applicable.' 'Not applicable.');TOTAL_ETAPE=0;DETAILS_ETAPE='';emettre_interface STEP "$ETAPE"
 }
 
 terminer_interface() {
@@ -484,6 +484,7 @@ proposer_agents() {
         local agent_nom
         if [ "$i" -eq 0 ]; then agent_nom=chef; else agent_nom="agent$((i+1))"; fi
         if "$HERDR_TROUVE" agent start "$agent_nom" --kind "$type" --pane "$pane" >/dev/null; then
+          if [ "${INTERFACE:-0}" = 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }${noms[$i]} = $type"; fi
           [ "${INTERFACE:-0}" != 1 ] || etat_etape ok
           if [ -z "${CHEF_PANE:-}" ]; then CHEF_PANE="$pane"; CHEF_TYPE="$type"; fi
           if [ "${INTERFACE:-0}" = 1 ];then TOTAL_ETAPE=$((TOTAL_ETAPE+1));etat_etape ok "$(texte "Outils lancés : $TOTAL_ETAPE." "Tools started: $TOTAL_ETAPE.")";fi
@@ -795,8 +796,8 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
   # aucun doublon n'est créé.
   CHOIX_LANCEUR='bureau'
   if [ "$INTERFACE" = 1 ]; then
-    choisir "$(texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?')" Herdr "$(texte 'Le bureau' Desktop)" "$(texte 'Herdr et bureau' 'Herdr and desktop')" || REPONSE_INTERFACE=''
-    [ "$REPONSE_INTERFACE" = 1 ] && CHOIX_LANCEUR=herdr
+    choisir "$(texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?')" "$(texte 'Le bureau' Desktop)" Herdr "$(texte 'Herdr et bureau' 'Herdr and desktop')" || REPONSE_INTERFACE=''
+    [ "$REPONSE_INTERFACE" = 2 ] && CHOIX_LANCEUR=herdr
     [ "$REPONSE_INTERFACE" = 3 ] && CHOIX_LANCEUR=ensemble
   elif [ "$DRY_RUN" = "1" ]; then
     simuler "$(texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')"
@@ -808,6 +809,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
     [ "$choix_saisi" = "1" ] && CHOIX_LANCEUR='herdr'
     [ "$choix_saisi" = "3" ] && CHOIX_LANCEUR='ensemble'
   fi
+  if [ "$INTERFACE" = 1 ] && [ "$ENTREE_FERMEE" != 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }$(texte "Raccourci choisi : $CHOIX_LANCEUR" "Shortcut selected: $CHOIX_LANCEUR")"; fi
   if [ "$CHOIX_LANCEUR" = "herdr" ]; then
     HERDR_LANCEUR="$HERDR_TROUVE"
     [ -z "$HERDR_LANCEUR" ] && HERDR_LANCEUR=$(command -v herdr 2>/dev/null || true)
@@ -883,6 +885,7 @@ if [ "$SANS_RACCOURCI" != "1" ]; then
     fi
   fi
 fi
+if [ "$INTERFACE" = 1 ] && [ "$ENTREE_FERMEE" != 1 ]; then DETAILS_ETAPE="${DETAILS_ETAPE:+$DETAILS_ETAPE, }Port $PORT_CHOISI"; fi
 dire ''
 
 proposer_kit() {

@@ -118,7 +118,8 @@ function Etat-Etape([string]$etat, [string]$texte = '') {
 }
 function Fin-Etape {
   if ($Interface -and $script:etape) {
-    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,$script:texteEtape)
+    $details = if ($script:detailsEtape.Count -gt 0) { ' ' + ($script:detailsEtape -join ', ') } else { '' }
+    Emettre-Interface 'DONE' @($script:etape,$script:etatEtape,($script:texteEtape + $details))
     $script:etape = ''
   }
 }
@@ -128,6 +129,7 @@ function Etape([string]$id) {
   $script:etape = $id; $script:etatEtape = 'skip'
   $script:texteEtape = Texte 'Non applicable.' 'Not applicable.'
   $script:totalEtape = 0
+  $script:detailsEtape = @()
   Emettre-Interface 'STEP' @($id)
 }
 function Terminer-Interface {
@@ -465,6 +467,7 @@ function Proposer-Agents([string[]]$Panneaux) {
       try {
         $nomAgent = if ($i -eq 0) { 'chef' } else { "agent$($i+1)" }
         Appeler-Herdr @('agent','start',$nomAgent,'--kind',$type,'--pane',$Panneaux[$i]) | Out-Null
+        if ($Interface) { $script:detailsEtape += "$($noms[$i]) = $type" }
         if (-not $script:chefPane) { $script:chefPane=$Panneaux[$i]; $script:chefOutil=$type }
         if ($Interface) { $script:totalEtape++; Etat-Etape 'ok' (Texte "Outils lancés : $($script:totalEtape)." "Tools started: $($script:totalEtape).") }
         Noter (Texte "$type : lancement confirme par Herdr." "${type}: launch confirmed by Herdr.")
@@ -726,8 +729,8 @@ if (-not $SansRaccourci) {
   # pour ce second cas : aucun doublon n'est cree.
   $choixLanceur = 'bureau'
   if ($Interface) {
-    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @('Herdr',(Texte 'Le bureau' 'Desktop'),(Texte 'Herdr et bureau' 'Herdr and desktop'))
-    if ($saisie -eq '1') { $choixLanceur = 'herdr' }
+    $saisie = Choisir (Texte 'Que doit lancer le raccourci ?' 'What should the shortcut open?') @((Texte 'Le bureau' 'Desktop'),'Herdr',(Texte 'Herdr et bureau' 'Herdr and desktop'))
+    if ($saisie -eq '2') { $choixLanceur = 'herdr' }
     if ($saisie -eq '3') { $choixLanceur = 'ensemble' }
   } elseif ($DryRun) {
     Simuler (Texte 'Question du raccourci : 1 = Herdr, 2 = le bureau dans le navigateur, 3 = Herdr et bureau (défaut 2).' 'Shortcut choice: 1 = Herdr, 2 = desktop in browser, 3 = Herdr and desktop (default 2).')
@@ -738,6 +741,7 @@ if (-not $SansRaccourci) {
     if ($saisie.Trim() -eq '1') { $choixLanceur = 'herdr' }
     if ($saisie.Trim() -eq '3') { $choixLanceur = 'ensemble' }
   }
+  if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += (Texte "Raccourci choisi : $choixLanceur" "Shortcut selected: $choixLanceur") }
   if ($choixLanceur -eq 'herdr') {
     $cible = $herdrTrouve
     if (-not $cible) { $cible = Chercher-Herdr }
@@ -783,6 +787,7 @@ if (-not $SansRaccourci) {
     }
   }
 }
+if ($Interface -and -not $script:entreeFermee) { $script:detailsEtape += "Port $portChoisi" }
 Dire ''
 
 function Proposer-Kit {

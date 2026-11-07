@@ -82,6 +82,15 @@ function checkProtocol(result,windows) {
   assert.equal(new Set(ids).size,ids.length,'identifiants de questions uniques');
 }
 for(const platform of ['bash',...(process.platform==='win32'?['ps']:[])]) {
+  test(`A2 ${platform} : raccourci par défaut et port dans le bilan`,async t=>{
+    const result=await run(t,platform,{answer:line=>line.startsWith('@@MULTI')?'':line.startsWith('@@CHOICE')?'1':'n'});
+    assert.equal(result.code,0,result.errors);
+    const choice=result.records.find(x=>x.startsWith('@@CHOICE') && x.includes('raccourci'));
+    assert.match(choice,/\tLe bureau\tHerdr\t/);
+    const done=result.records.find(x=>x.startsWith('@@DONE config\t'));
+    assert.match(done,/Raccourci choisi : bureau/);
+    assert.match(done,/Port 4317/);
+  });
   test(`A2 ${platform} : sélections groupées et confirmation`,async t=>{
     let outils=0, extensions=0;
     const result=await run(t,platform,{answer:line=>{
