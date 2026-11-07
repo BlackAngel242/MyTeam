@@ -671,11 +671,14 @@ if [ "$OUTILS_DISPONIBLES" -eq 0 ] && [ "$DRY_RUN" != 1 ]; then
   dire "$(texte 'Aucun outil IA détecté : configurez au moins un outil avant de démarrer une mission.' 'No AI tool detected: set up one before starting a mission.')"
 fi
 if [ "${panneaux_ok:-0}" = 1 ] && [ -n "${ids:-}" ]; then
-  nouveaux=$(detecter_outils)
+  # Repérer d'abord un nouvel outil, puis poser les questions hors de la boucle :
+  # dans `while … done <<< "$nouveaux"`, les questions liraient la liste au lieu des réponses.
+  nouvel_outil=0
   while IFS= read -r outil; do
     [ -n "$outil" ] || continue
-    if ! printf '%s\n' "${OUTILS_AVANT_INSTALLATION:-}" | grep -Fxq "$outil"; then proposer_agents "$ids"; break; fi
-  done <<< "$nouveaux"
+    if ! printf '%s\n' "${OUTILS_AVANT_INSTALLATION:-}" | grep -Fxq "$outil"; then nouvel_outil=1; break; fi
+  done <<< "$(detecter_outils)"
+  if [ "$nouvel_outil" = 1 ]; then proposer_agents "$ids"; fi
 fi
 
 # --- 5. Extensions utiles (optionnelles) --------------------------------

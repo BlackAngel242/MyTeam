@@ -5,7 +5,7 @@
 // Sans dépendance. Hors terminal ou avec --simple : sortie en texte simple, une ligne par événement.
 // Usage : node scripts/installateur-anime.mjs [--lang fr|en] [--dry-run] [--simple] [--port <n>] [--demo]
 // --demo : démonstration de l'animation, sans rien installer ni réseau.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { join, dirname } from 'node:path';
@@ -354,15 +354,25 @@ export function commandeInstalleur({ plateforme = process.platform, lang = 'fr',
 
 export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn } = {}) {
   const etat = etatInitial({ lang, simulation, demo });
-  const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false });
+  // Hors Windows, l'installeur mène son propre groupe de processus : Ctrl+C peut alors arrêter aussi ses commandes en cours.
+  const windows = process.platform === 'win32';
+  const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false, detached: !windows });
+  // Fin du processus écoutée tout de suite : un Ctrl+C pendant la bannière ne doit pas perdre l'événement.
+  const code = new Promise(resolve => enfant.on('close', c => resolve(c ?? 1)));
   let rendu, questions, lecteurEntree = null, surCtrlC = null;
   const annulation = new AbortController();
-  // Ctrl+C à tout moment (le mode brut le reçoit comme une touche) : arrêter l'installeur, rendre le terminal, dire où on en est.
+  // Ctrl+C à tout moment (le mode brut le reçoit comme une touche) : arrêter l'installeur ET ses commandes (winget, apt…),
+  // rendre le terminal, dire où on en est.
   const annuler = () => {
     if (etat.annule) return;
     etat.annule = true;
-    annulation.abort();
+    // Arrêt synchrone AVANT d'annuler la question en cours : sinon la fin d'entrée part vers l'installeur, qui répondrait encore.
+    try {
+      if (windows && enfant.pid) spawnSync('taskkill', ['/pid', String(enfant.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+      else if (enfant.pid) process.kill(-enfant.pid, 'SIGTERM');
+    } catch { /* arbre déjà fini */ }
     try { enfant.kill(); } catch { /* déjà fini */ }
+    annulation.abort();
   };
   if (anime) {
     rendu = sortieAnimee(sortie, couleur);
@@ -376,14 +386,14 @@ export async function executer({ commande, args, sortie = process.stdout, entree
     lecteurEntree = createInterface({ input: entree, crlfDelay: Infinity })[Symbol.asyncIterator]();
     questions = questionsTexte(sortie, lecteurEntree, lang);
   }
-  await rendu.demarrer(etat);
   enfant.stdin.on('error', () => {});
   const repondre = texte => { try { enfant.stdin.write(texte + '\n'); } catch { /* l'installeur est déjà fini */ } };
   let fin = null;
+  // Lecture branchée dès le lancement (un installeur arrêté pendant la bannière ferme sa sortie tôt) ;
+  // les événements, eux, attendent la fin de la bannière dans la file.
   const lignes = createInterface({ input: enfant.stdout, crlfDelay: Infinity });
-  const code = new Promise(resolve => enfant.on('close', c => resolve(c ?? 1)));
   const lignesFermees = new Promise(resolve => lignes.once('close', resolve));
-  let fileAttente = Promise.resolve();
+  let fileAttente = Promise.resolve(rendu.demarrer(etat));
   lignes.on('line', ligne => {
     fileAttente = fileAttente.then(async () => {
       const evt = parseLigne(ligne);

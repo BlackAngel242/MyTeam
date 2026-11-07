@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -253,7 +253,7 @@ console.log('@@END ok');`);
 
 test('le résumé de l\'installeur (après « === Résumé === ») reste affiché après la fin', () => {
   const etat = etatInitial({ lang: 'fr' });
-  // Le flux réel commence par une bannière en === … === : elle ne doit pas ouvrir le résumé (relecture omp, B1).
+  // Le flux réel commence par une bannière en === … === : elle ne doit pas ouvrir le résumé.
   appliquer(etat, parseLigne('@@INFO === Bureau des agents : installation ==='));
   appliquer(etat, parseLigne('@@INFO Installation de Node.js avec winget.'));
   assert.equal(etat.dansResume, false);
@@ -282,4 +282,43 @@ console.log('@@END ok');`);
   assert.equal(r.code, 130);
   assert.doesNotMatch(texte, /reponse=/, 'aucune réponse ne doit atteindre l\'installeur');
   assert.match(texte, /Installation annulée \(Ctrl\+C\)/);
+});
+
+// Garde-fou : un executer bloqué ferait échouer le test au lieu de le figer.
+const sansBlocage = (promesse, ms, quoi) => Promise.race([promesse, new Promise((_, refus) => setTimeout(() => refus(new Error(quoi + ' : executer bloqué')), ms).unref())]);
+
+test('Ctrl+C pendant la bannière : executer se termine avec le code 130 (aucun événement de fin perdu)', async t => {
+  const script = await fausseInstallation(t, `
+console.log('@@PLAN a\tA');
+console.log('@@STEP a');
+await new Promise(r => setTimeout(r, 30000));`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  sortie.resume();
+  setTimeout(() => entree.write('\u0003'), 20);
+  const r = await sansBlocage(executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' }), 15000, 'Ctrl+C pendant la bannière');
+  assert.equal(r.code, 130);
+  assert.equal(r.ok, false);
+});
+
+// Probant sous Linux/macOS (groupe de processus). Sous Windows, Node tue déjà les enfants Node d'un parent mort (job object) :
+// le test y passe même sans taskkill ; le cas réel (PowerShell → winget) repose sur `taskkill /T`, non simulé ici.
+test('Ctrl+C arrête aussi les commandes lancées par l\'installeur (arbre de processus)', async t => {
+  const dossier = await mkdtemp(join(tmpdir(), 'myteam-arbre-'));
+  t.after(() => rm(dossier, { recursive: true, force: true }));
+  const temoin = join(dossier, 'ecrit-apres-annulation.txt');
+  const script = await fausseInstallation(t, `
+const { spawn } = await import('node:child_process');
+// Commande d'installation simulée : garde la sortie ouverte et écrirait un fichier après 2 s.
+spawn(process.execPath, ['-e', ${JSON.stringify(`setTimeout(() => require('fs').writeFileSync(${JSON.stringify(temoin)}, 'trop tard'), 2000)`)}], { stdio: 'inherit' });
+console.log('@@PLAN a\tA');
+console.log('@@STEP a');
+console.log('@@CONFIRM q1\tContinuer ?');
+await lire();`);
+  const entree = new PassThrough(), sortie = new PassThrough();
+  let texte = '', envoye = false;
+  sortie.on('data', d => { texte += d; if (!envoye && texte.includes('Continuer ?')) { envoye = true; setImmediate(() => entree.write('\u0003')); } });
+  const r = await sansBlocage(executer({ commande: process.execPath, args: [script], sortie, entree, anime: true, couleur: false, lang: 'fr' }), 15000, 'Ctrl+C avec un petit-enfant');
+  assert.equal(r.code, 130);
+  await new Promise(res => setTimeout(res, 3000));
+  await assert.rejects(access(temoin), 'la commande lancée par l\'installeur ne doit plus rien écrire après Ctrl+C');
 });
