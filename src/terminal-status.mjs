@@ -12,7 +12,7 @@
 // (heure locale du poste, le lendemain si l'heure est déjà passée).
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { findHerdr } from './herdr.mjs';
+import { findHerdr, sessionHerdr } from './herdr.mjs';
 
 const execute = promisify(execFile);
 const MAX_TEXTE = 200000;
@@ -69,7 +69,8 @@ export function parseLimitMessage(texte, { now = () => Date.now() } = {}) {
 // le dernier état connu plutôt que d'inventer une absence de limite.
 export function createTerminalStatusReader({ run, now = () => Date.now() } = {}) {
   const lire = run ?? (async panneau => {
-    const { stdout } = await execute(findHerdr(), ['agent', 'read', panneau, '--source', 'detection'], {
+    const session = sessionHerdr();
+    const { stdout } = await execute(findHerdr(), [...(session ? ['--session', session] : []), 'agent', 'read', panneau, '--source', 'detection'], {
       windowsHide: true, timeout: 8000, maxBuffer: 1024 * 1024, encoding: 'utf8',
     });
     return stdout;

@@ -649,13 +649,14 @@ export function createBureauServer({bridge=createHerdr(),readActivity=readClaude
           }
         }
       }
-      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/queue-ui.js':'queue-ui.js','/todos-ui.js':'todos-ui.js','/files-ui.js':'files-ui.js','/crisis-ui.js':'crisis-ui.js','/auto-ui.js':'auto-ui.js','/palette-ui.js':'palette-ui.js','/direction-ui.js':'direction-ui.js','/bureau-base.js':'bureau-base.js','/scene.js':'scene.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js','/appearance.js':'appearance.js','/appearance.css':'appearance.css','/icons.svg':'icons.svg'};
+      const files={'/':'index.html','/index.html':'index.html','/style.css':'style.css','/app.js':'app.js','/queue-ui.js':'queue-ui.js','/todos-ui.js':'todos-ui.js','/files-ui.js':'files-ui.js','/crisis-ui.js':'crisis-ui.js','/auto-ui.js':'auto-ui.js','/palette-ui.js':'palette-ui.js','/direction-ui.js':'direction-ui.js','/bureau-base.js':'bureau-base.js','/scene.js':'scene.js','/logos.js':'logos.js','/terminal.js':'terminal.js','/response-card.js':'response-card.js','/tiles.js':'tiles.js','/i18n.js':'i18n.js','/i18n-en.js':'i18n-en.js','/discussion.js':'discussion.js','/sounds.js':'sounds.js','/empty-icons.js':'empty-icons.js','/appearance.js':'appearance.js','/appearance.css':'appearance.css','/icons.svg':'icons.svg','/myteam.png':'myteam.png'};
       if(req.method!=='GET'||!files[url.pathname]) return json(404,{error:'Page introuvable.'});
       const filename=files[url.pathname];
       let content;
       try {content=await readFile(join(publicDir,filename));} catch(error) {if(error.code==='ENOENT') return json(404,{error:'Page introuvable.'});throw error;}
-      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':'text/html';
-      res.writeHead(200,{...headers,'Content-Type':`${type}; charset=utf-8`});res.end(content);
+      const type=filename.endsWith('.css')?'text/css':filename.endsWith('.js')?'text/javascript':filename.endsWith('.svg')?'image/svg+xml':filename.endsWith('.png')?'image/png':'text/html';
+      // Une image n'a pas de jeu de caractères.
+      res.writeHead(200,{...headers,'Content-Type':type==='image/png'?type:`${type}; charset=utf-8`});res.end(content);
     } catch(error) {json(errorStatus(error),{error:error.message||'La demande n’a pas abouti.'});}
   });
   server.requestTimeout=20000;

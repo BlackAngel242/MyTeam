@@ -12,7 +12,7 @@ const source = fileURLToPath(new URL('../', import.meta.url));
 const cible = process.platform === 'win32'
   ? join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'Programs', 'MyTeam')
   : join(homedir(), '.local', 'lib', 'MyTeam');
-const fichiers = ['package.json', 'server.mjs', 'src', 'public', 'scripts', 'kit', 'docs'];
+const fichiers = ['package.json', 'server.mjs', 'src', 'public', 'scripts', 'bin', 'kit', 'docs'];
 
 // Même assistant animé que « Installer MyTeam.bat » (flèches, liste de tâches en direct) ; options transmises : --lang, --simple, --port.
 function lancerAssistant(dossier = cible) {
