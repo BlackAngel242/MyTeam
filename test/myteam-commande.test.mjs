@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createHerdr, sessionHerdr } from '../src/herdr.mjs';
-import { lancerMyTeam, variableUtilisateur } from '../scripts/myteam.mjs';
+import { lancerMyTeam, variableUtilisateur, identifier, processusNode } from '../scripts/myteam.mjs';
 import { createBureauServer } from '../server.mjs';
 import { cadre, etatInitial, appliquer, parseLigne, dossierLocal } from '../scripts/installateur-anime.mjs';
 
@@ -20,8 +20,9 @@ test('session Herdr dédiée : chaque appel du serveur vise --session, un nom in
   assert.throws(() => sessionHerdr({ BUREAU_HERDR_SESSION: 'myteam; rm -rf' }), /invalide/);
 });
 
-function dependances({ variables = {}, herdr = 'C:/herdr.exe', statut = 0 } = {}) {
-  const journal = { ouvertures: [], lancements: [], textes: [] };
+function dependances({ variables = {}, herdr = 'C:/herdr.exe', statut = 0, presents = [null], pidNode = () => null } = {}) {
+  const journal = { ouvertures: [], lancements: [], textes: [], tues: [] };
+  let n = 0;
   return {
     journal,
     options: {
@@ -31,6 +32,10 @@ function dependances({ variables = {}, herdr = 'C:/herdr.exe', statut = 0 } = {}
       trouverHerdr: () => herdr,
       lancer: (fichier, args, opts) => { journal.lancements.push({ fichier, args, opts }); return { status: statut }; },
       ecrire: t => journal.textes.push(t),
+      qui: async () => presents[Math.min(n++, presents.length - 1)],
+      pidNode,
+      tuer: pid => journal.tues.push(pid),
+      pause: async () => {},
     },
   };
 }
@@ -43,6 +48,58 @@ test('myteam : ouvre le bureau au port enregistré puis Herdr sur la session MyT
   assert.deepEqual(journal.lancements[0].args, ['--session', 'myteam']);
   assert.equal(journal.lancements[0].opts.stdio, 'inherit');
   assert.ok(journal.textes.some(t => t.includes('http://127.0.0.1:8317')));
+  assert.equal(options.env.BUREAU_HERDR_PATH, 'C:/herdr.exe', 'le serveur reçoit aussi le chemin de Herdr');
+});
+
+test('myteam : un bureau MyTeam d’une autre session est arrêté puis rouvert sur la session MyTeam', async () => {
+  const { journal, options } = dependances({ presents: [{ myteam: true, session: null, pid: 4242 }, null] });
+  assert.equal(await lancerMyTeam([], options), 0);
+  assert.deepEqual(journal.tues, [4242]);
+  assert.equal(journal.ouvertures.length, 1);
+});
+
+test('myteam : le bon bureau déjà ouvert est réutilisé, un autre programme sur le port n’est jamais arrêté', async () => {
+  const a = dependances({ presents: [{ myteam: true, session: 'myteam', pid: 7 }] });
+  assert.equal(await lancerMyTeam([], a.options), 0);
+  assert.deepEqual(a.journal.tues, []);
+  const b = dependances({ presents: [{ myteam: false }] });
+  assert.equal(await lancerMyTeam([], b.options), 1);
+  assert.deepEqual(b.journal.tues, []);
+  assert.equal(b.journal.ouvertures.length, 0);
+  assert.ok(b.journal.textes.some(t => /occupé par un autre programme/.test(t)));
+  const c = dependances({ presents: [{ myteam: true, ancien: true, session: null, pid: null }] });
+  assert.equal(await lancerMyTeam([], c.options), 1, 'ancien bureau sans processus Node identifié : on explique au lieu de deviner');
+  assert.equal(c.journal.ouvertures.length, 0);
+  const d = dependances({ presents: [{ myteam: true, ancien: true, session: null, pid: null }, null], pidNode: () => 99 });
+  assert.equal(await lancerMyTeam([], d.options), 0);
+  assert.deepEqual(d.journal.tues, [99]);
+});
+
+test('identifier : bureau MyTeam, ancien bureau, autre programme, port libre', async () => {
+  const rep = (status, corps, csp = '') => async () => ({ ok: status === 200, status, json: async () => corps, headers: { get: n => n === 'content-security-policy' ? csp : null } });
+  assert.deepEqual(await identifier(4317, { recuperer: rep(200, { app: 'myteam', version: '0.6.1', session: 'myteam', pid: 5 }) }), { myteam: true, session: 'myteam', pid: 5, version: '0.6.1' });
+  assert.equal((await identifier(4317, { recuperer: rep(404, { error: 'Page introuvable.' }, "default-src 'self'; frame-ancestors 'none'") })).ancien, true);
+  assert.deepEqual(await identifier(4317, { recuperer: rep(404, { error: 'Not found' }) }), { myteam: false });
+  assert.equal(await identifier(4317, { recuperer: async () => { throw new Error('ECONNREFUSED'); } }), null);
+});
+
+test('processusNode : seul un processus node.exe qui écoute le port est retenu', () => {
+  const netstat = ['  TCP    127.0.0.1:4317         0.0.0.0:0              LISTENING       4242', '  TCP    127.0.0.1:43170        0.0.0.0:0              LISTENING       9', ''].join('\r\n');
+  const lancer = image => (cmd) => ({ stdout: cmd === 'netstat' ? netstat : image });
+  assert.equal(processusNode(4317, { platform: 'win32', lancer: lancer('"node.exe","4242","Console","1","50 000 K"') }), 4242);
+  assert.equal(processusNode(4317, { platform: 'win32', lancer: lancer('"chrome.exe","4242","Console","1","50 000 K"') }), null);
+});
+
+test('le serveur annonce son identité : application, version, session Herdr et processus', async t => {
+  const avant = process.env.BUREAU_HERDR_SESSION;
+  process.env.BUREAU_HERDR_SESSION = 'myteam';
+  t.after(() => { if (avant === undefined) delete process.env.BUREAU_HERDR_SESSION; else process.env.BUREAU_HERDR_SESSION = avant; });
+  const server = createBureauServer();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const corps = await (await fetch(`http://127.0.0.1:${server.address().port}/api/identite`)).json();
+  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.deepEqual(corps, { app: 'myteam', version, session: 'myteam', pid: process.pid });
 });
 
 test('myteam --bureau n\'ouvre pas Herdr ; option inconnue et --help répondent sans rien lancer', async () => {
