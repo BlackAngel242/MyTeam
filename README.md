@@ -4,6 +4,27 @@
 
 Voyez vos agents d'IA [Herdr](https://github.com/herdrdev/herdr) travailler dans un bureau en pixel art, envoyez-leur des consignes et lisez leurs réponses. Le bureau et son état fonctionnent localement ; les outils d’IA utilisent leurs propres services.
 
+## Installer et lancer MyTeam
+
+**La commande recommandée sous Windows, macOS et Linux** (Node.js 22 ou plus) est :
+
+```powershell
+npx @drsmoke/myteam@latest
+```
+
+Elle lance directement l'assistant interactif et prépare une installation durable de MyTeam. Après l'assistant, ouvrez un nouveau terminal puis tapez `myteam` pour démarrer le bureau et sa session Herdr dédiée (à partir de la version 0.6.1).
+
+> **Pourquoi `npm i @drsmoke/myteam` affiche-t-il « done » sans ouvrir l'assistant ?** Parce que `npm install` ajoute seulement le paquet au projet courant. La commande **Install** affichée automatiquement par npmjs.com n'est pas une commande de lancement. Utilisez `npx` ci-dessus.
+
+Pour installer le paquet npm globalement à la place (facultatif) :
+
+```powershell
+npm install -g @drsmoke/myteam
+myteam-install
+```
+
+`myteam-install` lance alors l'assistant ; `myteam` est le lanceur de l'application installé par cet assistant, et non par `npm install` seul.
+
 [![Licence MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
 [![CI](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml)
@@ -23,13 +44,15 @@ La mémoire d’exécution (file, direction, autonomie et configuration) est pri
 
 Les documents techniques relus peuvent être partagés volontairement. Le kit crée ses notes `HANDOFF.md` et `JOURNAL.md` dans `.myteam-local/`, ignoré par Git, et n’écrase aucun fichier existant. `.gitignore` ne protège pas un fichier déjà suivi ou ajouté de force ; vérifiez les fichiers avant publication. Les outils d’IA conservent leurs propres journaux, droits et connexions : MyTeam ne fournit pas de bac à sable système pour ces outils.
 
-Installation en une commande (Node.js 22+) : `npx @drsmoke/myteam` — ou [télécharger MyTeam 0.6.0](https://github.com/BlackAngel242/MyTeam/releases/download/v0.6.0/MyTeam-0.6.0.zip).
+## Après l'installation
+
+L'assistant vérifie les prérequis, propose les outils d'IA manquants et crée le raccourci **MyTeam** sur le Bureau. Le lanceur `myteam` ouvre le bureau dans votre navigateur et Herdr dans sa session dédiée. Si Node.js n'est pas installé, utilisez [l'archive de la dernière version](https://github.com/BlackAngel242/MyTeam/releases/latest), dont l'installateur prépare aussi Node.js.
 
 ## Mises à jour intégrées
 
 Depuis une archive officielle, MyTeam annonce une nouvelle release dans le bureau. Cliquez sur **Mettre à jour et redémarrer** dans l’aide : le téléchargement et la vérification SHA-256 sont suivis du remplacement des fichiers et du redémarrage automatique. Les données de projet hors du dossier de l’application et les dossiers locaux `.bureau/` et `.myteam-local/` sont conservés ; l’ancienne version reste en sauvegarde à côté du dossier. Une copie Git est exclue : utilisez Git pour la mettre à jour. La première transition depuis 0.5.0 nécessite un téléchargement manuel.
 
-## Démarrage
+## Depuis les sources
 
 ```bash
 git clone https://github.com/BlackAngel242/MyTeam.git && cd MyTeam

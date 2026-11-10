@@ -258,6 +258,31 @@ img {
   line-height: 1.5;
 }
 
+.hero-install {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.hero-install-commande {
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 1rem;
+  user-select: all;
+}
+
+.hero-install-aide {
+  margin: -24px auto 40px;
+  max-width: 640px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+  text-align: center;
+}
+
 .hero-actions {
   display: flex;
   align-items: center;

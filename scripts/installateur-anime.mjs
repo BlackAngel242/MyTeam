@@ -67,6 +67,10 @@ export function bannière(couleur) {
   return BANNIERE.map(([ligne, n]) => '  ' + p.degrade(ligne, n));
 }
 
+// Le protocole masque le dossier d'installation (« [dossier] ») dans ses messages ; l'écran de la personne qui installe,
+// lui, affiche le vrai chemin : c'est le sien, et c'est la prochaine étape qu'on lui indique.
+export const dossierLocal = (etat, texte) => etat.dossier ? String(texte).replaceAll('[dossier]', etat.dossier) : texte;
+
 export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
   const p = peindre(couleur), L = [];
   const fr = etat.lang !== 'en';
@@ -78,7 +82,7 @@ export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
     const libelle = t.etat === 'pending' || t.etat === 'skip' ? p.gris(t.libelle) : t.etat === 'run' ? p.gras(t.libelle) : t.libelle;
     L.push(p.gris('│') + '   ' + pastille + ' ' + libelle + (t.texte ? p.gris('  ' + t.texte) : ''));
   }
-  if (etat.info) L.push(p.gris('│') + '   ' + p.gris(etat.info));
+  if (etat.info) L.push(p.gris('│') + '   ' + p.gris(dossierLocal(etat, etat.info)));
   if (etat.question) {
     L.push(p.gris('│'));
     L.push(p.ambre('◆') + '  ' + p.gras(etat.question.texte));
@@ -87,7 +91,7 @@ export function cadre(etat, image, { couleur = true, largeur = 100 } = {}) {
   }
   if (etat.fin) {
     // Résumé de l'installeur (lignes après « === Résumé === ») : rapport et prochaine étape restent à l'écran.
-    if (etat.resume.length) { L.push(p.gris('│')); for (const l of etat.resume) L.push(p.gris('│') + '   ' + l); }
+    if (etat.resume.length) { L.push(p.gris('│')); for (const l of etat.resume) L.push(p.gris('│') + '   ' + dossierLocal(etat, l)); }
     L.push(p.gris('│'), (etat.fin.ok ? p.menthe('◇') : p.rouge('◇')) + '  ' + bilanFin(etat));
   }
   return L.map(l => ajuster(l, largeur - 1));
@@ -156,7 +160,7 @@ function sortieSimple(flux) {
       const t = etat.taches.find(x => x.id === evt.id);
       if (evt.type === 'step' && t) dit(`… ${t.libelle}`);
       else if (evt.type === 'done' && t) dit(`${evt.etat === 'ok' ? '✔' : evt.etat === 'skip' ? '–' : '✖'} ${t.libelle}${evt.texte ? ' : ' + evt.texte : ''}`);
-      else if (evt.type === 'info') dit(`  ${evt.texte}`);
+      else if (evt.type === 'info') dit(`  ${dossierLocal(etat, evt.texte)}`);
     },
     arreter() {},
   };
@@ -352,8 +356,9 @@ export function commandeInstalleur({ plateforme = process.platform, lang = 'fr',
   return { commande: 'bash', args };
 }
 
-export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn } = {}) {
+export async function executer({ commande, args, sortie = process.stdout, entree = process.stdin, anime = false, couleur = false, lang = 'fr', simulation = false, demo = false, lancer = spawn, dossier = null } = {}) {
   const etat = etatInitial({ lang, simulation, demo });
+  etat.dossier = dossier;
   // Hors Windows, l'installeur mène son propre groupe de processus : Ctrl+C peut alors arrêter aussi ses commandes en cours.
   const windows = process.platform === 'win32';
   const enfant = lancer(commande, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: false, detached: !windows });
@@ -426,6 +431,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const lang = option('--lang') ?? ((process.env.LANG ?? process.env.LANGUAGE ?? Intl.DateTimeFormat().resolvedOptions().locale ?? '').toLowerCase().startsWith('fr') ? 'fr' : 'en');
   const anime = Boolean(process.stdout.isTTY && process.stdin.isTTY) && !args.includes('--simple');
   const { commande, args: argsInstalleur } = commandeInstalleur({ lang, simulation: args.includes('--dry-run'), port: option('--port'), demo: args.includes('--demo') });
-  const r = await executer({ commande, args: argsInstalleur, anime, couleur: anime && !process.env.NO_COLOR, lang, simulation: args.includes('--dry-run'), demo: args.includes('--demo') });
+  const r = await executer({ commande, args: argsInstalleur, anime, couleur: anime && !process.env.NO_COLOR, lang, simulation: args.includes('--dry-run'), demo: args.includes('--demo'), dossier: racine });
   process.exit(r.ok ? 0 : (r.code || 1));
 }
