@@ -10,6 +10,12 @@ Ce modèle décrit le travail du projet choisi. Avant d'ajouter des tâches, con
 
 Le chef met à jour les cases après vérification. Chaque personne conserve ses notes privées hors du dépôt partagé.
 
+## NPM-DOC : clarification du lancement 0.6.1
+
+- [ ] Relecture et intégration de la documentation npm dans la PR #70.
+- [ ] Vérification des tests du lot 0.6.1 sur CI, avant release.
+- [ ] Publication manuelle après fusion et contrôle du README sur npmjs.com.
+
 ## U-MAJ : mise à jour intégrée (proposition à vérifier)
 
 - [ ] Contrôler SHA-256, archive et refus de copie Git sur Linux et Windows.
