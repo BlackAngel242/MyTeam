@@ -50,8 +50,10 @@ Les documents techniques relus peuvent être partagés volontairement. Le kit cr
 Si Node.js 22+ et npm sont déjà présents, la commande suivante installe la dernière version publiée sur npm dans le dossier utilisateur, puis lance l'assistant :
 
 ```sh
-npx @drsmoke/myteam
+npx @drsmoke/myteam@latest
 ```
+
+**Pourquoi ne pas utiliser `npm i @drsmoke/myteam` ?** Cette commande télécharge le paquet dans le projet courant sans exécuter son assistant. Le bloc **Install** de npmjs.com affiche la commande standard d'installation d'une dépendance, pas celle du démarrage interactif. Pour une installation npm globale facultative, exécutez `npm install -g @drsmoke/myteam`, puis `myteam-install`. Après le passage de l'assistant (version 0.6.1 et suivantes), `myteam` sert à ouvrir le bureau.
 
 La cible est `~/.local/lib/MyTeam` sous Linux/macOS et `%LOCALAPPDATA%\Programs\MyTeam` sous Windows. Relancer la commande sur une installation existante rouvre son assistant sans rien écraser ; pour changer de version, utilisez la mise à jour intégrée du bureau. Options : `--lang fr|en`, `--simple` (texte sans animation), `--demo` (démonstration, ne copie ni n'installe rien), `--dry-run`. L'assistant crée le raccourci MyTeam sur le Bureau et la commande `myteam`. Sur une machine sans Node.js, utilisez le ZIP ci-dessous, dont l'installateur prépare les prérequis.
 
