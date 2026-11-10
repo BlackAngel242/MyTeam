@@ -6,6 +6,11 @@ Toutes les évolutions notables du projet Bureau des agents sont consignées dan
 
 ## [0.6.1] - 2026-11-07 · « Èṣù »
 
+### Documentation npm
+
+- Lancement interactif mis en avant avec `npx @drsmoke/myteam@latest` dans les README et guides. `npm i @drsmoke/myteam` installe seulement le paquet ; `npm install -g @drsmoke/myteam` suivi de `myteam-install` ouvre aussi l'assistant.
+- Le README publié sur npmjs.com sera actualisé lors de la publication officielle de cette version, sans modification du workflow de release.
+
 ### Lancer MyTeam
 
 - Nouvelle commande `myteam` (PowerShell, cmd, bash) : elle démarre le bureau, l'ouvre dans le navigateur par défaut à l'adresse `http://127.0.0.1:<port>`, puis ouvre Herdr dans sa session dédiée `myteam`. Un bureau déjà ouvert est réutilisé ; un autre programme sur le port est signalé, jamais arrêté. `myteam --bureau` ouvre seulement le bureau.

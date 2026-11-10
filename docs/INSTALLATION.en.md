@@ -50,8 +50,10 @@ Reviewed technical documents may be shared deliberately. The kit creates `HANDOF
 If Node.js 22+ and npm are already installed, this command copies the latest npm release to your user directory and starts the same setup assistant:
 
 ```sh
-npx @drsmoke/myteam
+npx @drsmoke/myteam@latest
 ```
+
+**Why not `npm i @drsmoke/myteam`?** That command installs the package into the current project without starting the setup wizard. npmjs.com's standard **Install** snippet is a dependency-install command, not an interactive launch command. For optional global npm installation, run `npm install -g @drsmoke/myteam` followed by `myteam-install`. After setup (version 0.6.1 or later), use `myteam` to open the desk.
 
 The destination is `~/.local/lib/MyTeam` on Linux/macOS and `%LOCALAPPDATA%\Programs\MyTeam` on Windows. Running the command again on an existing installation reopens its assistant without overwriting anything; use the in-app updater to change versions. Options: `--lang fr|en`, `--simple` (plain text, no animation), `--demo` (demo, copies and installs nothing), `--dry-run`. The assistant creates the MyTeam desktop shortcut and the `myteam` command. If Node.js is missing, use the ZIP installer below.
 

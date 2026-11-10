@@ -4,6 +4,27 @@
 
 Watch your [Herdr](https://github.com/herdrdev/herdr) AI agents work in a pixel art office, send them instructions and read their replies. The office and its state run locally; AI tools use their own services.
 
+## Install and launch MyTeam
+
+**Recommended command on Windows, macOS and Linux** (Node.js 22 or newer):
+
+```powershell
+npx @drsmoke/myteam@latest
+```
+
+This starts the interactive setup wizard and prepares a permanent MyTeam installation. After setup, open a new terminal and run `myteam` to start the desk and its dedicated Herdr session (starting with version 0.6.1).
+
+> **Why does `npm i @drsmoke/myteam` report success without launching the wizard?** Because `npm install` only adds the package to the current project. npmjs.com's automatically generated **Install** command does not run the app. Use `npx` above.
+
+Alternatively, install the npm package globally (optional):
+
+```powershell
+npm install -g @drsmoke/myteam
+myteam-install
+```
+
+`myteam-install` runs the setup wizard; `myteam` is the app launcher created by that wizard, not by `npm install` alone.
+
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
 [![CI](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml/badge.svg)](https://github.com/BlackAngel242/MyTeam/actions/workflows/ci.yml)
@@ -23,13 +44,9 @@ Execution memory (queue, direction, autonomy and configuration) is private, sepa
 
 Reviewed technical documents may be shared deliberately. The kit creates `HANDOFF.md` and `JOURNAL.md` inside `.myteam-local/`, ignored by Git, and never overwrites an existing file. `.gitignore` does not protect files already tracked or force-added; review files before publishing. AI tools keep their own logs, permissions and connections: MyTeam does not provide an operating system sandbox for those tools.
 
-## Install
+## After setup
 
-```sh
-npx @drsmoke/myteam
-```
-
-Node.js 22 or later is required. The wizard installs the prerequisites (Herdr, and Clink on Windows), detects your AI tools, offers to install the missing ones and creates the **MyTeam** desktop shortcut. Then type `myteam` in a new terminal (or double-click the shortcut): Herdr opens in its dedicated `myteam` session and the desk opens in your browser. Without Node.js: [latest release archive](https://github.com/BlackAngel242/MyTeam/releases/latest), whose installer also sets up Node.js.
+The wizard checks prerequisites, offers missing AI tools and creates the **MyTeam** desktop shortcut. The `myteam` launcher opens the desk in your browser and starts its dedicated Herdr session. If Node.js is missing, use the [latest release archive](https://github.com/BlackAngel242/MyTeam/releases/latest), whose installer also sets up Node.js.
 
 ## Built-in updates
 

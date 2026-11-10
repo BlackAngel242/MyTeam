@@ -6,6 +6,11 @@ All notable changes to The Agent Office (MyTeam) project are documented in this 
 
 ## [0.6.1] - 2026-11-07 · "Èṣù"
 
+### npm installation documentation
+
+- README files and installation guides now emphasize `npx @drsmoke/myteam@latest` for interactive setup. `npm i @drsmoke/myteam` only installs a dependency; `npm install -g @drsmoke/myteam` followed by `myteam-install` also starts the wizard.
+- The README shown on npmjs.com will be updated when this version is officially published; the release workflow remains unchanged.
+
 ### Starting MyTeam
 
 - New `myteam` command (PowerShell, cmd, bash): it starts the desk, opens it in the default browser at `http://127.0.0.1:<port>`, then opens Herdr in its dedicated `myteam` session. A desk already running is reused; another program on the port is reported, never stopped. `myteam --bureau` opens only the desk.

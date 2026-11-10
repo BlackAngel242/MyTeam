@@ -2,6 +2,7 @@
 
 Cette synthèse conserve les décisions réutilisables du produit. Les conversations, états personnels, autorisations temporaires et relevés de sessions ne sont pas des consignes actuelles.
 
+- **2026-11-10** : documentation de la publication npm préparée en complément de la 0.6.1 : `npx` pour lancer l'assistant, `npm i` pour installer une dépendance et `myteam-install` après installation globale. README npm à actualiser uniquement lors de la publication de la 0.6.1, après revue et intégration ; tests réels non exécutés dans cette session.
 - **2026-11-07** : 0.6.0 « Èṣù » publiée (npx, assistant interactif, prérequis sans question). 0.6.1 préparée : commande `myteam`, session Herdr dédiée, raccourci MyTeam avec icône, relais de mission quand un agent atteint sa limite d'usage, commande d'installation et bouton Copier sur le site. Vérifié : 598 tests, 0 échec, 24 ignorés (Linux). Non vérifié : raccourci, PATH et session réels dans le Windows Sandbox, CI Linux.
 - **2026-10-29** : page de maintenance du bureau jusqu'au 27 novembre 2026, avec compte à rebours (jours, heures, minutes, secondes) et illustration pixel générée. Règle de lecture obligatoire ajoutée en tête d'`AGENTS.md`, `LESSONS.md` et `HANDOFF.md`. Vérifié : 507 tests verts. Non vérifié : aucun.
 - **0.1.0** : bureau local en pixels relié à Herdr, liste accessible, lecture des sorties et envoi protégé.

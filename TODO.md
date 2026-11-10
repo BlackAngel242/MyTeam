@@ -1,5 +1,10 @@
 # Suivi du projet
 
+## NPM-DOC : clarification de l'installation (0.6.1)
+
+- [ ] Relire et intégrer la documentation `npx` / `npm i` dans la branche de release 0.6.1 (#70).
+- [ ] Après validation de la 0.6.1, déclencher manuellement le workflow Release et vérifier le README public sur npmjs.com.
+
 ## Première version (0.1.0) : Terminée
 
 - [x] Repérer Herdr et confirmer l'accès local.
