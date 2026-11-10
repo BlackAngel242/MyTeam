@@ -1,5 +1,6 @@
 # Leçons
 
+- **npm ≠ exécution (2026-11-10)** : `npm i @drsmoke/myteam` installe le paquet sans ouvrir l'assistant ; `npx @drsmoke/myteam@latest` lance l'installateur. Le binaire npm global s'appelle `myteam-install` ; la commande `myteam` n'est créée que par l'assistant 0.6.1. Le README sur npmjs.com est figé par version : publier une nouvelle release est nécessaire pour l'actualiser.
 - **Actions destructives (2026-10-29)** : lancer `git status` avant `git checkout -- .`, `reset --hard`, `clean` ou `stash drop`. Une commande de nettoyage aurait effacé des modifications non commitées : commiter ou sauvegarder, ne jamais écraser. Ne jamais forcer un push : une branche fusionnée en squash se réconcilie par une fusion de `main`.
 - **Lien `claude.ai/code` dans une PR (2026-10-29)** : il fait tourner le workflow d'auto-fusion d'engagetrack ; ne jamais le mettre dans une PR ou un commit.
 - **Rendu vérifié (2026-10-29)** : un `curl` ne voit pas le texte rendu par JavaScript ; vérifier dans un navigateur, et écrire « non vérifié » tant que le déploiement n'est pas constaté. Un test réorienté vers une archive pour passer doit être signalé dans la PR.
