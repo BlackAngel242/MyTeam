@@ -1,6 +1,6 @@
 # Propositions d'amélioration : présence, pilotage et revue
 
-Statut : proposition. Ce document ne modifie aucun comportement du produit. Chaque proposition est indépendante : elle peut être acceptée, modifiée ou refusée séparément. Rien n'est décidé tant que l'évaluation n'a pas eu lieu et que l'accord explicite n'a pas été donné, proposition par proposition.
+Statut : proposition. Ce document ne modifie aucun comportement du produit. Chaque proposition est indépendante : elle peut être acceptée, modifiée ou refusée séparément. Rien n'est décidé tant que l'évaluation n'a pas eu lieu et que l'accord explicite n'a pas été donné, proposition par proposition. Un ajout du 13 novembre 2026 (périmètre resserré au local sur un seul poste, règle des dépendances assouplie sous conditions, propositions P13 à P17) figure en section dédiée, avant l'ordre de mise en œuvre.
 
 ## En bref, terre à terre
 
@@ -20,8 +20,8 @@ Les douze propositions ci dessous couvrent ces points. Chacune dit : ce qui se p
 
 Ces règles priment sur chaque proposition. Une mise en œuvre qui en viole une est à rejeter, même si la fonction marche.
 
-1. Zéro dépendance npm ajoutée. Node.js natif uniquement, comme aujourd'hui.
-2. 100 % local : le serveur reste sur 127.0.0.1, aucun service distant, aucun relais, aucun tunnel, aucune donnée de session envoyée à l'extérieur.
+1. Sobriété d'abord : Node.js natif de préférence, comme aujourd'hui. Une dépendance peut être introduite si elle rend le produit nettement plus efficace, à trois conditions : elle fonctionne entièrement en local, elle n'appelle aucun service externe, et la proposition qui l'introduit justifie le gain par une mesure. Décision du 13 novembre 2026.
+2. 100 % local : le serveur reste sur 127.0.0.1, aucun service distant, aucun relais, aucun tunnel, aucune donnée de session envoyée à l'extérieur. Un seul poste, un seul bureau : pas d'accès distant, pas de multi machines, pas de vues multiples du bureau. Décision du 13 novembre 2026.
 3. Windows d'abord : chaque proposition doit fonctionner sous Windows 10 et 11, chemin d'installation principal du produit, avant macOS et Linux.
 4. Vérité des faits : le bureau n'affiche que ce qui est observé (états, journaux locaux, fichiers, heure du poste). Aucun pourcentage, aucune humeur, aucune relation inventée. Une approximation est nommée comme telle à l'écran.
 5. Aucun envoi automatique sans revérification immédiate de la cible et de l'état, au moment même de l'envoi.
@@ -366,17 +366,157 @@ Domaines du code concernés, cités dans les implications : `src/herdr.mjs` (acc
 
 ---
 
+## Propositions supplémentaires P13 à P17 (ajout du 13 novembre 2026)
+
+Ajout décidé après une seconde passe d'examen, avec un périmètre resserré : tout reste sur le poste de l'utilisateur, en local sur 127.0.0.1 ; pas d'accès distant, pas de connexion à d'autres machines, pas de vues multiples du bureau. Cinq idées sont retenues, adaptées à ce périmètre. Elles héritent des garde-fous communs, y compris la règle révisée sur les dépendances (garde-fou 1).
+
+## P13. File unique « Besoin de vous », état relu persistant
+
+**Aujourd'hui.** Ce qui attend l'humain est dispersé : une question dans un panneau, un agent bloqué dans un autre, un travail terminé signalé dans la scène. L'humain fait le tour pour savoir qui a besoin de lui, et rien ne garde, côté serveur, ce qu'il a déjà relu.
+
+**Proposition.** Une file unique dans le bureau, « Besoin de vous », qui rassemble tout ce qui attend l'humain : questions des agents, agents bloqués, travaux terminés à relire. Chaque élément peut être répondu depuis la file (avec pièces jointes quand le travail en produit) ou marqué « relu ». L'état relu est conservé par le serveur, dans l'état privé du projet : il survit aux redémarrages et reste le même quel que soit le navigateur ouvert sur le bureau.
+
+**Processus.**
+1. Alimenter la file depuis les faits déjà observés : question détectée, passage à l'état bloqué, fin de travail constatée ; journaliser dans le journal P2.
+2. Afficher la file par ordre d'attente réel, le plus ancien en premier, avec l'agent, le projet et la nature de l'attente en toutes lettres.
+3. Répondre depuis la file : l'envoi passe par le chemin revérifié de P6, vers le panneau exact d'origine.
+4. Marquer relu : geste explicite de l'humain, enregistré côté serveur avec l'heure ; l'élément sort de la file mais reste dans l'historique de la tâche (P8).
+5. Un nouvel événement du même agent (nouvelle question, nouveau blocage) crée un nouvel élément, jamais une résurrection silencieuse de l'ancien.
+
+**Utilité.** Personne n'attend dans un coin oublié de l'écran. En un coup d'œil : qui a besoin de moi, depuis quand, et ce que j'ai déjà traité. C'est le prolongement direct du compteur de lecture de P12, en file complète et durable.
+
+**Implications.** État « relu » dans le dossier privé du projet, par élément ; alimentation depuis `src/responses.mjs`, `src/agent-activity.mjs` et les états de `src/herdr.mjs` ; vue nouvelle dans `public/`, intégrée au bureau unique, pas une vue séparée. Aucune donnée hors du poste.
+
+**Risques et garde-fous.** Marquer relu ne répond pas et ne clôt rien : c'est un état de lecture, pas une décision. Un élément dont l'attente a disparu d'elle même (l'agent n'est plus bloqué) sort de la file en le disant, pas en silence.
+
+**Critères d'acceptation.**
+- Trois attentes de natures différentes : elles apparaissent dans la file, dans l'ordre d'arrivée.
+- Élément marqué relu, serveur redémarré, autre navigateur : l'élément ne réapparaît pas.
+- Réponse depuis la file : elle arrive dans le panneau d'origine, par le chemin revérifié, une seule fois.
+- Agent débloqué par ailleurs : son élément quitte la file avec la mention de la disparition de l'attente.
+
+**Effort estimé : moyen. Priorité suggérée : haute, en vague 2, après le journal P2.**
+
+## P14. Jauges de capacité par agent, pour décider avant la limite
+
+**Aujourd'hui.** Le produit réagit bien à la limite atteinte (relais de quota, P5), mais l'humain décide des délégations sans voir la capacité restante de chaque agent : part d'usage consommée, taille de contexte engagée, rythme de dépense quand la source locale le donne. On découvre la panne au moment où elle arrive.
+
+**Proposition.** Afficher, par agent, des jauges lues uniquement dans les fichiers et journaux locaux que les outils écrivent déjà sur le poste : usage consommé quand la source existe, indicateur de contexte, et heure de la donnée. Ces jauges alimentent les décisions : le bureau peut signaler l'agent le plus chargé au moment d'une délégation, et le relais de quota peut préférer l'agent le moins chargé parmi les cibles valides.
+
+**Processus.**
+1. Recenser, outil par outil, les sources locales fiables (fichiers d'usage et de session) ; aucune source fiable = aucune jauge pour cet outil.
+2. Lire ces sources dans `src/agent-activity.mjs`, en lecture seule, avec l'âge de la donnée attaché à chaque valeur.
+3. Afficher les jauges sur la carte de l'agent et dans le détail, avec la mention de la source et de son âge ; une jauge périmée est estompée, jamais présentée comme fraîche.
+4. Brancher l'usage décisionnel : avertissement doux si la cible d'une délégation est l'agent le plus chargé, et préférence documentée dans le relais de quota.
+5. Journaliser les franchissements de seuils (par exemple 80 % puis 100 % constatés) dans le journal P2.
+
+**Utilité.** Déléguer devient un choix éclairé au lieu d'un réflexe : on confie le gros travail à celui qui a encore de la marge, et la limite cesse d'être une surprise.
+
+**Implications.** `src/agent-activity.mjs` et, selon les outils, les lecteurs de session existants ; affichage dans `public/` ; aucun appel à un service de facturation ou d'abonnement, aucune clé : si la donnée n'existe pas en local, elle n'existe pas dans le bureau.
+
+**Risques et garde-fous.** Une jauge est une lecture, pas une promesse de l'outil : l'afficher avec sa source et son âge (garde-fou 4). Ne jamais inventer un pourcentage à partir d'une donnée partielle ; mieux vaut pas de jauge qu'une jauge devinée. Les seuils sont des signaux, ils ne bloquent ni ne relancent rien tout seuls.
+
+**Critères d'acceptation.**
+- Agent dont la source locale d'usage existe : jauge affichée, valeur égale à celle de la source, âge visible.
+- Outil sans source fiable : aucune jauge, aucune valeur fabriquée.
+- Source vieille de plus du délai réglé : jauge estompée avec son âge, exclue des avertissements.
+- Délégation vers l'agent le plus chargé : l'avertissement s'affiche, la délégation reste possible par décision explicite.
+
+**Effort estimé : moyen, outil par outil. Priorité suggérée : moyenne, en vague 3 ; la lecture des sources peut commencer en vague 2.**
+
+## P15. Boîte unique de recherche et d'actions, ouverte par Ctrl+F
+
+**Aujourd'hui.** Pour retrouver un agent, un panneau, une réponse ou une commande du bureau, l'humain navigue dans les onglets et les listes. Plus l'équipe grandit, plus le coût de « retrouver et agir » grimpe.
+
+**Proposition.** Une seule boîte, ouverte par Ctrl+F dans le bureau (raccourci choisi pour ce produit), qui cherche et agit au même endroit : agents, panneaux, projets ouverts, réponses récentes, actions du bureau (ouvrir la file Besoin de vous, la salle de crise, créer une consigne, changer de projet). Chaque résultat est actionnable au clavier : aller à l'agent, ouvrir sa fenêtre, préparer une consigne. La recherche reste locale, sur les données que le bureau connaît déjà. Un bouton visible ouvre la même boîte pour ceux qui ne connaissent pas le raccourci, et Échap la referme sans rien changer.
+
+**Processus.**
+1. Indexer en mémoire les objets déjà connus du bureau (agents, panneaux, projets, réponses, actions) ; aucun nouvel appel pour chercher.
+2. Ouvrir la boîte par Ctrl+F quand le bureau a le focus, ou par son bouton ; la saisie filtre au fil de l'eau, résultats groupés par nature.
+3. Entrée sur un résultat exécute l'action associée (navigation ou préparation) ; une action qui envoie quelque chose passe toujours par la confirmation et la revérification habituelles.
+4. Les actions destructrices ou durables ne sont pas dans la boîte : elle sert à trouver et à préparer, pas à décider à la place de l'humain.
+5. La recherche du navigateur reste accessible hors du bureau ; le raccourci n'est capturé que lorsque le bureau est au premier plan et que la boîte peut s'ouvrir.
+
+**Utilité.** Retrouver un agent parmi dix, ou lancer la bonne action, devient une frappe au lieu d'une chasse à la souris. C'est le gain quotidien le plus fréquent des cinq propositions de cet ajout.
+
+**Implications.** Interface dans `public/` uniquement, plus la liste des actions exposées par les vues existantes ; aucun état nouveau, aucun appel réseau ; tests de navigation au clavier dans le style des tests d'interface existants.
+
+**Risques et garde-fous.** Ctrl+F est le raccourci de recherche du navigateur : la capture doit être limitée au bureau en focus, annoncée dans l'aide, et la boîte doit toujours pouvoir s'ouvrir par un bouton, pour ne enfermer personne. Aucune action irréversible ne passe par cette boîte.
+
+**Critères d'acceptation.**
+- Ctrl+F dans le bureau : la boîte s'ouvre, focus dans la saisie ; Échap la ferme sans effet.
+- Trois lettres du nom d'un agent : il apparaît, Entrée ouvre sa fenêtre.
+- Une action d'envoi choisie dans la boîte aboutit à l'écran de préparation habituel, jamais à un envoi direct.
+- Boîte ouverte puis clic dehors : elle se ferme, aucune action n'a été exécutée.
+
+**Effort estimé : petit à moyen. Priorité suggérée : haute, en vague 2.**
+
+## P16. Fenêtre agent unique : conversation, terminal, fichiers, changements, avec repli honnête
+
+**Aujourd'hui.** Pour un même agent, le bureau montre sa sortie dans le panneau de lecture, ses fichiers dans l'explorateur, et ses réponses dans la vue des réponses : trois endroits à assembler mentalement. Et quand la conversation d'un outil n'est pas lisible (session introuvable, format non pris en charge), l'utilisateur ne sait pas toujours ce qu'il regarde ni pourquoi.
+
+**Proposition.** Une seule fenêtre par agent, la même d'où qu'on l'ouvre (scène, liste, file Besoin de vous, boîte Ctrl+F), avec quatre onglets : Conversation (les échanges lisibles), Terminal (la sortie brute du panneau), Fichiers (l'explorateur restreint au projet), Changements (la différence produite, en lecture seule, dans la continuité de P10). Règle d'ouverture honnête : si la conversation n'est pas lisible pour cet agent, la fenêtre s'ouvre sur Terminal en disant pourquoi, puis bascule une fois vers Conversation dès qu'elle devient lisible, sauf si l'humain a choisi lui même un onglet, auquel cas son choix est respecté et ne bouge plus.
+
+**Processus.**
+1. Unifier l'ouverture : un seul composant fenêtre agent dans `public/`, invoqué par tous les points d'entrée avec l'identifiant du panneau.
+2. Ordre des onglets et contenu : Conversation depuis `src/responses.mjs`, Terminal depuis la lecture du panneau, Fichiers depuis `src/files.mjs`, Changements en lecture seule.
+3. État de lisibilité par agent, calculé à l'ouverture : lisible, pas encore lisible (session en cours de création), non lisible (raison nommée).
+4. Bascule unique : quand l'état passe à lisible et que l'humain n'a pas choisi d'onglet, la fenêtre passe sur Conversation une seule fois.
+5. La fenêtre conserve l'agent et son hôte de vérité (le panneau) même si la liste des agents est filtrée entre temps.
+
+**Utilité.** Un agent = un endroit. On lit la conversation quand elle existe, le terminal sinon, sans se demander quelle vue est la bonne ; les fichiers et les changements sont à un onglet de distance au lieu d'un changement de contexte.
+
+**Implications.** Refactorisation d'affichage dans `public/` ; les sources de données existent déjà ; aucun changement de modèle côté serveur, sauf l'état de lisibilité calculé à la demande. Dépend de P10 pour l'onglet Changements complet ; une version avec les trois premiers onglets peut précéder.
+
+**Risques et garde-fous.** La bascule automatique ne doit jamais arracher l'œil de ce que l'humain lit : elle n'a lieu qu'à la première disponibilité et jamais après un choix manuel. L'onglet Terminal montre la sortie brute réelle, sans filtre silencieux.
+
+**Critères d'acceptation.**
+- Agent à conversation lisible : la fenêtre s'ouvre sur Conversation depuis n'importe quel point d'entrée.
+- Agent à conversation non lisible : ouverture sur Terminal, raison affichée en clair dans la fenêtre.
+- Conversation qui devient lisible pendant que la fenêtre est ouverte sur Terminal sans choix manuel : une bascule, une seule ; après un choix manuel d'onglet, aucune bascule.
+- Fichiers de l'agent affichés : restreints aux dossiers autorisés du projet, comme l'explorateur actuel.
+
+**Effort estimé : moyen. Priorité suggérée : haute, en vague 2.**
+
+## P17. Notes accrochées à un panneau précis, envoyées seulement quand l'humain le décide
+
+**Aujourd'hui.** Une consigne se prépare et part dans le même geste, ou attend dans la file générale. Il manque le geste intermédiaire : préparer une note pour un agent précis, la laisser mûrir, la relire, et ne l'envoyer que lorsqu'elle est prête, sans risque qu'elle parte avant.
+
+**Proposition.** Des notes que l'humain rédige dans le bureau et accroche à un panneau précis (l'agent, pas seulement le projet). Une note a un état simple : brouillon, prête, envoyée. Tant qu'elle est brouillon, elle ne peut pas partir, par aucun chemin (ni file, ni autonomie, ni reprise). Le passage à l'envoi est un geste explicite sur la note prête, qui emprunte le chemin revérifié de P6 vers le panneau accroché, et la note passe alors à « envoyée » avec son heure, conservée dans l'historique de la tâche (P8). Les notes non envoyées survivent au redémarrage du serveur, dans l'état privé du projet.
+
+**Processus.**
+1. Créer une note depuis la fenêtre de l'agent (P16) ou la scène : le panneau cible est enregistré avec la note, affiché sur elle en toutes lettres.
+2. Éditer librement ; l'état brouillon est l'état par défaut et le seul état créé automatiquement.
+3. Marquer « prête » : la note devient envoyable, mais rien ne part encore.
+4. Envoyer : geste explicite, revérification du panneau accroché (toujours le même agent, toujours joignable), envoi unique, note marquée envoyée.
+5. Si le panneau accroché a disparu entre temps : l'envoi est refusé en le disant, la note reste prête, l'humain peut la réaccrocher à un autre panneau en le choisissant.
+
+**Utilité.** Préparer le travail d'avance sans le lancer par accident : le soir, on accroche les notes du lendemain ; le matin, on envoie celles qui tiennent toujours. C'est aussi la forme la plus sûre de consigne différée, parce qu'elle ne peut pas partir toute seule.
+
+**Implications.** Modèle de note dans l'état privé du projet ; affichage dans `public/` (liste des notes par agent, dans sa fenêtre) ; envoi par le chemin unique de `src/herdr.mjs`. Aucune interaction avec l'autonomie : une note n'est pas une étape de file et n'y entre jamais automatiquement.
+
+**Risques et garde-fous.** Le risque principal serait un chemin détourné qui envoie un brouillon : à couvrir par un test dédié sur chaque chemin d'envoi existant. Une note ne contient pas de secret ; comme les consignes, elle reste en local.
+
+**Critères d'acceptation.**
+- Note brouillon, redémarrage du serveur, session qui continue : la note est toujours brouillon, rien n'a été envoyé.
+- Note prête envoyée : un seul envoi, au panneau accroché, note marquée envoyée avec l'heure.
+- Panneau accroché fermé entre la préparation et l'envoi : refus expliqué, note toujours prête et réaccrochable.
+- File en autonomie qui tourne à côté : aucune note, même prête, n'est emportée par la file.
+
+**Effort estimé : petit à moyen. Priorité suggérée : moyenne, en vague 3.**
+
 ## Ordre de mise en œuvre suggéré
 
 **Vague 1, fiabilité immédiate.** P6 (revérifier avant envoi), P5 (reprise après limite disciplinée), P12 partiel (faux terminé, compteur de lecture). Ce sont les propositions qui empêchent des erreurs, avec le moins de surface nouvelle.
 
-**Vague 2, structure.** P1 (surface déclarée et événements), P2 (journal et relecture), P7 (ouverture validée), P4 (portes humaines). Elles changent les fondations et rendent les vagues suivantes moins chères.
+**Vague 2, structure.** P1 (surface déclarée et événements), P2 (journal et relecture), P7 (ouverture validée), P4 (portes humaines), P13 (file unique des attentes), P15 (boîte Ctrl+F), P16 (fenêtre agent unique). Elles changent les fondations et rendent les vagues suivantes moins chères.
 
-**Vague 3, confort avancé.** P3 (packs d'équipe), P8 (contrat de compte rendu), P9 (questions structurées), P10 (revue du dernier tour), P11 (tableau partagé et espaces isolés). Chacune peut être prise ou laissée sans gêner les autres.
+**Vague 3, confort avancé.** P3 (packs d'équipe), P8 (contrat de compte rendu), P9 (questions structurées), P10 (revue du dernier tour), P11 (tableau partagé et espaces isolés), P14 (jauges de capacité), P17 (notes accrochées à un panneau). Chacune peut être prise ou laissée sans gêner les autres.
 
 ## Ce qui est écarté, et pourquoi
 
-- **Dépendances compilées ou environnements d'exécution supplémentaires** (binaires à compiler, moteurs de pages ou de terminaux tiers) : contraires au zéro dépendance et à l'installation Windows simple. On emprunte des mécanismes, jamais des binaires.
+- **Environnements d'exécution de remplacement et binaires à compiler** (changer de moteur d'exécution, compiler des composants tiers) : contraires à l'installation Windows simple. On emprunte des mécanismes, jamais des binaires. Cela n'interdit pas une dépendance locale légère dans les conditions du garde-fou 1 (locale, sans service externe, gain mesuré).
+- **Accès distant, connexion à d'autres machines et vues multiples du bureau** : écartés par décision du 13 novembre 2026. Le produit reste un poste, un bureau, en local.
 - **Relais, tunnels et services de notification externes pour joindre l'humain hors du poste** : contraires au 100 % local. L'alerte utile est gardée, en local (P12).
 - **Applications mobiles dédiées** : le bureau navigateur, déjà responsive, couvre le besoin sans plateforme supplémentaire à maintenir.
 - **Rotation de comptes automatisée pour contourner les limites** : sensible pour la facturation et les conditions des fournisseurs ; la reprise de P5 continue le travail, elle ne change pas d'identité.
@@ -391,7 +531,7 @@ Points qu'une évaluation rapide pourrait manquer, à vérifier en priorité :
 2. P5 est la seule proposition qui tape automatiquement dans un panneau : ses critères sont volontairement les plus stricts du document ; les relâcher en mise en œuvre viderait la proposition de son sens.
 3. P2 conditionne P4, P8 et P10 : si le journal est refusé, ces trois propositions doivent être réécrites, pas simplement amputées.
 4. P3 touche à la confiance envers des dossiers tiers : la validation et la règle « du style, jamais des instructions » sont le cœur de la proposition, pas un raffinement.
-5. Aucune proposition ne doit ajouter de dépendance, d'appel distant ou d'action publique : si une mise en œuvre en a besoin, elle a dévié et doit revenir.
+5. Aucune proposition ne doit ajouter d'appel distant, d'accès à distance ou d'action publique : si une mise en œuvre en a besoin, elle a dévié et doit revenir. Une dépendance ne peut arriver que dans les conditions du garde-fou 1 (locale, sans service externe, gain mesuré et justifié dans la proposition).
 6. Les estimations d'effort sont relatives à la base actuelle (serveur Node natif, tests par scénarios simulés) ; une proposition qui exigerait de changer de base sort du périmètre de ce document.
 
 ## Ce que ce document ne fait pas
