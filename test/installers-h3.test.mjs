@@ -38,13 +38,15 @@ test('H3 grille PowerShell : découpes des deux colonnes et aucun autre espace t
   const result=await ps(t,['Appeler-Herdr','Lire-Panneaux','Creer-GrilleHerdr'],`
 $script:panes=@('w9:p1');$script:calls=@()
 function FauxHerdr {
- $script:calls+=,@($args);$global:LASTEXITCODE=0
- if($args[0] -eq 'workspace'){return '{"result":{"workspace_id":"w9"}}'}
- if($args[1] -eq 'list') {
-  if(($args -join ' ') -ne 'pane list --workspace w9'){throw 'liste non bornée au nouvel espace'}
+ $reste=$args
+ if($reste.Count -ge 2 -and $reste[0] -eq '--session'){ if($reste[1] -ne 'myteam'){throw 'session inattendue'}; $reste=@($reste[2..($reste.Count-1)]) }
+ $script:calls+=,@($reste);$global:LASTEXITCODE=0
+ if($reste[0] -eq 'workspace'){return '{"result":{"workspace_id":"w9"}}'}
+ if($reste[1] -eq 'list') {
+  if(($reste -join ' ') -ne 'pane list --workspace w9'){throw 'liste non bornée au nouvel espace'}
   return @{result=@{panes=@($script:panes|ForEach-Object {@{pane_id=$_}})}}|ConvertTo-Json -Depth 5 -Compress
  }
- if($args[1] -eq 'split'){$script:panes+=('w9:p'+($script:panes.Count+1))}
+ if($reste[1] -eq 'split'){$script:panes+=('w9:p'+($script:panes.Count+1))}
  return '{"result":{}}'
 }
 $herdrTrouve='FauxHerdr'
@@ -63,6 +65,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 printf 'w9:p1\n' > "$work/panes"
 fake_herdr() {
+ if [ "$1" = "--session" ]; then [ "$2" = "myteam" ] || return 1; shift 2; fi
  printf '%s\n' "$*" >> "$work/calls"
  case "$1 $2" in
   'workspace create') printf '{"result":{"workspace_id":"w9"}}\n' ;;
@@ -134,7 +137,7 @@ set -e
 dire(){ :; };noter(){ :; };simuler(){ :; }
 command(){ if [ "$1" = '-v' ];then case "$2" in codex|qwen) printf '/factice/%s\n' "$2";return 0;;*)return 1;;esac;fi;builtin command "$@"; }
 confirmer(){ [ "$2" = individuel ]; }
-fake_herdr(){ STARTED="$*"; }
+fake_herdr(){ if [ "$1" = "--session" ]; then shift 2; fi; STARTED="$*"; }
 HERDR_TROUVE=fake_herdr;DRY_RUN=0;OUI=1
 [ "$(detecter_outils | tr '\n' ',')" = 'codex,qwen,' ]
 proposer_agents 'w9:p1'
@@ -145,6 +148,21 @@ proposer_agents 'w9:p1' <<< 1
 printf 'START:%s\n' "$STARTED"`);
   assert.match(result.stdout,/START:agent start chef --kind codex --pane w9:p1/);
   assert.equal((result.stdout.match(/START:/g)||[]).length,1);
+});
+
+test('A4 bash : un panneau déjà tenté ne masque pas un identifiant voisin',async t=>{
+  const result=await bash(t,['proposer_agents'],`
+INTERFACE=0;DRY_RUN=0;OUI=0;PANNEAUX_TENTES='w9:p1'
+detecter_outils(){ printf 'codex\\n'; };dire(){ :; };noter(){ :; };confirmer(){ return 0; }
+command(){ [ "$1" = -v ] && return 0; builtin command "$@"; }
+fake_herdr(){ if [ "$1" = "--session" ]; then shift 2; fi; STARTED="$STARTED|$*"; };HERDR_TROUVE=fake_herdr
+proposer_agents 'w9:p1
+w9:p10' <<< 1
+proposer_agents 'w9:p1
+w9:p10' <<< 1
+printf 'START:%s\\n' "$STARTED"`);
+  assert.equal((result.stdout.match(/agent start/g)||[]).length,1);
+  assert.match(result.stdout,/--pane w9:p10/);
 });
 
 test('H3 raccourci combiné bash : port et chemins littéraux, serveur avant Herdr',async t=>{
@@ -302,4 +320,61 @@ test('installeur bash : Herdr dans local/bin est détecté sans PATH et sans ex�
   const script=join(path,'discovery.sh');await writeFile(script,fn+`\ncommand(){ if [ "$*" = '-v herdr' ]; then return 1; fi; builtin command "$@"; }\nchercher_herdr\n`);
   const result=await execute(process.platform==='win32'?'C:/Program Files/Git/bin/bash.exe':'/bin/bash',['--noprofile','--norc',script.replaceAll('\\','/')],{...options,env:{...process.env,herdr_test_home:path}});
   assert.equal(result.stdout.trim().replaceAll('\\','/'),binary.replaceAll('\\','/'));
+});
+
+test('QA-L1 grille bash : la création de l\'espace transmet le dossier du projet (--cwd)',async t=>{
+  const result=await bash(t,['lire_panneaux','creer_grille_herdr'],`
+set -e
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+printf 'w9:p1\n' > "$work/panes"
+fake_herdr() {
+ if [ "$1" = "--session" ]; then [ "$2" = "myteam" ] || return 1; shift 2; fi
+ printf '<%s>\n' "$@" >> "$work/calls"
+ case "$1 $2" in
+  'workspace create') printf '{"result":{"workspace_id":"w9"}}\n' ;;
+  'pane list')
+   printf '{"result":{"panes":['
+   sep='';while read -r id;do printf '%s{"pane_id":"%s"}' "$sep" "$id";sep=',';done < "$work/panes"
+   printf ']}}\n' ;;
+  'pane split') n=$(wc -l < "$work/panes");printf 'w9:p%s\n' "$((n+1))" >> "$work/panes";printf '{"result":{}}\n' ;;
+  *) printf '{"result":{}}\n' ;;
+ esac
+}
+HERDR_TROUVE=fake_herdr
+RACINE='/dossier/projet qa-l1'
+ids=$(creer_grille_herdr)
+[ "$(printf '%s' "$ids"|tr '\n' ',')" = 'w9:p1,w9:p2,w9:p3,w9:p4' ]
+head -n 6 "$work/calls"`);
+  assert.deepEqual(result.stdout.trim().split(/\r?\n/),[
+    '<workspace>',
+    '<create>',
+    '<--label>',
+    '<Bureau des agents>',
+    '<--cwd>',
+    '</dossier/projet qa-l1>',
+  ]);
+});
+
+test('QA-L1 grille PowerShell : la création de l\'espace transmet le dossier du projet (--cwd)',async t=>{
+  const result=await ps(t,['Appeler-Herdr','Lire-Panneaux','Creer-GrilleHerdr'],`
+$script:panes=@('w9:p1');$script:calls=@()
+function FauxHerdr {
+ $reste=$args
+ if($reste.Count -ge 2 -and $reste[0] -eq '--session'){ if($reste[1] -ne 'myteam'){throw 'session inattendue'}; $reste=@($reste[2..($reste.Count-1)]) }
+ $script:calls+=,@($reste);$global:LASTEXITCODE=0
+ if($reste[0] -eq 'workspace'){return '{"result":{"workspace_id":"w9"}}'}
+ if($reste[1] -eq 'list') {
+  return @{result=@{panes=@($script:panes|ForEach-Object {@{pane_id=$_}})}}|ConvertTo-Json -Depth 5 -Compress
+ }
+ if($reste[1] -eq 'split'){$script:panes+=('w9:p'+($script:panes.Count+1))}
+ return '{"result":{}}'
+}
+$herdrTrouve='FauxHerdr'
+$racine='C:\dossier\projet qa-l1'
+$ids=@(Creer-GrilleHerdr)
+$creation=@($calls|Where-Object {$_[0] -eq 'workspace'})[0]
+if(($creation -join '|') -ne 'workspace|create|--label|Bureau des agents|--cwd|C:\dossier\projet qa-l1'){throw "creation sans le dossier du projet : $($creation -join ' ')"}
+'ok'`);
+  if(result)assert.equal(result.stdout.trim(),'ok');
 });

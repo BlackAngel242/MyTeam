@@ -14,7 +14,7 @@ test('une consigne conserve les accents et emojis coupés entre morceaux réseau
   t.after(() => new Promise(resolve => server.close(resolve)));
   const port = server.address().port;
   const origin = `http://127.0.0.1:${port}`;
-  const {token} = await (await fetch(`${origin}/api/state`)).json();
+  const {token} = await (await fetch(`${origin}/api/state`,{headers:{'Sec-Fetch-Site':'same-origin'}})).json();
 
   for (const message of ['Réparer', 'Bonjour 👋']) {
     const bytes = Buffer.from(JSON.stringify({id:'agent-1', message}));

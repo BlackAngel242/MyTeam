@@ -18,6 +18,26 @@ async function textes() {
   return { ps1: await readFile(ps1, 'utf8'), sh: await readFile(sh, 'utf8') };
 }
 
+test('les intégrations utilisent MULTI uniquement en interface et aucune sélection automatique', async () => {
+  const { ps1: windows, sh: unix } = await textes();
+  const chefPs = windows.slice(windows.indexOf('function Proposer-Chef'), windows.indexOf('if (-not $Interface) { Proposer-Chef }'));
+  const chefSh = unix.slice(unix.indexOf('proposer_chef()'), unix.indexOf('[ "$INTERFACE" = 1 ] || proposer_chef'));
+  assert.match(chefPs, /\$Oui -or -not \$herdrTrouve/);
+  assert.match(chefPs, /Lire-Interface 'MULTI'/);
+  assert.match(chefPs, /\[string\]\$index -in \$selection/);
+  assert.match(chefSh, /\[ "\$OUI" = 1 \]/);
+  assert.match(chefSh, /lire_interface MULTI/);
+  assert.match(chefSh, /\$selection.*\$index/);
+});
+
+test('Clink est installé directement, avec ou sans Oui', async () => {
+  const { ps1: windows, sh: unix } = await textes();
+  const clink = windows.slice(windows.indexOf('function Proposer-Clink'), windows.indexOf("Etape 'clink'"));
+  assert.doesNotMatch(clink, /Confirmer/);
+  assert.match(clink, /& \$wingetClink.Source install/);
+  assert.doesNotMatch(unix, /clink/i);
+});
+
 test('les deux installeurs annoncent simulation, option oui et aide', async () => {
   const { ps1: t1, sh: t2 } = await textes();
   for (const [nom, texte] of [['installer.ps1', t1], ['installer.sh', t2]]) {
@@ -84,9 +104,15 @@ test('les installeurs préparent les panneaux Herdr et les extensions utiles', a
     }
     assert.match(texte, /code --install-extension/, `${nom} : installation VS Code`);
     assert.match(texte, /Veux-tu voir la liste des extensions/, `${nom} : question explicite`);
-    // Raccourci : une question de choix, sans doublon de lanceur.
-    assert.match(texte, /1 = Herdr, 2 = le bureau/, `${nom} : choix du raccourci`);
-    assert.ok((texte.match(/Ouvrir le bureau\.cmd|Ouvrir le bureau\.command|ouvrir-le-bureau\.desktop/g) ?? []).length >= 1, `${nom} : lanceur existant réutilisé`);
+    // Session Herdr dédiée : toute commande de panneau/agent vise --session myteam.
+    assert.match(texte, /--session/, `${nom} : session explicite`);
+    assert.match(texte, /SESSION_HERDR|sessionActuelle/, `${nom} : session par défaut myteam`);
+    // Raccourci : automatique, cible le lanceur myteam, jamais une question de choix.
+    assert.match(texte, /MyTeam\.lnk|myteam\.desktop/, `${nom} : raccourci MyTeam`);
+    assert.match(texte, /myteam\.cmd|bin\/myteam/, `${nom} : lanceur myteam`);
+    assert.doesNotMatch(texte, /1 = Herdr, 2 = le bureau/, `${nom} : plus de question de raccourci`);
+    // Prochaine étape finale.
+    assert.match(texte, /Pour démarrer/, `${nom} : prochaine étape`);
   }
 });
 

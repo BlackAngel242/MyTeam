@@ -24,7 +24,7 @@ async function fixture(t, options = {}) {
   });
   const port = server.address().port, origin = `http://127.0.0.1:${port}`;
   const send = (path, {method='GET', headers={}, body}={})=>new Promise((resolve, reject)=>{
-    const req = request({hostname:'127.0.0.1', port, path, method, headers:{Host:`127.0.0.1:${port}`, ...headers}}, res=>{
+    const req = request({hostname:'127.0.0.1', port, path, method, headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}}, res=>{
       let text = '';
       res.setEncoding('utf8');
       res.on('data', chunk=>text+=chunk);
@@ -50,7 +50,7 @@ async function fixture(t, options = {}) {
 test('les trois lectures de fichiers exigent origine exacte et jeton même sans Content-Type', async t=>{
   const f = await fixture(t);
   for (const route of ['/api/places', '/api/files/recent?id=agent-1', '/api/files/list?root=agent%3Aagent-1&path=']) {
-    for (const headers of [{}, {Origin:f.headers.Origin}, {'X-Bureau-Token':f.headers['X-Bureau-Token']}, {...f.headers, Origin:'http://localhost:4317'}, {...f.headers, 'X-Bureau-Token':'faux'}]) {
+    for (const headers of [{'Sec-Fetch-Site':'none'}, {Origin:f.headers.Origin,'Sec-Fetch-Site':'none'}, {'X-Bureau-Token':f.headers['X-Bureau-Token'],'Sec-Fetch-Site':'none'}, {...f.headers, Origin:'http://localhost:4317'}, {...f.headers, 'X-Bureau-Token':'faux'}]) {
       assert.equal((await f.send(route, {headers})).status, 403);
     }
     const response = await f.send(route, {headers:f.headers});

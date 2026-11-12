@@ -55,13 +55,22 @@ function codexScreenSafe(output) {
   if(!screen.trim()) return false;
   return !(/do you trust the contents of this directory\?/.test(screen)&&/1\. yes, continue/.test(screen)&&/2\. no, quit/.test(screen));
 }
-export function createHerdr({allowAgent=async()=>true,run,executeFile=execute,sessionsDir=join(homedir(),'.claude','sessions'),now=()=>Date.now()}={}) {
+// Session Herdr dédiée (installation : BUREAU_HERDR_SESSION=myteam) ; absente = session par défaut de Herdr.
+export function sessionHerdr(env=process.env) {
+  const nom=env.BUREAU_HERDR_SESSION;
+  if(!nom) return null;
+  if(!/^[A-Za-z0-9_-]{1,64}$/.test(nom)) throw new HerdrError('BUREAU_HERDR_SESSION invalide : lettres, chiffres, - et _ seulement.');
+  return nom;
+}
+export function createHerdr({allowAgent=async()=>true,run,executeFile=execute,sessionsDir=join(homedir(),'.claude','sessions'),now=()=>Date.now(),env=process.env}={}) {
   const inflight=new Set();
   let listing;
   const sessionsClaude=new Map();
   const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
-  const invoke=async args=>{
+  const invoke=async demande=>{
     try {
+      const session=sessionHerdr(env);
+      const args=session?['--session',session,...demande]:demande;
       if(run) return await run(args);
       const {stdout}=await executeFile(findHerdr(),args,{windowsHide:true,timeout:12000,maxBuffer:2*1024*1024,encoding:'utf8'});
       return stdout;

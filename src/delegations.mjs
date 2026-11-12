@@ -11,6 +11,7 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { masque } from './masque.mjs';
+import { completeLines, findTranscript } from './jsonl.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;      // octets lus au plus par appel
 const MAX_LINE = 4 * 1024 * 1024;        // une ligne plus longue est ignorée
@@ -36,26 +37,6 @@ async function transcriptInfo(path, root) {
   }
   const info = await lstat(path);
   return info.isFile() && !info.isSymbolicLink() ? info : undefined;
-}
-
-async function findTranscript(root, filename) {
-  const pending = [root];
-  while (pending.length) {
-    const directory = pending.pop();
-    try {
-      const info = await lstat(directory);
-      if (!info.isDirectory() || info.isSymbolicLink()) continue;
-      for await (const entry of await opendir(directory)) {
-        if (entry.isSymbolicLink()) continue;
-        const path = join(directory, entry.name);
-        if (entry.isDirectory()) pending.push(path);
-        else if (entry.isFile() && entry.name === filename) return path;
-      }
-    } catch {
-      // Un dossier inaccessible ne doit pas masquer les autres sessions.
-    }
-  }
-  return undefined;
 }
 
 function textOf(content) {
@@ -265,37 +246,6 @@ function consumeLine(state, line) {
   }
 }
 
-// Ligne trop longue : on l'ignore en avançant, l'état reste utilisable
-// (pas de relecture intégrale du journal à chaque appel). L'état de saut
-// (`skipping`) est conservé entre deux lectures : une ligne géante répartie sur
-// plusieurs sondages ne doit jamais être coupée en fausses entrées.
-async function* completeLines(stream, state) {
-  let partial = state.partial;
-  let skipping = state.skipping;
-  for await (const chunk of stream) {
-    if (state.offset === 0 && state.head.length === 0) state.head = Buffer.from(chunk.subarray(0, 64));
-    state.offset += chunk.length;
-    state.tail = Buffer.concat([state.tail, chunk]).subarray(-64);
-    let start = 0;
-    for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
-      const segment = chunk.subarray(start, end + 1);
-      if (skipping) { skipping = false; }
-      else if (partial.length + segment.length > MAX_LINE) { partial = Buffer.alloc(0); }
-      else {
-        yield partial.length ? Buffer.concat([partial, segment]) : segment;
-        partial = Buffer.alloc(0);
-      }
-      start = end + 1;
-    }
-    if (start < chunk.length) {
-      if (!skipping && partial.length + chunk.length - start > MAX_LINE) { partial = Buffer.alloc(0); skipping = true; }
-      else if (!skipping) partial = Buffer.concat([partial, chunk.subarray(start)]);
-    }
-  }
-  state.partial = partial;
-  state.skipping = skipping;
-}
-
 function freshState() {
   return { offset: 0, partial: Buffer.alloc(0), skipping: false, head: Buffer.alloc(0), tail: Buffer.alloc(0), delegations: [], byToolId: new Map(), size: 0, mtimeMs: 0, ino: 0, birthtimeMs: 0 };
 }
@@ -344,7 +294,7 @@ async function readSession(sessionId, root, key) {
     }
     if (state.offset < info.size) {
       const stream = createReadStream(path, { start: state.offset, end: Math.min(info.size, state.offset + MAX_BYTES) - 1 });
-      const input = Readable.from(completeLines(stream, state));
+      const input = Readable.from(completeLines(stream, state, { track: true }));
       try {
         for await (const line of input) consumeLine(state, line);
       } finally {
@@ -375,30 +325,40 @@ export async function readDelegations(sessionId, { root = join(homedir(), '.clau
   try { return await pending; } finally { inflight.delete(key); }
 }
 
-// Choix du chef : le panneau <espace>:p<numéro> au plus petit numéro, dans le
-// plus petit espace, avec l'identifiant complet comme dernier critère.
+// Clé de panneau d'un agent : { espace, numero } lu dans paneId (ou, à
+// défaut, dans la partie avant « @ » de l'identifiant complet). Null quand
+// l'identifiant est illisible : un tel agent ne peut pas être directeur.
+export function clePanneau(agent) {
+  if (!agent || typeof agent !== 'object') return null;
+  const raw = typeof agent.paneId === 'string' ? agent.paneId
+    : typeof agent.id === 'string' ? agent.id.split('@')[0]
+      : '';
+  const match = /^([^:]+):p(\d+)$/.exec(raw.trim());
+  return match ? { espace: match[1], numero: Number(match[2]) } : null;
+}
+
+// Choix du chef : le PREMIER candidat lisible de la liste reçue (option A,
+// tranchée par DrSmoke). bossOf ne trie plus : l'ordre de la liste est la
+// responsabilité de l'appelant. La direction (src/direction.mjs) lui donne
+// la liste triée par première apparition mémorisée ; au premier démarrage,
+// sans mémoire, elle la trie par numéro de panneau.
 //
-// APPROXIMATION : Herdr ne fournit pas l'heure de démarrage des panneaux. Le
-// « premier agent démarré » ne peut donc pas être prouvé ; on prend le panneau
-// le plus bas numéroté, qui correspond en pratique au premier créé dans l'espace.
+// Herdr ne fournit pas l'heure de démarrage des panneaux : le « premier
+// démarré » n'existe dans aucune donnée d'entrée, seul l'ordre observé par
+// MyTeam fait foi. Un même panneau listé deux fois (deux empreintes) garde
+// un représentant stable : le plus petit identifiant complet.
 export function bossOf(agents) {
   if (!Array.isArray(agents)) return null;
   let best = null;
-  let bestKey = null;
+  let bestCle = null;
+  let bestId = '';
   for (const agent of agents) {
-    if (!agent || typeof agent !== 'object') continue;
-    const raw = typeof agent.paneId === 'string' ? agent.paneId
-      : typeof agent.id === 'string' ? agent.id.split('@')[0]
-        : '';
-    const match = /^([^:]+):p(\d+)$/.exec(raw.trim());
-    if (!match) continue;
-    const key = [match[1], Number(match[2]), typeof agent.id === 'string' ? agent.id : ''];
-    if (bestKey === null
-      || key[0] < bestKey[0]
-      || (key[0] === bestKey[0] && key[1] < bestKey[1])
-      || (key[0] === bestKey[0] && key[1] === bestKey[1] && key[2] < bestKey[2])) {
-      bestKey = key;
-      best = agent;
+    const cle = clePanneau(agent);
+    if (!cle) continue;
+    const id = typeof agent.id === 'string' ? agent.id : '';
+    if (!best) { best = agent; bestCle = cle; bestId = id; continue; }
+    if (cle.espace === bestCle.espace && cle.numero === bestCle.numero && id < bestId) {
+      best = agent; bestId = id;
     }
   }
   return best;

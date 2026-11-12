@@ -129,7 +129,7 @@ test('/api/reponses raccorde Codex avec la liste courante et protège la lecture
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const origin = `http://127.0.0.1:${server.address().port}`;
-  const { token } = await (await fetch(origin+'/api/state')).json();
+  const { token } = await (await fetch(origin+'/api/state',{headers:{'Sec-Fetch-Site':'same-origin'}})).json();
   assert.equal((await fetch(origin+'/api/reponses?id=x')).status,403);
   const headers = { Origin: origin, 'X-Bureau-Token': token };
   const read = () => fetch(origin+'/api/reponses?id=x',{ headers }).then(r => r.json());

@@ -6,7 +6,7 @@ import {masque} from './masque.mjs';
 // Tableau mural de mémoire partagée : lecture seule des fichiers piliers du projet.
 // Liste fermée de fichiers, jamais de chemin venant du navigateur ; rien n'est écrit.
 const projectDirectory=fileURLToPath(new URL('../',import.meta.url));
-const FILES=['HANDOFF.md','TODO.md','LESSONS.md','AGENTS.md'];
+const FILES=['HANDOFF.md','TODO.md','LESSONS.md','AGENTS.md','docs/plan-travail.md'];
 const MAX_BYTES=512*1024;
 
 function clean(value) {
@@ -49,6 +49,10 @@ export function parseBlackboard(texts) {
   if(typeof texts['LESSONS.md']==='string') {
     const lessons=bullets(texts['LESSONS.md'].split(/\r?\n/));
     board.lessons={source:'LESSONS.md',total:lessons.length,latest:lessons.slice(-5).reverse()};
+  }
+  if(typeof texts['docs/plan-travail.md']==='string') {
+    const phases=sections(texts['docs/plan-travail.md']).map(s=>s.title).filter(Boolean).slice(0,6);
+    if(phases.length) board.plan={source:'docs/plan-travail.md',phases};
   }
   return board;
 }

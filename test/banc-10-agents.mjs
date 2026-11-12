@@ -153,6 +153,9 @@ export async function creerBanc(t, options = {}) {
     getOtherResponses: async (agent, liste) => { n.reponses++; return lecteurReponses(agent, liste); },
     getTodos: async liste => { n.todos++; return lecteurTodos(liste); },
     delegations: async sessionId => { n.delegations++; return readDelegations(sessionId, { root: chemins.claude }); },
+    // Tableau mural vide pour les scénarios d'intégration : l'injection du tableau
+    // dans les consignes d'autonomie est couverte par test/autonomie.test.mjs.
+    getBlackboard: async () => ({}),
     queueFile: join(racine, 'file-attente.json'),
     criseFile: join(racine, 'crise.json'),
     directionFile: join(racine, 'direction.json'),

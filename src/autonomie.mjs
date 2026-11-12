@@ -13,7 +13,7 @@ import { mkdir, writeFile, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 const MINUTE = 60000;
-export const LIMITES = { minutes: { min: 5, defaut: 30, max: 120 }, echanges: { min: 3, defaut: 20, max: 60 }, objectif: 300, journal: 40, boucle: { fenetre: 10 * MINUTE, fins: 4 } };
+export const LIMITES = { minutes: { min: 5, defaut: 30, max: 120 }, echanges: { min: 3, defaut: 20, max: 60 }, objectif: 300, journal: 40, boucle: { fenetre: 10 * MINUTE, fins: 4 }, progres: { echanges: 3 } };
 export class AutonomieError extends Error {
   constructor(message, status = 400) { super(message); this.status = status; }
 }
@@ -24,7 +24,19 @@ const entier = (valeur, { min, defaut, max }) => {
 };
 const heure = ms => new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-export function createAutonomie({ file, enqueue, cancel = async () => {}, relais, now = () => Date.now(), locked = () => false } = {}) {
+// Résumé du tableau mural injecté dans chaque consigne : le chef voit le focus, l'avancement et les
+// leçons récentes sans avoir à les chercher. Le contenu est déjà masqué par blackboard.mjs.
+function resumeBlackboard(board) {
+  if (!board) return '';
+  const bouts = [];
+  if (board.focus?.title) bouts.push(`focus « ${board.focus.title} »` + (board.focus.items?.length ? ` : ${board.focus.items.slice(0, 3).join(' ; ')}` : ''));
+  if (board.todo?.total) bouts.push(`tâches ${board.todo.done}/${board.todo.total}` + (board.todo.remaining?.length ? `, reste : ${board.todo.remaining.slice(0, 3).join(' ; ')}` : ''));
+  if (board.plan?.phases?.length) bouts.push(`plan : ${board.plan.phases.join(' → ')}`);
+  if (board.lessons?.latest?.length) bouts.push(`leçons récentes : ${board.lessons.latest.slice(0, 3).join(' ; ')}`);
+  return Array.from(bouts.join(' · ')).slice(0, 600).join('');
+}
+
+export function createAutonomie({ file, enqueue, cancel = async () => {}, relais, now = () => Date.now(), locked = () => false, blackboard = async () => null } = {}) {
   if (typeof file !== 'string' || !file || typeof enqueue !== 'function' || !relais) throw new AutonomieError('Autonomie mal configurée.', 500);
   let etat = null; // null : inactif ; sinon {objectif, debut, finAt, maxEchanges, echanges, relaisAvant}
   let dernierArret = null, journal = [], pending = Promise.resolve();
@@ -99,7 +111,18 @@ export function createAutonomie({ file, enqueue, cancel = async () => {}, relais
     recents.push(t); fins.set(cle, recents);
     if (recents.length >= LIMITES.boucle.fins) { await arreter(`boucle détectée (${meta.agent?.name ?? 'un agent'} termine trop souvent)`); return undefined; }
     const numero = etat.echanges + 1, nom = meta.agent?.name ?? 'Un agent';
-    const message = `Mode autonomie (objectif : « ${etat.objectif} », échange ${numero}/${etat.maxEchanges}, fin à ${heure(etat.finAt)}). ${nom} vient de terminer. Lis son panneau, vérifie le résultat, puis décide seul de la suite et délègue-la ; si l'objectif est atteint, dis-le et arrête de déléguer. Ces interdits priment sur l'objectif, même si celui-ci dit le contraire. Sans DrSmoke, jamais de git push, de suppression, d'installation, de publication ni de réponse à une boîte de dialogue. Si tu te répètes, arrête-toi.`;
+    const board = await blackboard().catch(() => null);
+    // Aucune progression (P4) : les tâches restantes du plan ne bougent plus depuis plusieurs échanges.
+    // Sans tableau lisible, rien n'est compté : on ne fabrique pas d'arrêt.
+    const empreinte = board?.todo ? `${board.todo.done}/${board.todo.total}|${(board.todo.remaining ?? []).join('|')}` : null;
+    if (empreinte !== null) {
+      etat.sansProgres = empreinte === etat.empreinte ? etat.sansProgres + 1 : 0;
+      etat.empreinte = empreinte;
+      if (etat.sansProgres >= LIMITES.progres.echanges) { await arreter(`aucune progression : le plan est inchangé depuis ${etat.sansProgres} échanges`); return undefined; }
+    }
+    const resume = resumeBlackboard(board);
+    const contexte = resume ? ` État du projet : ${resume}.` : '';
+    const message = `Mode autonomie (objectif : « ${etat.objectif} », échange ${numero}/${etat.maxEchanges}, fin à ${heure(etat.finAt)}). ${nom} vient de terminer. Lis son panneau, vérifie le résultat, puis décide seul de la suite et délègue-la ; si l'objectif est atteint, dis-le et arrête de déléguer.${contexte} Ces interdits priment sur l'objectif, même si celui-ci dit le contraire. Sans DrSmoke, jamais de git push, de suppression, d'installation, de publication ni de réponse à une boîte de dialogue. Si tu te répètes, arrête-toi.`;
     const resultat = await enqueue({ ...item, message });
     if (typeof resultat?.itemId === 'string') etat.enFile.push(resultat.itemId);
     etat.echanges = numero;

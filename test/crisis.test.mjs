@@ -162,7 +162,7 @@ async function bureau(t,{agents=[{id:'agent-1',name:'Claude',status:'idle',ready
   const port=server.address().port;
   const origin=`http://127.0.0.1:${port}`;
   const send=(path,{method='GET',headers={},body}={})=>new Promise((resolve,reject)=>{
-    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{
+    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}},res=>{
       let text='';
       res.setEncoding('utf8');
       res.on('data',chunk=>text+=chunk);
@@ -211,7 +211,7 @@ test('crise : POST /api/crise exige jeton et origine exacte, mal formé = 400',a
   const headers={'Content-Type':'application/json',Origin:origin,'X-Bureau-Token':token};
   for(const invalide of [{}, {Origin:origin}, {'X-Bureau-Token':token}, {...headers,'X-Bureau-Token':'x'.repeat(token.length)}, {...headers,Origin:'http://localhost:4317'}]) {
     assert.equal((await send('/api/crise',{method:'POST',headers:invalide,body:JSON.stringify({active:true})})).status,403);
-    assert.equal((await send('/api/crise',{headers:invalide})).status,403);
+    assert.equal((await send('/api/crise',{headers:{...invalide,'Sec-Fetch-Site':'none'}})).status,403);
   }
   assert.equal((await send('/api/crise',{method:'POST',headers,body:JSON.stringify({active:'oui'})})).status,400);
   assert.equal((await send('/api/crise',{method:'POST',headers,body:'{invalide'})).status,400);

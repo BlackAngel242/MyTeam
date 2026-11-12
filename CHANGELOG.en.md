@@ -4,6 +4,50 @@
 
 All notable changes to The Agent Office (MyTeam) project are documented in this file. The format is based on Keep a Changelog.
 
+## [0.6.1] - 2026-11-07 · "Èṣù"
+
+### npm installation documentation
+
+- README files and installation guides now emphasize `npx @drsmoke/myteam@latest` for interactive setup. `npm i @drsmoke/myteam` only installs a dependency; `npm install -g @drsmoke/myteam` followed by `myteam-install` also starts the wizard.
+- The README shown on npmjs.com will be updated when this version is officially published; the release workflow remains unchanged.
+
+### Starting MyTeam
+
+- New `myteam` command (PowerShell, cmd, bash): it starts the desk, opens it in the default browser at `http://127.0.0.1:<port>`, then opens Herdr in its dedicated `myteam` session. A desk already running is reused; another program on the port is reported, never stopped. `myteam --bureau` opens only the desk.
+- The installer creates the **MyTeam** desktop shortcut without asking, with the MyTeam icon, and makes the `myteam` command available (user PATH on Windows, `~/.local/bin/myteam` on Linux and macOS). The "What should the shortcut start?" question is gone.
+- Herdr: the installer and the desk work in the `myteam` session (`BUREAU_HERDR_SESSION`); the default session is no longer touched. Running the installer again reuses the existing "Bureau des agents" workspace.
+- The final message shows the real installation folder instead of "[dossier]".
+
+### Hand-off when a usage limit is hit
+
+- When an agent hits its usage limit, its current mission is handed once, through the queue, to an available agent of the same project (never the lead, another tool first). When it comes back, the agent is told its mission was taken over. Disable with `BUREAU_RELAIS_QUOTA=0`.
+
+### Website
+
+- The home page shows the `npx @drsmoke/myteam` command with a **Copy** button instead of the download button; the archive stays available from the latest release.
+
+## [0.6.0] - 2026-11-07 · "Èṣù"
+
+### One-command installation
+
+- `npx @drsmoke/myteam` installs MyTeam into `%LOCALAPPDATA%\Programs\MyTeam` (Windows) or `~/.local/lib/MyTeam` (Linux, macOS), outside the data folder, then starts the assistant. Running it again reopens the assistant of an existing installation without overwriting anything; `--demo` copies nothing; `--dry-run` writes nothing.
+- The release also publishes the npm package (trusted publishing, no stored token) before making the release public.
+
+### Setup assistant
+
+- Arrow-key choices (↑/↓ and Enter; two-digit numbers accepted: tools 10 and above were unreachable), yes/no with ←/→ and "No" as default.
+- Checkboxes for Herdr integrations, AI tools and extensions: nothing pre-checked; confirming the list consents to the checked items only.
+- Empty panes are offered again after AI tools are installed; "Desktop" is the default shortcut; each step shows the value kept.
+- The final summary and next step stay on screen; Ctrl+C cancels cleanly at any time (exit code 130, terminal restored).
+- Prerequisites are installed directly, without a question, with or without `-Oui`: Node.js 22+, Herdr and Clink (Windows). Clink already installed outside PATH is detected, and winget "already installed" codes are no longer reported as failures.
+- Accents restored in messages; `installer.sh` stays compatible with bash 3.2 (macOS).
+
+### Since 0.5.1
+
+- Releases are now started manually only.
+- `public/app.js` split into modules (scene, queue, tasks, files, crisis room, autonomy, palette, direction).
+- Code version read from one place (`src/version.mjs`); `/api/state` requires the same origin proof as other reads; lead-agent rules set.
+
 ## [0.5.1] - 2026-10-21 · "Ṣàngó"
 
 - Integrated release updates: notification, verified ZIP download, preparation and automatic restart.

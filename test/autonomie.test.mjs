@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createAutonomie, AutonomieError } from '../src/autonomie.mjs';
 
-async function banc(t, { relaisActif = false, locked = () => false } = {}) {
+async function banc(t, { relaisActif = false, locked = () => false, blackboard = async () => null } = {}) {
   const dossier = await mkdtemp(join(tmpdir(), 'autonomie-'));
   t.after(() => rm(dossier, { recursive: true, force: true }));
   const file = join(dossier, 'autonomie.json');
@@ -13,7 +13,7 @@ async function banc(t, { relaisActif = false, locked = () => false } = {}) {
   let heure = Date.parse('2026-10-18T10:00:00.000Z');
   let actifRelais = relaisActif;
   const relais = { get: () => ({ actif: actifRelais }), set: async v => { actifRelais = v; return { actif: v }; } };
-  const creer = () => createAutonomie({ file, enqueue: async item => { envoyes.push(item); return { ok: true }; }, relais, now: () => heure, locked });
+  const creer = () => createAutonomie({ file, enqueue: async item => { envoyes.push(item); return { ok: true }; }, relais, now: () => heure, locked, blackboard });
   return { file, envoyes, relais, creer, avancer: min => { heure += min * 60000; } };
 }
 const fin = (id, nom) => [{ id: 'chef', message: 'neutre', priority: 'normale', requestKey: id }, { agent: { id, name: nom } }];
@@ -189,4 +189,55 @@ test('le journal plafonné garde toujours l\'entrée de lancement', async t => {
   assert.equal(journal.length, 40);
   assert.equal(journal[0].type, 'debut');
   assert.match(journal.at(-1).texte, /Agent49/);
+});
+
+test('le tableau mural alimente la consigne (focus, tâches, leçons)', async t => {
+  const { creer, envoyes } = await banc(t, { blackboard: async () => ({
+    focus: { title: 'Lot L', items: ['poser la base'] },
+    todo: { total: 5, done: 2, remaining: ['brancher le moteur', 'écrire les tests'] },
+    lessons: { latest: ['toujours masquer les chemins'] },
+  }) });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 5 });
+  await a.passer(...fin('x', 'Codex'));
+  const m = envoyes[0].message;
+  assert.match(m, /État du projet/);
+  assert.match(m, /focus « Lot L »/);
+  assert.match(m, /tâches 2\/5/);
+  assert.match(m, /leçons récentes/);
+  assert.ok(m.indexOf('objectif :') < m.indexOf('Ces interdits'));
+});
+
+test('un tableau mural absent ou en erreur laisse la consigne inchangée', async t => {
+  const { creer, envoyes } = await banc(t, { blackboard: async () => { throw new Error('lecture impossible'); } });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 5 });
+  await a.passer(...fin('x', 'Codex'));
+  assert.doesNotMatch(envoyes[0].message, /État du projet/);
+  assert.match(envoyes[0].message, /objectif : « Finir le lot L »/);
+  assert.match(envoyes[0].message, /jamais de git push/);
+});
+
+test('aucune progression : un plan inchangé pendant trois échanges arrête le mode avant le quatrième message', async t => {
+  const plan = { todo: { total: 5, done: 2, remaining: ['brancher le moteur'] } };
+  const { creer, envoyes } = await banc(t, { blackboard: async () => plan });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 10 });
+  for (const [id, nom] of [['a', 'Claude'], ['b', 'Codex'], ['c', 'Dola'], ['d', 'Muse']]) await a.passer(...fin(id, nom));
+  assert.equal(envoyes.length, 3);
+  assert.equal(a.get().actif, false);
+  assert.match(a.get().arret, /aucune progression/);
+});
+
+test('aucune progression : un plan qui avance remet le compteur à zéro', async t => {
+  let fait = 0;
+  const { creer, envoyes } = await banc(t, { blackboard: async () => ({ todo: { total: 9, done: fait, remaining: ['x'] } }) });
+  const a = creer();
+  await a.demarrer({ objectif: 'Finir le lot L', echanges: 10 });
+  for (const [id, nom] of [['a', 'Claude'], ['b', 'Codex'], ['c', 'Dola'], ['d', 'Muse'], ['e', 'Gemini']]) {
+    fait += 1;
+    await a.passer(...fin(id, nom));
+  }
+  assert.equal(envoyes.length, 5);
+  assert.equal(a.get().actif, true);
 });

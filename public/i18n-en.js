@@ -524,6 +524,7 @@ window.DICTIONNAIRE_EN = {
   "poste.limite_reset": "Limit left · resets at {heure}",
   "poste.lu_dans_barre": "Read from the tool bar at {heure}",
   "poste.non_expose": "Not exposed by this tool",
+  "poste.non_attribuable": "Activity not attributable to a panel",
   "poste.non_precise": "Not specified",
   "poste.panneau_herdr": "Herdr pane",
   "poste.plan": "Published plan: {fait}/{total} boxes · {pct}%",

@@ -26,7 +26,10 @@ const I18N = {
     'hero.badge': '100% Local · Zéro Dépendance npm · Vérité des faits',
     'hero.titre': 'Surveillez, lisez et dirigez vos agents d\'IA dans un atelier vivant en pixel art',
     'hero.description': 'Un tableau de bord local immersif pour orchestrer vos équipes d\'agents autonomes exécutés dans Herdr. Fini les terminaux aveugles : chaque agent a son poste, ses outils et ses dossiers visibles.',
-    'hero.btn-telecharger': 'Télécharger la dernière version',
+    'hero.btn-copier': 'Copier la commande',
+    'hero.btn-copie': 'Commande copiée',
+    'hero.install.aide': 'Collez-la dans PowerShell, l’Invite de commandes ou un terminal (Node.js 22 ou plus). Sans Node.js :',
+    'hero.install.zip': 'archive de la dernière version',
     'hero.btn-github': 'Voir le projet sur GitHub',
     'hero.preview-caption': 'Tournée du chef : délégation animée en direct avec remise du dossier doré au poste d\'un collaborateur.',
 
@@ -91,18 +94,18 @@ const I18N = {
     'feat.autonomie.title': 'Autonomie supervisée (NoBabysitter)',
     'feat.autonomie.desc': 'Coordination en étoile où le chef décide et délègue chaque étape vers un objectif borné (durée de 5 à 120 min, 3 à 60 échanges). Arrêts de sécurité stricts sans jamais de push ni de suppression.',
 
-    // Nouveautés 0.5.1
-    'nouveautes.badge': 'Version 0.5.1',
-    'nouveautes.titre': 'Les nouveautés de la version 0.5.1',
+    // Nouveautés 0.6.0
+    'nouveautes.badge': 'Version 0.6.0',
+    'nouveautes.titre': 'Les nouveautés de la version 0.6.0 « Èṣù »',
     'nouveautes.desc': 'Des fonctionnalités concrètes, testées et observées sur votre poste.',
-    'nouveautes.update.title': 'Mise à jour dans MyTeam',
-    'nouveautes.update.desc': 'Une nouvelle release est signalée dans le bureau. Téléchargement vérifié puis redémarrage automatique en un clic.',
-    'nouveautes.switch.title': "Choix du projet dès le démarrage",
-    'nouveautes.switch.desc': "Améliorer MyTeam ou travailler dans un autre dossier : le contexte est choisi avant les commandes.",
-    'nouveautes.sante.title': "Données locales séparées",
-    'nouveautes.sante.desc': "Chaque projet possède son propre état local, hors du code. Les journaux du kit restent ignorés par Git.",
-    'nouveautes.agents10.title': "Interface harmonisée",
-    'nouveautes.agents10.desc': "Icônes Lucide et thèmes clair et sombre sur ordinateur comme sur téléphone.",
+    'nouveautes.update.title': 'Installation en une commande',
+    'nouveautes.update.desc': 'npx @drsmoke/myteam copie MyTeam dans votre dossier utilisateur puis lance l’assistant. Relancer la commande rouvre l’assistant sans rien écraser.',
+    'nouveautes.switch.title': "Choix aux flèches et cases à cocher",
+    'nouveautes.switch.desc': "Outils, intégrations et extensions se choisissent aux flèches et à l’Espace : rien n’est coché d’avance.",
+    'nouveautes.sante.title': "Prérequis installés d’office",
+    'nouveautes.sante.desc': "Node.js, Herdr et Clink s’installent sans question ; un logiciel déjà présent n’est plus signalé comme un échec.",
+    'nouveautes.agents10.title': "Un résumé clair à la fin",
+    'nouveautes.agents10.desc': "Chaque étape affiche la valeur retenue, et le résumé final indique la prochaine étape.",
     'nouveautes.capsule.title': "Animation et survol corrigés",
     'nouveautes.capsule.desc': "Une seule boucle de dessin après reprise et aucun survol persistant après la sortie du canvas.",
 
@@ -198,7 +201,7 @@ const I18N = {
     'footer.link-conduct': 'Code de conduite',
     'footer.link-security': 'Sécurité',
     'footer.link-notice': 'Marques tierces',
-    'footer.divinite': "MyTeam 0.5.1 · Version de référence",
+    'footer.divinite': "MyTeam 0.6.0 « Èṣù » · Version de référence",
     'footer.credit': 'Réalisé avec l\'aide de l\'IA (Claude, Codex, Antigravity, OpenCode). Auteur et contributeur : DrSmoke (BlackAngel242).',
     'footer.license': 'Distribué sous licence libre MIT.',
     'footer.top': 'Haut de page'
@@ -230,7 +233,10 @@ const I18N = {
     'hero.badge': '100% Local · Zero npm Dependencies · Factual Truth',
     'hero.titre': 'Monitor, inspect, and direct your AI agent teams in a living pixel art workshop',
     'hero.description': 'An immersive local dashboard to orchestrate your autonomous agent teams running in Herdr. No more blind consoles: every agent has their own desk, tool emblem, and visible dossiers.',
-    'hero.btn-telecharger': 'Download the latest version',
+    'hero.btn-copier': 'Copy the command',
+    'hero.btn-copie': 'Command copied',
+    'hero.install.aide': 'Paste it into PowerShell, Command Prompt or a terminal (Node.js 22 or later). Without Node.js:',
+    'hero.install.zip': 'archive of the latest release',
     'hero.btn-github': 'View project on GitHub',
     'hero.preview-caption': 'Chief tour: live animated delegation delivering the golden folder to a teammate\'s workstation.',
 
@@ -295,18 +301,18 @@ const I18N = {
     'feat.autonomie.title': 'Supervised Autonomy (NoBabysitter)',
     'feat.autonomie.desc': 'Star-pattern coordination where the chief decides and delegates each step toward a bounded goal (5 to 120 min duration, 3 to 60 exchanges). Strict safety stops, never any push or deletion.',
 
-    // What's new 0.5.1
-    'nouveautes.badge': 'Version 0.5.1',
-    'nouveautes.titre': 'What\'s new in version 0.5.1',
+    // What's new 0.6.0
+    'nouveautes.badge': 'Version 0.6.0',
+    'nouveautes.titre': 'What\'s new in version 0.6.0 “Èṣù”',
     'nouveautes.desc': 'Concrete, tested, and observable features on your machine.',
-    'nouveautes.update.title': 'Updates inside MyTeam',
-    'nouveautes.update.desc': 'New releases appear in the desk. One click downloads, verifies and automatically restarts the app.',
-    'nouveautes.switch.title': "Choose your project at startup",
-    'nouveautes.switch.desc': "Improve MyTeam or work in another folder: choose the context before sending commands.",
-    'nouveautes.sante.title': "Separate local data",
-    'nouveautes.sante.desc': "Each project has its own local state outside the code. Kit journals remain ignored by Git.",
-    'nouveautes.agents10.title': "Consistent interface",
-    'nouveautes.agents10.desc': "Lucide icons and light and dark themes on desktop and mobile.",
+    'nouveautes.update.title': 'One-command installation',
+    'nouveautes.update.desc': 'npx @drsmoke/myteam copies MyTeam into your user folder and starts the assistant. Running it again reopens the assistant without overwriting anything.',
+    'nouveautes.switch.title': "Arrow keys and checkboxes",
+    'nouveautes.switch.desc': "Tools, integrations and extensions are picked with the arrow keys and Space: nothing is pre-checked.",
+    'nouveautes.sante.title': "Prerequisites installed for you",
+    'nouveautes.sante.desc': "Node.js, Herdr and Clink install without a question; software already present is no longer reported as a failure.",
+    'nouveautes.agents10.title': "A clear summary at the end",
+    'nouveautes.agents10.desc': "Each step shows the value kept, and the final summary tells you what to do next.",
     'nouveautes.capsule.title': "Animation and hover fixes",
     'nouveautes.capsule.desc': "A single drawing loop after resuming and no lingering hover after leaving the canvas.",
 
@@ -402,7 +408,7 @@ const I18N = {
     'footer.link-conduct': 'Code of Conduct',
     'footer.link-security': 'Security Policy',
     'footer.link-notice': 'Third-party Trademarks',
-    'footer.divinite': "MyTeam 0.5.1 · Reference release",
+    'footer.divinite': "MyTeam 0.6.0 “Èṣù” · Reference release",
     'footer.credit': 'Built with the help of AI (Claude, Codex, Antigravity, OpenCode). Author and contributor: DrSmoke (BlackAngel242).',
     'footer.license': 'Released under the MIT License.',
     'footer.top': 'Back to top'
@@ -506,6 +512,19 @@ function setupLightbox() {
 
 }
 
+// Bouton « Copier la commande » : un site ne peut pas lancer une installation sur l'ordinateur ; il copie la
+// commande, à coller dans un terminal. Repli : la commande reste sélectionnable si le presse-papiers est refusé.
+function setupCopie() {
+  document.querySelectorAll('[data-copie]').forEach(bouton => {
+    bouton.addEventListener('click', async () => {
+      const lang = document.documentElement.lang === 'en' ? 'en' : 'fr';
+      try { await navigator.clipboard.writeText(bouton.dataset.copie); } catch { return; }
+      bouton.textContent = t('hero.btn-copie', lang);
+      setTimeout(() => { bouton.textContent = t('hero.btn-copier', document.documentElement.lang === 'en' ? 'en' : 'fr'); }, 2000);
+    });
+  });
+}
+
 function setupNavToggle() {
   if (typeof document === 'undefined') return;
   const toggle = document.getElementById('nav-toggle');
@@ -541,6 +560,7 @@ if (typeof document !== 'undefined') {
 
     setupLightbox();
     setupNavToggle();
+    setupCopie();
   });
 }
 

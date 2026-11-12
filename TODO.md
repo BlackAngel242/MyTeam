@@ -1,5 +1,10 @@
 # Suivi du projet
 
+## NPM-DOC : clarification de l'installation (0.6.1)
+
+- [ ] Relire et intégrer la documentation `npx` / `npm i` dans la branche de release 0.6.1 (#70).
+- [ ] Après validation de la 0.6.1, déclencher manuellement le workflow Release et vérifier le README public sur npmjs.com.
+
 ## Première version (0.1.0) : Terminée
 
 - [x] Repérer Herdr et confirmer l'accès local.
@@ -106,3 +111,27 @@ Le plan `docs/superpowers/plans/2026-10-20-reference.md` fait foi : nettoyage pu
 
 - [ ] Vérifier le parcours dans une installation ZIP Linux et sur `windows-latest`, dont redémarrage et conservation de l'état local.
 - [ ] Fusionner la PR après revue et publier la release 0.5.1 ; vérifier que le site propose son archive.
+
+## F2 : deux OpenCode dans deux panneaux
+
+- [x] Option B : « activité non attribuable » au lieu d'une attribution fausse (PR #26, `a4d9d30`).
+- [ ] Nommage « OpenCode · fenêtre N » après la mémoire d'ordre de C1 (phase C4).
+
+## F3 : confidentialité
+
+- [x] Inventaire de ce qui sort de la machine (PR #31, `20349f8`).
+- [x] Masque incomplet : `AIza`, `github_pat_`, racines `workspace`, `data`, `srv` (voir `docs/revue-opencode-final.md`). Vérifié le 23 octobre 2026 sur `main` : ces six exemples sont masqués (`clé [secret masqué]`, `jeton [secret masqué]`, `fichier [chemin masqué]`), et `https://exemple.test/api/todos` reste intact.
+- [x] Règle de secours de l'écran alignée sur le serveur : sans drapeau `boss`, aucun chef n'est affiché (`public/app.js`, `bossOf`).
+
+## Version 0.6.1 : lancer MyTeam
+
+- [x] Commande `myteam`, session Herdr `myteam`, raccourci MyTeam avec icône, vrai dossier dans le message final.
+- [x] Relais de mission quand un agent atteint sa limite d'usage.
+- [x] Site : commande `npx @drsmoke/myteam` et bouton Copier.
+- [ ] Essai réel dans le Windows Sandbox : raccourci et icône, commande `myteam` dans PowerShell et cmd, navigateur, session `myteam`.
+- [ ] CI Linux verte, relecture, PR, release.
+- [ ] Espace Herdr `myteam` créé dans le dossier de MyTeam : le repointer vers le projet choisi dans le bureau (relecture 0.6.1, B2).
+- [ ] Raccourci et `.desktop` : retrouver Node si le PATH de la session graphique ne le contient pas (nvm, Explorateur pas encore rafraîchi).
+- [ ] Relais de quota : annuler un relais encore en file quand l'agent revient ou qu'une crise commence.
+- [ ] `myteam` : redémarrer un bureau de la même session mais d'une autre version, après une mise à jour.
+- [ ] À étudier : proposer la mise à jour des outils d'IA déjà installés ; ajouter au catalogue ceux qui ont une installation officielle (omp, qwen…).

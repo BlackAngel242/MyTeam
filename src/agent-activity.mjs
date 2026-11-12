@@ -5,6 +5,7 @@ import { join, posix, win32 } from 'node:path';
 import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
 import { masque } from './masque.mjs';
+import { completeLines } from './jsonl.mjs';
 
 const MAX_BYTES = 50 * 1024 * 1024;
 const MAX_LINE = 4 * 1024 * 1024;
@@ -45,7 +46,7 @@ export function normalizeActivity(value, { claude = false } = {}) {
     effort: effortName(value.effort),
     limitReached: value.limitReached === true,
     source: 'journal local',
-    match: claude ? 'session exacte' : 'dossier et activité récente',
+    match: value?.match === 'activité non attribuable' ? 'activité non attribuable' : (claude ? 'session exacte' : 'dossier et activité récente'),
   };
   if (claude || Array.isArray(value.subagents)) result.subagents = (Array.isArray(value.subagents) ? value.subagents : []).filter(agent =>
     agent && typeof agent.id === 'string' && /^[a-zA-Z0-9_.:-]{1,128}$/.test(agent.id)
@@ -73,28 +74,6 @@ async function* files(root) {
       }
     } catch { /* Un journal inaccessible ne rend pas Herdr indisponible. */ }
   }
-}
-
-async function* completeLines(stream, state) {
-  let partial = state.partial;
-  let skipping = state.skipping;
-  for await (const chunk of stream) {
-    state.offset += chunk.length;
-    let start = 0;
-    for (let end = chunk.indexOf(10); end !== -1; end = chunk.indexOf(10, start)) {
-      const segment = chunk.subarray(start, end + 1);
-      if (!skipping && partial.length + segment.length <= MAX_LINE) yield partial.length ? Buffer.concat([partial, segment]) : segment;
-      partial = Buffer.alloc(0);
-      skipping = false;
-      start = end + 1;
-    }
-    if (start < chunk.length) {
-      if (!skipping && partial.length + chunk.length - start <= MAX_LINE) partial = Buffer.concat([partial, chunk.subarray(start)]);
-      else { partial = Buffer.alloc(0); skipping = true; }
-    }
-  }
-  state.partial = partial;
-  state.skipping = skipping;
 }
 
 function consumeCodex(state, entry) {
@@ -299,7 +278,11 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     }
     candidates.sort((a, b) => b.updated - a.updated);
     const result = candidates[0];
-    if (!result || candidates[1]?.updated === result.updated) return null;
+    if (!result) return null;
+    if (candidates[1]?.updated === result.updated) return null;
+    // Plusieurs sessions du meme dossier avec des horodatages differents :
+    // aucune ne peut etre attribuee a un panneau avec certitude (option B).
+    if (candidates.length > 1) return { nonAttribuable: true };
     return result;
   }
   const reader=async function readAgentActivity(agent, agents = [agent], {planOnly=false,sourceOnly=false}={}) {
@@ -312,9 +295,10 @@ export function createAgentActivityReader({ codexRoot = join(homedir(), '.codex'
     pending.set(key, promise);
     try {
       const result=await promise;
-      if(sourceOnly) return result && (agent.kind !== 'Codex' || result.offset >= result.size) ? result : null;
+      if(sourceOnly) return result && !result.nonAttribuable && (agent.kind !== 'Codex' || result.offset >= result.size) ? result : null;
       if(planOnly) return result&&result.offset>=result.size?structuredClone(result.plan):null;
       if(agent.kind==='Codex') return result&&(result.tokens||result.model||result.effort||result.limits.length||result.subagents)?normalizeActivity(result):null;
+      if(result?.nonAttribuable) return {source:'journal local',match:'activité non attribuable',tokens:null,limits:[],model:null,effort:null,limitReached:false};
       const activity=normalizeActivity(result);
       return activity&&(activity.tokens||activity.model||activity.effort)?activity:null;
     } finally {if(pending.get(key)===promise) pending.delete(key);}

@@ -41,7 +41,7 @@ async function fixture(t) {
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(()=>new Promise(resolve=>{server.close(resolve);server.closeAllConnections();}));
   const origin=`http://127.0.0.1:${server.address().port}`;
-  const state=await (await fetch(`${origin}/api/state`)).json();
+  const state=await (await fetch(`${origin}/api/state`,{headers:{'Sec-Fetch-Site':'same-origin'}})).json();
   const send=async(ids,token=state.token)=>{
     const response=await fetch(`${origin}/api/broadcast`,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','X-Bureau-Token':token},body:JSON.stringify({ids,message:'Verifier le projet'})});
     return {status:response.status,data:await response.json()};

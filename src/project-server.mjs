@@ -5,7 +5,7 @@ import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomBytes} from 'node:crypto';
 import {resolveProject,relativeProjectPath,projectContains,projectStateDir,scopedBridge,ProjectError} from './projects.mjs';
-import {createHerdr} from './herdr.mjs';
+import {createHerdr,sessionHerdr} from './herdr.mjs';
 import {createTerminalStatusReader} from './terminal-status.mjs';
 import {readClaudeActivity} from './claude-activity.mjs';
 import {readAgentActivity} from './agent-activity.mjs';
@@ -14,6 +14,7 @@ import {readDelegations} from './delegations.mjs';
 import {createTodosReader} from './todos.mjs';
 import {readBlackboard} from './blackboard.mjs';
 import {initKit} from '../scripts/init-kit.mjs';
+import {VERSION} from './version.mjs';
 export function localDataRoot({home=homedir(),env=process.env,platform=process.platform}={}){
  return platform==='win32'?join(env.LOCALAPPDATA||join(home,'AppData','Local'),'MyTeam'):platform==='darwin'?join(home,'Library','Application Support','MyTeam'):join(env.XDG_DATA_HOME||join(home,'.local','share'),'MyTeam');
 }
@@ -21,7 +22,7 @@ const installation=fileURLToPath(new URL('../',import.meta.url));
 export async function createProjectServer({createBureauServer,myteamRoot=installation,dataRoot=localDataRoot(),places={home:homedir()},bridge,readTerminal=createTerminalStatusReader(),startTimers=true}={}){
  const token=randomBytes(32).toString('hex');let runtime=null,changing=false;
  const config=join(dataRoot,'project.json');
- const installedVersion=JSON.parse(await readFile(join(myteamRoot,'package.json'),'utf8').catch(()=>'{}')).version??null;
+ const installedVersion=VERSION;
  const select=async (selection,{persist=true}={})=>{
   const project=await resolveProject(selection,places,myteamRoot);
   if(selection.prepareKit===true&&project.mode==='project')await initKit(project.root,{lang:selection.lang==='en'?'en':'fr'});
@@ -41,6 +42,9 @@ export async function createProjectServer({createBureauServer,myteamRoot=install
   try{
    if(req.headers.host!==new URL(origin).host||req.headers['sec-fetch-site']==='cross-site')return json(403,{error:'Origine refusée.'});
    const url=new URL(req.url,origin);
+   // Identité du bureau pour la commande myteam, avant même le choix du projet (sinon 409, pris pour un autre programme).
+   // Rien de personnel (ni chemin, ni jeton, ni processus) : nom, version, session Herdr.
+   if(url.pathname==='/api/identite'&&req.method==='GET'){let session=null;try{session=sessionHerdr();}catch{session=null;}return json(200,{app:'myteam',version:installedVersion,session});}
    if(url.pathname==='/api/projet'){
     if(req.method==='GET')return json(200,{token,version:installedVersion,project:runtime?{mode:runtime.mode,root:runtime.root}:null,places:Object.keys(places)});
     if(req.method!=='POST')return json(405,{error:'Méthode refusée.'});

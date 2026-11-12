@@ -104,7 +104,7 @@ async function bureau(t) {
   t.after(()=>new Promise(resolve=>server.close(resolve)));
   const port=server.address().port,origin=`http://127.0.0.1:${port}`;
   const send=(path,{method='GET',headers={},body}={})=>new Promise((resolve,reject)=>{
-    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,...headers}},res=>{
+    const req=request({hostname:'127.0.0.1',port,path,method,headers:{Host:`127.0.0.1:${port}`,'Sec-Fetch-Site':'same-origin',...headers}},res=>{
       let text='';res.setEncoding('utf8');res.on('data',part=>text+=part);res.on('end',()=>resolve({status:res.statusCode,data:JSON.parse(text)}));
     });req.on('error',reject);req.end(body);
   });
@@ -119,7 +119,7 @@ test('relais API : GET et POST protégés, forme exacte, entrée incorrecte refu
     assert.equal((await send('/api/relais',{method,headers:{...headers,Origin:'http://localhost:4317'},body:method==='POST'?'{}':undefined})).status,403);
     assert.equal((await send('/api/relais',{method,headers:{...headers,'X-Bureau-Token':'faux'},body:method==='POST'?'{}':undefined})).status,403);
     const noOrigin={...headers};delete noOrigin.Origin;
-    assert.equal((await send('/api/relais',{method,headers:noOrigin,body:method==='POST'?'{}':undefined})).status,403);
+    assert.equal((await send('/api/relais',{method,headers:{...noOrigin,'Sec-Fetch-Site':'none'},body:method==='POST'?'{}':undefined})).status,403);
   }
   assert.deepEqual((await send('/api/relais',{headers})).data,{actif:false});
   for(const value of [{},[],{actif:'oui'},{actif:1}])assert.equal((await send('/api/relais',{method:'POST',headers,body:JSON.stringify(value)})).status,400);
