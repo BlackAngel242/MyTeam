@@ -2,6 +2,10 @@
 
 Lire `AGENTS.md`, `LESSONS.md`, `PRODUCT.md`, `DESIGN.md`, `TODO.md` et le plan courant avant toute modification.
 
+## Proposition d'améliorations (12 novembre 2026)
+
+Un document de propositions est déposé dans `docs/propositions-ameliorations.md` : douze propositions indépendantes (surface déclarée et événements, journal rejouable, packs d'équipe, portes humaines, reprise après limite disciplinée, revérification avant envoi, ouverture de projet validée, contrat de compte rendu, questions structurées, revue du dernier tour, tableau partagé et espaces isolés, présence lisible), chacune avec processus, utilité, implications et critères d'acceptation. Aucun code modifié, aucune décision prise : en attente d'évaluation, proposition par proposition, et d'accord explicite avant toute mise en œuvre.
+
 ## Préparation documentaire npm (10 novembre 2026)
 
 La PR MyTeam 0.6.1 (#70, branche `lot/l2-lanceur`) existe déjà et fournit le lanceur `myteam`, le raccourci et la session Herdr dédiée. Les README et guides clarifient `npx` contre `npm i` dans une PR complémentaire, sans changer le binaire npm existant `myteam-install`. L'intégration de la PR complémentaire et la publication npm 0.6.1 restent à effectuer. Le workflow `Release` est exclusivement manuel et nécessite `main` ; aucun essai Windows réel ni `npm test` local n'a été effectué pour cette documentation.
